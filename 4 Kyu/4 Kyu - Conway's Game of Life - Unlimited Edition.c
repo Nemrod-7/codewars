@@ -1,0 +1,135 @@
+#define MIN(x,y) (((x) < (y)) ? (x) : (y))
+#define MAX(x,y) (((x) > (y)) ? (x) : (y))
+#define USIGN(x) (((x) > 0) ? (x) : 0)
+
+#define CELL(x) (*(*((x)->data + i) + j))
+#define INIT_POS(x) ((((x) - 1) >= 0) ? ((x) - 1) : (x))
+#define END_POS(x,y) ((((x) + 1) < (y)) ? ((x) + 1) : (x))
+
+enum {DEAD,ALIVE};
+
+typedef unsigned short int value;
+
+typedef struct _cell {
+    _Bool state;
+    value x;
+    value y;
+} cell;
+typedef struct _board {
+    cell a, b;
+    value row;
+    value col;
+    int **data;
+} board;
+
+
+board *init (int row, int col) {
+
+    board *new = malloc (sizeof (board));
+    new->data = malloc (row * sizeof (int *));
+    new->row = row;
+    new->col = col;
+
+    for (int i = 0; i < row; ++i) {
+        new->data[i] = malloc (col * sizeof (int));
+        for (int j = 0; j < col; ++j)
+            CELL (new) = DEAD;
+    }
+
+    return new;
+}
+void copy (int **cells, int irow, int icol, board *world) {
+
+    const value endx = MIN(irow, world->row), endy = MIN(icol, world->col);
+    const value padx = (world->row - endx) * 0.5, pady = (world->col - endy) * 0.5;
+
+    for (int i = 0; i < endx; ++i)
+        for (int j = 0; j < endy; ++j)
+            world->data[padx + i][pady + j] = cells[i][j];
+}
+_Bool get_state (board *world, cell curr) {
+
+    const value nrow = world->row, ncol = world->col;
+    _Bool state = DEAD;
+    int neigh = 0 - curr.state;
+
+    for (int i = INIT_POS(curr.x); i <= END_POS(curr.x,nrow); ++i)
+        for (int j = INIT_POS(curr.y); j <= END_POS(curr.y,ncol); ++j)
+            if (CELL (world) == ALIVE)
+                neigh++;
+
+    if (curr.state == DEAD && neigh == 3)
+        state = ALIVE;
+
+    if (curr.state == ALIVE)
+        if (neigh == 2 || neigh == 3)
+            state = ALIVE;
+
+    return state;
+}
+void update (board *world, board *next) {
+
+    const value row = world->row, col = world->col;
+    //   upper-left board point     | bottom-right board point
+    cell pt_a = {.x = row,.y = col}, pt_b = {.x = 0,.y = 0};
+
+    for (int i = 0; i < row; ++i) {
+        for (int j = 0; j < col; ++j) {
+            cell curr = {.state = CELL (world), .x = i, .y = j};
+            CELL (next) = get_state (world, curr);
+
+            if (CELL (next) == ALIVE) {
+                //keep the position of the board to be cropped
+                pt_a.x = MIN (i, pt_a.x) , pt_a.y = MIN (j, pt_a.y);
+                pt_b.x = MAX (i, pt_b.x) , pt_b.y = MAX (j, pt_b.y);
+            }
+        }
+    }
+
+    copy (next->data,next->row,next->col,world);
+
+    world->a.x = pt_a.x, world->a.y = pt_a.y;
+    world->b.x = pt_b.x, world->b.y = pt_b.y;
+}
+void resize (board *world, board *final) {
+
+    const value startx = world->a.x, starty = world->a.y;
+    const value endx = world->b.x, endy = world->b.y;
+
+    for (int i = startx ; i <= endx; ++i)
+        for (int j = starty ; j <= endy; ++j)
+            *(*(final->data + (i - startx)) + (j - starty)) = CELL (world);
+
+}
+void free_board (board *board) {
+
+  for (int i = 0; i < board->row; ++i)
+      free (board->data[i]);
+
+ free (board);
+}
+int **get_generation(int **cells, int generations, int *rowptr, int *colptr) {
+
+    int nrow = *rowptr, ncol = *colptr;
+    board *world = init (nrow + generations, ncol + generations);
+    board *next = init (nrow + generations, ncol + generations);
+
+    copy (cells, nrow, ncol, world);
+
+   if (generations == 0)
+       return world->data;
+
+    while (generations-->0)
+        update (world, next);
+
+    free_board (next);
+
+    *rowptr = nrow = USIGN ((world->b.x - world->a.x) + 1);
+    *colptr = ncol = USIGN ((world->b.y - world->a.y) + 1);
+
+    board *final = init (nrow,ncol);
+    resize (world,final);
+    free_board (world);
+
+  return final->data;
+}
