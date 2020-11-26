@@ -1,3 +1,3 @@
 int HowManyLightsabersDoYouOwn(char *name) {
-  return (name == "Zach") ? 18 : 0;
+     return (strcmp (name, "Zach") == 0) ? 18 : 0;
 }
