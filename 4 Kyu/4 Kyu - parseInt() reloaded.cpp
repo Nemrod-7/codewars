@@ -32,6 +32,7 @@ int main () {
     auto start = chrono::high_resolution_clock::now();
 
     Test();
+
     //cout << parse_int("two hundred and forty-six") << endl;
 
     auto end = chrono::high_resolution_clock::now();
@@ -41,7 +42,7 @@ int main () {
 
 long parse_int (std::string number) {
 
-    unsigned num = 0, sec = 0, index,mult, cardinal, shift;
+    unsigned num = 0, sec = 0, index, mult, cardinal, shift;
     bool mill = false;
     char *str = strdup (number.c_str()), *token = strtok (str," ,.-");
 
@@ -58,7 +59,6 @@ long parse_int (std::string number) {
                         num = (mult < 2) ? num + (cardinal * shift) : num * shift;
                     else
                         sec = (mult < 2) ? sec + (cardinal * shift) : sec * shift;
-
                 }
 
         token = strtok (NULL," ,.-");
