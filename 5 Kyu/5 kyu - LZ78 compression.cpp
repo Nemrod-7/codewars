@@ -1,5 +1,4 @@
 #include <iostream>
-
 #include <string>
 #include <map>
 
@@ -40,6 +39,8 @@ std::string encoder(const std::string& data) {
             index = 0, actual.clear();
         }
     }
+    //for (auto &it : dict)
+      //  cout << it.first << ' ' << it.second << endl;
 
     if (index > 0)
         os += to_string (index);
@@ -71,15 +72,9 @@ int main () {
 
     auto start = std::chrono::steady_clock::now();
 
-        /*
-    */
-    Test();
-
+    //Test();
     //decoder("0A0B1A2A4A4B");
-    //cout << encoder ("this is a test");
-
-
-
+    cout << encoder ("this is a test") << endl;
 
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed = end - start;
