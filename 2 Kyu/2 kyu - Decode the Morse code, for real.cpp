@@ -117,7 +117,6 @@ class Debug {
         static void display_pt (Point p) {
             cout << setw(2) << fixed << setprecision(2) ;
             cout << '[' << p.x << ", " << p.y << ']';
-            //cout <<" clust : " << p.id;
             cout << endl;
         }
         static void display_vect (vector<Point> points) {
@@ -175,14 +174,7 @@ vector<float> mk_unit (string src) {
     for (auto &it : mapz) zero.push_back ({it.first,it.second});
 
     if (zero.size() == 0) zero = ones;
-
-    /*
-    cout << ":::graph:::\n";
-    cout << "ones :\n";
-    Debug::display_vect(ones);
-    cout << "zero :\n";
-    Debug::display_vect(zero);
-    */
+    
     nunits = min (static_cast<int> (ones.size()), 2);
     ones = Kmeans::clust (ones, mk_seeds (ones, nunits));
 
@@ -207,12 +199,10 @@ vector<float> mk_unit (string src) {
     unit[1] = max (ones.back().x, zero[1].x);
     unit[2] = max (ones.back().x, zero.back().x);
 
-
     return unit;
 }
 
 int getop (int length, vector<float> &units) {
-  //cout << length << ' ';
   if (abs (length - units[0]) <= abs (length - units[1])) return 0;
   if (abs (length - units[2]) < abs (length - units[1])) return 2;
   return 1;
@@ -230,8 +220,7 @@ string decodeMorse (string morseCode) {
             iss.unget();
     }
     os.erase(os.find_last_not_of(' ')+1);
-
-    //cout << os;
+    
     return os;
 }
 string decodeBitsAdvanced (const char *bits) {
@@ -243,33 +232,16 @@ string decodeBitsAdvanced (const char *bits) {
 
   vector<float> unit = mk_unit (code);
   int bit, opt;
-  string sign;
 
   while (it != code.end()) {
       bit = *it;
       opt = getop (skip (it), unit);
-      //size = skip (it);
-      if (bit == '1') {
-          morse += (opt == 0) ? '.' : '-';
-          //sign += (opt == 0) ? '.' : '-';
-      }
 
+      if (bit == '1') morse += (opt == 0) ? '.' : '-';
       if (bit == '0') {
-          if (opt != 0) {
-              //cout << sign << endl;
-              //cout << morse_code[sign];
-              //morse += sign + ' ';
-              //sign.clear();
-              morse += ' ';
-          };
-          if (opt == 2) {
-              //cout << ' ';
-              //sign.clear();
-              morse += "  ";
-          };
-          //cout << morse_code[sign];
+          if (opt != 0) morse += ' ';
+          if (opt == 2) morse += "  ";
       }
-      //cout << morse << endl;
   }
 
   return morse;
