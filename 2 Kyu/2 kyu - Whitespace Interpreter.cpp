@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <algorithm>
 #include <vector>
 #include <map>
@@ -6,28 +7,44 @@
 #include <stack>
 
 using namespace std;
-
+/////////////////////////////////Assert/////////////////////////////////////////
+class Assert {
+    public :
+        template<class T> static void That (const T& a, const T& b) {
+            if (a != b) {
+                cout << "actual : " << a << " expected : " << b;
+                cout << endl;
+            }
+        }
+};
+string Equals (const string &entry) { return entry;}
+void Test ();
+////////////////////////////////////////////////////////////////////////////////
 const char space = 32, tab = 9, line = 10;
 
 class Debug {
     public :
-        static void display (const string &src) {
+        static string display (const string &src) {
+            string os;
             for (auto &c : src)
                 switch (c) {
-                    case space : cout << "[space]"; break;
-                    case tab : cout << "[tab]"; break;
-                    case line : cout << "[lf]"; break;
+                    case space : os += "[space]"; break;
+                    case tab : os += "[tab]"; break;
+                    case line : os += "[lf]"; break;
                     default : break;
                 }
-            cout << endl;
+
+            return os;;
         }
-        static string convert (string s) { // To help with debugging
+        static void mk_str (string s) { // To help with debugging
+            cout << '"';
+            for (auto &it : s) {
+                if (it == space) cout << ' ';
+                if (it == tab) cout << (char)92 << 't';
+                if (it == line) cout << (char)92 << 'n';
+            }
+            cout << '"' << ';';
 
-          transform (s.begin(), s.end(), s.begin(), [] (char c) {
-              return (c == ' ') ? 's' : ((c == '\n') ? 'n' : 't');
-          });
-
-          return s;
         }
 };
 class interpreter {
@@ -200,8 +217,7 @@ void flow_op (const string &code, int &it) {
   [tab][line-feed]: Exit a subroutine and return control to the location from which the subroutine was called.
   */
 }
-
-string whitespace (const string &code, const string &inp = string()) {
+string whitespace2 (const string &code, const string &inp = string()) {
     map<int,int> heap;
     stack<int> S;
     string os, op;
@@ -228,16 +244,29 @@ string whitespace (const string &code, const string &inp = string()) {
     cout << os;
     return os;
 }
+
+//////////////////////////////////////////////////////////////////
+string clean (const string &src) {
+    string code;
+    for (auto &it : src) {
+        if (it == space || it == tab || it == line)
+            code += it;
+    }
+    return code;
+}
 string get_op (const string &code, int &it) {
   string sub  = code.substr (it, 2);
   it += 2;
   return sub;
 }
-string whitespace2 (const string &code) {
+void add (stack<int> S) {
 
-    string sub, os;
+}
+string whitespace (const string &src) {
+
+    string code = clean (src), sub, os;
     stack<int> S;
-    int val, it = 0;
+    int a, b, it = 0;
 
     while (it < code.size()) {
         switch (code[it]) {
@@ -251,20 +280,26 @@ string whitespace2 (const string &code) {
                 } else {
                     sub = code.substr (it, 2);
                     it += 2;
+                    if (sub == "\t ") { // (number): Duplicate the nth value from the top of the stack and push onto the stack.
+
+                    }
+                    if (sub == "\t\n") { // (number): Discard the top n values below the top of the stack from the stack. (For n<**0** or **n**>=stack.length, remove everything but the top value.)
+
+                    }
+                    if (sub == "\n ") { // Duplicate the top value on the stack.
+                        S.push(S.top());
+                    }
+                    if (sub == "\n\t") { // Swap the top two value on the stack.
+                        a = S.top(), S.pop();
+                        b = S.top(), S.pop();
+                        S.push (b);
+                        S.push (a);
+                    }
                     /*
-                    if (sub == "\t ") { // SEARCH
+                    if (sub == "\n\n") { // Discard the top value on the stack.
 
                     }
-                    if (sub == "\t\n") { // DISCARDn
 
-                    }
-                    if (sub == "\n ") { // return COPYTOP;
-
-                    }
-                    if (sub == "\n\t") { // return SWAP;
-                    
-                    }
-                    if (sub == "\n\n") return 5; // return DELTOP;    // LFLF = "\n\n"
                     */
                 }
 
@@ -277,19 +312,45 @@ string whitespace2 (const string &code) {
                 if (sub == "\t ") { // Arithmetic                // TS = "\t "
                     //it += 2;
                     sub = code.substr (it, 2);
+                    if (sub == "  ")  { // Pop a and b, then push b+a.
+                        a = S.top(), S.pop();
+                        b = S.top(), S.pop();
+                        S.push (a + b);
+                    }
+                    if (sub == " \t") { // Pop a and b, then push b-a.
+
+                        a = S.top(), S.pop();
+                        b = S.top(), S.pop();
+                        S.push (a - b);
+                    }
+                    if (sub == " \n") { // Pop a and b, then push b*a.
+                      a = S.top(), S.pop();
+                      b = S.top(), S.pop();
+                      S.push (a * b);
+                    }
+                    if (sub == "\t ") { // Pop a and b, then push b/a*. If a is zero, throw an error.
+                        a = S.top(), S.pop();
+                        b = S.top(), S.pop();
+
+                        if (a == 0) throw::exception();
+
+                        S.push (b / a);
+                    }
                     /*
-                    if (sub == "  ")  return 6; // return ADD;
-                    if (sub == " \t") return 7; // return SUBS;
-                    if (sub == " \n") return 8; // return MULT;
-                    if (sub == "\t ") return 9; // return DIV;   // TS = "\t "
-                    if (sub == "\t\t") return 10; // return MOD;
+                    if (sub == "\t\t") { // Pop a and b, then push b%a*. If a is zero, throw an error.
+
+                    }
                     */
                 }
                 if (sub == "\t\t") { // heap access
                     //it += 2;
                     /*
-                    if (code[it] == space) return 11; // return SWAPHEAP;
-                    if (code[it] == tab) return 12;   // return PUSHEAP;
+                    if (code[it] == space) { // Pop a and b, then store a at heap address b.
+
+                    }
+                    if (code[it] == tab) { // Pop a and then push the value at heap address a onto the stack.
+
+                    }
                     */
                 }
                 if (sub == "\t\n") { // I/O access
@@ -301,8 +362,8 @@ string whitespace2 (const string &code) {
                         S.pop();
                     }
                     if (sub == " \t")  { // OUTI
-                        val = S.top();
-                        os += to_string(val);
+                        a = S.top();
+                        os += to_string (a);
                         S.pop();
                     }
                     if (sub == "\t ") {
@@ -315,6 +376,7 @@ string whitespace2 (const string &code) {
                     //Debug::display (sub);
                 }
                 break;
+
             }
             case line : {
                 it++;
@@ -333,19 +395,20 @@ string whitespace2 (const string &code) {
                     return os;
                 }
                 //cout << "[exit]";
-
-            }
-            /*
-            default : {
                 break;
             }
+            default : {
+                // cout << it;
+                // Debug::display (code);
+                //throw::exception();
+                it++;
+            }
+            /*
             */
-        };
+        }
     }
 
 }
-
-
 
 int operation (const string &code, int it) {
 
@@ -414,28 +477,45 @@ int operation (const string &code, int it) {
 int main () {
 
     //operation (output, 0);
-    string outputA = "   \t    \t \n\t\n  \n\n\n";
 
-    //Debug::display(outputA);
+    string duplicate = "   \t\t\n \n \t\n \t\t\n \t\n\n\n";
+    string duplicateN1 = "   \t\n   \t \n   \t\t\n \t  \t \n\t\n \t\n\n\n"; // 1
+    string duplicateN2 = "   \t\n   \t \n   \t\t\n \t  \t\n\t\n \t\n\n\n"; // 2
+    string duplicateN3 = "   \t\n   \t \n   \t\t\n \t   \n\t\n \t\n\n\n"; // 3
+    string swap = "   \t\t\n   \t \n \n\t\t\n \t\t\n \t\n\n\n";
 
-    whitespace2 (outputA);
+    whitespace (duplicateN1);
+
+
     /*
-    -> [space][space][space][tab][space][space][space][space][space][tab][lf][tab][lf][space][space] [lf][lf][lf]
+    fstream oss ("whites", ios::out);
+    oss << Debug::display (duplicateN1);
+    -> [space]
+          [space]
+              [space][tab][lf]
+       [space]
+          [lf][space]
 
-      [space]
-        [space]
-            [space][tab][space][space][space][space][space][tab][lf]
-                [tab][lf]
-                    [space][space]
+       [tab][lf]
+          [space][tab][tab][lf]
+       [space][tab]
 
-                [lf]
-                    [lf][lf]
+       [lf][lf][lf]
+
     */
 
 }
+template<typename Func> void expect_error(const std::string &msg, Func f) {
+  bool error = false;
+
+  try { f(); }
+  catch (...) { error = true; }
+  if (!error)
+    std::cout << msg << std::endl;
+  //Assert::That(error, Equals(true));
+}
 
 void Test () {
-    /*
     std::string output1 = "   \t\n\t\n \t\n\n\n", output2 = "   \t \n\t\n \t\n\n\n", output3 = "   \t\t\n\t\n \t\n\n\n", output0 = "    \n\t\n \t\n\n\n";
     Assert::That(whitespace(output1), Equals("1"));
     Assert::That(whitespace(output2), Equals("2"));
@@ -455,16 +535,36 @@ void Test () {
     Assert::That(whitespace(outputB), Equals("B"));
     Assert::That(whitespace(outputC), Equals("C"));
 
+
+    outputA = "blahhhh   \targgggghhh     \t\n\t\n  \n\n\n"; // A
+    Assert::That(whitespace(outputA), Equals("A"));
+
+    outputB = " I heart \t  cats  \t \n\t\n  \n\n\n"; // B
+    Assert::That(whitespace(outputB), Equals("B"));
+
+    outputC = "   \t  welcome  \t\t\n\t\n to the\nnew\nworld\n"; // C
+    Assert::That(whitespace(outputC), Equals("C"));
+
+  string pushTwice = "   \t\t\n   \t\t\n\t\n \t\t\n \t\n\n\n"; // 33
+  Assert::That(whitespace(pushTwice), Equals("33"));
+  /*
+  string duplicate = "   \t\t\n \n \t\n \t\t\n \t\n\n\n";  // 33
+  string duplicateN1 = "   \t\n   \t \n   \t\t\n \t  \t \n\t\n \t\n\n\n"; // 1
+  string duplicateN2 = "   \t\n   \t \n   \t\t\n \t  \t\n\t\n \t\n\n\n"; // 2
+  string duplicateN3 = "   \t\n   \t \n   \t\t\n \t   \n\t\n \t\n\n\n"; // 3
+  string swap = "   \t\t\n   \t \n \n\t\t\n \t\t\n \t\n\n\n"; // 32
+  string discard = "   \t\t\n   \t \n \n\t \n\n\t\n \t\n\n\n"; // 2
+  string slide = "   \t\t\n   \t \n   \t\n   \t  \n   \t\t \n   \t \t\n   \t\t\t\n \n\t \t\n \t\t\n\t\n \t\t\n \t\t\n \t\t\n \t\n\n\n"; // 5123
+  string test = "  \t\n\t\n \t\n\n\n"; // 0
+
+  string heap2 = "   \t\n   \t\n   \t \n\t\t \t\t\t\t\n \t\n\n\n"; // 2
+  string arith = "  \t\t\n   \t  \n\t   \t\n \t\n\n\n"; // 3
+  string floor div = "   \t   \n   \t\t\n\t \t \t\n \t\n\n\n"; // 2
+
+  string input_func = "   \t\n\t\n\t\t   \t \n\t\n\t\t   \t\t\n\t\n\t\t   \t\t\n\t\t\t   \t \n\t\t\t   \t\n\t\t\t\t\n \t\t\n \t\t\n \t\n\n\n";// 123
+
+  string input_edge = "   \t\n\t\n\t\t   \t \n\t\n\t\t   \t\t\n\t\n\t\t   \t\t\n\t\t\t   \t \n\t\t\t   \t\n\t\t\t\t\n \t\t\n \t\t\n \t\n\n\n";//Expecting exception for end of input
+
     */
 
-}
-
-template<typename Func> void expect_error(const std::string &msg, Func f) {
-  bool error = false;
-
-  try { f(); }
-  catch (...) { error = true; }
-  if (!error)
-    std::cout << msg << std::endl;
-  //Assert::That(error, Equals(true));
 }
