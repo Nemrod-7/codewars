@@ -34,7 +34,7 @@ class Debug {
                     default : break;
                 }
 
-            return os;;
+            return os;
         }
         static void mk_str (string s) { // To help with debugging
             cout << '"';
@@ -53,69 +53,7 @@ class interpreter {
         string code, op;
         stack<int> S;
 };
-/*
-IMP [tab][space] - Arithmetic
-    [space][space]: Pop a and b, then push b+a.
-    [space][tab]: Pop a and b, then push b-a.
-    [space][line-feed]: Pop a and b, then push b*a.
-    [tab][space]: Pop a and b, then push b/a*. If a is zero, throw an error.
-    *Note that the result is defined as the floor of the quotient.
-    [tab][tab]: Pop a and b, then push b%a*. If a is zero, throw an error.
-    *Note that the result is defined as the remainder after division and sign (+/-) of the divisor (a).
 
-IMP [tab][tab] - Heap Access
-    [space]: Pop a and b, then store a at heap address b.
-    [tab]: Pop a and then push the value at heap address a onto the stack.
-
-
-IMP [line-feed] - Flow Control
-    [space][space] (label): Mark a location in the program with label n.
-    [space][tab] (label): Call a subroutine with the location specified by label n.
-    [space][line-feed] (label): Jump unconditionally to the position specified by label n.
-    [tab][space] (label): Pop a value off the stack and jump to the label specified by n if the value is zero.
-    [tab][tab] (label): Pop a value off the stack and jump to the label specified by n if the value is less than zero.
-    [tab][line-feed]: Exit a subroutine and return control to the location from which the subroutine was called.
-    [line-feed][line-feed]: Exit the program.
-
-Parsing Numbers :
-    Numbers begin with a [sign] symbol : [tab] -> negative, [space] -> positive.
-    Numbers end with a [terminal] symbol: [line-feed].
-    Between the sign symbol and the terminal symbol are binary digits [space] -> binary-0, or [tab] -> binary-1.
-    A number expression [sign][terminal] will be treated as zero.
-    The expression of just [terminal] should throw an error.
-
-Parsing Labels :
-    Labels begin with any number of [tab] and [space] characters.
-    Labels end with a terminal symbol: [line-feed].
-    Unlike with numbers, the expression of just [terminal] is valid.
-    Labels must be unique.
-    A label may be declared either before or after a command that refers to it.
-
-Input/Output : As stated earlier, there commands may read data from input or write to output.
-
-Parsing Input :
-Whitespace will accept input either characters or integers. Due to the lack of an input stream mechanism, the input will be passed as a string to the interpreter function.
-Reading a character involves simply taking a character from the input stream.
-Reading an integer involves parsing a decimal or hexadecimal number from the current position of the input stream, up to and terminated by a line-feed character.
-The original implementation being in Haskell has stricter requirements for parsing an integer.
-The Javascript and Coffeescript implementations will accept any number that can be parsed by the parseInt function as a single parameter.
-The Python implementations will accept any number that can be parsed by the int function as a single parameter.
-The Java implementations will use an InputStream instance for input. For InputStream use readLine if the program requests a number and read if the program expects a character.
-An error should be thrown if the input ends before parsing is complete. (This is a non-issue for the Haskell implementation, as it expects user input)
-
-Writing Output :
-    For a number, append the output string with the number's string value.
-    For a character, simply append the output string with the character.
-    The Java implementations will support an optional OutputStream for output. If an OutputStream is provided, it should be flushed before and after code execution and filled as code is executed. The output string should be returned in any case.
-
-Commands :
-    Notation: n specifies the parameter, [number] or [label].
-    Errors should be thrown for invalid numbers, labels, and heap addresses,
-    or if there are not enough items on the stack to complete an operation (unless otherwise specified).
-    In addition, an error should be thrown for unclean termination.
-
-
-*/
 
 int btoi (string str) {
 
@@ -131,8 +69,8 @@ int btoi (string str) {
 }
 
 void stack_op (const string &code, int &it, stack<int> &S) {
-  //it++;
-  switch (code[it++]) {
+  it++;
+  switch (code[it]) {
       case space : {
           //it++;
           int nxt = code.find (line, it) + 1;
@@ -208,14 +146,6 @@ void flow_op (const string &code, int &it) {
     if (op == "\n\n") { // [line-feed][line-feed]: Exit the program.
         it = code.size() - 1;
     }
-  /*
-  [space][space] (label): Mark a location in the program with label n.
-  [space][tab] (label): Call a subroutine with the location specified by label n.
-  [space][line-feed] (label): Jump unconditionally to the position specified by label n.
-  [tab][space] (label): Pop a value off the stack and jump to the label specified by n if the value is zero.
-  [tab][tab] (label): Pop a value off the stack and jump to the label specified by n if the value is less than zero.
-  [tab][line-feed]: Exit a subroutine and return control to the location from which the subroutine was called.
-  */
 }
 string whitespace2 (const string &code, const string &inp = string()) {
     map<int,int> heap;
@@ -307,37 +237,23 @@ string whitespace (const string &src) {
             }
             case tab : {
                 sub = get_op (code, it);
-                //sub = code.substr (it, 2);
-                //it += 2;
-                if (sub == "\t ") { // Arithmetic                // TS = "\t "
-                    //it += 2;
+
+                if (sub == "\t ") { // Arithmetic
+
                     sub = code.substr (it, 2);
-                    if (sub == "  ")  { // Pop a and b, then push b+a.
-                        a = S.top(), S.pop();
-                        b = S.top(), S.pop();
-                        S.push (a + b);
-                    }
-                    if (sub == " \t") { // Pop a and b, then push b-a.
-
-                        a = S.top(), S.pop();
-                        b = S.top(), S.pop();
-                        S.push (a - b);
-                    }
-                    if (sub == " \n") { // Pop a and b, then push b*a.
-                      a = S.top(), S.pop();
-                      b = S.top(), S.pop();
-                      S.push (a * b);
-                    }
-                    if (sub == "\t ") { // Pop a and b, then push b/a*. If a is zero, throw an error.
-                        a = S.top(), S.pop();
-                        b = S.top(), S.pop();
-
-                        if (a == 0) throw::exception();
-
-                        S.push (b / a);
-                    }
+                    a = S.top(), S.pop();
+                    b = S.top(), S.pop();
+                    
+                    if (sub == "  ")  { S.push (a + b); } // Pop a and b, then push b+a.
+                    if (sub == " \t") { S.push (b - a); } // Pop a and b, then push b-a.
+                    if (sub == " \n") { S.push (a * b); } // Pop a and b, then push b*a.
+                    if (sub == "\t ") {
+                        if (a == 0) throw runtime_error();
+                        S.push (b / a); 
+                    } // Pop a and b, then push b/a*. If a is zero, throw an error.
+                    
                     /*
-                    if (sub == "\t\t") { // Pop a and b, then push b%a*. If a is zero, throw an error.
+                    if (sub == "\t\t") { // Pop a and b, then push b % a*. If a is zero, throw an error.
 
                     }
                     */
@@ -355,10 +271,9 @@ string whitespace (const string &src) {
                 }
                 if (sub == "\t\n") { // I/O access
                     sub = get_op (code, it);
-                    //sub = code.substr (it, 2);
-                    //it += 2;
+                    
                     if (sub == "  ") {
-                        os += S.top(); //cout << static_cast<char>(S.top());
+                        os += S.top(); // cout << static_cast<char>(S.top());
                         S.pop();
                     }
                     if (sub == " \t")  { // OUTI
@@ -371,9 +286,9 @@ string whitespace (const string &src) {
                     }
                     if (sub == "\t\t") {
 
-
+                        
                     }
-                    //Debug::display (sub);
+                    // Debug::display (sub);
                 }
                 break;
 
@@ -381,14 +296,18 @@ string whitespace (const string &src) {
             case line : {
                 it++;
                 sub = code.substr (it, 2);
+                
                 /*
+                
                 if (sub == "  ")  return 17; // return MARK;
                 if (sub == " \t") return 18; // return CALL;
                 if (sub == " \n") return 19; // return JUMP;
                 if (sub == "\t ") return 20; // return JUMP1;      // TS = "\t "
                 if (sub == "\t\t") return 21;// return JUMP2;
                 if (sub == "\t\n") return 22;// return EXITSUB;
+                
                 */
+                
                 if (sub == "\n\n") { // return EXIT;     // LFLF = "\n\n"
                     //Debug::display (sub);
                     cout << os << endl;
