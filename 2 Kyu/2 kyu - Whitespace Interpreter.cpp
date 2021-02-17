@@ -165,7 +165,6 @@ void arith_op (const string &code, size_t &it, vector<int> &stack) {
         stack.push_back ((b % a + a) % a);
     } // Pop a and b, then push b % a*. If a is zero, throw an error.
 }
-
 void heap_op (char mode, map<int,int> &heap, vector<int> &stack) {
   int a = get_val(stack);
   //cout << a ;
@@ -192,9 +191,8 @@ string whitespace (const string &src, const string &inp = string()) {
     size_t it = 0;
 
     while (it < code.size()) {
-        int op = code[it];
-        //cout << it << ' ';
-        switch (op) {
+
+        switch (code[it]) {
             case space : { stack_op (code, it, stack);
               //cout << "stack : " << it << endl;
              break; }
@@ -229,43 +227,41 @@ string whitespace (const string &src, const string &inp = string()) {
                 break;
             }
             case line : { // Flow control
-                //cout << "line : " << it << endl;
                 it++;
-                sub = code.substr (it, 2);
+                sub = get_op (code, it);
+
+                if (sub == "\t\n") {
+                    cout << "exitsub : " << it << endl;
+                } //
+
+                if (sub == "\n\n") {
+                    //cout << "exit : " << it << endl;
+                    return os;
+                }
+                label = get_label (code, it);
 
                 if (sub == "  ")  {
-                    int location = it;
-                    label = get_label (code, it);
-                    //if (!locat[label])
-                        locat[label] = location;
+                    locat[label] = it;
                     //cout << "mark : " << locat[label] << endl;
-                  //cout << "mark : " << it << endl;
                 } // [space][space] (label): Mark a location in the program with label n.
                 if (sub == " \t") {
                     cout << "call : " << it << endl;
                 } // space][tab] (label): Call a subroutine with the location specified by label n.
                 if (sub == " \n") {
-                    cout << "jump : " << it << endl;
+                    it = locat[label];
+                    //cout << "jump : " << it << endl;
                 } // [space][line-feed] (label): Jump unconditionally to the position specified by label n.
                 if (sub == "\t ") {
                     a = get_val(stack);
-                    label = get_label(code,it);
-
-                    if (a == 0) it = locat[get_label(code,it)];
+                    if (a == 0) it = locat[label];
                 } // [tab][space] (label): Pop a value off the stack and jump to the label specified by n if the value is zero.
 
                 if (sub == "\t\t") {
-                    cout << "jump2 : " << it << endl;
+                    a = get_val(stack);
+                    if (a < 0) it = locat[label];
+                    //cout << "jump2 : " << it << endl;
                 }// [tab][tab] (label): Pop a value off the stack and jump to the label specified by n if the value is less than zero.
-
-                if (sub == "\t\n") {
-                    cout << "exitsub : " << it << endl;
-                }// [line-feed][line-feed]: Exit the program.
-
-                if (sub == "\n\n") {
-                    //cout << "exit : " << it << endl;
-                    return os;
-                } // Exit the program.
+ // Exit the program.
 
                 break;
             }
@@ -275,28 +271,19 @@ string whitespace (const string &src, const string &inp = string()) {
         }
     }
     //if (!src.size())
-    //throw exception();
+    throw exception();
 }
-
 
 int main () {
 
-  string code = "   \t\n   \t\t\n   \n   \t \n   \n   \t\n\n  \n\t\n \t\n\t \n\n\n\n";// Expected: equal to "123"
+  string jump = "   \t\n   \t\t\n   \n   \t \n   \n   \t\n\n  \n\t\n \t\n\t \n\n\n\n";// Expected: equal to "123"
+
   //Debug::to_file (jump);
-  //string test = "   \t \n\t\n \t\n\n\n";
-  //Debug::to_file (test);
+  //cout << get_label (jump, it);
+  //cout << whitespace(jump);
+  Test();
 
-  cout << whitespace(code);
-// [space][space] (label): Mark a location in the program with label n.
-// space][tab] (label): Call a subroutine with the location specified by label n.
-
-// [space][line-feed] (label): Jump unconditionally to the position specified by label n.
-// [tab][space] (label): Pop a value off the stack and jump to the label specified by label n if the value is zero.
-// [tab][tab] (label): Pop a value off the stack and jump to the label specified by n if the value is less than zero.
-// [line-feed][line-feed]: Exit the program.
-// Exit the program.
-
-  //Test();
+  cout << "end";
 }
 
 template<typename Func> void expect_error(const std::string &msg, Func f) {
@@ -392,27 +379,20 @@ void Test () {
   expect_error("Expecting exception for empty stack", [] () { whitespace("   \t\n   \t \n\t\t \t\t\t\n\n\n"); });
   expect_error("Expecting exception for arith edge case stack", [] (){ whitespace ("\t   \t\n \t\n\n\n");}); // nth test : Testing_arithmetic_edge_cases
 
-
+string jump = "   \t\n   \t\t\n   \n   \t \n   \n   \t\n\n  \n\t\n \t\n\t \n\n\n\n";// Expected: equal to "123"
+Assert::That(whitespace(jump), Equals("123"));
   /*
 
   string input_func = "   \t\n\t\n\t\t   \t \n\t\n\t\t   \t\t\n\t\n\t\t   \t\t\n\t\t\t   \t \n\t\t\t   \t\n\t\t\t\t\n \t\t\n \t\t\n \t\n\n\n";// 123
   string input_edge = "   \t\n\t\n\t\t   \t \n\t\n\t\t   \t\t\n\t\n\t\t   \t\t\n\t\t\t   \t \n\t\t\t   \t\n\t\t\t\t\n \t\t\n \t\t\n \t\n\n\n";//Expecting exception for end of input
   Testing_input_functionality
   Log
-  "   \t\n\t\n\t\t   \t \n\t\n\t\t   \t\t\n\t\n\t\t   \t\t\n\t\t\t   \t \n\t\t\t   \t\n\t\t\t\t\n \t\t\n \t\t\n \t\n\n\n";
-  Expected: equal to "123"
-  Actual: "491050"
-  Testing_input_edge_cases
-  Log
+
   "   \t\n\t\n\t\t   \t \n\t\n\t\t   \t\t\n\t\n\t\t   \t\t\n\t\t\t   \t \n\t\t\t   \t\n\t\t\t\t\n \t\t\n \t\t\n \t\n\n\n";
   Expecting exception for end of input
   Expected: true
   Actual: false
-  Testing_conditional_and_unconditional_jump_functionality
-  Log
-  "   \t\n   \t\t\n   \n   \t \n   \n   \t\n\n  \n\t\n \t\n\t \n\n\n\n";
-  Expected: equal to "123"
-  Actual: ""
+
   Testing_conditional_and_unconditional_jump_edge_cases
   Log
   "   \t\n\t\n \t\n\t  \n   \t\n\n   \n\n\n\n";
