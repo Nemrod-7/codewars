@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 #include <fstream>
 #include <cmath>
 #include <vector>
@@ -181,82 +182,88 @@ void heap_op (char mode, map<int,int> &heap, vector<int> &stack) {
 
 string whitespace (const string &src, const string &inp = string()) {
 
-    string code = clean (src), input = inp, sub, os;
-    string label;
-    string::iterator in = input.begin();
+    string code = clean (src), os;
+    string op, label;
+    //char c;
+    //string::iterator in = input.begin();
+    stringstream iss (inp);
     vector<int> stack;
     map<int,int> heap;
-    map<string,size_t> locat;
+    map<string, size_t> locat;
     int a, b;
     size_t it = 0;
 
     while (it < code.size()) {
-
+        //int op = code[it];
+        //cout << it << ' ';
         switch (code[it]) {
             case space : { stack_op (code, it, stack);
               //cout << "stack : " << it << endl;
              break; }
             case tab : {
-                //cout << "tab : " << it << endl;
-                sub = get_op (code, it);
 
-                if (sub == "\t ") { arith_op (code, it, stack); }
-                if (sub == "\t\t") {
+                op = get_op (code, it);
+
+                if (op == "\t ") { arith_op (code, it, stack); }
+                if (op == "\t\t") {
                     heap_op (code[it], heap, stack);
                     it++;
                 }
-                if (sub == "\t\n") { // I/O access
+                if (op == "\t\n") { // I/O access
 
-                    sub = get_op (code, it);
-                    //cout << Debug::display(sub);
-                    if (sub == "  ") { os += get_val(stack); }
-                    if (sub == " \t")  { os += to_string (get_val (stack)); }
-                    if (sub == "\t ") {
-                        a = *in++;
-                        b = get_val(stack);
-                        heap[b] = a;
+                    op = get_op (code, it);
+
+                    if (op == "  ") { os += get_val(stack); }
+                    if (op == " \t")  { os += to_string (get_val (stack)); }
+                    if (op == "\t ") {
+                        //b = get_val(stack);
+                        if (iss >> a)
+                            heap[get_val(stack)] = a - '0';
+                        else
+                            throw exception();
                     }
-                    if (sub == "\t\t") {
-                      //cout << "here";
-                      a = *in++;
-                      b = get_val(stack);
-                      heap[b] = a;
+                    if (op == "\t\t") {
+                        //b = get_val(stack);
+                        if (iss >> a)
+                            heap[get_val(stack)] = a;
+                        else
+                            throw exception();
                     }
-                    // Debug::display (sub);
+                    // Debug::display (op);
                 }
                 break;
             }
             case line : { // Flow control
                 it++;
-                sub = get_op (code, it);
+                op = get_op (code, it);
 
-                if (sub == "\t\n") {
-                    cout << "exitsub : " << it << endl;
+                if (op == "\t\n") {
+                    cout << "exitop : " << it << endl;
                 } //
 
-                if (sub == "\n\n") {
+                if (op == "\n\n") {
                     //cout << "exit : " << it << endl;
                     return os;
                 }
                 label = get_label (code, it);
 
-                if (sub == "  ")  {
+                if (op == "  ")  {
                     locat[label] = it;
                     //cout << "mark : " << locat[label] << endl;
                 } // [space][space] (label): Mark a location in the program with label n.
-                if (sub == " \t") {
+                if (op == " \t") {
                     cout << "call : " << it << endl;
-                } // space][tab] (label): Call a subroutine with the location specified by label n.
-                if (sub == " \n") {
+                } // space][tab] (label): Call a oproutine with the location specified by label n.
+                if (op == " \n") {
                     it = locat[label];
                     //cout << "jump : " << it << endl;
                 } // [space][line-feed] (label): Jump unconditionally to the position specified by label n.
-                if (sub == "\t ") {
+                if (op == "\t ") {
                     a = get_val(stack);
                     if (a == 0) it = locat[label];
                 } // [tab][space] (label): Pop a value off the stack and jump to the label specified by n if the value is zero.
 
-                if (sub == "\t\t") {
+                if (op == "\t\t") {
                     a = get_val(stack);
                     if (a < 0) it = locat[label];
                     //cout << "jump2 : " << it << endl;
@@ -276,26 +283,22 @@ string whitespace (const string &src, const string &inp = string()) {
 
 int main () {
 
-  string jump = "   \t\n   \t\t\n   \n   \t \n   \n   \t\n\n  \n\t\n \t\n\t \n\n\n\n";// Expected: equal to "123"
+  //string stackedge4 = "   \t\n   \t \n   \t\t\n \t  \t\t\n\t\n \t\n\n\n"; // Expecting exception for out of bounds index
+  // Expecting exception for out of bounds index
 
-  //Debug::to_file (jump);
-  //cout << get_label (jump, it);
-  //cout << whitespace(jump);
+
   Test();
 
-  cout << "end";
 }
 
-template<typename Func> void expect_error(const std::string &msg, Func f) {
+template<typename Func> void expect_error (const std::string &msg, Func f) {
   bool error = false;
 
   try { f(); }
   catch (...) { error = true; }
   if (!error)
-    std::cout << msg << std::endl;
-  //Assert::That(error, Equals(true));
+    cout << msg << endl;
 }
-
 void Test () {
     std::string output1 = "   \t\n\t\n \t\n\n\n", output2 = "   \t \n\t\n \t\n\n\n", output3 = "   \t\t\n\t\n \t\n\n\n", output0 = "    \n\t\n \t\n\n\n";
     Assert::That(whitespace(output1), Equals("1"));
@@ -381,18 +384,18 @@ void Test () {
 
 string jump = "   \t\n   \t\t\n   \n   \t \n   \n   \t\n\n  \n\t\n \t\n\t \n\n\n\n";// Expected: equal to "123"
 Assert::That(whitespace(jump), Equals("123"));
-  /*
 
-  string input_func = "   \t\n\t\n\t\t   \t \n\t\n\t\t   \t\t\n\t\n\t\t   \t\t\n\t\t\t   \t \n\t\t\t   \t\n\t\t\t\t\n \t\t\n \t\t\n \t\n\n\n";// 123
-  string input_edge = "   \t\n\t\n\t\t   \t \n\t\n\t\t   \t\t\n\t\n\t\t   \t\t\n\t\t\t   \t \n\t\t\t   \t\n\t\t\t\t\n \t\t\n \t\t\n \t\n\n\n";//Expecting exception for end of input
+{
+    string intst = "   \t\n\t\n\t\t   \t \n\t\n\t\t   \t\t\n\t\n\t\t   \t\t\n\t\t\t   \t \n\t\t\t   \t\n\t\t\t\t\n \t\t\n \t\t\n \t\n\n\n";
+    string input = "1\n2\n3\n";
+    Assert::That(whitespace(intst, input), Equals("123"));
+}
+
+expect_error("Expecting exception for unclean termination", [] () { whitespace("   \t\n\t\n\t\t   \t \n\t\n\t\t   \t\t\n\t\n\t\t   \t\t\n\t\t\t   \t \n\t\t\t   \t\n\t\t\t\t\n \t\t\n \t\t\n \t\n\n\n","1\n2\n"); });
+
+  /*
   Testing_input_functionality
   Log
-
-  "   \t\n\t\n\t\t   \t \n\t\n\t\t   \t\t\n\t\n\t\t   \t\t\n\t\t\t   \t \n\t\t\t   \t\n\t\t\t\t\n \t\t\n \t\t\n \t\n\n\n";
-  Expecting exception for end of input
-  Expected: true
-  Actual: false
-
   Testing_conditional_and_unconditional_jump_edge_cases
   Log
   "   \t\n\t\n \t\n\t  \n   \t\n\n   \n\n\n\n";
