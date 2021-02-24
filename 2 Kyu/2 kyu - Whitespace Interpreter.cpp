@@ -6,7 +6,10 @@
 #include <bitset>
 #include <map>
 
+#include <algorithm>
 #include <stack>
+
+#include <iomanip>
 
 using namespace std;
 /////////////////////////////////Assert/////////////////////////////////////////
@@ -29,6 +32,10 @@ const char space = 32, tab = 9, line = 10;
 
 class Debug {
     public :
+        static string unbleach(std::string s) {
+          std::transform(s.begin(), s.end(), s.begin(), [] (char c) { return (c == ' ') ? 's' : ((c == '\n') ? 'n' : 't'); });
+          return s;
+        }
         static string display (const string &src) {
             string os;
             for (auto &c : src)
@@ -53,15 +60,10 @@ class Debug {
         }
         static void to_file (string &src) {
           fstream oss ("whites", ios::out);
-          oss << Debug::display (src);
+          oss << display (src);
         }
 };
-class interpreter {
-    private :
-        int it = 0;
-        string code, op;
-        stack<int> S;
-};
+
 //////////////////////////////////////////////////////////////////
 string clean (const string &src) {
     string code;
@@ -72,33 +74,47 @@ string clean (const string &src) {
     return code;
 }
 
+int number2 (const string &code, size_t &it) {
+
+  if (code[it] == line) throw exception();
+  int sign = code[it] == space ? 1 : -1;
+  string num;
+  it++;
+
+  do {
+    if (code[it] != line ) num += code[it] == tab ? '1' : '0';
+    else break;
+  } while (it++);
+
+  it++;
+  return bitset<8> (num).to_ulong() * sign;
+}
 int number (const string &code, size_t &it) {
+    if (code[it] == line) {
+      throw exception();
+    }
     int sign = code[it] == space ? 1 : -1;
     string num;
 
     while (it++) {
-        if (code[it] == line) break;
-        num += code[it] == tab ? '1' : '0';
+        if (code[it] != line)
+            num += code[it] == tab ? '1' : '0';
+        else break;
     }
 
     it++;
     return bitset<8> (num).to_ulong() * sign;
 }
-
 string get_label (const string &code, size_t &it) {
     string os;
 
     do {
-        switch (code[it]) {
-            case space : os += 's'; break;
-            case tab : os += 't'; break;
-            case line : os += 'l'; break;
-            default : break;
-        }
+        os += code[it];
     } while (code[it++] != line);
 
     return os;
 }
+
 int get_val (vector<int> &stack) {
     if (!stack.size()) throw exception();
     int val = stack.back();
@@ -106,31 +122,34 @@ int get_val (vector<int> &stack) {
     return val;
 }
 string get_op (const string &code, size_t &it) {
-  string sub  = code.substr (it, 2);
+  string sub = code.substr (it, 2);
   it += 2;
   return sub;
 }
 
 void stack_op (const string &code, size_t &it, vector<int> &stack) {
   it++;
-  //cout << "stack ";
+
   if (code[it] == space)  { it++;
       stack.push_back (number (code, it));
-
+      //cout << "number : " << stack.back() << endl;
   } else {
       string sub = get_op (code, it);
       int size = stack.size() - 1;
-      //cout << size << ' ';
+
       if (size < 0) throw exception();
 
       if (sub == "\t ") {
-          int pos = size - number (code, it);
+          int num =  number (code, it);
+          int pos = size - num;
+          if (num < 0 || num >= (int) stack.size()) throw exception();
+          //cout << num << ' ' << size;
           stack.push_back (stack[pos]);
       } // (number): Duplicate the nth value from the top of the stack and push onto the stack.
       if (sub == "\t\n") {
           int num = number (code, it);
 
-          if (num < 0 || num >= stack.size())
+          if (num < 0 || num >= (int) stack.size())
               num = stack.size() - 1;
 
           auto top = stack.end() - 1, start = top - num;
@@ -146,16 +165,13 @@ void stack_op (const string &code, size_t &it, vector<int> &stack) {
 void arith_op (const string &code, size_t &it, vector<int> &stack) {
 
     string sub = get_op (code, it);
-
     //if (stack.size() < 2) throw exception();
     int a = get_val (stack), b = get_val (stack);
     //cout << a << ' ' << b << endl;
-    //cout << a << ' ' << b;
     if (sub == "  ")  { stack.push_back (a + b); } // Pop a and b, then push b+a.
     if (sub == " \t") { stack.push_back (b - a); } // Pop a and b, then push b-a.
     if (sub == " \n") { stack.push_back (a * b); } // Pop a and b, then push b*a.
 
-    //if (a == 0) throw exception();
     if (sub == "\t ") {
         if (a == 0) throw exception();
         stack.push_back (floor (b / (float)a));
@@ -170,31 +186,73 @@ void heap_op (char mode, map<int,int> &heap, vector<int> &stack) {
   int a = get_val(stack);
   //cout << a ;
   if (mode == space) {
-      if (!stack.size()) throw exception();
       heap[get_val(stack)] = a;
   } // Pop a and b, then store a at heap address b.
   if (mode == tab) {
       //cout << heap.size ();
-      if (!heap.size()) throw exception();
+      if (!heap[a]) throw exception();
       stack.push_back (heap[a]);
   } // Pop a and push the value at heap address a to the stack.
+}
+
+map<string,size_t> mk_base (const string &code) {
+
+    size_t it = 0;
+    string sub;
+    map<string,size_t> labels;
+
+    while (it < code.size()) {
+        switch (code[it]) {
+            case space : {
+              it++;
+              if (code[it] == space)  {
+                  it = code.find ('\n', it) + 1;
+              } else {
+                  sub = get_op (code, it);
+                  if (sub == "\t " || sub == "\t\n") it = code.find ('\n', it) + 1;                  //if (sub == "\t\n") it = code.find ('\n', it) + 1;
+              }
+              break;
+            }
+            case tab : {
+                sub = get_op (code, it);
+
+                if (sub == "\t " || sub == "\t\n")  it += 2;
+                if (sub == "\t\t") it++;
+                break;
+            }
+            case line : {
+                it++;
+                sub = get_op (code, it);
+
+                if (sub != "\t\n" && sub != "\n\n") {
+                    string label = get_label (code, it);
+
+                    if (sub == "  ") {
+                        if (labels[label]) throw exception();
+                        labels[label] = it;
+                    }
+
+                }
+                break;
+            }
+        }
+    }
+
+    return labels;
 }
 
 string whitespace (const string &src, const string &inp = string()) {
 
     string code = clean (src), os;
     string op, label;
-    //char c;
-    //string::iterator in = input.begin();
     stringstream iss (inp);
     vector<int> stack;
     map<int,int> heap;
-    map<string, size_t> locat;
-    int a, b;
+    map<string, size_t> base = mk_base(code);
+    int val;
     size_t it = 0;
 
     while (it < code.size()) {
-        //int op = code[it];
         //cout << it << ' ';
         switch (code[it]) {
             case space : { stack_op (code, it, stack);
@@ -216,59 +274,59 @@ string whitespace (const string &src, const string &inp = string()) {
                     if (op == "  ") { os += get_val(stack); }
                     if (op == " \t")  { os += to_string (get_val (stack)); }
                     if (op == "\t ") {
-                        //b = get_val(stack);
-                        if (iss >> a)
-                            heap[get_val(stack)] = a - '0';
+                        char c;
+                        if (iss >> c)
+                            heap[get_val(stack)] = c;
                         else
                             throw exception();
+                        //cout << a << ' ';
                     }
                     if (op == "\t\t") {
-                        //b = get_val(stack);
-                        if (iss >> a)
-                            heap[get_val(stack)] = a;
+                        int c;
+                        if (iss >> c)
+                            heap[get_val(stack)] = c;
                         else
                             throw exception();
+
                     }
                     // Debug::display (op);
                 }
                 break;
             }
             case line : { // Flow control
+
                 it++;
                 op = get_op (code, it);
 
                 if (op == "\t\n") {
                     cout << "exitop : " << it << endl;
-                } //
+                }
 
                 if (op == "\n\n") {
-                    //cout << "exit : " << it << endl;
+                    cout << "exit : " << it << endl;
                     return os;
                 }
-                label = get_label (code, it);
 
-                if (op == "  ")  {
-                    locat[label] = it;
-                    //cout << "mark : " << locat[label] << endl;
-                } // [space][space] (label): Mark a location in the program with label n.
+                label = get_label (code, it);
+                if (base.size() == 0) throw exception();
+
                 if (op == " \t") {
                     cout << "call : " << it << endl;
-                } // space][tab] (label): Call a oproutine with the location specified by label n.
+                } // Call subroutine.
                 if (op == " \n") {
-                    it = locat[label];
-                    //cout << "jump : " << it << endl;
-                } // [space][line-feed] (label): Jump unconditionally to the position specified by label n.
+                    it = base[label];
+                } // Jump unconditionally to label.
                 if (op == "\t ") {
-                    a = get_val(stack);
-                    if (a == 0) it = locat[label];
-                } // [tab][space] (label): Pop a value off the stack and jump to the label specified by n if the value is zero.
+                    val = get_val(stack);
+                    if (val == 0) it = base[label];
+                } // Jump to the label if value == zero.
 
                 if (op == "\t\t") {
-                    a = get_val(stack);
-                    if (a < 0) it = locat[label];
+                    val = get_val(stack);
+                    if (val < 0) it = base[label];
                     //cout << "jump2 : " << it << endl;
-                }// [tab][tab] (label): Pop a value off the stack and jump to the label specified by n if the value is less than zero.
- // Exit the program.
+                }// Jump to the label if value < zero.
+
 
                 break;
             }
@@ -283,11 +341,23 @@ string whitespace (const string &src, const string &inp = string()) {
 
 int main () {
 
-  //string stackedge4 = "   \t\n   \t \n   \t\t\n \t  \t\t\n\t\n \t\n\n\n"; // Expecting exception for out of bounds index
-  // Expecting exception for out of bounds index
+
+  string call2 = "   \t \n\n \t \n   \t\t\n\n \t \n   \t\n\n \t \n\n\n\n\n   \n\t\n \t\n\n\n"; // Testing_subroutine_functionality
+  string call3 = "   \t\n\t\n \t   \t\n\n \t \n   \t \n\n \t \n   \t\t\n\n \t \n\n\n\n\n  \n\t\n \t\n\t\n"; // Expecting exception for unknown label
+  string code = "   \t\n   \t \n   \t\t\n\t\n \t\n \n\n\t\n \t\t\n \t\n  \n\n  \n\n\n\n"; //=> ok Expecting exception for repeated labels
 
 
-  Test();
+  string invalid = "  \t\t\n\n\n\t\t\n\n  \n\n\n\n";
+  //whitespace (call2);
+  // Debug::to_file (call2);
+  /*
+  //map<string, size_t> base = mk_base(code);
+  for (auto &it : base)
+      cout << Debug::display (it.first) << ' ' << it.second << endl;
+      */
+
+  //Test();
+  //cout << "Debug::display(jump5.substr(42 - 5));";
 
 }
 
@@ -313,9 +383,9 @@ void Test () {
 
 
     expect_error("Expecting exception for unclean termination", [] () { whitespace(""); });
-
     std::string outputA = "   \t     \t\n\t\n  \n\n\n", outputB = "   \t    \t \n\t\n  \n\n\n", outputC = "   \t    \t\t\n\t\n  \n\n\n";
     Assert::That(whitespace(outputA), Equals("A"));
+
     Assert::That(whitespace(outputB), Equals("B"));
     Assert::That(whitespace(outputC), Equals("C"));
 
@@ -392,7 +462,15 @@ Assert::That(whitespace(jump), Equals("123"));
 }
 
 expect_error("Expecting exception for unclean termination", [] () { whitespace("   \t\n\t\n\t\t   \t \n\t\n\t\t   \t\t\n\t\n\t\t   \t\t\n\t\t\t   \t \n\t\t\t   \t\n\t\t\t\t\n \t\t\n \t\t\n \t\n\n\n","1\n2\n"); });
+expect_error("Expecting exception for out of bounds index", [] () { whitespace ("   \t\n   \t \n   \t\t\n \t \t\t\n\t\n \t\n\n\n"); });
+expect_error("Expecting exception for out of bounds index", [] () { whitespace ("   \t\n   \t \n   \t\t\n \t  \t\t\n\t\n \t\n\n\n"); });
 
+string jump1 = "   \t\n   \t\t\n   \n   \t \n   \n   \t\n\n  \n\t\n \t\n\t \n\n\n\n";
+string jump2 = "  \t\t\t\n\n  \n \n   \t\t\n\t  \n\t\n \t   \t\n\t    \n \n\t\t\n\n\n\n";
+string jump3 = "   \t\n   \t \n   \t\t\n\t\n \t\n \n\n\t\n \t\t\n \t\n  \n\n\n\n";
+string jump4 = "   \t\n   \t \n   \t\t\n\t\n \t\n \n\n\n  \t\n\t\n \t\t\n \t\n\n\n\n  \n\n \n\t\n";
+string jump5 = "  \t\t\n   \n   \t\n   \t \n   \t\t\n\n  \n\t\n \t \n \n\t\t \n\n \n\n\n   \n\n\n\n";
+string jump6 = "   \n   \t\n\t\n \t\n\t  \n   \t\n\t\n \t\n\n\n";
   /*
   Testing_input_functionality
   Log
@@ -403,3 +481,124 @@ expect_error("Expecting exception for unclean termination", [] () { whitespace("
 
 }
 //////////////////////////////////Arkive///////////////////////////////////////
+/*
+size_t search_pos (const string &code, string label) {
+//const string mark = "\n  ";
+size_t size = label.size() + 3;
+return code.find ("\n  " + label) + size;
+}
+enum instruct {
+    PUSH, DUPLICATE, DISCARD, COPY, SWAP, POP,
+    ADD, SUB, MUL, DIV, MOD, HEAP1, HEAP2,
+    OUTC, OUTI, READC, READN,
+    MARK, CALL, JUMP, JUMP1, JUMP2, ESUB, EXIT
+};
+void operation (const string src) {
+  string code = clean (src), os;
+  size_t it = 0;
+
+  string op, label;
+  int ins, num;
+  int index = 0;
+  map<string, size_t> locat;
+  vector<vector<string>> program;
+
+  while (it < code.size()) {
+
+    switch (code[it]) {
+      case space : {
+        it++;
+
+        if (code[it] == space)  { it++;
+
+          ins = PUSH;
+          label = to_string(number (code, it));
+
+        } else {
+
+          op = get_op (code, it);
+
+          if (op == "\t ") {
+            ins = DUPLICATE;
+            label = to_string(number (code, it));
+          }
+          if (op == "\t\n") {
+            ins = DISCARD;
+            label = to_string(number (code, it));
+          }
+          if (op == "\n ") ins = COPY;
+          if (op == "\n\t") ins = SWAP;
+          if (op == "\n\n") ins = POP;
+        }
+
+        break;
+      }
+      case tab : {
+
+        op = get_op (code, it);
+
+        if (op == "\t ") {
+          op = get_op (code, it);
+
+          if (op == "  ")  ins = ADD;
+          if (op == " \t") ins = SUB;
+          if (op == " \n") ins = MUL;
+          if (op == "\t ") ins = DIV;
+          if (op == "\t\t") ins = MOD;
+        }
+
+        if (op == "\t\t") {
+          cout << " heap " << endl;
+          it++;
+        }
+        if (op == "\t\n") { // I/O access
+
+          op = get_op (code, it);
+
+          if (op == "  ")  ins = OUTC;
+          if (op == " \t") ins = OUTI;
+          if (op == "\t ") ins = READC;
+          if (op == "\t\t") ins = READN;
+        }
+        break;
+      }
+      case line : { // Flow control
+
+        it++;
+        op = get_op (code, it);
+
+        if (op == "\t\n") ins = ESUB;
+        if (op == "\n\n") ins = EXIT;
+        //label = get_label (code, it);
+        if (op == "  ")  {
+          ins = MARK;
+          label = get_label (code, it);
+
+        }
+        if (op == " \t") {
+          ins = CALL;
+          label = get_label (code, it);
+        }
+        if (op == " \n") {
+          ins = JUMP;
+          label = get_label (code, it);
+        }
+        if (op == "\t ") {
+          ins = JUMP1;
+          label = get_label (code, it);
+        }
+
+        if (op == "\t\t") {
+          ins = JUMP2;
+          label = get_label (code, it);
+        }
+        break;
+      }
+      default : {
+        //cout << "default : " << endl;
+      }
+    }
+    cout << index++ << ' ' << ins << ' ' << label << endl;
+  }
+}
+*/
