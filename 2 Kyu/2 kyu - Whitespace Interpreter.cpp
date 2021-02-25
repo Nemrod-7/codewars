@@ -26,7 +26,7 @@ class Assert {
         }
 };
 string Equals (const string &entry) { return entry;}
-void Test ();
+void Test (), Test2 ();
 ////////////////////////////////////////////////////////////////////////////////
 const char space = 32, tab = 9, line = 10;
 
@@ -246,15 +246,16 @@ string whitespace (const string &src, const string &inp = string()) {
     string code = clean (src), os;
     string op, label;
     stringstream iss (inp);
-    vector<int> stack;
+    vector<int> stack, subs;
     map<int,int> heap;
     map<string, size_t> base = mk_base(code);
     int val;
-    size_t it = 0;
+    size_t index = 4, it = 0;
 
-    while (it < code.size()) {
-        //cout << it << ' ';
+    while (index-->0) { //it < code.size()
+
         switch (code[it]) {
+
             case space : { stack_op (code, it, stack);
               //cout << "stack : " << it << endl;
              break; }
@@ -294,39 +295,37 @@ string whitespace (const string &src, const string &inp = string()) {
                 break;
             }
             case line : { // Flow control
-
                 it++;
                 op = get_op (code, it);
 
                 if (op == "\t\n") {
-                    cout << "exitop : " << it << endl;
+                    it = get_val(subs);
+                    //cout << "exitsub : " << it << endl;
                 }
 
-                if (op == "\n\n") {
-                    cout << "exit : " << it << endl;
-                    return os;
-                }
+                if (op == "\n\n") { return os; }
 
                 label = get_label (code, it);
-                if (base.size() == 0) throw exception();
+                //if (base[label] == 0) throw exception();
 
                 if (op == " \t") {
-                    cout << "call : " << it << endl;
+                    subs.push_back (it);
+                    //cout << " call ";
+                    it = base[label];
+                    //cout << it << endl;
                 } // Call subroutine.
                 if (op == " \n") {
                     it = base[label];
                 } // Jump unconditionally to label.
                 if (op == "\t ") {
-                    val = get_val(stack);
+                    val = get_val (stack);
                     if (val == 0) it = base[label];
                 } // Jump to the label if value == zero.
-
                 if (op == "\t\t") {
-                    val = get_val(stack);
+                    val = get_val (stack);
                     if (val < 0) it = base[label];
                     //cout << "jump2 : " << it << endl;
                 }// Jump to the label if value < zero.
-
 
                 break;
             }
@@ -334,22 +333,24 @@ string whitespace (const string &src, const string &inp = string()) {
                  cout << "default : " << it << endl;
             }
         }
+        cout << it << ' ';
     }
     //if (!src.size())
-    throw exception();
+    //throw exception();
 }
 
 int main () {
 
 
-  string call2 = "   \t \n\n \t \n   \t\t\n\n \t \n   \t\n\n \t \n\n\n\n\n   \n\t\n \t\n\n\n"; // Testing_subroutine_functionality
-  string call3 = "   \t\n\t\n \t   \t\n\n \t \n   \t \n\n \t \n   \t\t\n\n \t \n\n\n\n\n  \n\t\n \t\n\t\n"; // Expecting exception for unknown label
-  string code = "   \t\n   \t \n   \t\t\n\t\n \t\n \n\n\t\n \t\t\n \t\n  \n\n  \n\n\n\n"; //=> ok Expecting exception for repeated labels
+
+  //string code = "   \t\n   \t \n   \t\t\n\t\n \t\n \n\n\t\n \t\t\n \t\n  \n\n  \n\n\n\n"; //=> ok Expecting exception for repeated labels
+  string call4 = "   \t\n\n \t \n   \t \n\n \t \n   \t\t\n\n \t \n\n\n\n\n   \n\t\n \t\n\t\n";
+  whitespace (call4);
+
+  //Test2();
+  //Debug::to_file (call4);
 
 
-  string invalid = "  \t\t\n\n\n\t\t\n\n  \n\n\n\n";
-  //whitespace (call2);
-  // Debug::to_file (call2);
   /*
   //map<string, size_t> base = mk_base(code);
   for (auto &it : base)
@@ -368,6 +369,15 @@ template<typename Func> void expect_error (const std::string &msg, Func f) {
   catch (...) { error = true; }
   if (!error)
     cout << msg << endl;
+}
+void Test2 () {
+  cout << " jumps test";
+  string call2 = "   \t \n\n \t \n   \t\t\n\n \t \n   \t\n\n \t \n\n\n\n\n   \n\t\n \t\n\n\n"; // => ok Testing_subroutine_functionality
+  whitespace (call2);
+
+  expect_error("Expecting exception for repeated labels", [] () { whitespace ("   \t\n   \t \n   \t\t\n\t\n \t\n \n\n\t\n \t\t\n \t\n  \n\n  \n\n\n\n"); });
+  expect_error("Expecting exception for unknown label", [] () { whitespace ("   \t\n\t\n \t   \t\n\n \t \n   \t \n\n \t \n   \t\t\n\n \t \n\n\n\n\n  \n\t\n \t\n\t\n"); });
+
 }
 void Test () {
     std::string output1 = "   \t\n\t\n \t\n\n\n", output2 = "   \t \n\t\n \t\n\n\n", output3 = "   \t\t\n\t\n \t\n\n\n", output0 = "    \n\t\n \t\n\n\n";
