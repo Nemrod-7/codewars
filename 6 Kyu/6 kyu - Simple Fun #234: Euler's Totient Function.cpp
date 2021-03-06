@@ -18,6 +18,11 @@ test_t Equals (test_t entry) { return entry;}
 void Test ();
 ////////////////////////////////////////////////////////////////////////////////
 
+typedef struct {
+    int *data;
+    size_t size;
+} Array;
+
 vector<int> SieveOfEratosthenes2 (int num) {
     const int end = sqrt (num);
     bool *primes = new bool[num + 1];
@@ -37,7 +42,56 @@ vector<int> SieveOfEratosthenes2 (int num) {
 
     return sieve;
 }
+vector<int> SieveOfEratosthenes3 (int num) {
+    const int end = sqrt (num);
 
+    static vector<bool> primes;
+    static int start = 2;
+    static vector<int> sieve;
+
+    primes.resize (num + 1);
+    int p, i;
+
+    for (p = 2; p <= end ; p++)
+        if (primes[p] == false)
+            for (i = p * p; i <= num; i += p)
+                 primes[i] = true;
+
+    for (i = start; i <= num; i++)
+        if (primes[i] == false) {
+            sieve.push_back(i);
+            cout << i << ' ';
+        }
+
+    //cout << endl;
+    start = num;
+
+    return sieve;
+}
+Array SieveOfEratosthenes (int num) {
+    const int end = sqrt (num);
+    register int p, i;
+
+    bool *primes = new bool[num + 1];
+
+    Array sieve;
+    sieve.data = new int[num / 2];
+    sieve.size = 0;
+
+    fill_n (primes, num, 0);
+
+    for (p = 2; p <= end ; p++)
+        if (primes[p] == false)
+            for (i = p * p; i <= num; i += p)
+                 primes[i] = true;
+
+    for (i = 2; i <= num; i++)
+         if (primes[i] == false)
+            sieve.data[sieve.size++] = i;
+
+    return sieve;
+}
+/*
 int *SieveOfEratosthenes (int num) {
     int end = sqrt (num);
     bool *primes = new bool[num + 1];// = {0};
@@ -58,17 +112,18 @@ int *SieveOfEratosthenes (int num) {
     sieve[0] = size;
     return sieve;
 }
+*/
 int eulersTotientFunction (int n){
-    int res = n;
     const int end = sqrt (n);
-    //vector<int> primes = SieveOfEratosthenes(end);
-    int *primes = SieveOfEratosthenes(end);
-    for (int i = 1; i < primes[0]; ++i)
-        if (n % primes[i] == 0) {
-            while (n % primes[i] == 0)
-                n /= primes[i];
+    int res = n;
+    Array primes = SieveOfEratosthenes(end);
 
-            res -= res / primes[i];
+    for (int i = 0; i < primes.size; ++i)
+        if (n % primes.data[i] == 0) {
+            while (n % primes.data[i] == 0)
+                n /= primes.data[i];
+
+            res -= res / primes.data[i];
         }
 
     return (n > 1) ? res - res / n : res;
