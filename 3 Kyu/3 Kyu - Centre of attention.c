@@ -61,28 +61,8 @@ typedef struct {
 } unsigned_array;
 
 const Point direct[4] = {{-1,0},{1,0},{0,-1},{0,1}};
-////////////////////////////////func def///////////////////////////
-unsigned_array central_pixels(Image image, unsigned colour);
-Graph init_graph (Image img, unsigned color);
-void display (Image ,unsigned );
-void display_graph (Graph G);
-bool answer_matches(unsigned_array actual, unsigned_array expected);
+
 ///////////////////////////////////////////////////////////////////
-int main () {
-    time_t start = clock(), stop;
-
-    unsigned data[4];
-
-  //  Image img = {.width = 4095, .height = 4095};
-
-    //central_pixels (img,5);
-
-    Test();
-
-    stop = clock();
-    printf ("Process took %.06f s \n", (double)(stop - start) * 2 / CLOCKS_PER_SEC);
-    return 0;
-}
 
 Graph init_graph (Image img, unsigned color) {
 
@@ -209,10 +189,26 @@ unsigned_array central_pixels(Image img, unsigned color) {
     }
     */
 
-    display_graph (G);
+    //display_graph (G);
 
     //printf ("%2i ", out.size);
     return find_max (G,maxval);
+}
+
+int main () {
+    time_t start = clock(), stop;
+
+    unsigned data[4];
+
+  //  Image img = {.width = 4095, .height = 4095};
+
+    //central_pixels (img,5);
+
+    Test();
+
+    stop = clock();
+    printf ("Process took %.06f s \n", (double)(stop - start) * 2 / CLOCKS_PER_SEC);
+    return 0;
 }
 ///////////////////////////////tools///////////////////////////////
 void display_graph (Graph G) {

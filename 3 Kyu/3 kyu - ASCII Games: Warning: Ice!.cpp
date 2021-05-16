@@ -30,7 +30,7 @@ struct comp {
 };
 
 const vector<point> compass {{'l',-1,0},{'r',1,0},{'u',0,-1},{'d',0,1}};
-map <pair<int,int>,char> padkey {{{-1,0},'l'}, {{1,0},'r'},{{0,-1},'u'},{{0,1},'d'}};
+map<pair<int,int>,char> padkey {{{-1,0},'l'}, {{1,0},'r'},{{0,-1},'u'},{{0,1},'d'}};
 
 const char wall{'#'}, start{'S'}, stop{'E'}, ice{' '}, ground{'x'}, path{'*'};
 
@@ -82,6 +82,7 @@ class Graph {
         */
 
 };
+
 class Debug {
     public :
         static void display (Graph G) {
@@ -138,7 +139,7 @@ vector<char> mkroute (Vertex *v, char dir) {
     return next;
 }
 char get_direction (Vertex *prev, Vertex *curr) {
-    pair <int,int> p {(curr->x - prev->x), (curr->y - prev->y)};
+    pair<int,int> p {(curr->x - prev->x), (curr->y - prev->y)};
     return padkey[p];
 }
 bool is_valid (Graph *G, pair<int,int> p) {
