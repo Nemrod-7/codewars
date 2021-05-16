@@ -70,7 +70,7 @@ vector<int> SieveOfEratosthenes3 (int num) {
 }
 Array SieveOfEratosthenes (int num) {
     const int end = sqrt (num);
-    register int p, i;
+    int p, i;
 
     bool *primes = new bool[num + 1];
 
