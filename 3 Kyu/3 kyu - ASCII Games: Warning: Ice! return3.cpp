@@ -162,10 +162,10 @@ std::vector<char> ice_maze_solver (const std::string &map) {
     priority_queue<Vertex*, vector<Vertex*>, comp> Q;
 
     Q.push (G.source);
-    int index = 9;
+    int index = 1;
 
+    //while (index-->0) {
     while (!Q.empty()) {
-
         u = Q.top();
         u->visit = true;
         Q.pop();
@@ -173,7 +173,9 @@ std::vector<char> ice_maze_solver (const std::string &map) {
         if (G.is_exit (*u)) {
             return {u->path.begin(), u->path.end()};
         }
-        Display::stack(Q);
+        //Display::point(*u);
+        cout << u->path << endl; //  "uuuulurd";
+        //cout << u->path << endl;
         for (auto &direction : compass) {
             Vertex nxt {u->x + direction.x ,u->y + direction.y};
             Vertex *curr = u, *prev = u;
@@ -186,22 +188,23 @@ std::vector<char> ice_maze_solver (const std::string &map) {
             } else {
                 path = u->path + direction.floor;
             }
-
             if (is_valid (G, u, direction)) {
                 nextv = G[nxt];
+
                 while (curr->floor == ice) {
-                    prev = curr, curr = G[nxt];
-                    nextv = curr;
+                    prev = curr;
+                    curr = G[nxt];
 
                     nxt.move (direction);
                     if (curr->floor == ground || G[nxt]->floor == wall) break;
                     curr->dist = alt++;
-
+                    nextv = G[nxt];
                 }
 
+                //cout << endl;
                 if (alt < nextv->dist) {
                     nextv->dist = alt;
-                    nextv->moves = u->dist + 1;
+                    nextv->moves = u->moves + 1;
                     nextv->path = path;
                     nextv->prev = prev;
                     Q.push (nextv);
@@ -210,6 +213,8 @@ std::vector<char> ice_maze_solver (const std::string &map) {
         }
     }
 
+    Display::path(G);
+
     return {};
 }
 
@@ -217,14 +222,31 @@ int main () {
 
   std::string map;
 
-  map = "E#   #\n"
-        "      \n"
-        "#     \n"
-        "  #   \n"
-        " #    \n"
-        " S    ";
-  std::cout << std::endl << "Tiebreak by least number of movess first" << std::endl << map << std::endl;
-   Assert::That(ice_maze_solver(map), Equals(std::vector<char>({'r','u','l','u'})));
+
+
+  map =
+  "x     x # \n"
+  "     #  # \n"
+  " ##x E    \n"
+  " #    x   \n"
+  " #  #     \n"
+  " #  x    x\n"
+  "x       # \n"
+  "     #  # \n"
+  " #x  x   x\n"
+  " #     x  \n"
+  " #      # \n"
+  " # x  x # \n"
+  " #x#xx#x# \n"
+  " #x#xx### \n"
+  "x xxxxxx x\n"
+  "# xxSxxx #";
+
+
+  //std::cout << std::endl << "Pokemon Gold (again), Mahogany Town Gym" << std::endl << map << std::endl;
+  Assert::That(ice_maze_solver(map), Equals(std::vector<char>({'u','u','u','u','l','u','r','d','l','u','r'})));
+  /*
+  */
 
   // Test();
 }
