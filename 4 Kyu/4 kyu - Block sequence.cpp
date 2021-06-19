@@ -38,22 +38,23 @@ int a007376 (int n) {
     return s[(n - 1) % val] - '0';
 }
 
-int main () {
-    int index = 0, n = 8, num = 8, pre = 0;
+int solve (int num) {
 
-    while (pre - num < 0) {
-        num -= pre;
-        pre = prefix (index++);
-        //index++;
-    }
-    cout << n - pre;
-    /*
-    for (int i = 1; i < 10; i++) {
-        cout << setw(2) << prefix (i) << " : ";
-        for (int j = 1; j < i; j++) {
-            cout << j;
-        }
-        cout << endl;
-    }
-    */
+  int index = 2, tmp = num, pre = 0;
+
+  while (true) {
+      pre = prefix (index);
+      if (tmp - pre <= 0) break;
+
+      tmp -= pre;
+      index++;
+  }
+
+  cout << tmp << ' ' << pre << " " << a007376 (num - pre) << endl;
+  return a007376 (num - pre);
+}
+int main () {
+
+
+  return 0;
 }
