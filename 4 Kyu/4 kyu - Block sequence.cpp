@@ -1,115 +1,67 @@
 #include <iostream>
-#include <cmath>
-
 #include <iomanip>
 
 using namespace std;
-/*
-ex : 8
-1 23 456 789 10
-1 12 123 1234
-*/
-uint64_t pref (uint64_t n) {
-    uint64_t num = n * (n + 1) * 0.5;
-    if (n >= 10) num += (n - 9) * (n - 8) * 0.5;
-    if (n >= 100) num += (n - 99) * (n - 98) * 0.5;
-    return num;
-}
-uint64_t gen (uint64_t n) { // generate smarandache concanated sequence
-    const uint64_t n2 = sqrt (8 * n - 7);
-    return n - 0.5 * floor ((n2 + 1) * 0.5) * floor ((n2 - 1) * 0.5);
-}
-int a007376 (int n) {
 
-    uint64_t dig = 1, val  = 1, lim  = 9;
+uint64_t a007376 (uint64_t n) {
 
-    while (n > val * lim) {
-        n -= val * lim;
-        val++;
-        lim = lim * 10;
-        dig = dig * 10;
-    }
+  uint64_t dig = 1, val  = 1, lim  = 9;
 
-    dig += (n - 1) / val;
-    string s = to_string (dig);
-    return s[(n - 1) % val] - '0';
-}
-
-int solve (int num) {
-
-  int index = 0, tmp = num, pre = 0;
-
-  while (true) {
-      if (tmp - pre <= 0) break;
-      pre = pref (index);
-
-      tmp -= pre;
-      index++;
+  while (n > val * lim) {
+      n -= val * lim;
+      val++;
+      lim *= 10;
+      dig *= 10;
   }
 
-  //cout << tmp << ' ' << pre << " " << a007376 (num - pre) << endl;
-  return pre;
+  dig += (n - 1) / val;
+  string s = to_string (dig);
+  return s[(n - 1) % val] - '0';
 }
+uint64_t prefix (uint64_t n) {
+    long long num = n * (n + 1) * 0.5;
 
-long bSearch (long n) {
-   long res = 0, i = 1, k = 9, j = 9;
-   for (; j < n; ++i, k *= 10, j += k){
-       res += i * k * (k + 1) / 2;
-       res += i * k * (n - j);
-   }
+    for (uint64_t p = 10; p < n; p *= 10)
+        num += (n - (p - 1)) * (n - (p - 2)) / 2;
 
-   k = n - j / 10;
-   res += i * k * (k + 1) / 2;
+    return num;
+  }
+int solve (long long n) {
 
-   return res;
-}
-int solve2 (long n) {
-
-    long num = n, lb = 0, rb = (long)1e9;
+    uint64_t num = n, low = 0, high = 1e9, mid;
     n--;
 
-    while (lb < rb){
-       long mb = (lb + rb + 1) * 0.5;
-       if (pref (mb) > n)
-          rb = mb - 1;
+    while (low < high){
+       mid = (low + high + 1) / 2 ;
+       if (prefix (mid) > n)
+          high = mid - 1;
        else
-          lb = mb;
+          low = mid;
     }
 
-    n -= pref (lb);
-    cout << a007376 (num - pref (lb)) << " ";
-
-    long cnt = 9, len = 1;
-
-    while (n >= cnt * len){
-       n -= cnt * len;
-       cnt *= 10;
-       ++len;
-    }
-
-    //cout << cnt / 9 + n / len;
-    //string x = String.valueOf(cnt / 9 + n / len);
-
-    int y = (int)(n % len);
-    return cnt / 9 + n / len;
+    return a007376 (num - prefix (low));
 }
 
 int main () {
-  /*
-  for (int i = 1; i < 20; i++)
-      cout << setw(3) << i;
 
-      cout <<endl;
-  for (int i = 1; i < 8; i++)
-      for (int j = 1; j < i; j++)
-          cout << setw(3) << j;
+  //Test();
 
-  cout << "\n\n";
-  */
-  for (int i = 1; i < 500; i++)
-
-      cout << setw(3) << i << " :: " << setw(2) << solve2 (i) << " :: " << pref (i) << endl;
-
-  //solve (1);
   return 0;
+}
+
+void Test () {
+  /*
+    Assert::That(solve(1), Equals(1));
+    Assert::That(solve(2),Equals(1));
+    Assert::That(solve(3),Equals(2));
+    Assert::That(solve(100),Equals(1));
+    Assert::That(solve(2100), Equals(2));
+    Assert::That(solve(31000),Equals(2));
+    Assert::That(solve(55),Equals(1));
+    Assert::That(solve(123456),Equals(6));
+    Assert::That(solve(123456789),Equals(3));
+    Assert::That(solve(999999999999999999), Equals(4));
+    Assert::That(solve(1000000000000000000),Equals(1));
+    Assert::That(solve(999999999999999993),Equals(7));
+    */
 }
