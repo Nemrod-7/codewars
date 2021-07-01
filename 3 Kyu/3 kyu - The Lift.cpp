@@ -1,29 +1,11 @@
 #include <iostream>
 #include <vector>
 
+#include "assert.hpp"
+
 using namespace std;
 
 enum {down = -1, stop, up};
-
-void display (vector<int> &visit) {
-
-    for (auto &it : visit) {
-        cout << it << ' ';
-    }
-    cout << endl;
-}
-void display_mat (const vector<vector<int>> &mat) {
-  const int top = mat.size();
-
-  for (int i = 0; i < mat.size(); i++) {
-    cout << "{";
-    for (int j = 0; j < mat[i].size(); j++) {
-      cout << mat[i][j] << ' ';
-    }
-    cout << "} ";
-  }
-  cout << endl;
-}
 
 bool progress (const vector<vector<int>> &scraper, int floor) {
 
@@ -42,7 +24,7 @@ int move (vector<vector<int>> &scraper, int floor, int dir) {
     return dir;
 }
 bool canmove (int user, int floor, int dir) {
-    if (dir == up && user > floor) return true;
+    if ((dir == up || dir == stop) && user > floor) return true;
     if (dir == down && user < floor) return true;
     return false;
 }
@@ -50,13 +32,13 @@ vector<int> the_lift (const vector<vector<int>> &queues, int capacity) {
 
     const int top = queues.size();
     int floor = 0, dir = stop;
-    bool flag;
+
     vector<int> visit = {floor}, lift;
     vector<int>::iterator user;
     vector<vector<int>> scraper = queues;
 
-    while (progress(scraper, floor)) {
-        flag = false;
+    while (progress (scraper, floor)) {
+        bool flag = false, board = false;
 
         user = lift.begin();
 
@@ -65,59 +47,129 @@ vector<int> the_lift (const vector<vector<int>> &queues, int capacity) {
                 scraper[floor].push_back (*user);
                 lift.erase (user);
                 flag = true;
+            } else {
+                user++;
             }
-            else user++;
         }
 
         user = scraper[floor].begin();
 
         while (user != scraper[floor].end()) {
-            if (canmove (*user, floor, dir) && lift.size() < capacity) {
+            board = canmove (*user, floor, dir);
+
+            if (board == true && dir != stop) flag = true;
+            if (board && lift.size() < capacity) {
                 lift.push_back (*user);
                 scraper[floor].erase (user);
-                flag = true;
+            } else {
+                user++;
             }
-            else user++;
+
         }
-        //display (lift);
+        //Display::skyscraper (scraper, lift, floor);
         if (flag == true)
             visit.push_back (floor);
+
+        dir = move (scraper, floor, dir);
+
+        floor += dir;
+    }
+    //Display::vect (visit);
+    visit.push_back (floor);
+    return visit ;
+}
+
+
+int main () {
+
+    Timer clock;
+
+    vector<vector<int>> queues;
+    vector<int> result;
+    queues = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{}};
+    queues = { { 2, 6 }, {}, { 0 }, { 1, 2 }, { 2, 2, 6, 3 }, {}, {} };
+
+    Test();
+
+    // [ 0, 6, 5, 4, 3, 2, 1, 0, 5, 4, 3, 2, 1, 0, 4, 3, 2, 1, 0, 3, 2, 1, 0, 1, 0 ]
+    clock.stop();
+    clock.get_duration();
+}
+
+void Test () {
+    vector<vector<int>> queues; vector<int> result;
+
+    queues = { {}, {}, {5,5,5}, {}, {}, {}, {} };
+    result = {0, 2, 5, 0};
+    Assert::That(the_lift(queues, 5), Equals(result));
+
+    queues = { {}, {}, {1,1}, {}, {}, {}, {} };
+    result = {0, 2, 1, 0};
+    Assert::That(the_lift(queues, 5), Equals(result));
+
+    queues = { {}, {3}, {4}, {}, {5}, {}, {} };
+    result = {0, 1, 2, 3, 4, 5, 0};
+    Assert::That(the_lift(queues, 5), Equals(result));
+
+    queues = { {}, {0}, {}, {}, {2}, {3}, {} };
+    result = {0, 5, 4, 3, 2, 1, 0};
+    Assert::That(the_lift(queues, 5), Equals(result));
+
+    queues = { { 2, 6 }, {}, { 0 }, { 1, 2 }, { 2, 2, 6, 3 }, {}, {} };
+    result = the_lift (queues, 5);
+    Assert::That (result, { 0, 2, 4, 6, 4, 3, 2, 1, 0 });
+}
+/*
+vector<int> the_lift2 (const vector<vector<int>> &queues, int capacity) {
+
+    //const int top = queues.size();
+    int floor = 0, dir = stop;
+    bool stopped, board;
+    vector<int> visited = {floor}, lift;
+    vector<int>::iterator user;
+    vector<vector<int>> scraper = queues;
+    int index = 8;
+
+    //while (index-->0) {
+    while (progress(scraper, floor)) {
+        stopped = false;
+        user = lift.begin();
+
+        while (user != lift.end()) {
+            if (*user == floor) {
+                scraper[floor].push_back (*user);
+                lift.erase (user);
+                stopped = true;
+            } else {
+                user++;
+            }
+        }
+        user = scraper[floor].begin();
+
+        while (user != scraper[floor].end()) {
+
+            board = eligible (*user, floor, dir);
+
+            if (board == true && lift.size() < capacity) {
+                lift.push_back (*user);
+                scraper[floor].erase (user);
+            } else {
+                user++;
+            }
+        }
+        //display (lift);
+        Display::skyscraper (scraper, lift, floor);
+
+        if (stopped == true || board == true)
+            visited.push_back (floor);
 
         dir = move (scraper, floor, dir);
         //display_mat (scraper);
         floor += dir;
     }
 
-    visit.push_back (floor);
-    return visit ;
-}
-
-int main () {
-
-    std::vector<std::vector<int>> queues { {}, {}, {5,5,5}, {}, {}, {}, {} };
-
-    queues = { {}, {0}, {}, {}, {2}, {3}, {} };
-    vector<int> result = the_lift (queues, 5);
-
-    display (result);
-}
-
-void Test () {
-  std::vector<std::vector<int>> queues; std::vector<int> result;
-
-    queues = { {}, {}, {5,5,5}, {}, {}, {}, {} };
-    result = {0, 2, 5, 0};
-    //Assert::That(the_lift(queues, 5), Equals(result));
-
-    queues = { {}, {}, {1,1}, {}, {}, {}, {} };
-    result = {0, 2, 1, 0};
-    //Assert::That(the_lift(queues, 5), Equals(result));
-
-    queues = { {}, {3}, {4}, {}, {5}, {}, {} };
-    result = {0, 1, 2, 3, 4, 5, 0};
-    //Assert::That(the_lift(queues, 5), Equals(result));
-
-    queues = { {}, {0}, {}, {}, {2}, {3}, {} };
-    result = {0, 5, 4, 3, 2, 1, 0};
-    //Assert::That(the_lift(queues, 5), Equals(result));
-}
+    visited.push_back (floor);
+    //Display::vect (visited);
+    return visited ;
+  }
+*/
