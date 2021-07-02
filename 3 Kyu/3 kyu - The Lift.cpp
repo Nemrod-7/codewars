@@ -7,6 +7,105 @@ using namespace std;
 
 enum {down = -1, stop, up};
 
+class Lift {
+
+    private :
+        vector<int>::iterator it;
+        bool flag;
+    public :
+        int direction, floor;
+        size_t top, capacity;
+        vector<int> V;
+
+        Lift (int maxc, int size) {
+            direction = floor = stop;
+            capacity = maxc;
+            top = size - 1;
+        }
+        int move () {
+            if (floor == 0) direction = up;
+            if (floor == top) direction = down;
+            floor += direction;
+            return floor;
+        }
+
+        bool eligible (int user) {
+            if ((direction == up || direction == stop) && user > floor) return true;
+            if (direction == down && user < floor) return true;
+            return false;
+        }
+        bool embark (vector<vector<int>> &skyscraper) {
+            flag = false;
+
+            it = skyscraper[floor].begin();
+
+            while (it != skyscraper[floor].end()) {
+                flag = eligible (*it);
+                //cout << floor << ' ' << *it << ' ' << flag << endl;
+                //if (flag == true && direction != stop) flag = true;
+                if (flag && V.size() < capacity) {
+                    V.push_back (*it);
+                    skyscraper[floor].erase (it);
+                } else {
+                    it++;
+                }
+            }
+
+            return flag;
+        }
+        bool debark (vector<vector<int>> &skyscraper) {
+            flag = false;
+            it = V.begin();
+
+            while (it != V.end()) {
+                if (*it == floor) {
+                    skyscraper[floor].push_back (*it);
+                    V.erase (it);
+                    flag = true;
+                } else {
+                    it++;
+                }
+            }
+            return flag;
+        }
+};
+
+class Display {
+    public :
+        static void vect (const vector<int> &visit) {
+            cout << "[";
+            for (auto &it : visit)
+                cout << setw(2) << it;
+            cout << "]";
+        }
+        static void skyscraper (const vector<vector<int>> &mat, const Lift &lift) {
+            size_t size = 0, index = mat.size();
+
+            for (auto &it : mat)
+                size = max (size, it.size());
+
+            while (index-->0)  {
+                cout << "[";
+                for (int j = 0; j < size; j++) {
+                    if (mat[index].size() > j) {
+                      cout << setw(2) << mat[index][j];
+                    } else {
+                      cout << "  ";
+                    }
+                }
+                cout << "]";
+                if (index == lift.floor) {
+                    cout << "->";
+                    vect (lift.V);
+                }
+                cout << endl;
+            }
+            cout << "-";
+            for (int j = 0; j < size; j++) cout << "--";
+            cout << "-\n\n";
+      }
+
+};
 bool progress (const vector<vector<int>> &scraper, int floor) {
 
     for (int i = 0; i < scraper.size(); ++i) {
@@ -17,68 +116,28 @@ bool progress (const vector<vector<int>> &scraper, int floor) {
     if (floor != 0) return true;
     return false;
 }
-int move (vector<vector<int>> &scraper, int floor, int dir) {
-    if (floor == 0) return up;
-    if (floor == scraper.size() - 1) return down;
-    //if (dir == stop) return up;
-    return dir;
-}
-bool canmove (int user, int floor, int dir) {
-    if ((dir == up || dir == stop) && user > floor) return true;
-    if (dir == down && user < floor) return true;
-    return false;
-}
 vector<int> the_lift (const vector<vector<int>> &queues, int capacity) {
 
-    const int top = queues.size();
-    int floor = 0, dir = stop;
+    Lift lift (capacity, queues.size());
+    int floor = 0;
 
-    vector<int> visit = {floor}, lift;
-    vector<int>::iterator user;
-    vector<vector<int>> scraper = queues;
+    vector<int> visited = {floor};
+    vector<vector<int>> skyscraper = queues;
+    int index = 6;
 
-    while (progress (scraper, floor)) {
-        bool flag = false, board = false;
+    while (index-->0) {
+        bool movement = (lift.embark (skyscraper) || lift.debark (skyscraper));
 
-        user = lift.begin();
+        if (movement)
+            visited.push_back (lift.floor);
 
-        while (user != lift.end()) {
-            if (*user == floor) {
-                scraper[floor].push_back (*user);
-                lift.erase (user);
-                flag = true;
-            } else {
-                user++;
-            }
-        }
-
-        user = scraper[floor].begin();
-
-        while (user != scraper[floor].end()) {
-            board = canmove (*user, floor, dir);
-
-            if (board == true && dir != stop) flag = true;
-            if (board && lift.size() < capacity) {
-                lift.push_back (*user);
-                scraper[floor].erase (user);
-            } else {
-                user++;
-            }
-
-        }
-        //Display::skyscraper (scraper, lift, floor);
-        if (flag == true)
-            visit.push_back (floor);
-
-        dir = move (scraper, floor, dir);
-
-        floor += dir;
+        lift.move();
+        //Display::skyscraper (skyscraper, lift);
     }
     //Display::vect (visit);
-    visit.push_back (floor);
-    return visit ;
+    visited.push_back (lift.floor);
+    return visited;
 }
-
 
 int main () {
 
@@ -87,9 +146,11 @@ int main () {
     vector<vector<int>> queues;
     vector<int> result;
     queues = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{}};
-    queues = { { 2, 6 }, {}, { 0 }, { 1, 2 }, { 2, 2, 6, 3 }, {}, {} };
+    queues = { { 3 }, {}, { 1, 4 }, { 1, 4, 0, 0 }, {}, { 4 } }; // result = {0,5,4,3,2,1,0}
 
-    Test();
+
+    // Display::vect (the_lift(queues, 5));
+    //Test();
 
     // [ 0, 6, 5, 4, 3, 2, 1, 0, 5, 4, 3, 2, 1, 0, 4, 3, 2, 1, 0, 3, 2, 1, 0, 1, 0 ]
     clock.stop();
@@ -120,6 +181,61 @@ void Test () {
     Assert::That (result, { 0, 2, 4, 6, 4, 3, 2, 1, 0 });
 }
 /*
+vector<int> the_lift (const vector<vector<int>> &queues, int capacity) {
+
+    const int top = queues.size();
+    int floor = 0, dir = stop;
+
+    lift_proto lft2 (capacity);
+
+    vector<int> visit = {floor}, lift;
+    vector<int>::iterator user;
+    vector<vector<int>> scraper = queues;
+    int index = 6;
+
+    while (index-->0) {
+    // while (progress (scraper, floor)) {
+        bool flag = false, board = false;
+
+        user = lift.begin();
+
+        while (user != lift.end()) {
+            if (*user == floor) {
+                scraper[floor].push_back (*user);
+                lift.erase (user);
+                flag = true;
+            } else {
+                user++;
+            }
+        }
+
+        user = scraper[floor].begin();
+
+        while (user != scraper[floor].end()) {
+            board = canmove (*user, floor, dir);
+            cout << floor << ' ' << *user << ' ' << board << endl;
+            if (board == true && dir != stop) flag = true;
+            if (board && lift.size() < capacity) {
+                lift.push_back (*user);
+                scraper[floor].erase (user);
+            } else {
+                user++;
+            }
+
+        }
+        Display::skyscraper (scraper, lift, floor);
+        if (flag == true)
+            visit.push_back (floor);
+
+        dir = move (scraper, floor, dir);
+
+        floor += dir;
+    }
+    //Display::vect (visit);
+    visit.push_back (floor);
+    return visit ;
+}
+
 vector<int> the_lift2 (const vector<vector<int>> &queues, int capacity) {
 
     //const int top = queues.size();
