@@ -1,80 +1,57 @@
 #include <iostream>
 #include <string>
-#include <vector>
 #include <queue>
-#include <chrono>
 
+#include <chrono>
 using namespace std;
 
-struct Vertex {
-    int x, y;
-    int dist;
-    int state;
-    Vertex *next;
-    //vector<struct Edge> ve;
-};
-int len, size;
 const char PATH{'x'}, FREE{'.'},EXIT{'E'},WALL{'W'};
+using point = pair<int,int>;
 
-void Test();
-int path_finder(string maze) ;
+bool is_free (string &maze, int pos) { return pos >= 0 && pos < maze.size() && maze[pos] == FREE; }
+int path_finder(string maze) {
+
+    if (maze.size() < 2) return 0;
+    int sze = maze.find('\n') + 1;
+    const int directions[4] = {-1, 1, -sze, sze};
+    priority_queue<point, vector<point>, greater<point>> q1;
+
+    q1.push({0,0});
+
+    while (!q1.empty()) {
+        auto &[dist, coord] = q1.top();
+        q1.pop();
+        int alt = dist + 1;
+        maze[coord] = PATH;
+        if (coord == maze.size() - 1) return dist;
+
+        for (int pos : directions) {
+            int next = pos + coord;
+
+            if (is_free (maze, next)) {
+                q1.push ({alt, next});
+            }
+        }
+    }
+
+    return -1;
+}
 
 int main () {
 
   auto start = chrono::high_resolution_clock::now();
 
-  //path_finder(".");
-  Test();
+  path_finder(".W.\n.W.\n...");
 
   auto end = chrono::high_resolution_clock::now();
   chrono::duration<double> elapsed = end - start;
   cout << "Process took " << elapsed.count()  << " ms" << endl;
-
-}
-
-bool is_inside (int pos) { return (pos >= 0 && pos < len);}
-bool is_free (string maze, int coord) { return maze[coord] == FREE;}
-
-int path_finder(string maze) {
-
-    len = maze.size();
-    size = maze.find('\n') + 1;
-    if (len < 2) return 0;
-
-    const int directions[4] = {-1, 1, -size, size};
-    const vector<pair<int,int>> cardinal{{-1,0},{1,0},{0,-1},{0,1}};
-
-    pair<int,int> u, source{0,0};
-    queue <pair<int,int>> Q;
-
-    Q.push(source);
-
-    while (!Q.empty()) {
-        u = Q.front();
-        Q.pop();
-
-        int alt = u.second + 1;
-
-        if (u.first == maze.size()-1) break;
-
-        for (int pos : directions) {
-            int next = pos + u.first;
-            if (is_inside (next) && is_free (maze, next)) {
-                Q.push({next,alt});
-                maze[next] = PATH;
-            }
-        }
-    }
-
-    cout << maze << endl << endl;
-
-    return -1;
 }
 
 void Test() {
 
 
-  path_finder(".W.\n.W.\n...");
+  path_finder(".WE\n.W.\n...");
   path_finder(".W.\n.W.\nW..");
   path_finder("......\n......\n......\n......\n......\n......");
   path_finder("......\n......\n......\n......\n.....W\n....W.");

@@ -36,4 +36,5 @@ ull numPrimorial (unsigned short int n) {
 
 int main () {
 
+    std::cout << numPrimorial(8);
 }

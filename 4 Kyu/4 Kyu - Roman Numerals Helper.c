@@ -22,8 +22,8 @@ int from_roman (char * source) {
 }
 void to_roman (int n, char *dest) {
     int index = 0;
-    int dec[] = {1000,900,500,400,100,90,50,40,10,9,5,4,1};
-    char roman[][3] = {"M","CM","D","CD","C","XC","L","XL","X","IX","V","IV","I"};
+    int dec[13] = {1000,900,500,400,100,90,50,40,10,9,5,4,1};
+    char roman[13][3] = {"M","CM","D","CD","C","XC","L","XL","X","IX","V","IV","I"};
 
     while (n) {
         if (n >= dec[index]) {

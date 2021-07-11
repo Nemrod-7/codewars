@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #define FIRSTDIG(x) ((x)/10%10)
 #define SECONDIG(x) ((x)%10)
 
@@ -11,4 +13,9 @@ int res = 0;
   while (*source++);
 
 return res;
+}
+int main () {
+    int num = calc ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
+
+    printf ("%i", num);
 }

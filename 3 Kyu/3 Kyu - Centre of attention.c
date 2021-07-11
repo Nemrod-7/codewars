@@ -200,11 +200,8 @@ int main () {
 
     unsigned data[4];
 
-  //  Image img = {.width = 4095, .height = 4095};
 
-    //central_pixels (img,5);
-
-    Test();
+    //Test();
 
     stop = clock();
     printf ("Process took %.06f s \n", (double)(stop - start) * 2 / CLOCKS_PER_SEC);

@@ -20,12 +20,9 @@ unsigned find_next (const char *code,int pos) {
     return pos;
 }
 
-
-
 void brainfuck(const char *code, const char *input, char *output) {
 
   unsigned short index = 0,in = 0, out = 0;
-  //unsigned char *output = malloc (BUFFSIZE * sizeof (char));
   unsigned char tape[BUFFSIZE] = {0}, *ptr = tape;
 
   while (CODE) {
@@ -38,10 +35,9 @@ void brainfuck(const char *code, const char *input, char *output) {
           case ',': *ptr = input[in++]; break;
           case '[': if (*ptr == '\0') index = find_next (code,index); break;
           case ']': if (*ptr != '\0') index = find_next (code,index); break;
-    }
-    index++;
+      }
+      index++;
  }
 
   output[out] = '\0';
-  //return output;
 }

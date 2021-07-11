@@ -1,15 +1,23 @@
+#include <iostream>
 #include <vector>
-#include <algorithm>
+#include <numeric>
 
 using namespace std;
 
-int lcm (int a, int b) { return a * b / __gcd(a, b); }
+uint64_t sum_differences_between_products_and_LCMs (const vector<pair<uint64_t, uint64_t>>& pairs) {
+  uint64_t sum = 0;
 
-int sum_differences_between_products_and_LCMs(const vector<vector<int>> &pairs) {
-    int sum = 0, prod ;
-    for (auto it : pairs) {
-        prod = it[0] * it[1];
-        sum += (prod - lcm (it[0], it[1]));
-    }
-    return sum;
+  for (auto &[a,b] : pairs)
+      sum += (a * b - lcm (a, b));
+
+  return sum;
+}
+
+int main () {
+
+    pair<int,int> p {2,5};
+
+    auto [a,b] = p;
+
+    cout << a;
 }

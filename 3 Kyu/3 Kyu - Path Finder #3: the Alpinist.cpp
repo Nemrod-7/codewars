@@ -2,21 +2,191 @@
 #include <string>
 #include <vector>
 #include <queue>
-#include <chrono>
+#include <limits>
 
 using namespace std;
-///////////////////////////////////Tests////////////////////////////////////////
-typedef std::vector<int> test_t;
-class Assert {
-    public :
-        static void That (test_t actual, test_t expression) {
-            //if (actual != expression)
-            //    cout<<"actual : "<<actual<<" expected : "<<expression<<endl;
-        }
+using point = pair<int,int>;
+
+struct vtx {
+    int dist, visit, val, coord;
+
+    bool operator<(const vtx &x) const{
+        return dist > x.dist;
+    }
 };
-test_t Equals (test_t entry) {return entry;}
-void Test();
-///////////////////////////////////Graph///////////////////////////////////////
+
+bool is_free (string &maze, size_t pos) { return pos >= 0 && pos < maze.size() && isdigit (maze[pos]); }
+
+int path_finder (std::string maze) {
+
+  if (maze.size() < 2) return 0;
+
+  const int size = maze.find('\n') + 1, directions[4] = {-1, 1, -size, size};
+
+  vector<vtx> grph;
+  priority_queue<vtx> q1;
+
+  auto val = [](char c) {return c - '0';};
+
+  for (int i = 0; i < maze.size(); i++)
+      grph.push_back ({numeric_limits<int>::max(), false, maze[i] - '0', i});
+
+  grph[0].dist = 0;
+  q1.push(grph[0]);
+
+  while (!q1.empty()) {
+      size_t coord = q1.top().coord;
+      vtx &u = grph[coord];
+
+      q1.pop();
+      u.visit = true;
+
+      if (coord == maze.size() - 1) return u.dist;
+
+      for (int pos : directions) {
+          size_t next = pos + coord;
+          vtx &nxt = grph[next];
+
+          if (is_free (maze, next) && nxt.visit == false) {
+              int alt = u.dist + abs (u.val - nxt.val);
+
+              if (alt < nxt.dist) {
+                  nxt.dist = alt;
+                  q1.push (nxt);
+              }
+          }
+      }
+  }
+
+  return -1;
+}
+
+
+
+int main () {
+
+  std::string s7 =
+  "000000\n"
+  "000000\n"
+  "000000\n"
+  "000010\n"
+  "000109\n"
+  "001010";
+
+  //cout << rnd;
+  cout << path_finder (s7);
+}
+
+void Test () {
+      std::string s1 =
+
+    "000\n"
+    "000\n"
+    "000";
+
+    std::string s2 =
+
+    "010\n"
+    "010\n"
+    "010";
+
+    std::string s3 =
+
+    "010\n"
+    "101\n"
+    "010";
+
+    std::string s4 =
+
+    "0707\n"
+    "7070\n"
+    "0707\n"
+    "7070";
+
+    std::string s5 =
+
+    "700000\n"
+    "077770\n"
+    "077770\n"
+    "077770\n"
+    "077770\n"
+    "000007";
+
+    std::string s6 =
+
+    "777000\n"
+    "007000\n"
+    "007000\n"
+    "007000\n"
+    "007000\n"
+    "007777";
+
+    std::string s7 =
+
+    "000000\n"
+    "000000\n"
+    "000000\n"
+    "000010\n"
+    "000109\n"
+    "001010";
+
+    /*
+    Assert::That(path_finder(s1), Equals( 0));
+    Assert::That(path_finder(s2), Equals( 2));
+    Assert::That(path_finder(s3), Equals( 4));
+    Assert::That(path_finder(s4), Equals(42));
+    Assert::That(path_finder(s5), Equals(14));
+    Assert::That(path_finder(s6), Equals( 0));
+    Assert::That(path_finder(s7), Equals( 4));
+    */
+}
+/////////////////////////////////arkive/////////////////////////////
+
+int path_finder2(std::string maze) {
+
+  if (maze.size() < 2) return 0;
+
+  int size = maze.find('\n') + 1, alt;
+  const int directions[4] = {-1, 1, -size, size};
+
+  vector<pair<int, bool>> vertex (maze.size(), {numeric_limits<int>::max(), false});
+  priority_queue<point, vector<point>, greater<point>> q1;
+
+  auto val = [](char c) {return c - '0';};
+
+  q1.push({0,0});
+  vertex[0].first = 0;
+
+  while (!q1.empty()) {
+      size_t coord = q1.top().second;
+      auto &[dist, visit] = vertex[coord];
+
+      q1.pop();
+      visit = true;
+
+      if (coord == maze.size() - 1) return dist;
+
+      for (int pos : directions) {
+          int next = pos + coord;
+          auto &[nxdist, vted] = vertex[next];
+
+          if (is_free (maze, next) && vted == false) {
+              alt = dist + abs (val (maze[coord]) - val(maze[next]));
+
+              if (alt < nxdist) {
+                  nxdist = alt;
+                  q1.push ({alt,next});
+              }
+          }
+      }
+  }
+
+  return -1;
+}
+
+
+
+
 struct Vertex {
     int x, y;
     int dist, edge;
@@ -86,22 +256,6 @@ class Graph {
 
 };
 
-//////////////////////////////////Func def///////////////////////////////////////
-int dijkstra (string src);
-
-/////////////////////////////////////////////////////////////////////////////////
-int main () {
-
-    auto start = chrono::high_resolution_clock::now();
-
-
-    Test();
-
-    auto end = chrono::high_resolution_clock::now();
-    chrono::duration<double> elapsed = end - start;
-    cout << "Process took " << elapsed.count()  << " ms" << endl;
-}
-
 bool is_inside (Graph *G, pair<int,int> p) {
     return (p.first >= 0 && p.second >= 0 && p.first < G->N && p.second < G->N);
 }
@@ -160,19 +314,5 @@ int dijkstra (string maze) {
     //G.mkpath(u);
     //G.display();
     return -1;
-
-}
-
-vector<int> i_am_here(string path) {
-
-    for (auto &n : path)
-        cout << (int)n << endl;
-    return {0, 0};
-}
-void Test () {
-
-    Assert::That(i_am_here(""      ), Equals(std::vector<int>{0, 0}));
-    Assert::That(i_am_here("RLrl"  ), Equals(std::vector<int>{0, 0}));
-    Assert::That(i_am_here("r5L2l4"), Equals(std::vector<int>{4, 3}));
 
 }
