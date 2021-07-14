@@ -1,390 +1,359 @@
 #include <iostream>
 #include <vector>
 #include <queue>
-#include <map>
+#include <limits>
+#include <algorithm>
+#include "Assert.hpp"
 
-#include <iomanip>
-#include <chrono>
 
 using namespace std;
-
 struct Vertex {
     int x, y;
-    int dist, move;
-    char tile, visit;
-    vector<char> route;
-    Vertex *next;
+    char floor;
+    int dist, moves;
+    bool visit;
+    string path;
+    Vertex *prev;
+
+    void move (const Vertex &v) {
+        x += v.x, y += v.y;
+    }
 };
-struct point {
-  char id;
-  short x, y;
-};
+
 struct comp {
     bool operator()(Vertex const *a, Vertex const *b ) {
-
-        if (a->move == b->move)
-            return a->dist > b->dist;
+      return a->dist > b->dist;
+      /*
+        if (a->moves == b->moves)
         else
-            return a->move > b->move;
+            return a->moves > b->moves;
+            */
     }
 };
 
-const vector<point> compass {{'l',-1,0},{'r',1,0},{'u',0,-1},{'d',0,1}};
-map<pair<int,int>,char> padkey {{{-1,0},'l'}, {{1,0},'r'},{{0,-1},'u'},{{0,1},'d'}};
-
-const char wall{'#'}, start{'S'}, stop{'E'}, ice{' '}, ground{'x'}, path{'*'};
+const vector<Vertex> compass {{-1,0,'l'},{1,0,'r'},{0,-1,'u'},{0,1,'d'}};
+const char wall{'#'}, start{'S'}, stop{'E'}, ice{' '}, ground{'x'};
 
 class Graph {
-    public:
-        size_t width, height;
+    private :
         vector<vector<Vertex>> Vmap;
+    public :
+        Vertex nul {0,0,wall,-1};
+        size_t width, height;
         Vertex *source, *exit;
 
-        Graph(string src) {
+        Graph (const string &src = "") {
+            width = src.find ('\n');
+            //height = src.size() / width;
+            height = count (begin(src), end(src), '\n') + 1;
+            if (width != string::npos)
+                Vmap.resize (height, vector<Vertex>(width));
 
-            width = src.find ('\n'), height = src.size() / width;
-            width += 2, height += 2;
-            Vmap.resize (height, vector<Vertex> (width));
-            int next = 0;
-            for (int y = 0; y < height; ++y) {
-                for (int x = 0; x < width; x++) {
-                    Vmap[y][x] = {
-                        .x = x, .y = y,
-                        .dist = numeric_limits<int>::max(),
-                        .move = 0,
-                        .visit = false,
-                        .next = NULL };
+            Vertex p = {.floor = 0,.dist = numeric_limits<int>::max(),.moves = 0, .visit = 0,.path = {}, .prev = &nul};
 
-                    if (x == 0 || x == width - 1  ||
-                        y == 0 || y == height - 1) {
-                            Vmap[y][x].tile = wall;
-                        } else {
-                            if (src[next] == '\n') next++;
-                            char floor = src[next];
-                            if (src[next] == start) {
-                                floor = ice;
-                                Vmap[y][x].dist = 0;
-                                source = coord({x,y});
-                            }
-                            if (src[next] == stop) {
-                                floor = ground;
-                                exit = coord({x,y});
-                            }
-                            Vmap[y][x].tile = floor;
-                            next++;
-                        }
-                }
-            }
-        }
-        bool isfree(pair<int,int> p) { return coord(p)->visit == false;}
-        Vertex *coord (pair<int,int> p) { return &Vmap[p.second][p.first];}
-        /*
-        */
+            for (p.y = 0; p.y < height; p.y++) {
+                for (p.x = 0; p.x < width; ++p.x) {
+                    p.floor = src[p.y * (width + 1) + p.x];
+                    Vmap[p.y][p.x] = p;
 
-};
-
-class Debug {
-    public :
-        static void display (Graph G) {
-            for (int y = 0; y < G.height; ++y) {
-                for (int x = 0; x < G.width; ++x) {
-                    if (G.Vmap[y][x].visit)
-                        cout << '.' << ' ';
-                        //cout << setw(2) << Vmap[y][x].dist << ' ';
-                    else {
-                        cout << G.Vmap[y][x].tile << ' ';
+                    if (p.floor == start) {
+                        source = &Vmap[p.y][p.x];
                     }
+                    if (p.floor == stop) exit = &Vmap[p.y][p.x];
                 }
-                cout << "\n";
             }
-            cout << "\n";
+
+            source->dist = 0;
+            source->floor = ice;
+
+            exit->floor = ground;
         }
-        static void showroute (Vertex *v) {
-            for (auto it : v->route)
-                cout << it;
+
+        bool is_exit (Vertex &p) { return p.x == exit->x && p.y == exit->y; }
+        bool is_free (Vertex &p) {
+          if (is_inside (p) == false) return false;
+          return (Vmap[p.y][p.x].visit == false);
+        }
+        bool is_inside (Vertex &p) { return p.x >= 0 && p.y >= 0 && p.x < width && p.y < height; }
+        Vertex *operator[] (Vertex &p) { return is_inside(p) ? &Vmap[p.y][p.x] : &nul; }
+};
+class Display {
+    public :
+        static void graph (Graph &G) {
+            Vertex p;
+            for (p.y = 0; p.y < G.height; p.y++) {
+                for (p.x = 0; p.x < G.width; ++p.x) {
+                    cout << G[p]->floor;
+                }
+                cout << endl;
+            }
             cout << endl;
         }
-        static void show_vertex (Vertex *v) {
-            cout << " <" << v->x << "," << v->y << "> ";
-            cout << v->move << " || " << v->dist << " ";
-            showroute (v);
-        }
-        static void show_moves (Graph G) {
-            for (int y = 0; y < G.height; ++y) {
-                for (int x = 0; x < G.width; ++x) {
-                    if (G.Vmap[y][x].visit)
-                        //cout << '.' << ' ';
-                        cout << G.Vmap[y][x].move << ' ';
-                    else {
-                        cout << G.Vmap[y][x].tile << ' ';
-                    }
+        static void visited (Graph &G) {
+            Vertex p;
+            for (p.y = 0; p.y < G.height; p.y++) {
+                for (p.x = 0; p.x < G.width; ++p.x) {
+                    if (G[p]->visit) cout << '.';
+                    else cout << G[p]->floor;
                 }
-                cout << "\n";
+                cout << endl;
             }
-            cout << "\n";
+            cout << endl;
+        }
+        static void route (Vertex &p) {
+            cout << '[';
+            for (auto &it : p.path) cout << it;
+            cout << "]\n";
+        }
+        static void stack (priority_queue<Vertex*, vector<Vertex*>, comp> Q) {
+            while (!Q.empty()) {
+                cout << Q.top()->moves << ' ';
+                //route ();
+                Q.pop();
+            }
+        }
+        static void locate (Graph &G, Vertex *v) {
+            Vertex p;
+            const int m = G.height + 1, n = G.width + 1;
+
+            for (p.y = -1; p.y < m; p.y++) {
+                for (p.x = -1; p.x < n; p.x++) {
+
+                    if (v->x ==p.x && v->y == p.y) cout << '+';
+                    else cout << G[p]->floor;
+                }
+                cout << endl;
+            }
+            cout << endl;
+        }
+        static void path (Graph &G) {
+            Vertex p;
+            const int m = G.height + 1, n = G.width + 1;
+
+            for (p.y = -1; p.y < m; p.y++) {
+                for (p.x = -1; p.x < n; p.x++) {
+                    char tile = G[p]->floor;
+                    if (tile == wall) cout << tile;
+                    else if (G[p]->dist < 100) cout << '+';
+                    else cout << G[p]->floor;
+                }
+                cout << endl;
+            }
+            cout << endl;
+        }
+        static void route (Graph &G, Vertex *v) {
+            Vertex p;
+            const int m = G.height , n = G.width;
+            vector<vector<int>> route (G.height, vector<int>(G.width));
+            Vertex *root = v;
+
+            while (root) {
+
+                route[root->y][root->x] = true;
+                root = root->prev;
+            }
+
+            for (p.y = 0; p.y < m; p.y++) {
+                for (p.x = 0; p.x < n; p.x++) {
+
+                    if (route[p.y][p.x] == true) cout << '.';
+                    else
+                    cout << G[p]->floor;
+                }
+                cout << endl;
+            }
+            cout << endl;
+        }
+        static void point (Vertex p) {
+            cout << '[' << p.x << ',' << p.y << ']' << endl;
         }
 };
 
-vector<char> mkroute (Vertex *v, char dir) {
+bool equals (const Vertex &a, const Vertex &b) { return a.x == b.x && a.y == b.y; }
 
-    vector<char> next;
+bool is_valid (Graph &G, Vertex *u, const Vertex &direction) {
 
-    if (v->route.size()) {
-        next = v->route;
-        if (v->tile == ice && next.back() == dir)
-                return next;
+    Vertex nxt {u->x + direction.x ,u->y + direction.y};
+    Vertex from {u->x - u->prev->x, u->y - u->prev->y};
+
+    if (G[nxt]->floor == wall) return false;
+    if (G[nxt]->visit == true) return false;
+    //if (equals (*u->prev, nxt) == true) return false;
+    if (u->floor == ice && u->prev->floor == ground && equals (direction, from) == false) {
+        //u->path.pop_back();
+        return false;
     }
-
-    next.push_back (dir);
-    return next;
-}
-char get_direction (Vertex *prev, Vertex *curr) {
-    pair<int,int> p {(curr->x - prev->x), (curr->y - prev->y)};
-    return padkey[p];
-}
-bool is_valid (Graph *G, pair<int,int> p) {
-    if (p.first < 0 || p.second < 0 || p.first >= G->width || p.second >= G->height) return false;
-    if (G->coord(p)->tile == wall) return false;
+    /*
+    */
     return true;
 }
-bool is_free (Graph *G, Vertex *now, Vertex *nxt) {
-    map<char,int> cardinals {{'d',-2},{'l',-1},{'r',1},{'u',2}};
-    int first = cardinals[get_direction (now, nxt)];
-    int sec = cardinals[nxt->visit];
-    if (nxt->visit == false) return true;
-
-    if (nxt->visit != 'i')
-        if (first != sec && first + sec != 0)
-            return true;
-
-        return false;
-}
-bool has_reached (Vertex *curr, Vertex *exit) {
-    return (curr->x == exit->x && curr->y == exit->y);
-}
-Vertex *slide (Graph *G, Vertex *v, point direction) {
-    int alt = v->dist;
-    Vertex *prev , *next = v;
-    //vector<char> route = mkroute (v, direction.id);
-    //prev = next;
-    while (true) {
-        prev = next;
-        pair<int,int> p {prev->x + direction.x, prev->y + direction.y};
-        //Debug::show_vertex (prev);
-        if (is_valid (G, p) == false) return prev;
-
-        next = G->coord(p);
-        next->dist = alt++;
-        next->move = v->move + 1;
-        next->visit = direction.id;
-        next->route = mkroute (v, direction.id);
-        next->next = prev;
-        if (next->tile == ground) return next;
-
-    }
-
+float distance (Vertex *a, Vertex *b) {
+    return max (abs(a->x - b->x), abs (a->y - b->y)); // diagonal distance
+  //return hypot (a->x - b->x, a->y - b->y); // euclidian distance
+  //  return abs (a->x - b->x) + abs (a->y - b->y); //  manathan distance
 }
 
-std::vector<char> ice_maze_solver(const std::string &map) {
+std::vector<char> debug (Graph &G, Vertex  *u) {
 
-    Graph G(map);
-    Vertex *u, *nextv;
+    Vertex *nextv;
     priority_queue<Vertex*, vector<Vertex*>, comp> Q;
-    //queue<Vertex*> Q;
-    Q.push (G.source);
+
+    Q.push (u);
+
     while (!Q.empty()) {
-
         u = Q.top();
-        u->visit = 'i';
+        u->visit = true;
         Q.pop();
-        Debug::show_vertex (u);
-
-        if (has_reached (G.exit, u)) {
-
-            //Debug::display(G);
-            return u->route;
+        //Display::visited (G);
+        Display::locate (G, u);
+        if (G.is_exit (*u)) {
+            return {u->path.begin(), u->path.end()};
         }
-            // return u->route;
 
-        for (auto direction : compass) {
-            pair<int,int> nexdir {u->x + direction.x , u->y + direction.y};
+        for (auto &direction : compass) {
+            Vertex nxt {u->x + direction.x ,u->y + direction.y};
+            Vertex *curr = u, *prev = u;
+
             int alt = u->dist + 1;
+            string path;
 
-            if (is_valid(&G, nexdir)) {
+            if (u->floor == ice && u->path.back() == direction.floor) {
+                path = u->path;
+            } else {
+                path = u->path + direction.floor;
+            }
 
-                nextv = G.coord (nexdir);
-                bool free = is_free(&G, u, nextv);
+            if (is_valid (G, u, direction)) {
+                nextv = G[nxt];
+                while (curr->floor == ice) {
+                    curr = G[nxt];
+                    prev = curr;
 
-                if (free) {
-                    if (u->tile == ice) {
+                    nxt.move (direction);
+                    if (curr->floor == ground || G[nxt]->floor == wall) break;
+                    curr->dist = alt++;
+                    nextv = G[nxt];
+                }
 
-                        if (u->next && u->next->tile == ground) {
-                            if (get_direction (u->next, u) == direction.id) {
-                                nextv = slide(&G, u, direction);
-                                Q.push(nextv);
-                            }
-
-                        } else {
-                            nextv = slide(&G, u, direction);
-                            Q.push(nextv);
-                        }
-
-                    } else {
-                        if (alt < nextv->dist) {
-                            nextv->dist = alt++;
-                            nextv->move = alt;
-                            nextv->next = u;
-                            nextv->route = mkroute (u, direction.id);
-                            Q.push(nextv);
-                        }
-                    }
-
-              }
-           }
+                //cout << endl;
+                if (alt < nextv->dist) {
+                    nextv->dist = alt;
+                    nextv->moves = u->moves + 1;
+                    nextv->path = path;
+                    nextv->prev = prev;
+                    Q.push (nextv);
+                }
+            }
         }
     }
 
-    /*
-
-    */
+    //Display::path(G);
 
     return {};
 }
 
-float moveistic (Vertex *curr, Vertex *dest) {
-  return abs(curr->x - dest->x) + abs(curr->y - dest->y); //  manathan distance
-  //sqrt ((curr->x - dest->x) * (curr->x - dest->x) + (curr->y - dest->y) * (curr->y - dest->y)); // euclidian distance
-}
-/////////////////////////////////Assert/////////////////////////////////////////
-typedef vector<char> test_t;
-class Assert {
-  public :
-  static void That (test_t actual, test_t expression) {
-    if (actual != expression) {
-      cout << "actual : ";
-      for (auto it : actual)
-      cout << it;
+std::vector<char> ice_maze_solver (const std::string &map) {
 
-      cout << " expected : ";
-      for (auto it : expression)
-      cout << it;
-      cout << endl;
+    Graph G (map);
+    Vertex *u, *nextv;
+    priority_queue<Vertex*, vector<Vertex*>, comp> Q;
+
+    Q.push (G.source);
+
+    //while (index-->0) {
+    while (!Q.empty()) {
+
+        u = Q.top();
+        u->visit = true;
+        Q.pop();
+
+        if (G.is_exit (*u)) {
+            //Display::visited(G);
+            Display::path(G);
+            return {u->path.begin(), u->path.end()};
+        }
+        //Display::point(*u);
+        if (u->path == "uuuulurd") {
+            break;
+        }
+        for (auto &direction : compass) {
+            Vertex nxt {u->x + direction.x ,u->y + direction.y};
+            Vertex *curr = u, *prev = u;
+
+            string path;
+
+            if (u->floor == ice && u->path.back() == direction.floor) {
+                path = u->path;
+            } else {
+                path = u->path + direction.floor;
+            }
+
+            if (is_valid (G, u, direction)) {
+                nextv = G[nxt];
+
+                int alt = distance (nextv, G.exit);
+                //int alt = u->dist + 1;
+                while (curr->floor == ice) {
+                    curr = G[nxt];
+                    prev = curr;
+
+                    nxt.move (direction);
+                    if (curr->floor == ground || G[nxt]->floor == wall) break;
+                    curr->dist = alt++;
+                    nextv = G[nxt];
+                }
+
+                //cout << endl;
+                if (alt < nextv->dist) {
+                    nextv->dist = alt;
+                    nextv->moves = u->moves + 1;
+                    nextv->path = path;
+                    nextv->prev = prev;
+                    Q.push (nextv);
+                }
+            }
+        }
     }
-  }
-};
-test_t Equals (test_t entry) { return entry;}
-void Test ();
-////////////////////////////////////////////////////////////////////////////////
+    //debug (G, u);
+
+    return {};
+}
+
 int main () {
 
-    auto start = std::chrono::high_resolution_clock::now();
+  std::string map;
 
-    //Test();
-    string map =
-    "x     x # \n"
-    "     #  # \n"
-    " ##x E    \n"
-    " #    x   \n"
-    " #  #     \n"
-    " #  x    x\n"
-    "x       # \n"
-    "     #  # \n"
-    " #x  x   x\n"
-    " #     x  \n"
-    " #      # \n"
-    " # x  x # \n"
-    " #x#xx#x# \n"
-    " #x#xx### \n"
-    "x xxxxxx x\n"
-    "# xxSxxx #";
+  map =
+  "x     x # \n"
+  "     #  # \n"
+  " ##x E    \n"
+  " #    x   \n"
+  " #  #     \n"
+  " #  x    x\n"
+  "x       # \n"
+  "     #  # \n"
+  " #x  x   x\n"
+  " #     x  \n"
+  " #      # \n"
+  " # x  x # \n"
+  " #x#xx#x# \n"
+  " #x#xx### \n"
+  "x xxxxxx x\n"
+  "# xxSxxx #";
 
-    std::cout << std::endl << "Pokemon Gold (again), Mahogany Town Gym" << std::endl << map << std::endl;
-    Assert::That(ice_maze_solver(map), Equals(std::vector<char>({'u','u','u','u','l','u','r','d','l','u','r'})));
-    //debug_maze (map);
+  map = "      #  xE\n"
+        "      #    \n"
+        "           \n"
+        "      #    \n"
+        "      #    \n"
+        "      # #  \n"
+        "           \n"
+        " #         \n"
+        "         # \n"
+        " S        #";
 
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> elapsed = end - start;
-    std::cout << "Process took " << elapsed.count()  << " ms" << std::endl;
-
-}
-void Test() {
-    std::string map;
-
-    /*
-    */
-    map = "    x \n"
-                      "  #   \n"
-                      "   E  \n"
-                      " #    \n"
-                      "    # \n"
-                      "S    #";
-    //std::cout << "A simple spiral" << std::endl << map << std::endl;
-    Assert::That(ice_maze_solver(map), Equals(std::vector<char>({'u','r','d','l','u','r'})));
-    map = " #    \n"
-          "x   E \n"
-          "      \n"
-          "     S\n"
-          "      \n"
-          " #    ";
-    //std::cout << std::endl << "Slippery puzzle has one-way routes" << std::endl << map << std::endl;
-    Assert::That(ice_maze_solver(map), Equals(std::vector<char>({'l','u','r'})));
-    map = "E#    \n"
-          "      \n"
-          "      \n"
-          "      \n"
-          "      \n"
-          " #   S";
-    //std::cout << std::endl << "The end is unreachable" << std::endl << map << std::endl;
-    Assert::That(ice_maze_solver(map), Equals(std::vector<char>()));
-    map = "E#   #\n"
-          "      \n"
-          "#     \n"
-          "  #   \n"
-          " #    \n"
-          " S    ";
-    //std::cout << std::endl << "Tiebreak by least number of moves first" << std::endl << map << std::endl;
-    Assert::That(ice_maze_solver(map), Equals(std::vector<char>({'r','u','l','u'})));
-    map = "    E \n"
-          "     #\n"
-          "      \n"
-          "# #   \n"
-          "    # \n"
-          " #  S ";
-    //std::cout << std::endl << "Then by total distance traversed" << std::endl << map << std::endl;
-    Assert::That(ice_maze_solver(map), Equals(std::vector<char>({'l','u','r','u','r'})));
-
-    map = "E#xxx\n"
-          "x#x#x\n"
-          "x#x#x\n"
-          "x#x#x\n"
-          "xxx#S";
-    //std::cout << std::endl << "Covering all tiles with x should reduce the problem to simple pathfinding" << std::endl << map << std::endl;
-    Assert::That(ice_maze_solver(map), Equals(std::vector<char>({ 'u','u','u','u','l','l','d','d','d','d','l','l','u','u','u','u'})));
-
-
-    map = {32,32,32,32,32,32,32,32,35,32,32,32,32,32,10,32,32,32,35,32,32,32,32,32,32,32,32,32,32,10,32,32,32,32,32,32,32,32,32,35,32,32,32,32,10,32,35,32,32,32,32,32,32,32,32,32,32,32,32,10,35,32,32,32,32,32,32,32,35,32,32,32,32,32,10,32,32,32,32,32,32,32,32,32,32,32,32,32,35,10,32,32,32,32,32,32,35,32,32,32,32,32,32,32,10,32,32,35,32,32,32,32,32,32,32,32,32,32,69,10,32,32,32,32,32,32,32,32,32,32,32,32,32,35,10,32,32,32,32,32,32,32,35,32,32,32,32,32,32,10,32,32,32,32,32,35,32,32,32,35,32,32,32,32,10,32,32,32,32,32,32,32,32,32,32,32,32,32,32,10,35,35,35,35,35,35,35,35,35,35,35,35,35,83};
-    //ice_maze_solver(map);
-    Assert::That(ice_maze_solver(map), Equals(std::vector<char>({'u','l','u','r','u','r','d','l','u','l','d','r','d','r','u','r'})));
-
-    map =
-    "x     x # \n"
-    "     #  # \n"
-    " ##x E    \n"
-    " #    x   \n"
-    " #  #     \n"
-    " #  x    x\n"
-    "x       # \n"
-    "     #  # \n"
-    " #x  x   x\n"
-    " #     x  \n"
-    " #      # \n"
-    " # x  x # \n"
-    " #x#xx#x# \n"
-    " #x#xx### \n"
-    "x xxxxxx x\n"
-    "# xxSxxx #";
-
-    std::cout << std::endl << "Pokemon Gold (again), Mahogany Town Gym" << std::endl << map << std::endl;
-    Assert::That(ice_maze_solver(map), Equals(std::vector<char>({'u','u','u','u','l','u','r','d','l','u','r'})));
+        ice_maze_solver (map);
+  //std::cout << std::endl << "Pokemon Gold (again), Mahogany Town Gym" << std::endl << map << std::endl;
+  //Assert::That(ice_maze_solver(map), Equals(std::vector<char>({'u','u','u','u','l','u','r','d','l','u','r'})));
 
 }
