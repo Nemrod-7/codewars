@@ -3,44 +3,36 @@
 
 using namespace std;
 
-int get_length (string src) {
-  int size = src.size();
-  int sz = min (size / 3 + 1, 7), i = 0;
+int get_length (std::string src) {
+  int size = std::min (static_cast<int>(src.size()) / 3 + 1, 7);
 
-  while (sz--> 1) {
-      int ref = stoi(src.substr (i, sz));
-      int nxt1 = stoi (src.substr (i + sz, sz)), nxt2 = stoi (src.substr (i + sz, sz + 1));
+  while (size--> 1) {
+      int ref = stoi(src.substr (0, size));
+      int nxt1 = stoi (src.substr (size, size)), nxt2 = stoi (src.substr (size, size + 1));
 
-      if (ref + 1 == nxt1 || ref + 2 == nxt1) return sz;
-      if (ref + 1 == nxt2 || ref + 2 == nxt2) return sz;
+      if (ref + 1 == nxt1 || ref + 2 == nxt1) return size;
+      if (ref + 1 == nxt2 || ref + 2 == nxt2) return size;
   }
-  //cout << stoi(src.substr (i, sz)) << ' ' << stoi (src.substr (i + sz, sz)) << endl;
   return -1;
 }
 int missing (std::string s) {
-    int i = 0, j = 0;
-    int sz = get_length (s), fst;// = stoi(s.substr (0, sz));
-    vector<int> range, miss;
-
-    range.push_back (fst);
+    size_t i = 0, j = 0, sz = get_length (s), fst, next;
+    std::vector<int> miss;
 
     while (i + j + sz < s.size()) {
         i += j, j = sz;
-        fst = stoi(s.substr (i, sz));
+        fst = stoi(s.substr (i, sz)), next = stoi(s.substr (i + j, sz));
 
-        while (stoi(s.substr (i + j, sz)) <= fst)
-            sz++;
-        int next = stoi(s.substr (i + j, sz));
-
-        if (fst + 1 != next) {
-            miss.push_back (fst + 1);
+        while (next <= fst) {
+            //sz++;
+            next = stoi(s.substr (i + j, ++sz));
         }
-        //cout << fst << endl;
-        range.push_back(next);
+
+        if (fst + 1 != next)
+            miss.push_back (fst + 1);
     }
 
-    if (miss.size() == 1) return miss.back();
-    return -1;
+    return (miss.size() == 1) ? miss.back() : -1;
 }
 
 int main () {
