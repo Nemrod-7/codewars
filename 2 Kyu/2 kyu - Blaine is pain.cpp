@@ -41,6 +41,10 @@ struct train {
         prev = curr;
         curr = p;
     }
+    void move2 (const pair<int,int> &p) {
+        prev = curr;
+        curr += p;
+    }
 };
 
 class graph {
@@ -81,9 +85,11 @@ class Display {
         }
         static void rail (graph &G, train &a) {
             cout << "\033c";
+
             pair<int,int> p;
             for (p.second = 0; p.second < G.height; ++p.second) {
                 for (p.first = 0; p.first < G.width; ++p.first) {
+
                     if (a.curr == p)
                         cout << a.id;
                     else
@@ -91,7 +97,7 @@ class Display {
                 }
                 cout << "\n";
             }
-            this_thread::sleep_for(500ms);
+            this_thread::sleep_for(100ms);
         }
         static void point (const pair<int,int> &p) {
             cout << "[" << p.first << ',' << p.second << "]";
@@ -120,35 +126,45 @@ train mk_train (graph &track, const string &src) {
 
 train update (graph &track, train &x) {
     char curr = track[x.curr], last = track[x.prev];
-    pair<int,int> next;
+    pair<int,int> dir;
 
     switch (curr) {
         case '+' :
-            if (last != '-' )curr = '|';
-            //break;
+            if (last != '-' ) curr = '|';
+            else curr = '-';
+
         case '/' :
-            if (track[x.curr + base[curr]] == curr) {x.move (x.curr + base[curr]); return x;}
+            if (track[x.curr + base[curr]] == curr) { x.move2 (base[curr]); return x; }
 
             for (auto &p : compass) {
-                if (track[x.curr + p] != ' ')
-                    next = x.curr + p;
+                pair<int,int> next = x.curr + p;
+                if (track[next] != ' ' && next != x.prev)
+                    dir = p;
             }
-            x.move (next);
+            x.move2 (dir);
+            break;
+        case '-' :
+            if (track[x.curr + base['-']]) {x.move2 (base['-']);}
+
             break;
         case '|' :
-            if (track[x.curr + vert]) {x.move (x.curr + vert); return x;}
-            if (track[x.curr - vert]) {x.move (x.curr - vert); return x;}
-        case '\\' :
-            if (track[x.curr + base['\\']] == curr) {x.move (x.curr + base['\\']); return x;}
-            if (track[x.curr + vert]) {x.move (x.curr + vert); return x;}
-            if (track[x.curr - vert]) {x.move (x.curr - vert); return x;}
-            if (track[x.curr - horiz]) {x.move (x.curr - horiz); return x;}
-            if (track[x.curr + horiz]) {x.move (x.curr + horiz); return x;}
+            if (track[x.curr + base['|']]) {x.move2 (base['|']);}
 
+            break;
+        case '\\' :
+            if (track[x.curr + base['\\']] == curr) { x.move2 (base['\\']); return x; }
+
+            for (auto &p : compass) {
+                pair<int,int> next = x.curr + p;
+                if (track[next] != ' ' && next != x.prev) {
+                    dir = p; //Display::point (next);
+                }
+            }
+            x.move2 (dir);
+            break;
 
         default : break;
     }
-
 
     return x;
 }
@@ -158,12 +174,12 @@ int train_crash(const string &src, const string &a_train, int a_train_pos, const
     pair<int,int> origin = get_origin (track);
     train A = mk_train (track, a_train);
 
-    int index = 6;
+    int index = 35;
 
     while (index-->0) {
         update (track, A);
+        Display::rail (track, A);
     }
-    Display::rail (track, A);
 
     return 42;
 }
