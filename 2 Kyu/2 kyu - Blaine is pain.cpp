@@ -22,11 +22,14 @@ void operator-= (pair<int,int> &a, const pair<int,int> &b) {
     a.first -= b.first, a.second -= b.second;
 }
 
-                                      //  0      1      2     3       4     5     6      7
-                                      //  W     NW      N     NE      E     SE    S     SW
-//const vector<pair<int,int>> compass {{0,-1},{-1,-1},{-1,0},{-1,1},{0,1},{1,1},{1,0},{1,-1}};
-
-const pair<int, int> vert {0,1}, horiz { 1,0};
+                                //  0       1      2      3      4    5     6     7
+                                //  W      NW      N      NE     E    SE    S     SW
+const vector<pair<int,int>> direct {{0,-1},{-1,-1},{-1,0},{-1,1},{0,1},{1,1},{1,0},{1,-1}};
+// if (i % 2 == 0) // corners
+// if (i % 2 == 1) // cardinals
+// if (i % 4 == 2) // horizontal
+//if (i % 4 == 0)  // vertical
+//const pair<int, int> vert {0,1}, horiz { 1,0};
 map<char, pair<int,int>> base {{'-', {1,0}}, {'|', {0,1}}, {'\\', {1,1}}, {'/', {-1,1}}};
 
 const vector< pair<int,int>> compass {{1,0},{0,1},{-1,0},{0,-1}};
@@ -41,9 +44,12 @@ struct train {
         prev = curr;
         curr = p;
     }
-    void move2 (const pair<int,int> &p) {
+    void move2 (const pair<int,int> p) {
+        pair<int,int> tmp = prev;
         prev = curr;
-        curr += p;
+
+            curr += p;
+
     }
 };
 
@@ -144,22 +150,50 @@ train update (graph &track, train &x) {
             x.move2 (dir);
             break;
         case '-' :
-            if (track[x.curr + base['-']]) {x.move2 (base['-']);}
 
+            for (int i = 0; i < direct.size(); i++) {
+                pair<int,int> next = x.curr + direct[i];
+
+                if (i % 4 == 2) {
+                    if (track[next] != ' ' && next != x.prev) {
+                        dir = direct[i];
+                    }
+                }
+            }
+            x.move2 (dir);
             break;
         case '|' :
-            if (track[x.curr + base['|']]) {x.move2 (base['|']);}
+            for (int i = 0; i < direct.size(); i++) {
+                pair<int,int> next = x.curr + direct[i];
 
+                if (i % 4 == 0) {
+                    if (track[next] != ' ' && next != x.prev) {
+                        dir = direct[i];
+                    }
+                }
+            }
+
+            x.move2 (dir);
             break;
         case '\\' :
+            for (int i = 0; i < direct.size(); i++) {
+                pair<int,int> next = x.curr + direct[i];
+
+                if (track[next] != ' ' && next != x.prev) {
+                    dir = direct[i];
+                }
+            }
+
+        /*
             if (track[x.curr + base['\\']] == curr) { x.move2 (base['\\']); return x; }
 
             for (auto &p : compass) {
                 pair<int,int> next = x.curr + p;
                 if (track[next] != ' ' && next != x.prev) {
-                    dir = p; //Display::point (next);
+                    dir = p;
                 }
             }
+            */
             x.move2 (dir);
             break;
 
@@ -173,12 +207,13 @@ int train_crash(const string &src, const string &a_train, int a_train_pos, const
     graph track (src);
     pair<int,int> origin = get_origin (track);
     train A = mk_train (track, a_train);
-
-    int index = 35;
-
+    A.prev = {33,0};
+    //Display::point (origin);
+    int index = 50;
+    //A.curr = make_pair (55,19), A.prev = make_pair (54,19);
     while (index-->0) {
         update (track, A);
-        Display::rail (track, A);
+        // Display::rail (track, A);
     }
 
     return 42;
