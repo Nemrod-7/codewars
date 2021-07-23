@@ -23,8 +23,8 @@ void operator-= (pair<int,int> &a, const pair<int,int> &b) {
 }
 
                                 //  0       1      2      3      4    5     6     7
-                                //  W      NW      N      NE     E    SE    S     SW
-const vector<pair<int,int>> direct {{0,-1},{-1,-1},{-1,0},{-1,1},{0,1},{1,1},{1,0},{1,-1}};
+                                //     N      NE     E    SE     S    SW      W      NW
+const vector<pair<int,int>> direct {{0,-1},{1,-1},{1,0},{1,1},{0,1},{-1,1},{-1,0},{-1,-1}};
 // if (i % 2 == 0) // corners
 // if (i % 2 == 1) // cardinals
 // if (i % 4 == 2) // horizontal
