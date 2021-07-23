@@ -22,29 +22,24 @@ void operator-= (pair<int,int> &a, const pair<int,int> &b) {
     a.first -= b.first, a.second -= b.second;
 }
 
-                                //    0      1      2    3      4    5       6      7
-                                //    N      NE     E    SE     S    SW      W      NW
-const vector<pair<int,int>> direct {{0,-1},{1,-1},{1,0},{1,1},{0,1},{-1,1},{-1,0},{-1,-1}};
 // if (i % 2 == 0) // cardina
 // if (i % 2 == 1) // corners
 // if (i % 4 == 0)  // N -> S
 // if (i % 4 == 1)  // NE -> SW
 // if (i % 4 == 2) // E -> W
 // if (i % 4 == 3) // SE -> NW
-map<char, pair<int,int>> base {{'-', {1,0}}, {'|', {0,1}}, {'\\', {1,1}}, {'/', {-1,1}}};
 
-const vector< pair<int,int>> compass {{1,0},{0,1},{-1,0},{0,-1}};
-const vector< pair<int,int>> corner {{1,1},{-1,1},{-1,-1},{1,-1}};
+                                //    0      1      2    3      4    5       6      7
+                                //    N      NE     E    SE     S    SW      W      NW
+const vector<pair<int,int>> direct {{0,-1},{1,-1},{1,0},{1,1},{0,1},{-1,1},{-1,0},{-1,-1}};
+vector<map<char,bool>> base {{{'\\',1},{'/',1},{'x',1},{'|',1},{'+',1}},{{'/',1}},
+                             {{'/',1},{'/',1},{'x',1},{'-',1},{'+',1}},{{'\\',1}}};
 
 struct train {
     pair<int,int> curr, prev;
     char id;
     int unit;
 
-    void move (const pair<int,int> &p) {
-        prev = curr;
-        curr = p;
-    }
     void move2 (const pair<int,int> p) {
         pair<int,int> tmp = prev;
         prev = curr;
@@ -135,18 +130,24 @@ train update (graph &track, train &x) {
     char curr = track[x.curr], last = track[x.prev];
     pair<int,int> dir;
 
+    if (curr == '+') {
+        if (last != '-' ) curr = '|';
+        else curr = '-';
+    }
+    if (curr == 'S') {
+        curr = last;
+    }
+
     switch (curr) {
-        case '+' :
-            if (last != '-' ) curr = '|';
-            else curr = '-';
 
         case '/' :
-            if (track[x.curr + base[curr]] == curr) { x.move2 (base[curr]); return x; }
 
-            for (auto &p : compass) {
-                pair<int,int> next = x.curr + p;
-                if (track[next] != ' ' && next != x.prev)
-                    dir = p;
+            for (int i = 0; i < direct.size(); i++) {
+                pair<int,int> next = x.curr + direct[i];
+
+                if (base[i % 4][track[next]] && next != x.prev) {
+                    dir = direct[i];
+                }
             }
             x.move2 (dir);
             break;
@@ -154,6 +155,7 @@ train update (graph &track, train &x) {
 
             for (int i = 0; i < direct.size(); i++) {
                 pair<int,int> next = x.curr + direct[i];
+
 
                 if (i % 4 == 2) {
                     if (track[next] != ' ' && next != x.prev) {
@@ -185,16 +187,6 @@ train update (graph &track, train &x) {
                 }
             }
 
-        /*
-            if (track[x.curr + base['\\']] == curr) { x.move2 (base['\\']); return x; }
-
-            for (auto &p : compass) {
-                pair<int,int> next = x.curr + p;
-                if (track[next] != ' ' && next != x.prev) {
-                    dir = p;
-                }
-            }
-            */
             x.move2 (dir);
             break;
 
@@ -203,18 +195,49 @@ train update (graph &track, train &x) {
 
     return x;
 }
+bool is_free (graph &G, const train &x, const pair<int,int> &p) {
+
+    return G[p] != ' ' && p != x.prev;
+}
 int train_crash(const string &src, const string &a_train, int a_train_pos, const string &b_train, int b_train_pos, int limit) {
 
     graph track (src);
     pair<int,int> origin = get_origin (track);
     train A = mk_train (track, a_train);
-    A.prev = {33,0};
-    //Display::point (origin);
-    int index = 50;
-    //A.curr = make_pair (55,19), A.prev = make_pair (54,19);
+
+    //A.prev = make_pair (31,1);
+
+    pair<int,int> dir;
+    int index = 5;
+
     while (index-->0) {
-        update (track, A);
-        // Display::rail (track, A);
+        char curr = track[A.curr], last = track[A.prev];
+
+        if (curr == '+') {
+
+            if (last == '-')
+
+            for (int i = 0; i < direct.size(); i++) {
+                pair<int,int> next = A.curr + direct[i];
+
+                if (i % 2 == 0 && next != A.prev) {
+                    cout << track[next];
+                }
+            }
+
+            cout << endl;
+        }
+
+        for (int i = 0; i < direct.size(); i++) {
+            pair<int,int> next = A.curr + direct[i];
+
+            if (base[i % 4][track[next]] && next != A.prev) {
+                dir = direct[i];
+            }
+        }
+        A.move2 (dir);
+        //update (track, A);
+        //Display::rail (track, A);
     }
 
     return 42;
@@ -222,31 +245,31 @@ int train_crash(const string &src, const string &a_train, int a_train_pos, const
 
 int main () {
 
-  const std::string example_track =
-          "                                /------------\\\n"
-          "/-------------\\                /             |\n"
-          "|             |               /              S\n"
-          "|             |              /               |\n"
-          "|        /----+--------------+------\\        |   \n"
-          "\\       /     |              |      |        |     \n"
-          " \\      |     \\              |      |        |                    \n"
-          " |      |      \\-------------+------+--------+---\\\n"
-          " |      |                    |      |        |   |\n"
-          " \\------+--------------------+------/        /   |\n"
-          "        |                    |              /    | \n"
-          "        \\------S-------------+-------------/     |\n"
-          "                             |                   |\n"
-          "/-------------\\              |                   |\n"
-          "|             |              |             /-----+----\\\n"
-          "|             |              |             |     |     \\\n"
-          "\\-------------+--------------+-----S-------+-----/      \\\n"
-          "              |              |             |             \\\n"
-          "              |              |             |             |\n"
-          "              |              \\-------------+-------------/\n"
-          "              |                            |               \n"
-          "              \\----------------------------/ \n";
+    const std::string example_track =
+            "                                /------------\\\n"
+            "/-------------\\                /             |\n"
+            "|             |               /              S\n"
+            "|             |              /               |\n"
+            "|        /----+--------------+------\\        |   \n"
+            "\\       /     |              |      |        |     \n"
+            " \\      |     \\              |      |        |                    \n"
+            " |      |      \\-------------+------+--------+---\\\n"
+            " |      |                    |      |        |   |\n"
+            " \\------+--------------------+------/        /   |\n"
+            "        |                    |              /    | \n"
+            "        \\------S-------------+-------------/     |\n"
+            "                             |                   |\n"
+            "/-------------\\              |                   |\n"
+            "|             |              |             /-----+----\\\n"
+            "|             |              |             |     |     \\\n"
+            "\\-------------+--------------+-----S-------+-----/      \\\n"
+            "              |              |             |             \\\n"
+            "              |              |             |             |\n"
+            "              |              \\-------------+-------------/\n"
+            "              |                            |               \n"
+            "              \\----------------------------/ \n";
 
 
-  train_crash (example_track, "Aaaa", 147, "Bbbbbbbbbbb", 288, 1000);
+    train_crash (example_track, "Aaaa", 147, "Bbbbbbbbbbb", 288, 1000);
 
 }
