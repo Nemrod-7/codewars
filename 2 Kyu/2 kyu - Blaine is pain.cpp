@@ -22,14 +22,15 @@ void operator-= (pair<int,int> &a, const pair<int,int> &b) {
     a.first -= b.first, a.second -= b.second;
 }
 
-                                //  0       1      2      3      4    5     6     7
-                                //     N      NE     E    SE     S    SW      W      NW
+                                //    0      1      2    3      4    5       6      7
+                                //    N      NE     E    SE     S    SW      W      NW
 const vector<pair<int,int>> direct {{0,-1},{1,-1},{1,0},{1,1},{0,1},{-1,1},{-1,0},{-1,-1}};
-// if (i % 2 == 0) // corners
-// if (i % 2 == 1) // cardinals
-// if (i % 4 == 2) // horizontal
-//if (i % 4 == 0)  // vertical
-//const pair<int, int> vert {0,1}, horiz { 1,0};
+// if (i % 2 == 0) // cardina
+// if (i % 2 == 1) // corners
+// if (i % 4 == 0)  // N -> S
+// if (i % 4 == 1)  // NE -> SW
+// if (i % 4 == 2) // E -> W
+// if (i % 4 == 3) // SE -> NW
 map<char, pair<int,int>> base {{'-', {1,0}}, {'|', {0,1}}, {'\\', {1,1}}, {'/', {-1,1}}};
 
 const vector< pair<int,int>> compass {{1,0},{0,1},{-1,0},{0,-1}};
