@@ -75,7 +75,7 @@ class Display {
                 }
                 cout << "\n";
             }
-            this_thread::sleep_for(100ms);
+            this_thread::sleep_for(80ms);
         }
         static void trn (graph &G, const train &a) {
             cout << "\033c";
@@ -95,7 +95,7 @@ class Display {
                 }
                 cout << "\n";
             }
-            this_thread::sleep_for(50ms);
+            this_thread::sleep_for(100ms);
         }
         static void point (const pair<int,int> &p) {
             cout << "[" << p.first << ',' << p.second << "]";
@@ -124,7 +124,7 @@ pair<int,int> get_origin (graph &track) {
     return {0,0};
 }
 
-bool is_valid (graph &track, pair<int,int> prev, pair<int,int> curr, int index) {
+bool is_valid (graph &track, pair<int,int> &prev, pair<int,int> &curr, int index) {
 
     pair<int,int> next = curr + direct[index];
     char rail = track[curr], last = track[prev];
@@ -151,7 +151,7 @@ void getnext (graph &track, train &x) {
     for (size_t i = 0; i < direct.size(); i++) {
         curr = x.trn.front(), prev = *std::next (begin(x.trn), 1);
 
-        if (is_valid (track, prev, curr, i)) {
+        if (is_valid (track, prev, curr , i)) {
             nxt = direct[i];
         }
     }
@@ -171,6 +171,7 @@ pair<int,int> getstart (graph &track, int pos) {
     while (pos-->0) {
         getnext (track, curr);
     }
+    //cout << endl;
     return curr.trn.front();
   }
 
@@ -179,17 +180,10 @@ bool collision (train &a,  train &b) {
     auto &[ib, sb, vb] = b;
     list<pair<int,int>>::iterator ita = va.begin(), itb;
 
-    itb = vb.begin();
-
-    while (distance (va.begin(), ita) < sa) {
-        itb = vb.begin();
-        while (distance (vb.begin(), itb) < sb) {
+    for (auto ita = va.begin(); distance (va.begin(), ita) < sa; ita++) {
+        for (auto itb = vb.begin(); distance (vb.begin(), itb) < sb; itb++)
             if (*ita == *itb) return true;
-            itb++;
-        }
-        ita++;
     }
-
 
     return false;
 }
@@ -207,8 +201,10 @@ void advance (graph &track, train &x, size_t &wait) {
     }
 }
 
-train mktrain2 (graph &track, const string &src, int pos) {
-    pair<int,int> origin = get_origin(track), lim;
+train mktrain (graph &track, const string &src, int pos) {
+
+    const pair<int,int> origin = get_origin (track), dest = getstart (track, pos);
+    pair<int,int> lim;
     train curr;
     auto &[id, size, wagon] = curr;
 
@@ -223,32 +219,41 @@ train mktrain2 (graph &track, const string &src, int pos) {
     size = src.size();
     wagon.push_front (origin);
 
-    for (int i = lim.first; i < lim.second; i++) {
-      pair<int, int> nxt = wagon.back() + direct[i];
-      if (base[i % 4][track[nxt]])
-          wagon.push_back (nxt);
+    for (int i = lim.first; i < lim.second; i++) {            //set clockwise or counterclockwise
+        pair<int, int> nxt = wagon.back() + direct[i];
+        if (base[i % 4][track[nxt]])
+            wagon.push_back (nxt);
     }
 
-    const pair<int,int> dest = getstart (track, pos);
+    while (wagon.size() < size) {                             // make wagons
+        for (size_t i = 0; i < direct.size(); i++) {
+            pair<int,int> prv = *std::prev(wagon.end(), 2);
+            if (is_valid (track, prv, wagon.back(), i)) {
 
-    while (wagon.front() != dest) {
+                wagon.push_back (wagon.back() + direct[i]);
+            }
+        }
+
+    }
+
+    while (wagon.front() != dest)                             // go to start point
         getnext (track, curr);
-    }
-
+    /*
+    */
     return curr;
 }
 int train_crash (const string &src, const string &a_train, int a_train_pos, const string &b_train, int b_train_pos, int limit) {
 
     graph track (src);
     //Display::test (src, a_train, a_train_pos, b_train, b_train_pos, limit);
-    train A = mktrain2 (track, a_train, a_train_pos);
-    train B = mktrain2 (track, b_train, b_train_pos);
+    train A = mktrain (track, a_train, a_train_pos);
+    train B = mktrain (track, b_train, b_train_pos);
 
     size_t sleep = A.size, sleepb = B.size, cnt = 0;
 
     while (limit-->0) {
         if (collision (A, B)) return cnt;
-        Display::grph(track, A,B);
+        //Display::grph(track, A,B);
         cnt++;
 
         advance (track, A, sleep);
@@ -263,34 +268,9 @@ int main () {
 
   string src;
 
-  const std::string example_track =
-          "                                /------------\\\n"
-          "/-------------\\                /             |\n"
-          "|             |               /              S\n"
-          "|             |              /               |\n"
-          "|        /----+--------------+------\\        |   \n"
-          "\\       /     |              |      |        |     \n"
-          " \\      |     \\              |      |        |                    \n"
-          " |      |      \\-------------+------+--------+---\\\n"
-          " |      |                    |      |        |   |\n"
-          " \\------+--------------------+------/        /   |\n"
-          "        |                    |              /    | \n"
-          "        \\------S-------------+-------------/     |\n"
-          "                             |                   |\n"
-          "/-------------\\              |                   |\n"
-          "|             |              |             /-----+----\\\n"
-          "|             |              |             |     |     \\\n"
-          "\\-------------+--------------+-----S-------+-----/      \\\n"
-          "              |              |             |             \\\n"
-          "              |              |             |             |\n"
-          "              |              \\-------------+-------------/\n"
-          "              |                            |               \n"
-          "              \\----------------------------/ \n";
+  src = {47,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,92,10,124,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,124,10,124,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,124,10,124,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,124,10,124,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,124,10,92,45,45,45,45,45,45,45,45,45,83,45,45,45,45,45,45,45,47,10};
+  train_crash (src,"aA",10,"bbbbbB",30,200);
 
-
-  int cnt = train_crash (example_track, "Aaaa", 147, "Bbbbbbbbbbb", 288, 1000);
- /*
-*/
 }
 
 void Test () {
@@ -321,7 +301,6 @@ void Test () {
  src = {47,45,45,45,45,92,32,32,32,32,32,47,45,45,45,45,92,32,10,124,32,32,32,32,32,92,32,32,32,47,32,32,32,32,32,124,32,10,124,32,32,32,32,32,32,92,32,47,32,32,32,32,32,32,124,32,10,124,32,32,32,32,32,32,32,83,32,32,32,32,32,32,32,124,32,10,124,32,32,32,32,32,32,47,32,92,32,32,32,32,32,32,124,32,10,124,32,32,32,32,32,47,32,32,32,92,32,32,32,32,32,124,32,10,92,45,45,45,45,47,32,32,32,32,32,92,45,45,45,45,47,10};
  train_crash (src,"Eeeeeeee",32,"Xxxx",23,100);
 
-
   src = {47,45,45,45,45,45,45,45,92,32,10,124,32,32,32,32,32,32,32,124,32,10,124,32,32,32,32,32,32,32,124,32,10,124,32,32,32,32,32,32,32,124,32,10,92,45,45,45,45,45,45,45,43,45,45,45,45,45,45,45,45,92,10,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,124,10,32,32,32,32,32,32,32,32,83,32,32,32,32,32,32,32,32,124,10,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,124,10,32,32,32,32,32,32,32,32,92,45,45,45,45,45,45,45,45,47,10};
  train_crash (src, "aaaaaA",15,"bbbbbB",5,100);
 
@@ -333,8 +312,6 @@ train_crash (src, "aaaaaA",15,"bbbbbB",5,100);
 
 src = {47,45,45,45,45,92,32,32,32,32,32,47,45,45,45,45,92,32,10,124,32,32,32,32,32,92,32,32,32,47,32,32,32,32,32,124,32,10,124,32,32,32,32,32,32,92,32,47,32,32,32,32,32,32,124,32,10,124,32,32,32,32,32,32,32,83,32,32,32,32,32,32,32,124,32,10,124,32,32,32,32,32,32,47,32,92,32,32,32,32,32,32,124,32,10,124,32,32,32,32,32,47,32,32,32,92,32,32,32,32,32,124,32,10,92,45,45,45,45,47,32,32,32,32,32,92,45,45,45,45,47,10};
  cout << train_crash (src,"aaaaaA",8,"bbbbbB",20,100); // expected -1
-
-
 
   /*
   train_crash (src, "aaaaaA", 10, "bbbbbB", 30,100);
