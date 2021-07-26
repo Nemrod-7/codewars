@@ -95,7 +95,7 @@ class Display {
                 }
                 cout << "\n";
             }
-            this_thread::sleep_for(500ms);
+            this_thread::sleep_for(50ms);
         }
         static void point (const pair<int,int> &p) {
             cout << "[" << p.first << ',' << p.second << "]";
@@ -124,9 +124,9 @@ pair<int,int> get_origin (graph &track) {
     return {0,0};
 }
 
-bool is_valid (graph &track, train &a, int index) {
+bool is_valid (graph &track, pair<int,int> prev, pair<int,int> curr, int index) {
 
-    pair<int,int> curr = a.trn.front(), prev = *std::next (begin(a.trn), 1), next = curr + direct[index];
+    pair<int,int> next = curr + direct[index];
     char rail = track[curr], last = track[prev];
 
     if (next == prev) return false;
@@ -147,9 +147,11 @@ bool is_valid (graph &track, train &a, int index) {
     return false;
 }
 void getnext (graph &track, train &x) {
-    pair<int,int> nxt;
+    pair<int,int> prev, curr, nxt;
     for (size_t i = 0; i < direct.size(); i++) {
-        if (is_valid (track, x, i)) {
+        curr = x.trn.front(), prev = *std::next (begin(x.trn), 1);
+
+        if (is_valid (track, prev, curr, i)) {
             nxt = direct[i];
         }
     }
@@ -169,7 +171,6 @@ pair<int,int> getstart (graph &track, int pos) {
     while (pos-->0) {
         getnext (track, curr);
     }
-    //cout << endl;
     return curr.trn.front();
   }
 
@@ -178,19 +179,17 @@ bool collision (train &a,  train &b) {
     auto &[ib, sb, vb] = b;
     list<pair<int,int>>::iterator ita = va.begin(), itb;
 
-
     itb = vb.begin();
-    /*
+
     while (distance (va.begin(), ita) < sa) {
         itb = vb.begin();
         while (distance (vb.begin(), itb) < sb) {
-          //cout << distance (vb.begin(), itb) << " ";
-            //if (*ita == *itb) return true;
+            if (*ita == *itb) return true;
             itb++;
         }
         ita++;
     }
-    */
+
 
     return false;
 }
@@ -230,15 +229,12 @@ train mktrain2 (graph &track, const string &src, int pos) {
           wagon.push_back (nxt);
     }
 
-    pair<int,int> dest = getstart (track, pos);
-
+    const pair<int,int> dest = getstart (track, pos);
 
     while (wagon.front() != dest) {
         getnext (track, curr);
     }
-    /*
-    Display::trn(track, curr);
-    */
+
     return curr;
 }
 int train_crash (const string &src, const string &a_train, int a_train_pos, const string &b_train, int b_train_pos, int limit) {
@@ -250,15 +246,15 @@ int train_crash (const string &src, const string &a_train, int a_train_pos, cons
 
     size_t sleep = A.size, sleepb = B.size, cnt = 0;
 
-    if (collision (A, B)) return cnt;
-    /*
     while (limit-->0) {
-        //Display::grph(track, A,B);
+        if (collision (A, B)) return cnt;
+        Display::grph(track, A,B);
         cnt++;
 
         advance (track, A, sleep);
         advance (track, B, sleepb);
     }
+    /*
     */
     return -1;
 }
@@ -267,8 +263,32 @@ int main () {
 
   string src;
 
-  src = {47,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,92,10,124,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,124,10,124,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,124,10,124,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,124,10,124,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,124,10,92,45,45,45,45,45,45,45,45,45,83,45,45,45,45,45,45,45,47,10};
-  train_crash (src,"xX",15,"Zzzzzzzzzzzzzz",40,100);
+  const std::string example_track =
+          "                                /------------\\\n"
+          "/-------------\\                /             |\n"
+          "|             |               /              S\n"
+          "|             |              /               |\n"
+          "|        /----+--------------+------\\        |   \n"
+          "\\       /     |              |      |        |     \n"
+          " \\      |     \\              |      |        |                    \n"
+          " |      |      \\-------------+------+--------+---\\\n"
+          " |      |                    |      |        |   |\n"
+          " \\------+--------------------+------/        /   |\n"
+          "        |                    |              /    | \n"
+          "        \\------S-------------+-------------/     |\n"
+          "                             |                   |\n"
+          "/-------------\\              |                   |\n"
+          "|             |              |             /-----+----\\\n"
+          "|             |              |             |     |     \\\n"
+          "\\-------------+--------------+-----S-------+-----/      \\\n"
+          "              |              |             |             \\\n"
+          "              |              |             |             |\n"
+          "              |              \\-------------+-------------/\n"
+          "              |                            |               \n"
+          "              \\----------------------------/ \n";
+
+
+  int cnt = train_crash (example_track, "Aaaa", 147, "Bbbbbbbbbbb", 288, 1000);
  /*
 */
 }
@@ -300,24 +320,6 @@ void Test () {
  // crashes tricky
  src = {47,45,45,45,45,92,32,32,32,32,32,47,45,45,45,45,92,32,10,124,32,32,32,32,32,92,32,32,32,47,32,32,32,32,32,124,32,10,124,32,32,32,32,32,32,92,32,47,32,32,32,32,32,32,124,32,10,124,32,32,32,32,32,32,32,83,32,32,32,32,32,32,32,124,32,10,124,32,32,32,32,32,32,47,32,92,32,32,32,32,32,32,124,32,10,124,32,32,32,32,32,47,32,32,32,92,32,32,32,32,32,124,32,10,92,45,45,45,45,47,32,32,32,32,32,92,45,45,45,45,47,10};
  train_crash (src,"Eeeeeeee",32,"Xxxx",23,100);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
   src = {47,45,45,45,45,45,45,45,92,32,10,124,32,32,32,32,32,32,32,124,32,10,124,32,32,32,32,32,32,32,124,32,10,124,32,32,32,32,32,32,32,124,32,10,92,45,45,45,45,45,45,45,43,45,45,45,45,45,45,45,45,92,10,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,124,10,32,32,32,32,32,32,32,32,83,32,32,32,32,32,32,32,32,124,10,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,124,10,32,32,32,32,32,32,32,32,92,45,45,45,45,45,45,45,45,47,10};
