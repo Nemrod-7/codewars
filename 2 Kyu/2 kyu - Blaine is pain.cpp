@@ -15,7 +15,7 @@ pair<int,int> operator+ (const pair<int,int> &a, const pair<int,int> &b) {
 
 const vector<pair<int,int>> direct {{0,-1},{1,-1},{1,0},{1,1},{0,1},{-1,1},{-1,0},{-1,-1}};
 
-vector<map<char,bool>> base2 {
+vector<map<char,bool>> base {
   {{'|',1},{'+',1},{'S',1}},
   {{'/',1},{'X',1},{'S',1}},
   {{'-',1},{'S',1}},
@@ -78,7 +78,7 @@ class Display {
                 }
                 cout << "\n";
             }
-            this_thread::sleep_for(100ms);
+            this_thread::sleep_for(1000ms);
         }
         static void trn (graph &G, const train &a) {
             cout << "\033c";
@@ -136,29 +136,23 @@ bool is_valid (graph &track, pair<int,int> &prev, pair<int,int> &curr, int index
     index %= 4;
 
     switch (rail) {
-        case '+' : if ((last == '-' && next == '-') || (last != '-' && next == '|')) return true; break;
+        case '+' : if ((last == '-' && next == '-') || (last != '-' && index == 0)) return true; break;
         case 'X' : if (last == next) return true; break;
         case 'S' : if (last == next) return true; break;
         case '|' : if (index == 0) return true; break;
         case '-' : if (index == 2) return true; break;
-        default  : return base2[index][next]; break;
+        default  : return base[index][next]; break;
     }
 
     return false;
 }
 void getnext (graph &track, train &x) {
-    pair<int,int> prev = *std::next (begin(x.trn), 1), curr = x.trn.front(), nxt;
-
-    if (curr == make_pair(29,4)) Display::point (curr);
+    pair<int,int> prev = *std::next (begin(x.trn), 1), curr = x.trn.front();
 
     for (size_t i = 0; i < direct.size(); i++) {
-
-        if (is_valid (track, prev, curr , i)) {
-            nxt = direct[i];
-        }
+        if (is_valid (track, prev, curr , i))
+            x.move (direct[i]);
     }
-
-    x.move (nxt);
 }
 pair<int,int> getstart (graph &track, int pos) {
     pair<int,int> origin = get_origin(track);
@@ -166,18 +160,16 @@ pair<int,int> getstart (graph &track, int pos) {
 
     for (size_t i = 4; i < direct.size(); i++) {
           pair<int, int> nxt = origin + direct[i];
-          //cout << track[nxt] << ' ' << i % 4 << endl;
+
           if (is_valid (track, origin, origin, i))
               curr.trn.push_back (nxt);
     }
-    //Display::trn(track, curr);
-    while (pos-->0) {
+
+    while (pos-->0)
         getnext (track, curr);
-        // Display::trn(track, curr);
-    }
-    //cout << endl;
+
     return curr.trn.front();
-  }
+}
 
 void advance (graph &track, train &x, size_t &wait) {
 
@@ -194,7 +186,7 @@ void advance (graph &track, train &x, size_t &wait) {
 }
 train mktrain (graph &track, const string &src, int pos) {
 
-    const pair<int,int> origin = get_origin (track), dest = getstart (track, pos);
+    const pair<int,int> origin = get_origin (track);
     pair<int,int> lim;
     train curr;
     auto &[id, size, wagon] = curr;
@@ -210,11 +202,10 @@ train mktrain (graph &track, const string &src, int pos) {
     size = src.size();
     wagon.push_front (origin);
 
-    //Display::point(origin);
     for (int i = lim.first; i < lim.second; i++) {            //set clockwise or counterclockwise
         pair<int, int> nxt = wagon.back() + direct[i];
 
-        if (base2[i % 4][track[nxt]])
+        if (base[i % 4][track[nxt]])
             wagon.push_back (nxt);
     }
 
@@ -222,18 +213,25 @@ train mktrain (graph &track, const string &src, int pos) {
         for (size_t i = 0; i < direct.size(); i++) {
             pair<int,int> prv = *std::prev(wagon.end(), 2);
 
-            if (is_valid (track, prv, wagon.back(), i)) {
+            if (is_valid (track, prv, wagon.back(), i) && wagon.size() < size) {
                 wagon.push_back (wagon.back() + direct[i]);
             }
         }
     }
 
-    while (wagon.front() != dest) {                           // go to start point
-        getnext (track, curr);
-        //Display::trn(track, curr);
+    if (isupper(src.front())) {
+        pair<int,int> dest = getstart (track, pos);
+
+        while (curr.trn.front() != dest) {                           // go to start point
+            getnext (track, curr);
+        }
+
+    } else {
+
+        while (pos-->0)
+            getnext (track, curr);
     }
-        /*
-    */
+
     return curr;
 }
 
@@ -256,9 +254,8 @@ bool collision (train a,  train b) {
     }
 
     for (auto &p : vb) {
-        //if (mapb[p]) return true;
-        //else
         mapb[p]++;
+        if (mapb[p] > 1) return true;
     }
 
     return false;
@@ -266,9 +263,7 @@ bool collision (train a,  train b) {
 int train_crash (const string &src, const string &a_train, int a_train_pos, const string &b_train, int b_train_pos, int limit) {
 
     graph track (src);
-
     //Display::test (src, a_train, a_train_pos, b_train, b_train_pos, limit);
-
     train A = mktrain (track, a_train, a_train_pos);
     train B = mktrain (track, b_train, b_train_pos);
 
@@ -276,34 +271,20 @@ int train_crash (const string &src, const string &a_train, int a_train_pos, cons
 
     if (collision (A, B)) return 0;
 
+
+  //  Display::grph (track,A,B);
     while (limit-->0) {
         advance (track, A, sleep);
         advance (track, B, sleepb);
-        //Display::grph(track, A,B);
-
-        if (limit < (2000 - 72)) {
-            map<pair<int,int>, int> mapa, mapb;
-            for (auto &p : A.trn) {
-//                mapa[p]++;
-                //Display::point (p);
-                /*
-                if (mapa[p] > 1) {
-
-                }
-                */
-  //              cout << mapa[p] << ' ';
-            }
-            cout << endl;
-        }
 
         cnt++;
         if (collision (A, B)) return cnt;
     }
     /*
-
     */
     return -1;
 }
+
 void Test () {
 
   string src;
@@ -329,10 +310,32 @@ int main () {
 
   string src;
 
-  src = {32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,47,45,45,45,45,45,45,45,45,45,45,45,45,92,10,47,45,45,45,45,45,45,45,45,45,45,45,45,45,92,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,47,32,32,32,32,32,32,32,32,32,32,32,32,32,124,10,124,32,32,32,32,32,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,47,32,32,32,32,32,32,32,32,32,32,32,32,32,32,83,10,124,32,32,32,32,32,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,32,32,32,32,32,32,47,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,124,10,124,32,32,32,32,32,32,32,32,47,45,45,45,45,43,45,45,45,45,45,45,45,45,45,45,45,45,45,45,43,45,45,45,45,45,45,92,32,32,32,32,32,32,32,32,124,32,32,32,10,92,32,32,32,32,32,32,32,47,32,32,32,32,32,124,32,32,32,32,32,32,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,124,32,32,32,32,32,10,32,92,32,32,32,32,32,32,124,32,32,32,32,32,92,32,32,32,32,32,32,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,10,32,124,32,32,32,32,32,32,124,32,32,32,32,32,32,92,45,45,45,45,45,45,45,45,45,45,45,45,45,43,45,45,45,45,45,45,43,45,45,45,45,45,45,45,45,43,45,45,45,92,10,32,124,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,124,32,32,32,124,10,32,92,45,45,45,45,45,45,43,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,43,45,45,45,45,45,45,47,32,32,32,32,32,32,32,32,47,32,32,32,124,10,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,32,32,32,32,32,32,47,32,32,32,32,124,32,10,32,32,32,32,32,32,32,32,92,45,45,45,45,45,45,83,45,45,45,45,45,45,45,45,45,45,45,45,45,43,45,45,45,45,45,45,45,45,45,45,45,45,45,47,32,32,32,32,32,124,10,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,124,10,47,45,45,45,45,45,45,45,45,45,45,45,45,45,92,32,32,32,32,32,32,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,124,10,124,32,32,32,32,32,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,32,32,32,32,32,47,45,45,45,45,45,43,45,45,45,45,92,10,124,32,32,32,32,32,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,32,32,32,32,32,124,32,32,32,32,32,124,32,32,32,32,32,92,10,92,45,45,45,45,45,45,45,45,45,45,45,45,45,43,45,45,45,45,45,45,45,45,45,45,45,45,45,45,43,45,45,45,45,45,83,45,45,45,45,45,45,45,43,45,45,45,45,45,47,32,32,32,32,32,32,92,10,32,32,32,32,32,32,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,32,32,32,32,32,92,10,32,32,32,32,32,32,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,32,32,32,32,32,124,10,32,32,32,32,32,32,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,32,32,32,32,32,32,92,45,45,45,45,45,45,45,45,45,45,45,45,45,43,45,45,45,45,45,45,45,45,45,45,45,45,45,47,10,32,32,32,32,32,32,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,10,32,32,32,32,32,32,32,32,32,32,32,32,32,32,92,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,47,32,10};
-  cout << train_crash (src,"bbbbbbbbbbbbbbbbbbbbbbbB",301,"ddddddddddD",84,2000); // exp 91
 
-
+  src = {47,45,45,45,45,45,45,45,92,32,10,124,32,32,32,32,32,32,32,124,32,10,124,32,32,32,32,32,32,32,124,32,10,124,32,32,32,32,32,32,32,124,32,10,92,45,45,45,45,45,45,45,83,45,45,45,45,45,45,45,45,92,10,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,124,10,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,124,10,32,32,32,32,32,32,32,32,124,32,32,32,32,32,32,32,32,124,10,32,32,32,32,32,32,32,32,92,45,45,45,45,45,45,45,45,47,10};
+ train_crash (src,"Xxxxxxx",47,"bbbbbbbbbbbbbbbbbbbbbbbbbB",35,2000);
+ /*
+Initial track:
+xxxx----\
+x       |
+x       b
+X       b
+\-------b--Bbbbbbb
+        b        b
+        b        b
+        b        b
+        bbbbbbbbbb
+  /*
+  src = {47,45,45,45,45,92,32,32,32,32,32,47,45,45,45,45,92,32,10,124,32,32,32,32,32,92,32,32,32,47,32,32,32,32,32,124,32,10,124,32,32,32,32,32,32,92,32,47,32,32,32,32,32,32,124,32,10,124,32,32,32,32,32,32,32,83,32,32,32,32,32,32,32,124,32,10,124,32,32,32,32,32,32,47,32,92,32,32,32,32,32,32,124,32,10,124,32,32,32,32,32,47,32,32,32,92,32,32,32,32,32,124,32,10,92,45,45,45,45,47,32,32,32,32,32,92,45,45,45,45,47,10};
+ train_crash (src,"Bbbb",0,"aaaaaaaaaaaaaaaA",30,2000);
+Initial track:
+Bbbb-\     aaaaaa
+|     \   a     a
+|      \ a      a
+|       A       a
+|      / \      a
+|     /   \     a
+\----/     \---aa
+*/
    cout << "\nfinished\n";
 }
 
