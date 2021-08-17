@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <map>
+#include <cmath>
 #include <queue>
 #include <algorithm>
 
@@ -25,9 +26,9 @@ const char wall{'#'}, start{'S'}, stop{'E'}, ice{' '}, ground{'x'};
 const vector<pair<pair<int,int>,char>> compass {{{-1,0},'l'},{{1,0},'r'},{{0,-1},'u'},{{0,1},'d'}};
 
 struct vertex {
-    int dist, move;
+    float dist, move;
     pair<int,int> p;
-    bool visit;
+    //bool visit;
     string route;
     bool operator< (const vertex &x) const {
           if (x.move == 0) return true;
@@ -64,65 +65,25 @@ class graph {
         char operator[] (const point &p) { return is_inside(p) ? maze[p.second * width + p.first] : wall; }
 };
 
-vector<char> ice_maze_solver (string src) {
-
-    graph maze (src);
-
-    priority_queue <vertex, vector<vertex>, comp> q1;
-    map <pair<int,int>, vertex> vmap;
-
-    q1.push ({0,0, maze.enter, false});
-
-    while (!q1.empty()) { // (!q1.empty())
-        auto [dist, move, u, visit, route] = q1.top();
-        q1.pop();
-
-        if (u == maze.exit)
-            return { route.begin(), route.end() };
-
-        visit = true;
-
-        for (auto [direction, alpha] : compass) {
-            point nxt = u + direction, tmp = nxt;
-            int alt = dist + 1; // float alt = distance (nxt, maze.exit);
-
-            while (maze[tmp] == ice && !vmap[tmp].visit) {
-                alt++;
-                tmp += direction;
-                if (maze[tmp] != wall) nxt = tmp;
-            }
-
-            vertex nxtv = {alt, move + 1, nxt, false, route + alpha};
-
-            if (maze.is_free (nxt) && !vmap[nxt].visit && nxtv < vmap[nxt]) {
-                vmap[nxt] = nxtv;
-                q1.push (nxtv);
-            }
-        }
-    }
-
-    return {};
-}
-
 class Display {
   public :
 
-  static void visited (graph &G) {
-    //cout << "\033c";
+  static void visited (graph &G, map<pair<int,int>, vertex> &visit) {
+    cout << "\033c";
     int row = G.height + 1, col = G.width;
     for (int y = -1; y < row; y++) {
       for (int x = -1; x < col; x++) {
-        /*
-        if (G.visit[{x,y}])
-        cout << ". ";
+        if (visit[{x,y}].dist)
+            cout << ". ";
         else
-        cout << G[{x,y}] << ' ';
+            cout << G[{x,y}] << ' ';
+            /*
         */
       }
       cout << endl;
     }
     cout << endl;
-    //this_thread::sleep_for(500ms);
+    this_thread::sleep_for(100ms);
   }
   static void graph2 (graph &G) {
     int row = G.height + 1, col = G.width;
@@ -136,7 +97,7 @@ class Display {
 
   static void locate (graph &G, point p) {
     int row = G.height + 1, col = G.width;
-    //cout << "\033c";
+    cout << "\033c";
     for (int y = -1; y < row; y++) {
       for (int x = -1; x < col; x++) {
         if (p == pair<int,int> (x,y))
@@ -147,7 +108,7 @@ class Display {
       cout << endl;
     }
     cout << endl;
-    this_thread::sleep_for(500ms);
+    this_thread::sleep_for(200ms);
   }
 
   template<class T> static void showqueue (T q) { // NB: pass by value so the print uses a copy
@@ -164,20 +125,80 @@ class Display {
   }
 };
 
+float distance2 (const point &a, const point &b) {
+  return hypot (a.first - b.first, a.second - b.second); // euclidian distance
+  return max (abs(a.first - b.first), abs (a.second - b.second)); // diagonal distance
+  return abs (a.first - b.first) + abs (a.second - b.second); //  manathan distance
+}
+vector<char> ice_maze_solver (string src) {
+
+    graph maze (src);
+
+    priority_queue <vertex, vector<vertex>, comp> q1;
+    map<pair<int,int>, vertex> vmap;
+
+    q1.push ({0,0, maze.enter});
+
+    while (!q1.empty()) {
+        auto [dist, move, u, route] = q1.top();
+        q1.pop();
+
+        if (u == maze.exit)
+            return { route.begin(), route.end() };
+        //Display::visited (maze, vmap);
+        for (auto [direction, alpha] : compass) {
+            point nxt = u + direction, tmp = nxt;
+            int alt = dist + 1;
+            //float alt = distance2 (nxt, maze.exit);
+            /*
+            */
+            while (maze[tmp] == ice) {
+                alt++;
+                tmp += direction;
+                if (maze[tmp] != wall) nxt = tmp;
+            }
+            vertex nxtv = {alt, move + 1, nxt, route + alpha};
+
+            if (maze.is_free (nxt) && nxtv < vmap[nxt]) {
+                vmap[nxt] = nxtv;
+                q1.push (nxtv);
+            }
+        }
+    }
+
+    return {};
+}
+
 int main () {
 
     string map;
 
-    Test();
+    map = {32,32,32,35,32,35,32,32,32,32,35,32,32,32,32,35,32,32,35,32,32,32,32,35,32,32,32,32,32,10,32,32,32,35,32,32,32,32,32,32,32,35,32,32,32,32,32,32,32,35,32,32,32,32,35,32,120,32,32,10,35,32,32,32,35,120,35,32,32,32,32,35,32,32,32,32,32,32,32,35,32,32,35,35,32,32,32,32,32,10,120,120,32,35,32,35,32,32,32,32,35,32,35,32,32,32,32,32,35,32,32,32,32,32,32,32,32,32,32,10,32,32,120,32,32,35,32,35,32,35,32,35,32,35,32,32,32,32,32,32,32,35,120,32,32,32,32,32,35,10,32,32,32,32,32,32,32,120,32,35,32,32,32,35,32,32,32,32,32,32,32,32,35,32,35,32,32,32,32,10,32,32,32,35,32,32,35,32,32,32,32,35,32,32,35,32,35,32,32,35,32,32,32,32,32,32,35,32,32,10,32,32,32,35,32,32,32,32,35,32,32,32,120,35,32,32,32,120,32,32,32,35,32,32,32,32,35,32,32,10,35,32,32,32,35,32,32,35,32,35,32,35,32,32,35,120,32,32,32,32,32,32,32,32,32,32,32,32,32,10,32,32,32,32,32,32,32,32,32,32,35,32,32,35,35,32,32,32,32,32,32,32,32,32,35,120,32,32,32,10,32,120,32,32,35,32,32,32,32,32,35,35,32,120,32,32,32,32,32,32,35,32,35,32,32,32,32,32,32,10,32,32,32,32,32,32,32,32,32,32,32,120,32,32,32,32,32,32,120,120,32,32,32,32,32,32,32,32,32,10,32,32,32,32,32,35,120,32,35,32,32,35,32,120,32,35,32,120,32,32,35,32,32,32,35,32,32,32,32,10,32,32,32,32,120,32,32,32,32,32,32,35,32,32,32,32,32,32,35,32,35,32,32,32,32,120,35,32,32,10,35,32,32,32,35,32,35,32,32,32,35,32,32,32,120,32,32,32,35,32,32,32,32,32,32,35,32,32,32,10,32,32,32,32,35,32,32,32,32,32,32,32,32,35,32,32,32,32,32,32,32,32,32,32,35,32,32,32,32,10,32,32,32,32,32,32,32,32,32,32,32,120,32,35,32,35,32,32,32,32,32,32,32,32,32,32,35,35,35,10,32,32,32,32,32,32,32,32,32,32,32,32,32,35,32,35,35,32,120,120,35,32,120,32,32,32,32,32,32,10,35,32,35,32,32,32,32,32,32,32,32,32,32,32,32,35,32,32,32,32,32,32,32,32,120,32,32,32,35,10,32,32,35,35,32,32,32,35,35,32,32,32,32,32,32,32,32,32,32,35,35,35,32,120,32,32,120,32,32,10,32,35,35,35,32,32,32,35,32,32,32,32,32,32,32,32,35,120,32,32,35,32,32,32,32,32,35,32,32,10,35,35,32,32,32,120,35,32,32,35,32,32,32,35,32,120,32,32,32,35,32,32,32,35,35,32,32,32,32,10,32,32,35,32,35,32,35,35,32,32,35,35,32,32,32,35,32,120,32,32,32,120,32,32,32,32,32,32,32,10,32,32,32,32,32,32,32,32,32,35,32,32,32,35,32,32,32,32,32,32,32,32,32,32,32,32,32,35,32,10,35,32,32,32,32,32,32,32,35,32,32,32,69,32,32,32,32,32,35,32,35,32,32,32,32,32,120,35,32,10,32,35,32,32,35,32,32,32,32,35,32,32,32,32,35,35,35,32,35,32,35,32,35,35,32,32,32,32,32,10,32,32,32,32,32,32,32,32,32,32,32,32,32,32,120,35,32,32,32,32,32,32,32,32,32,32,35,32,32,10,32,35,32,35,32,120,32,32,32,32,32,32,32,32,35,32,32,32,32,32,32,32,32,32,32,32,32,32,120,10,35,32,32,35,32,35,32,32,32,32,35,32,32,32,32,32,32,35,32,32,35,32,83,32,32,32,32,32,32,10,35,32,32,32,32,32,32,32,32,120,35,32,35,32,32,32,32,32,32,32,32,35,32,32,32,32,32,32,32,10,120,32,32,32,32,35,32,32,32,32,32,32,32,32,32,35,35,32,32,35,32,35,32,32,32,32,32,35,32,10,32,32,35,32,32,35,35,35,32,32,32,32,32,32,32,32,32,35,120,32,32,35,35,32,32,32,32,32,35,10,32,32,32,35,120,35,35,32,32,32,32,32,32,32,32,32,32,32,35,35,32,35,32,35,32,32,32,35,32};
+
+    map =
+    "x     x # \n"
+    "     #  # \n"
+    " ##x E    \n"
+    " #    x   \n"
+    " #  #     \n"
+    " #  x    x\n"
+    "x       # \n"
+    "     #  # \n"
+    " #x  x   x\n"
+    " #     x  \n"
+    " #      # \n"
+    " # x  x # \n"
+    " #x#xx#x# \n"
+    " #x#xx### \n"
+    "x xxxxxx x\n"
+    "# xxSxxx #";
+
+    ice_maze_solver(map);
+    //    Test();
 
     cout << "finished";
 }
 
-float distance (const point &a, const point &b) {
-  //return hypot (a.first - b.first, a.second - b.second); // euclidian distance
-  return abs (a.first - b.first) + abs (a.second - b.second); //  manathan distance
-  return max (abs(a.first - b.first), abs (a.second - b.second)); // diagonal distance
-}
 
 void Test() {
 

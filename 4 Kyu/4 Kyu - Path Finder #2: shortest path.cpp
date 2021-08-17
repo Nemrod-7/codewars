@@ -9,6 +9,7 @@ const char PATH{'x'}, FREE{'.'},EXIT{'E'},WALL{'W'};
 using point = pair<int,int>;
 
 bool is_free (string &maze, int pos) { return pos >= 0 && pos < maze.size() && maze[pos] == FREE; }
+
 int path_finder(string maze) {
 
     if (maze.size() < 2) return 0;

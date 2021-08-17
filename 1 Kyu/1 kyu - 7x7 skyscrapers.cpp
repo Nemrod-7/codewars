@@ -6,7 +6,6 @@
 #include <chrono>
 //////////////////////////////////func def//////////////////////////////////////
 void Test () ;
-
 ////////////////////////////////////////////////////////////////////////////////
 int DN;
 
@@ -16,24 +15,25 @@ struct point {int x, y; };
 struct cluster { int comb[8]; };
 
 class Skyscraper {
+    private :
+        int N;
 
     public :
-        int N;
         vector<int> clues;
         vector<vector<int>> grid;
         vector<list<cluster>> row, col;
 
-        Skyscraper (const vector<int> src) {
+        Skyscraper (const vector<int> &src = {}) {
             clues = src;
             N = src.size() / 4, DN = N;
             row.resize(N), col.resize(N);
             grid.resize(N, vector<int>(N));
 
-            //vector<int> num;
             cluster num;
             generate (&num.comb[0], &num.comb[N], [i = 1] () mutable { return i++;});
 
             vector<pair<cluster, pair<int,int>>> combinations;
+
             do {
                 combinations.push_back({num, check_num(num)});
             } while (next_permutation (&num.comb[0], &num.comb[N]));
@@ -47,6 +47,7 @@ class Skyscraper {
                 col[i] = make_combs (combinations, vertical);
             }
         }
+
         pair<int,int> check_num (cluster &now) {
 
             int end = N - 1, first = 0, sec = 0, index = N;
@@ -87,36 +88,37 @@ class Skyscraper {
             }
             return stack;
         }
-
+        int size () { return N; }
 };
 
-class Debug {
+class Display {
     public :
-        static void display (Skyscraper &curr) {
+        static void graph (Skyscraper &curr) {
             int i, j, up;
 
             cout << " ";
-            for (i = 0; i != curr.N; ++i)
+            for (i = 0; i != curr.size(); ++i)
                 cout << " " << curr.clues[i] << " ";
             cout << endl;
 
-            for (i = 0; i != curr.N; ++i) {
-                up = ((curr.N * 4) - 1) - i;
+            for (i = 0; i != curr.size(); ++i) {
+                up = ((curr.size() * 4) - 1) - i;
 
                 cout << curr.clues[up];
-                for (j = 0; j != curr.N; ++j) {
+                for (j = 0; j != curr.size(); ++j) {
                     if (curr.grid[i][j])
                         cout <<  "[" << curr.grid[i][j] << "]";
                     else
                         cout << ("[ ]");
                 }
-                cout << curr.clues[curr.N + i];
+                cout << curr.clues[curr.size() + i];
                 cout << endl;
             }
             cout << " ";
 
-            for (i = 0; i != curr.N; ++i)
-                cout << " " << curr.clues[((curr.N * 4) - 1) - i - curr.N] << " ";
+            for (i = 0; i != curr.size(); ++i)
+                cout << " " << curr.clues[((curr.size() * 4) - 1) - i - curr.size()] << " ";
+            cout << endl;
             cout << endl;
 
         }
@@ -149,7 +151,7 @@ int main(void) {
 
 bool growing (Skyscraper &city) {
 
-    const int size = city.N, total = size * size;
+    const int size = city.size(), total = size * size;
     static int fuse, expansion;
     int count = 0;
 
@@ -204,9 +206,9 @@ int update (list<cluster> &input, list<cluster> &check, point p) {
 vector<vector<int>> SolvePuzzle (const vector<int> &clues) {
 
     Skyscraper city (clues);
-    const int size = city.N;
-    point p;
+    const int size = city.size();
 
+    point p;
     while (growing (city))
         for (p.y = 0; p.y != size; ++p.y)
             for (p.x = 0; p.x != size ; ++p.x) {
@@ -214,7 +216,7 @@ vector<vector<int>> SolvePuzzle (const vector<int> &clues) {
                 city.grid[p.x][p.y] = update (city.col[p.y], city.row[p.x], p);
             }
 
-    Debug::display (city);
+    Display::graph (city);
 
     return city.grid;
 }
@@ -334,8 +336,8 @@ void Test() {
       SolvePuzzle({7,0,0,0,2,2,3,0,0,3,0,0,0,0,3,0,3,0,0,5,0,0,0,0,0,5,0,4});
       SolvePuzzle({0,0,0,0,5,0,4,7,0,0,0,2,2,3,0,0,3,0,0,0,0,3,0,3,0,0,5,0});
       SolvePuzzle({0,0,0,0,5,0,4,7,0,0,0,2,2,3,0,0,3,0,0,0,0,3,0,3,0,0,5,0});
-      // no solutions
 
+      // no solutions
       SolvePuzzle ({2,3,3,3,2,1, 1,4,2,2,3,5, 4,3,2,2,1,5, 2,3,2,3,1,2});
       SolvePuzzle ({2,3,3,1,2,6, 3,4,2,2,2,1, 1,3,5,2,2,3, 4,2,2,3,1,2});
       SolvePuzzle({3,3,2,1,2,2,3,4,3,2,4,1,4,2,2,4,1,4,5,3,2,3,1,4,2,5,2,3});
