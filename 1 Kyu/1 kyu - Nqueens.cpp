@@ -76,102 +76,78 @@ string format (vector<int> &board) {
     return os;
   }
 
-int search_col (vector<int> &track) { // search column with max conflict
-    int cnt, sum = 0;
-    pair<int,int> a, b;
-    vector<pair<int,int>> hist (track.size()); // first = count, second = column
+int costpt (vector<int> &board, pair<int,int> a) {
+    int cnt = 0;
+    pair<int,int> b;
 
-    for (int i = 0; i < track.size(); i++) {
-        a = {i, track[i]};
-        cnt = 0;
-
-        for (int j = 0; j < track.size(); j++) {
-            b = {j, track[j]};
-
-            if (a != b && attack (a, b))
-                cnt++;
-        }
-
-        cout << setw (2) << cnt << " ";
-        sum += cnt;
-        hist[i] = make_pair (cnt, i);
+    for (int i = 0; i < board.size(); i++) {
+        b = {i, board[i]};
+        //Display::point (b);
+        if (a != b && attack (a, b)) cnt++;
     }
 
-    //if (sum == 0) return -1;
-    /////// random walk => search highest malue //////
-    sort (begin(hist), end(hist));
-    int maxv = hist.back().first, next = (hist.end() - 1)->first;
-
-    if (maxv != next) return hist.back().second; // if single high value retturn index
-
-    int high = hist.size() - 1, low = high; // make bounds for rnd device generation
-
-    while (true) {
-        if (hist[low].first != maxv) break;
-        low--;
-    }
-
-    uniform_int_distribution<> dist (low + 1, high);
-
-    return hist[dist(rd)].second;
-
+    return cnt;
 }
-int scan_col (int x, vector<int> &track) { // check next y with min conflict
-    int cnt;
-    pair<int,int> a, b;
 
-    vector<pair<int,int>> hist (track.size()); // first = count, second = column
+int rnd_walk (vector<int> hist, int val) {
+    vector<int> V;
 
-    for (int y = 0; y < track.size(); y++) {
-        cnt = 0;
-        a = {x, y};
+    for (int i = 0; i < hist.size(); i++)
+        if (hist[i] == val)
+            V.push_back (i);
 
-        for (int i = 0; i < track.size(); i++) {
-            b = {i, track[i]};
+    uniform_int_distribution<> dist (0, V.size() - 1);
 
-            if (attack (a, b)) cnt++;
-        }
-        hist[y] = make_pair (cnt, y);
-        //cout << setw (2) << cnt << "\n";
-    }
-    /////// random walk => search min malue //////
-    sort (begin(hist), end(hist));
-    int minv = hist.front().first, nxt = next (begin(hist))->first;
-    if (minv != nxt) return hist.front().second; // if single lowest value return index
-
-    int low = 0, high = low; // make bounds for rnd device generation
-
-    while (true) {
-        if (hist[high].first != minv) break;
-        high++;
-    }
-
-    uniform_int_distribution<> dist (low, high - 1);
-    //cout << hist[rand_walk (low, high - 1)].second;
-    return hist[dist(gen)].second;
+    return V[dist(gen)];
 }
-vector<int> min_conflict (vector<int> track, int pos) {
+vector<int> min_conflict3 (vector<int> track, int pos) {
     int x, y;
-    int max_iter  = track.size() * 10;
-    vector<int> xx, yy, prev;
+    int max_iter  = track.size() * 50;
+    vector<int> hist (track.size());
 
     while (max_iter-->0) {
 
-        if (csp (track) == true) {
-            //cout << track.size() * 10 - max_iter << " ";
-            return track;
+        int cnt, sum = 0, val = 0;
+        pair<int,int> a, b;
+
+        for (int i = 0; i < track.size(); i++) {
+            a = {i, track[i]};
+
+            cnt = costpt (track, a);
+            hist[i] = cnt;
+
+            val = max (val, cnt);
+            sum += cnt;
         }
 
-        x = search_col (track);
+        if (sum == 0) return track;
 
-        cout << "->" << x <<  "\n";
-        y = scan_col (x, track);
+        x = rnd_walk (hist, val);
+        //cout << "->" << x <<  "\n";
+        val = track.size();
+        for (int y = 0; y < track.size(); y++) {
+            cnt = 0;
+            a = {x, y};
+
+            for (int i = 0; i < track.size(); i++) {
+                b = {i, track[i]};
+
+                if (a != b && attack (a, b)) cnt++;
+            }
+
+            if (costpt (track, a) != cnt) {
+            //    cout << x << " " << y << endl;
+                //cout << costpt (track, a) << " " << cnt << endl;
+            }
+
+            val = min (val, cnt);
+            hist[y] = cnt;
+        }
+        //cout << costpt (track, a) << " " << cnt << endl;;
+        y = rnd_walk (hist, val);
+
         track[x] = y;
-        /*
-        if (track == prev) local--;
-        if (local == 0) return {};
-        prev = track;
-        */
+
     }
     //Display::board (track);
 
@@ -190,7 +166,7 @@ string Nqueens (int N, pair<int,int> pos) {
     //while (index-->0) {
     //    track = generate (N, pos);
 
-        res = min_conflict (track, pos.first);
+        res = min_conflict3 (track, pos.first);
 
         if (res.size() != 0) return format(res);
     //}
@@ -198,22 +174,18 @@ string Nqueens (int N, pair<int,int> pos) {
     return "";
 }
 
-
-
 int main () {
 
-    int index = 50, cnt = 0;
+    int index = 100, cnt = 0;
     string res;
+    //Nqueens (8, {0,1});
 
-    //cout << Nqueens (8, {0,1});
-    cout << Nqueens (8, {0,1});
-    /*
     while (index-->0) {
-        if (Nqueens (100, {0,1}) == "")
+        if (Nqueens (8, {0,1}) == "")
             cnt++;
     }
-
     cout << cnt;
+    /*
     /*
     */
     //scan_col (0, track);
