@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <vector>
 #include <random>
+#include <chrono>
 #include <algorithm>
 
 using namespace std;
@@ -29,29 +30,6 @@ class Display {
 random_device rd;  //Will be used to obtain a seed for the random number engine
 mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
 
-bool attack (pair<int,int> a, pair<int,int> b) {
-
-  return (a.first == b.first) ||
-         (a.second == b.second) ||
-         (a.first + a.second == b.first + b.second) ||
-         (a.first - a.second == b.first - b.second);
-}
-bool csp (vector<int> &track) {
-
-    for (int i = 0; i < track.size(); i++) {
-        pair<int,int> a = {i, track[i]};
-
-        for (int j = 0; j < track.size(); j++) {
-            pair<int,int> b = {j, track[j]};
-
-            if (a != b && attack (a, b))
-                return false;
-        }
-    }
-
-    return true;
-}
-
 vector<int> generate (int N, pair<int,int> pos) {
     vector<int> track (N);
     uniform_int_distribution<> dist (0, N - 1);
@@ -63,7 +41,7 @@ vector<int> generate (int N, pair<int,int> pos) {
             track[x] = dist(gen);
     }
     return track;
-}
+  }
 string format (vector<int> &board) {
     string os;
 
@@ -76,19 +54,13 @@ string format (vector<int> &board) {
     return os;
   }
 
-int costpt (vector<int> &board, pair<int,int> a) {
-    int cnt = 0;
-    pair<int,int> b;
+bool attack (pair<int,int> &a, pair<int,int> &b) {
 
-    for (int i = 0; i < board.size(); i++) {
-        b = {i, board[i]};
-        //Display::point (b);
-        if (a != b && attack (a, b)) cnt++;
-    }
-
-    return cnt;
+  return (a.first == b.first) ||
+         (a.second == b.second) ||
+         (a.first + a.second == b.first + b.second) ||
+         (a.first - a.second == b.first - b.second);
 }
-
 int rnd_walk (vector<int> hist, int val) {
     vector<int> V;
 
@@ -101,20 +73,27 @@ int rnd_walk (vector<int> hist, int val) {
     return V[dist(gen)];
 }
 vector<int> min_conflict3 (vector<int> track, int pos) {
-    int x, y;
+    const int N = track.size();
     int max_iter  = track.size() * 50;
-    vector<int> hist (track.size());
+
+    int x, y;
+    vector<int> hist (N);
+    pair<int,int> a, b;
 
     while (max_iter-->0) {
 
         int cnt, sum = 0, val = 0;
-        pair<int,int> a, b;
 
-        for (int i = 0; i < track.size(); i++) {
-            a = {i, track[i]};
+        for (x = 0; x < N; x++) {
+            a = {x, track[x]};
+            cnt = 0;
 
-            cnt = costpt (track, a);
-            hist[i] = cnt;
+            for (int i = 0; i < N; i++) {
+                b = {i, track[i]};
+                if ( a != b && attack (a, b)) cnt++;
+            }
+
+            hist[x] = cnt;
 
             val = max (val, cnt);
             sum += cnt;
@@ -123,26 +102,24 @@ vector<int> min_conflict3 (vector<int> track, int pos) {
         if (sum == 0) return track;
 
         x = rnd_walk (hist, val);
-        //cout << "->" << x <<  "\n";
-        val = track.size();
-        for (int y = 0; y < track.size(); y++) {
-            cnt = 0;
-            a = {x, y};
 
-            for (int i = 0; i < track.size(); i++) {
+        //cout << "->" << x <<  "\n";
+        val = N;
+
+        for (y = 0; y < N; y++) {
+            a = {x, y};
+            cnt = 0;
+
+            for (int i = 0; i < N; i++) {
                 b = {i, track[i]};
 
-                if (a != b && attack (a, b)) cnt++;
-            }
-
-            if (costpt (track, a) != cnt) {
-            //    cout << x << " " << y << endl;
-                //cout << costpt (track, a) << " " << cnt << endl;
+                if (attack (a, b)) cnt++;
             }
 
             val = min (val, cnt);
             hist[y] = cnt;
         }
+
         //cout << costpt (track, a) << " " << cnt << endl;;
         y = rnd_walk (hist, val);
 
@@ -153,6 +130,64 @@ vector<int> min_conflict3 (vector<int> track, int pos) {
 
     return {};
 }
+
+int cost (vector<int> &board) {
+    int cnt = 0, N = board.size();
+
+    for (int i = 0; i < N; i++) {
+        for (int j = i + 1; j < N; j++) { // avoid counting twice
+
+            if ((board[i] == board[j]) || (i + board[i] == j + board[j]) || (i - board[i] == j - board[j]))
+                cnt++;
+
+        }
+    }
+    return cnt;
+}
+double schedule (double t) {
+    const double k = 20, lam = 0.005, limit = 10000;
+    return t < limit ? (k * exp(-lam * t)) : 0;
+}
+vector<int> simulated_annealing (vector<int> board) {
+    //double temp = 100, thresh = 0.0001, decay = 0.99;
+    int x, y, curr, next ;
+    int index = 1;
+    double T, p;
+
+    uniform_int_distribution<> dist (0, board.size() - 1);
+    uniform_real_distribution<> rand (0, 1);
+
+    while (index < 10000) {
+        curr = cost (board);
+
+        x = dist (gen), y = dist (gen);   // let neighbor be a random neighbor of solution
+        swap (board[x], y);
+
+        next = cost (board);
+
+        if (next == 0) return board;
+
+        if (next <= curr) {
+
+        } else {  // if the cost of neighbor isn't less than the cost of solution
+            //T = 100 / index;             // 0.12 ms
+            T = schedule (index);      // 0.24 ms
+            //p = exp (curr - next / T);   // compute p = e^(-delta / t)
+            if (rand(gen) > p) {
+                board[x] = y;
+            } else {
+            //    cout << p << " ";
+
+            }
+        }
+        /*
+        */
+        index++;
+    }
+
+    return {};
+}
+
 string Nqueens (int N, pair<int,int> pos) {
 
     if (N == 1) return "Q";
@@ -176,18 +211,41 @@ string Nqueens (int N, pair<int,int> pos) {
 
 int main () {
 
+    chrono::steady_clock::time_point alpha = chrono::steady_clock::now ();
+    chrono::duration<double> elapsed;
+
     int index = 100, cnt = 0;
     string res;
-    //Nqueens (8, {0,1});
+    res = Nqueens (10, {0,1});
 
-    while (index-->0) {
-        if (Nqueens (8, {0,1}) == "")
+    //while (index-->0) {
+        if (res == "")
             cnt++;
-    }
+    //}
+
     cout << cnt;
+
+    chrono::steady_clock::time_point end = chrono::steady_clock::now ();
+    elapsed = end - alpha;
+    cout << "\nDuration " << fixed << elapsed.count() << " ms" << endl;
+}
+
+void Test () {
+
     /*
-    /*
+
+    std::string actual = nQueens::solveNQueens(4, {1, 1});
+    std::string expected = "";
+    Assert::That(actual, Equals(expected));
+
+    actual = nQueens::solveNQueens(4, {2,0});
+    expected = "..Q.\nQ...\n...Q\n.Q..\n";
+    Assert::That(actual, Equals(expected));
+
+    actual = nQueens::solveNQueens(6, {2,1});
+    expected = "....Q.\n..Q...\nQ.....\n.....Q\n...Q..\n.Q....\n";
+    Assert::That(actual, Equals(expected));
+
     */
-    //scan_col (0, track);
-    //Display::board (track);
+
 }
