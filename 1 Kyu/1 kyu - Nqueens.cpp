@@ -85,6 +85,9 @@ vector<int> min_conflict3 (vector<int> track, int pos) {
         int cnt, sum = 0, val = 0;
 
         for (x = 0; x < N; x++) {
+
+            if (x == pos) continue;
+
             a = {x, track[x]};
             cnt = 0;
 
@@ -196,6 +199,7 @@ string Nqueens (int N, pair<int,int> pos) {
     int index = 1;
     vector<int> track = generate (N, pos), res;
 
+    //Display::board (track);
     /*
     */
     //while (index-->0) {
@@ -216,8 +220,7 @@ int main () {
 
     int index = 100, cnt = 0;
     string res;
-    res = Nqueens (10, {0,1});
-
+    res = Nqueens (4, {2,0});
     //while (index-->0) {
         if (res == "")
             cnt++;
