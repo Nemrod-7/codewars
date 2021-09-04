@@ -34,14 +34,11 @@ vector<int> generate (int N, pair<int,int> pos) {
     vector<int> track (N);
     uniform_int_distribution<> dist (0, N - 1);
 
-    for (int x = 0; x < N; x++) {
-        if (x == pos.first)
-            track[x] = pos.second;
-        else
-            track[x] = dist(gen);
-    }
+    while (N-->0)
+        track[N] = (N == pos.first) ? pos.second : dist(gen);
+
     return track;
-  }
+}
 string format (vector<int> &board) {
     string os;
 
@@ -52,16 +49,15 @@ string format (vector<int> &board) {
         os += '\n';
     }
     return os;
-  }
+}
 
-bool attack (pair<int,int> &a, pair<int,int> &b) {
+bool attack (const pair<int,int> &a, const pair<int,int> &b) {
 
-  return (a.first == b.first) ||
-         (a.second == b.second) ||
+  return (a.second == b.second) ||
          (a.first + a.second == b.first + b.second) ||
          (a.first - a.second == b.first - b.second);
 }
-int rnd_walk (vector<int> hist, int val) {
+int rnd_walk (const vector<int> &hist, int val) {
     vector<int> V;
 
     for (int i = 0; i < hist.size(); i++)
@@ -87,12 +83,13 @@ vector<int> min_conflict3 (vector<int> track, int pos) {
         for (x = 0; x < N; x++) {
 
             if (x == pos) continue;
-
-            a = {x, track[x]};
+            a = make_pair (x, track[x]);
+            //a = {x, track[x]};
             cnt = 0;
 
             for (int i = 0; i < N; i++) {
-                b = {i, track[i]};
+                //b = {i, track[i]};
+                b = make_pair (i, track[i]);
                 if ( a != b && attack (a, b)) cnt++;
             }
 
@@ -105,10 +102,8 @@ vector<int> min_conflict3 (vector<int> track, int pos) {
         if (sum == 0) return track;
 
         x = rnd_walk (hist, val);
-
         //cout << "->" << x <<  "\n";
         val = N;
-
         for (y = 0; y < N; y++) {
             a = {x, y};
             cnt = 0;
@@ -122,7 +117,6 @@ vector<int> min_conflict3 (vector<int> track, int pos) {
             val = min (val, cnt);
             hist[y] = cnt;
         }
-
         //cout << costpt (track, a) << " " << cnt << endl;;
         y = rnd_walk (hist, val);
 
@@ -148,10 +142,10 @@ int cost (vector<int> &board) {
     return cnt;
 }
 double schedule (double t) {
-    const double k = 20, lam = 0.005, limit = 10000;
+    const double k = 20, lam = 0.005, limit = 30000;
     return t < limit ? (k * exp(-lam * t)) : 0;
 }
-vector<int> simulated_annealing (vector<int> board) {
+vector<int> simulated_annealing (vector<int> board, int pos) {
     //double temp = 100, thresh = 0.0001, decay = 0.99;
     int x, y, curr, next ;
     int index = 1;
@@ -160,27 +154,23 @@ vector<int> simulated_annealing (vector<int> board) {
     uniform_int_distribution<> dist (0, board.size() - 1);
     uniform_real_distribution<> rand (0, 1);
 
-    while (index < 10000) {
+    while (index < 30000) {
         curr = cost (board);
 
         x = dist (gen), y = dist (gen);   // let neighbor be a random neighbor of solution
+        if (x == pos) continue;
         swap (board[x], y);
 
         next = cost (board);
 
         if (next == 0) return board;
 
-        if (next <= curr) {
-
-        } else {  // if the cost of neighbor isn't less than the cost of solution
+        if (next > curr) {  // if the cost of neighbor isn't less than the cost of solution
             //T = 100 / index;             // 0.12 ms
             T = schedule (index);      // 0.24 ms
             //p = exp (curr - next / T);   // compute p = e^(-delta / t)
             if (rand(gen) > p) {
                 board[x] = y;
-            } else {
-            //    cout << p << " ";
-
             }
         }
         /*
@@ -191,24 +181,22 @@ vector<int> simulated_annealing (vector<int> board) {
     return {};
 }
 
-string Nqueens (int N, pair<int,int> pos) {
+string solveNQueens (int N, pair<int,int> pos) {
 
     if (N == 1) return "Q";
     if (N <= 3) return "";
 
     int index = 1;
-    vector<int> track = generate (N, pos), res;
+    vector<int> track, res;
 
     //Display::board (track);
-    /*
-    */
-    //while (index-->0) {
-    //    track = generate (N, pos);
+    while (index-->0) {
+        track = generate (N, pos);
 
         res = min_conflict3 (track, pos.first);
 
         if (res.size() != 0) return format(res);
-    //}
+    }
 
     return "";
 }
@@ -220,7 +208,8 @@ int main () {
 
     int index = 100, cnt = 0;
     string res;
-    res = Nqueens (4, {2,0});
+    res = solveNQueens (400, {2,1});
+
     //while (index-->0) {
         if (res == "")
             cnt++;
