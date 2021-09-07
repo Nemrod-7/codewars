@@ -30,15 +30,6 @@ class Display {
 random_device rd;  //Will be used to obtain a seed for the random number engine
 mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
 
-vector<int> generate (int N, pair<int,int> pos) {
-    vector<int> track (N);
-    uniform_int_distribution<> dist (0, N - 1);
-
-    while (N-->0)
-        track[N] = (N == pos.first) ? pos.second : dist(gen);
-
-    return track;
-}
 string format (vector<int> &board) {
     string os;
 
@@ -51,11 +42,31 @@ string format (vector<int> &board) {
     return os;
 }
 
-bool attack (const pair<int,int> &a, const pair<int,int> &b) {
+vector<int> generate2 (int N, pair<int,int> pos) {
+    vector<int> track (N);
 
-  return (a.second == b.second) ||
-         (a.first + a.second == b.first + b.second) ||
-         (a.first - a.second == b.first - b.second);
+    track[pos.first] = pos.second;
+
+    while (N-->0)
+        if (N != pos.first)
+            track[N] = (N != pos.second) ? N : pos.first;
+
+    return track;
+}
+
+vector<int> generate3 (int N, pair<int,int> pos) {
+    vector<int> board (N);
+
+    while (N-->0) board[N] = N;
+
+    shuffle (begin(board), end(board), gen);
+
+    board[pos.first] = pos.second;
+
+    return board;
+}
+bool attack2 (const int ax, const int ay, const int bx, const int by) {
+    return (ay == by) || (ax + ay == bx + by) || (ax - ay == bx - by);
 }
 int rnd_walk (const vector<int> &hist, int val) {
     vector<int> V;
@@ -68,13 +79,16 @@ int rnd_walk (const vector<int> &hist, int val) {
 
     return V[dist(gen)];
 }
-vector<int> min_conflict3 (vector<int> track, int pos) {
-    const int N = track.size();
-    int max_iter  = track.size() * 50;
+vector<int> min_conflict3 (const int N, pair<int,int> pos) {
+    // old N = 400 => 2.20 ms use of pair<int,int>
+    // new N = 500 => 0.30 ms without pair<int,int>
 
     int x, y;
     vector<int> hist (N);
-    pair<int,int> a, b;
+    int max_iter  = N * 50;
+    vector<int> board = generate3 (N, pos);
+
+    int *ptr = board.data();
 
     while (max_iter-->0) {
 
@@ -82,15 +96,13 @@ vector<int> min_conflict3 (vector<int> track, int pos) {
 
         for (x = 0; x < N; x++) {
 
-            if (x == pos) continue;
-            a = make_pair (x, track[x]);
-            //a = {x, track[x]};
-            cnt = 0;
+            if (x == pos.first) continue;
 
+            cnt = 0;
             for (int i = 0; i < N; i++) {
-                //b = {i, track[i]};
-                b = make_pair (i, track[i]);
-                if ( a != b && attack (a, b)) cnt++;
+                if (x != i && ptr[x] != ptr[i])
+                    if (attack2 (x, ptr[x], i, ptr[i]))
+                        cnt++;
             }
 
             hist[x] = cnt;
@@ -99,69 +111,70 @@ vector<int> min_conflict3 (vector<int> track, int pos) {
             sum += cnt;
         }
 
-        if (sum == 0) return track;
+        if (sum == 0) return board;
 
         x = rnd_walk (hist, val);
         //cout << "->" << x <<  "\n";
         val = N;
         for (y = 0; y < N; y++) {
-            a = {x, y};
             cnt = 0;
 
             for (int i = 0; i < N; i++) {
-                b = {i, track[i]};
-
-                if (attack (a, b)) cnt++;
+                if (attack2 (x, y, i, ptr[i])) cnt++;
             }
 
             val = min (val, cnt);
             hist[y] = cnt;
         }
-        //cout << costpt (track, a) << " " << cnt << endl;;
+        //cout << costpt (board, a) << " " << cnt << endl;;
         y = rnd_walk (hist, val);
 
-        track[x] = y;
-
+        board[x] = y;
     }
     //Display::board (track);
 
     return {};
 }
 
-int cost (vector<int> &board) {
-    int cnt = 0, N = board.size();
+double schedule (double t) {
+  const double k = 20, lam = 0.005, limit = 30000;
+  return t < limit ? (k * exp (-lam * t)) : 0;
+}
+
+int cost2 (vector<int> &board) {
+    int cnt = 0, N = board.size(), *ptr = board.data();
 
     for (int i = 0; i < N; i++) {
         for (int j = i + 1; j < N; j++) { // avoid counting twice
-
-            if ((board[i] == board[j]) || (i + board[i] == j + board[j]) || (i - board[i] == j - board[j]))
+            if ((i + ptr[i] == j + ptr[j]) || (i - ptr[i] == j - ptr[j]))
                 cnt++;
-
         }
     }
     return cnt;
 }
-double schedule (double t) {
-    const double k = 20, lam = 0.005, limit = 30000;
-    return t < limit ? (k * exp(-lam * t)) : 0;
-}
-vector<int> simulated_annealing (vector<int> board, int pos) {
+vector<int> simulated_annealing2 (int N, pair<int,int> pos) { // N = 400 => 12 ms
     //double temp = 100, thresh = 0.0001, decay = 0.99;
-    int x, y, curr, next ;
+    vector<int> board = generate3 (N, pos);
+    int a, b, curr, next ;
     int index = 1;
     double T, p;
 
+    random_device rd;  //Will be used to obtain a seed for the random number engine
+    mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
     uniform_int_distribution<> dist (0, board.size() - 1);
     uniform_real_distribution<> rand (0, 1);
 
     while (index < 30000) {
-        curr = cost (board);
 
-        x = dist (gen), y = dist (gen);   // let neighbor be a random neighbor of solution
-        if (x == pos) continue;
-        swap (board[x], y);
+        curr = cost2 (board);
 
-        next = cost (board);
+        do {
+            a = dist (gen), b = dist (gen);
+        } while (a == pos.first || b == pos.first) ;
+
+        swap (board[a], board[b]);
+
+        next = cost2 (board);
 
         if (next == 0) return board;
 
@@ -170,7 +183,7 @@ vector<int> simulated_annealing (vector<int> board, int pos) {
             T = schedule (index);      // 0.24 ms
             //p = exp (curr - next / T);   // compute p = e^(-delta / t)
             if (rand(gen) > p) {
-                board[x] = y;
+                swap (board[a], board[b]);
             }
         }
         /*
@@ -186,15 +199,13 @@ string solveNQueens (int N, pair<int,int> pos) {
     if (N == 1) return "Q";
     if (N <= 3) return "";
 
-    int index = 1;
+    int index = 2;
     vector<int> track, res;
 
     //Display::board (track);
     while (index-->0) {
-        track = generate (N, pos);
 
-        res = min_conflict3 (track, pos.first);
-
+        res = min_conflict3 (N, pos);
         if (res.size() != 0) return format(res);
     }
 
@@ -208,7 +219,8 @@ int main () {
 
     int index = 100, cnt = 0;
     string res;
-    res = solveNQueens (400, {2,1});
+
+    res = solveNQueens (800, {2,1});
 
     //while (index-->0) {
         if (res == "")
@@ -240,4 +252,155 @@ void Test () {
 
     */
 
+}
+//////////////////////////////// Arkive ///////////////////////////////////////
+
+vector<int> generate1 (int N, pair<int,int> pos) {
+    vector<int> track (N);
+    uniform_int_distribution<> dist (0, N - 1);
+
+    while (N-->0)
+        track[N] = (N == pos.first) ? pos.second : dist(gen);
+
+    return track;
+  }
+bool attack (const pair<int,int> &a, const pair<int,int> &b) {
+
+  return (a.second == b.second) ||
+         (a.first + a.second == b.first + b.second) ||
+         (a.first - a.second == b.first - b.second);
+       }
+pair<int,int> search (vector<int> track) {
+    int N = track.size();
+    int x, y;
+    pair<int,int> a, b, c, d;
+
+    vector<int> hist (N);
+    vector<vector<int>> mat (N, vector<int> (N));
+
+    random_device rd;  //Will be used to obtain a seed for the random number engine
+    mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+
+    for (x = 0; x < N; x++) {
+        a = make_pair (x, track[x]);
+
+        int cntx = 0;
+        for (y = 0; y < N; y++) {
+            c = {x, y}, b = make_pair (y, track[y]);
+
+            if (a != b && attack (a, b)) cntx++;
+
+            int cnty = 0;
+            for (int j = 0; j < N; j++) {
+                d = make_pair (j, track[j]);
+                if (c != d && attack (c, d)) cnty++;
+            }
+            mat[x][y] = cnty;
+
+        }
+        hist[x] = cntx;
+
+    }
+
+    int maxv = -N;
+
+    for (x = 0; x < N; x++) {
+        for (y = 0; y < N; y++) {
+            //cout << setw(3) << hist[x] - mat[x][y];
+            maxv = max (maxv, hist[x] - mat[x][y]);
+        }
+        //cout << endl;
+    }
+
+    vector<pair<int,int>> points;
+    for (x = 0; x < N; x++) {
+        for (y = 0; y < N; y++) {
+            if (hist[x] - mat[x][y] == maxv)
+                points.push_back({x,y});
+        }
+    }
+    uniform_int_distribution<> dist (0, points.size() - 1);
+
+    return points[dist(gen)];
+}
+bool complete (vector<int> &board) {
+  const int N = board.size();
+  pair<int,int> a, b;
+
+  for (int x = 0; x < N; x++) {
+      a = make_pair (x, board[x]);
+
+      for (int y = 0; y < N; y++) {
+          b = make_pair (y, board[y]);
+
+          if (a != b && attack (a, b)) return false;
+      }
+
+  }
+    return true;
+}
+vector<int> min_conflicts4 (vector<int> track, int pos) {
+
+    int index = track.size() * 50;
+
+    while (index-->0) {
+        auto [x, y] = search (track);
+        track[x] = y;
+
+        if (complete (track) == true) return track;
+    }
+
+    return {};
+}
+
+int cost (vector<int> &board) {
+  int cnt = 0, N = board.size();
+
+  for (int i = 0; i < N; i++) {
+    for (int j = i + 1; j < N; j++) { // avoid counting twice
+
+      if ((board[i] == board[j]) || (i + board[i] == j + board[j]) || (i - board[i] == j - board[j]))
+      cnt++;
+
+    }
+  }
+  return cnt;
+}
+vector<int> simulated_annealing (int N, pair<int,int> pos) {
+    //double temp = 100, thresh = 0.0001, decay = 0.99;
+    vector<int> board = generate1 (N, pos);
+    int x, y, curr, next ;
+    int index = 1;
+    double T, p;
+
+    random_device rd;  //Will be used to obtain a seed for the random number engine
+    mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+    uniform_int_distribution<> dist (0, board.size() - 1);
+    uniform_real_distribution<> rand (0, 1);
+
+    while (index < 30000) {
+        curr = cost (board);
+
+        x = dist (gen), y = dist (gen);   // let neighbor be a random neighbor of solution
+        if (x == pos.first) continue;
+        swap (board[x], y);
+
+        next = cost (board);
+
+        if (next == 0) return board;
+
+        if (next > curr) {  // if the cost of neighbor isn't less than the cost of solution
+            //T = 100 / index;             // 0.12 ms
+            T = schedule (index);      // 0.24 ms
+            //p = exp (curr - next / T);   // compute p = e^(-delta / t)
+            if (rand(gen) > p) {
+                board[x] = y;
+            }
+        }
+        /*
+        */
+        index++;
+    }
+
+    return {};
 }
