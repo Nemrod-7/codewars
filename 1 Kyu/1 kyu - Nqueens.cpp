@@ -53,7 +53,6 @@ vector<int> generate2 (int N, pair<int,int> pos) {
 
     return track;
 }
-
 vector<int> generate3 (int N, pair<int,int> pos) {
     vector<int> board (N);
 
@@ -65,6 +64,7 @@ vector<int> generate3 (int N, pair<int,int> pos) {
 
     return board;
 }
+
 bool attack2 (const int ax, const int ay, const int bx, const int by) {
     return (ay == by) || (ax + ay == bx + by) || (ax - ay == bx - by);
 }
@@ -136,11 +136,87 @@ vector<int> min_conflict3 (const int N, pair<int,int> pos) {
     return {};
 }
 
+class Qdata {
+        vector<int> rows, d1, d2;
+        int N;
+    public :
+        Qdata (int size) {
+            N = size;
+            rows.resize(N), d1.resize (2 * N - 1), d2.resize (2 * N - 1);
+        }
+
+        void reset (vector<int> board) {
+
+            fill (begin(rows), end(rows), 0);
+            fill (begin(d1), end(d1), 0);
+            fill (begin(d2), end(d2), 0);
+
+            for (int i = 0; i < N; i++) {
+                rows[board[i]]++;
+                d1[N + i - board[i] - 1]++;
+                d2[i + board[i]]++;
+            }
+        }
+
+        int attack (int x, int y) { return rows[y] + d1[N + x - y - 1] + d2[x + y]; }
+};
+
+vector<int> min_conflict4 (const int N, pair<int,int> pos) {
+    // min2 N = 400 => 2.20 ms use of pair<int,int>
+    // min3 N = 500 => 0.30 ms without pair<int,int>
+    // min4 N = 500 => 0.02 ms without pair<int,int>
+    int x, y;
+    vector<int> board(N), hist (N);
+    int max_iter  = N * 50;
+
+    Qdata actual (N);
+    board[pos.first] = pos.second;
+
+    actual.reset (board);
+    //Display::board (board);
+    //int *ptr = board.data();
+    while (max_iter-->0) {
+
+        int cnt, sum = 0, val = 0;
+
+        for (x = 0; x < N; x++) {
+
+            if (x == pos.first) {
+                cnt = 0;
+            } else {
+                cnt = actual.attack (x, board[x]) - 3;
+            }
+
+            hist[x] = cnt;
+            //cout << cnt << " ";
+            val = max (val, cnt);
+            sum += cnt;
+        }
+        if (sum == 0) return board;
+
+        x = rnd_walk (hist, val);
+        //cout << "->" << x <<  "\n";
+        val = N;
+        for (y = 0; y < N; y++) {
+            cnt = actual.attack (x, y);
+
+            val = min (val, cnt);
+            hist[y] = cnt;
+            //cout << cnt << endl;
+        }
+        y = rnd_walk (hist, val);
+
+        board[x] = y;
+        actual.reset(board);
+    }
+
+    return {};
+}
+
 double schedule (double t) {
   const double k = 20, lam = 0.005, limit = 30000;
   return t < limit ? (k * exp (-lam * t)) : 0;
 }
-
 int cost2 (vector<int> &board) {
     int cnt = 0, N = board.size(), *ptr = board.data();
 
@@ -201,11 +277,9 @@ string solveNQueens (int N, pair<int,int> pos) {
 
     int index = 2;
     vector<int> track, res;
-
     //Display::board (track);
     while (index-->0) {
-
-        res = min_conflict3 (N, pos);
+        res = min_conflict4 (N, pos);
         if (res.size() != 0) return format(res);
     }
 
@@ -339,7 +413,7 @@ bool complete (vector<int> &board) {
   }
     return true;
 }
-vector<int> min_conflicts4 (vector<int> track, int pos) {
+vector<int> min_conflicts1 (vector<int> track, int pos) {
 
     int index = track.size() * 50;
 
