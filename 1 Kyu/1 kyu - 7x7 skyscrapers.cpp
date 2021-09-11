@@ -1,8 +1,10 @@
 #include <iostream>
 #include <vector>
 #include <list>
+#include <random>
 #include <algorithm>
 
+#include <iomanip>
 #include <chrono>
 //////////////////////////////////func def//////////////////////////////////////
 void Test () ;
@@ -137,18 +139,6 @@ class Display {
         }
 };
 
-int main(void) {
-
-    auto start = std::chrono::high_resolution_clock::now();
-
-    Test();
-
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> elapsed = end - start;
-    std::cout << "Process took " << elapsed.count()  << " ms" << std::endl;
-    return 0;
-}
-
 bool growing (Skyscraper &city) {
 
     const int size = city.size(), total = size * size;
@@ -176,23 +166,24 @@ bool growing (Skyscraper &city) {
     return true;
 }
 
-int update (list<cluster> &input, list<cluster> &check, point p) {
+int reduce (list<cluster> &input, list<cluster> &check, pair<int, int> &p) {
 
-    vector<int> buffer(8);
     bool flag = true;
+    vector<int> buffer(8);
     int *cell = buffer.data(), output = 0, curr;
-
-    for (list<cluster>::const_iterator it = check.begin(); it != check.end(); ++it)
-        cell[it->comb[p.y]] = true;
-
     list<cluster>::iterator index = input.begin();
 
-    while (index != input.end()) {
-        curr = index->comb[p.x];
+    auto [x, y] = p;
 
-        if (cell[curr] == false)
+    for (auto &it : check)
+        cell[it.comb[y]] = true;
+
+    while (index != input.end()) {
+        curr = index->comb[x];
+
+        if (cell[curr] == false) {
             index = input.erase(index);
-        else {
+        } else {
             if (output > 0 && output != curr)
                 flag = false;
 
@@ -203,22 +194,96 @@ int update (list<cluster> &input, list<cluster> &check, point p) {
 
     return  (flag == true) ? output : 0;
 }
+
+void update (Skyscraper &city) {
+    const int size = city.size();
+    pair<int, int> p;
+    auto &[x, y] = p;
+
+    while (growing (city))
+        for (y = 0; y != size; y++)
+            for (x = 0; x != size ; x++) {
+              city.grid[y][x] = reduce (city.row[y], city.col[x], p);
+              city.grid[x][y] = reduce (city.col[y], city.row[x], p);
+            }
+}
 vector<vector<int>> SolvePuzzle (const vector<int> &clues) {
 
     Skyscraper city (clues);
     const int size = city.size();
+    pair<int, int> p;
+    auto &[x, y] = p;
 
-    point p;
-    while (growing (city))
-        for (p.y = 0; p.y != size; ++p.y)
-            for (p.x = 0; p.x != size ; ++p.x) {
-                city.grid[p.y][p.x] = update (city.row[p.y], city.col[p.x], p);
-                city.grid[p.x][p.y] = update (city.col[p.y], city.row[p.x], p);
-            }
-
-    Display::graph (city);
 
     return city.grid;
+}
+
+int search_rnd (vector<list<cluster>> &now, int size) {
+
+    size_t val = 999;
+    vector<int> hist;
+
+    random_device rd;
+    mt19937 gen(rd());
+
+    for (auto &it : now) {
+        if (it.size() > 1)
+            val = min (val, it.size());
+    }
+
+    for (int i = 0; i < size; i++) {
+        if (now[i].size() == val)
+            hist.push_back(i);
+    }
+    uniform_int_distribution<> dis (0, hist.size() - 1);
+
+    return hist[dis(gen)];
+}
+pair<int, int> min_pos (Skyscraper &city) {
+    pair<int, int> p;
+    auto &[x, y] = p;
+    int minx = 999, miny = 999;
+
+    for (int i = 0; i < city.size(); i++) {
+
+        int valx = city.row[i].size();
+        int valy = city.col[i].size();
+
+        if (valx > 1 && valx < minx) {
+            minx = valx;
+            x = i;
+        }
+        if (valy > 1 && valy < miny) {
+            miny = valy;
+            y = i;
+        }
+    }
+    return {x, y};
+}
+int main(void) {
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+    vector<int> clues {3,3,2,1,2,2,3,4,3,2,4,1,4,2,2,4,1,4,5,3,2,3,1,4,2,5,2,3};
+
+    Skyscraper city (clues);
+    const int size = city.size();
+    pair<int, int> p;
+    auto &[x, y] = p;
+    /*
+    */
+
+    p = min_pos (city);
+
+    city.grid[y][x] = 9;
+
+    Display::graph (city);
+    //Test();
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+    std::cout << "Process took " << elapsed.count()  << " ms" << std::endl;
+    return 0;
 }
 
 void Test() {
