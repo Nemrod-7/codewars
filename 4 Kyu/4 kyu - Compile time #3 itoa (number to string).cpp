@@ -3,32 +3,30 @@
 using namespace std;
 using integer = unsigned long long;
 
-template<char... c> struct make_string {
-    static constexpr char value[sizeof...(c) + 1] = {c..., '\0'};
+template<integer x> struct dig :
+    std::integral_constant<char, x < 10 ? x + '0' : x + 'a' - 10> {};
+
+template <integer X, integer Base = 10, char... C> struct mk_str :
+    mk_str<X / Base, Base, dig<X % Base>::value, C...> {};
+
+template <integer Base, char... C> struct mk_str<0, Base, C...> {
+    static constexpr char value[sizeof ...(C) + 1] = {(C)..., 0};
 };
 
-template<integer X, integer Base = 10> struct itoax {
-    static const integer value = X % Base + '0';
-};
+template <integer Base, char... C> constexpr char mk_str<0, Base, C...>::value[];
 
-template<integer X, integer Base = 10> struct mk_str {
-    static const char value = X % Base + '0';
+template <integer X, integer Base = 10>  struct itoax : mk_str<X, Base> {};
 
-    mk_str () {
-        cout << value;
-        mk_str<X / 10>();
-    }
-    /*
-    */
+template <integer Base> struct itoax<0, Base> {
+    static constexpr char value[2] {'0'};
 };
-template<> struct mk_str<0> {};
 
 int main () {
 
     //cout << static_cast<char> (itoax<1234>::value);
     //cout << itoax<1234>::value;
     //mk_str<1234>();
-    cout << make_string<'h', 'e'>::value[0];
+
 }
 
 /*
