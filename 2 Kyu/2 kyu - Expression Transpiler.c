@@ -32,57 +32,6 @@ char *getvar (char *src, char *var) {
     return src;
 }
 
-char *lambda (char *src) {
-
-    const int size = strlen (src);
-
-    if (size == 0) {
-        return strdup ("(){}");
-    }
-
-    int i = 0, v = 0, nvr = 0;
-    char *lmb = strstr (src, "->"), *it = src;
-    char var[64];
-    struct token vtable[10];
-
-    while (*it != '\0') {
-        if (*it == ',') nvr++;
-
-        if (IS_VAR (*it)) {
-            int pos = it - src;
-            it = getvar (it, var);
-
-            vtable[v++] = (struct token) {pos, strdup (var)};
-        } else {
-            it++;
-        }
-    }
-    nvr++;
-
-    for (int i = 0, j = nvr; i < nvr; i++, j++) {
-        //printf ("%s %s\n", vtable[i].str, vtable[j].str);
-    }
-    char *os = malloc (32 * sizeof (char)), *ptr = os;
-
-    i = 0;
-    *ptr++ = '(';
-    if (lmb != NULL) {
-        int lim = lmb - src;
-        for (; i < v && vtable[i].type < lim; i++) {
-            ptr += sprintf (ptr,"%s,", vtable[i].str);
-        }
-        ptr--;
-    }
-
-    ptr += sprintf (ptr,"){");
-
-    for (; i < v; i++) {
-        ptr += sprintf (ptr,"%s;", vtable[i].str);
-    }
-    *ptr = '}';
-
-    return os;
-}
 
 int detect (char *it) {
 
@@ -99,6 +48,66 @@ int detect (char *it) {
     return NONE;
 }
 
+char *lambda2 (char *expr) {
+  const int size = strlen (expr);
+  if (size == 0) return strdup ("(){}");
+
+  char *lmb = strstr (expr, "->"), *it = expr;
+  const int lim = lmb == NULL ? size : lmb - expr;
+  int nvr = 0, nval = 0, r = 0;
+
+  char buff[32];
+  char *lhs[5], *rhs[5];
+
+  lhs[0] = NULL;
+
+  while (*it) {                               // geting values
+      if (IS_VAR (*it)) {
+          int pos = it - expr;
+          it = getvar (it, buff);
+
+          if (pos < lim) lhs[nval] = strdup (buff);
+          if (pos > lim) rhs[r++] = strdup (buff);
+      }
+      if (*it == ',') nval++;
+      it++;
+  }
+
+  if (lmb) {                                  // catching errors
+      if (lhs[0] == NULL) return strdup ("error");
+      if (r > nval + 1) return strdup ("error");
+
+      if (r == nval + 1) {
+          for (int i = 0; i <= nval; i++) {
+              if (strcmp (lhs[i], rhs[i]) != 0) return strdup ("error");
+          }
+      }
+  }
+
+  char *os = malloc (64 * sizeof (char)), *ptr = os;
+  *ptr++ = '(';
+
+  if (lmb) {                                  // making param side
+      for (int i = 0; i <= nval; i++) {
+          ptr += sprintf (ptr ,"%s", lhs[i]);
+          if (i < nval) *ptr++ = ',';
+      }
+  }
+
+  ptr += sprintf (ptr, "){");
+
+  for (int i = 0; i <= nval; i++) {         // making lambda side
+      if (lmb) {
+
+          if (rhs[i])
+          ptr += sprintf (ptr ,"%s;", rhs[i]);
+      } else
+          ptr += sprintf (ptr ,"%s;", lhs[i]);
+  }
+
+  *ptr = '}';
+  return os;
+}
 char *transpile (const char* source) {
 
     //if (is_valid (source) == false) return strdup ("");
@@ -143,10 +152,10 @@ char *transpile (const char* source) {
         else if (*it == '{') {
             char *sub = strtok (it, "}") + 1;
             it += (strlen (sub) + 1);
-            lambda (sub);
-            pam[npam++] = sub;
+
+            pam[npam++] = lambda2 (sub);
             //printf ("lam : [{%s}] ", sub);
-            transpile (sub);
+            // transpile (sub);
         } else {
 
             it++;
@@ -157,6 +166,10 @@ char *transpile (const char* source) {
   //  printf ("%i %i ", npam, nvar + 1);
     if (npam != nvar + 1) return NULL;
 
+    for (int i = 0; i < npam ; i++) {
+        printf ("%s", pam[i]);
+        if (i < npam - 1) printf (",");
+    }
     return os;
 }
 ///////////////////////////Assert////////////////////////////////
@@ -266,7 +279,7 @@ char *parenth (char *expr) {
     printf ("%i %i", iv,jv);
 
     if (iv != jv) return "";
-    return true;
+    //return true;
 }
 bool is_valid (const char *it) {
     const char set[] = " {}()_,;->\n";
@@ -288,72 +301,20 @@ bool is_valid (const char *it) {
     return true;
 }
 
-char *lambda2 (char *expr) {
-  const int size = strlen (expr);
-  if (size == 0) return strdup ("(){}");
-
-  char *lmb = strstr (expr, "->"), *it = expr;
-  const int lim = lmb == NULL ? size : lmb - expr;
-  int nvr = 0, l = 0, r = 0;
-
-  char buff[32];
-  char *lhs[5], *rhs[5];
-
-  while (*it) {
-      if (IS_VAR (*it)) {
-          int pos = it - expr;
-          it = getvar (it, buff);
-
-          if (pos < lim) lhs[l] = strdup (buff);
-          if (pos > lim) rhs[r++] = strdup (buff);
-      }
-      if (*it == ',') l++;
-      it++;
-  }
-  //l++;
-  if (lmb && r)
-      for (int i = 0; i < l; i++) {
-          printf ("%s %s\n", lhs[i], rhs[i]);
-      }
-  char *os = malloc (64 * sizeof (char)), *ptr = os;
-  *ptr++ = '(';
-
-  if (lmb) {
-      for (int i = 0; i <= l; i++) {
-          ptr += sprintf (ptr ,"%s", lhs[i]);
-          if (i < l) *ptr++ = ',';
-      }
-  }
-
-  ptr += sprintf (ptr, "){");
-
-  for (int i = 0; i <= l; i++) {
-      if (lmb) {
-
-          if (rhs[i])
-          ptr += sprintf (ptr ,"%s;", rhs[i]);
-      } else
-          ptr += sprintf (ptr ,"%s;", lhs[i]);
-  }
-
-  *ptr = '}';
-
-  return os;
-}
 int main () {
 
     //fromTo (" f ({ a })","f( (){a;} )");
     //fromTo ("f( {a->} )", "f( (a){} )");
     //fromTo ("fun { a, b -> a b }" , "fun((a,b){a;b;})");
 
-  //char *res = transpile ("invoke({})");
+  char *res = transpile ("invoke({},{})");
 
-  char *expr = strdup ("{-> a}");
+  /*
+  char *expr = strdup ("{a, b -> a b}");
   char *sub = strtok (expr, "}") + 1;
 
   printf ("%s", lambda2 (sub));
 
-  /*
   char *res;
   sprintf (res, "{%s}", sub);
 
@@ -444,6 +405,58 @@ queue *init () {
   return new;
 }
 /////////////////////////////////////////////////////////////////////////
+/*
+char *lambda (char *src) {
+
+    const int size = strlen (src);
+
+    if (size == 0) {
+        return strdup ("(){}");
+    }
+
+    int i = 0, v = 0, nvr = 0;
+    char *lmb = strstr (src, "->"), *it = src;
+    char var[64];
+    struct token vtable[10];
+
+    while (*it != '\0') {
+        if (*it == ',') nvr++;
+
+        if (IS_VAR (*it)) {
+            int pos = it - src;
+            it = getvar (it, var);
+
+            vtable[v++] = (struct token) {pos, strdup (var)};
+        } else {
+            it++;
+        }
+    }
+    nvr++;
+
+    for (int i = 0, j = nvr; i < nvr; i++, j++) {
+        //printf ("%s %s\n", vtable[i].str, vtable[j].str);
+    }
+    char *os = malloc (32 * sizeof (char)), *ptr = os;
+
+    i = 0;
+    *ptr++ = '(';
+    if (lmb != NULL) {
+        int lim = lmb - src;
+        for (; i < v && vtable[i].type < lim; i++) {
+            ptr += sprintf (ptr,"%s,", vtable[i].str);
+        }
+        ptr--;
+    }
+
+    ptr += sprintf (ptr,"){");
+
+    for (; i < v; i++) {
+        ptr += sprintf (ptr,"%s;", vtable[i].str);
+    }
+    *ptr = '}';
+
+    return os;
+  }
 char *transpile2 (const char* source) {
 
     const int size = strlen (source);
@@ -495,62 +508,4 @@ char *transpile2 (const char* source) {
 
     return os;
 }
-char *transpile3 (const char* source) {
-
-    //if (is_valid (source) == false) return strdup ("");
-    const int size = strlen (source);
-    char *expr = strdup (source), *it = expr;
-    char *os = malloc (size * sizeof(char)), *ptr = os;
-    char buff[64];
-    bool running = true;
-
-    while (running) {
-
-        if (*it == '_' || isalnum (*it)) {
-            it = getvar (it, buff);
-            int type = detect (it);
-
-            ptr += sprintf (ptr, "%s", buff);
-            if (type == LAMB) {
-                *ptr++ = '(';
-            }
-            if (type == VAR) {
-                *ptr++ = ',';
-            }
-
-        }
-
-        else if (*it == '(') {
-            *ptr++ = *it++;
-        }
-
-        else if (*it == ')') {
-
-            if (*(ptr - 1) == ',' && *(it + 1) == '\0')
-                ptr--;
-
-            it++;
-        }
-        else if (*it == '{') {
-            char *ret;
-            if (*(it + 1) == '}') {
-                it++;
-                ret = strdup ("(){}");
-            } else {
-                char *sub = strtok (it + 1, "}");
-                ret = lambda (sub);
-                it += (strlen (sub) + 1);
-            }
-            ptr += sprintf (ptr, "%s", ret);
-        } else {
-            it++;
-        }
-
-        if ((it - expr) > size) running = false;
-    }
-
-    *ptr = ')';
-
-    //printf ("%s", os);
-    return os;
-}
+*/
