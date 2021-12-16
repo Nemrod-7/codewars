@@ -1,58 +1,94 @@
 #include <iostream>
-
-using namespace std;
+#include <functional>
 
 template<class T> class MagicCompare {
-  private :
-      T value;
-      bool flag;
-  public:
-      MagicCompare (const T& x = 0) : value(x), flag(true) {}
 
-      bool operator< (const T& rhs) {
-          if (value >= rhs) return false;
-          return true;
-      }
-      bool operator> (const T& rhs) {
-          if (value <= rhs) return false;
-          return true;
-      }
-      bool operator== (const T& rhs) {
-          if (value != rhs) return false;
-          return true;
-      }
-      bool operator!= (const T& rhs) { return (rhs == value) == false;}
-      bool operator<= (const T& rhs) { return (value > rhs) == false; }
-      bool operator>= (const T& rhs) { return (value < rhs) == false; }
+    private :
+        T value, prev;
+        bool state;
+    public :
+        MagicCompare (const T& x = 0, bool flag = true) : value(x), prev(x), state(flag) {};
 
-      friend bool operator< (const T& lhs, MagicCompare& rhs) { return rhs > lhs; }
-      friend bool operator<= (const T& lhs, MagicCompare& rhs) { return rhs >= lhs; }
-      friend bool operator>= (const T& lhs, MagicCompare& rhs) { return rhs <= lhs; }
-      friend bool operator> (const T& lhs, MagicCompare& rhs) { return rhs < lhs; }
-      friend bool operator== (const T& lhs, MagicCompare& rhs) { return rhs == lhs; }
-      friend bool operator!= (const T& lhs, MagicCompare& rhs) { return rhs != lhs; }
+        operator bool()  { return state; }
+        operator T()  { return value; }
 
-      friend ostream &operator<< (ostream &os, const MagicCompare& obj) {
-          os << obj.value;
-          return os;
-      }
+        MagicCompare<T> compare (std::function<bool(T lhs, T rhs)> comparator, const MagicCompare<T> &rhs) {
+            MagicCompare<T> curr = *this;
+
+            if (!(comparator (this->value, rhs.prev))) {
+                curr.state = false;
+            }
+
+            curr.value = rhs.value;
+            return curr;
+        }
+
+        MagicCompare<T> operator ++() { return this->operator += (1); }
+        MagicCompare<T> operator ++(int) {
+            MagicCompare<T> prev(this->value);
+            ++value;
+            return prev;
+        }
+
+        template <class R> MagicCompare<T> operator += (R x) {
+            value += x;
+            return *this;
+        }
+        template <class R> MagicCompare<T> operator *(R x) {
+            MagicCompare<T> curr = x;
+            curr.state = state;
+            return value * curr.value;
+        }
+
+        template<class R> MagicCompare<T> operator <(R rhs) {
+            return compare (std::less<T>(), MagicCompare<T>(rhs));
+        }
+        template<class R> MagicCompare<T> operator >(R rhs) {
+            return compare(std::greater<T>(), MagicCompare<T>(rhs));
+        }
+        template<class R> MagicCompare<T> operator <=(R rhs) {
+            return compare(std::less_equal<T>{}, MagicCompare<T>(rhs));
+        }
+        template<class R> MagicCompare<T> operator >=(R rhs) {
+            return compare(std::greater_equal<T>{}, MagicCompare<T>(rhs));
+        }
+        template<class R> MagicCompare<T> operator ==(R rhs) {
+            return compare(std::equal_to<T>{}, MagicCompare<T>(rhs));
+        }
+        template<class R> MagicCompare<T> operator !=(R rhs) {
+            return compare(std::not_equal_to<T>{}, MagicCompare<T>(rhs));
+        }
 };
-void check (bool x) {cout << (x ? "true " : "false") ;}
+
+template<class T> MagicCompare<T> operator<(T lhs, const MagicCompare<T> &rhs) {
+    return MagicCompare<T>(lhs) < rhs;
+}
+template<class T> MagicCompare<T> operator>(T lhs, const MagicCompare<T> &rhs) {
+    return MagicCompare<T>(lhs) > rhs;
+}
+template<class T> MagicCompare<T> operator<=(T lhs, const MagicCompare<T> &rhs) {
+    return MagicCompare<T>(lhs) <= rhs;
+}
+template<class T> MagicCompare<T> operator>=(T lhs, const MagicCompare<T> &rhs) {
+    return MagicCompare<T>(lhs) >= rhs;
+}
+template<class T> MagicCompare<T> operator==(T lhs, const MagicCompare<T> &rhs) {
+    return MagicCompare<T>(lhs) == rhs;
+}
+template<class T> MagicCompare<T> operator!=(T lhs, const MagicCompare<T> &rhs) {
+    return MagicCompare<T>(lhs) != rhs;
+}
+template<class T> MagicCompare<T> operator*(T lhs, const MagicCompare<T> &rhs) {
+    return MagicCompare<T> (lhs) * rhs;
+}
+
+
 int main () {
 
     using Integer = MagicCompare<int>;
+    using Float = MagicCompare<double>;
 
-    Integer a = 3;
-    //cout << a;
-
-    for (int i = 0; i < 5; i++) {
-        check (i == a);
-
-        cout << "  " << i << "<=" << a << endl;
+    for (Float x = 0; x < 1; x += 0.01) {
+        //std::cout << x << " ";
     }
-    //cout << a;
-    //bool res_5gtalt7neqa = (5 > a < 7 != a);
-
-
-
 }
