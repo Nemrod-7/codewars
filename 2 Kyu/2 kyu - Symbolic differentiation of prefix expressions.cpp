@@ -1,24 +1,18 @@
 #include <iostream>
+#include <sstream>
 #include <vector>
 #include <map>
-#include <stack>
-#include <algorithm>
 #include <functional>
+#include <utility>
 
 using namespace std;
-using funct = function<double(double,double)>;
-
-enum types {NUL, VAR, NUM, SUB, OPE, FUN};
-
-map<string,funct> oper2 {{"+", plus<double>()},{"-", minus<double>()},
-              {"*", multiplies<double>()}, {"/", divides<double>()},{"^",{}}};
-
-map<string,int> func {{"exp",1},{"ln",1},{"sin",1},{"cos",1},{"tan",1}};
-map<string,int> oper {{"+", 1},{"-",1},{"*",2},{"/",2},{"^",3}};
-// + - * / ^ cos sin tan exp ln
 
 /* rules of derivation
 
+add : a + b => a' + b'
+min : a - b => a' - b'
+mul : a * b => a.b' + a'.b
+div : a / b => (a'* b − b'* a) / (b * b)
 con : const => 0
 lin : x     => 1
 pow : x^a   => a.x^(a - 1)
@@ -30,6 +24,11 @@ cos : cos x => -sin x
 tan : tan x => 1/(cos²(x))
 
 */
+
+using func = function<double(double,double)>;
+map<string, func> oper {{"+", plus<double>()},{"-", minus<double>()},
+              {"*", multiplies<double>()}, {"/", divides<double>()}, {"^", multiplies<double>()} };
+
 vector<string> tokenize (const string &src) {
   string expr;
 
@@ -61,235 +60,236 @@ vector<string> tokenize (const string &src) {
   }
   return tok;
 }
-int identify (string src) {
-    if (oper[src]) return OPE;
-    if (func[src]) return FUN;
-    if (src.front() == '(') return SUB;
-
-    bool alp = 0, dig = 0;
-    for (auto &it : src) {
-        if (isdigit (it)) dig = true;
-        if (isalpha (it)) alp = true;
+bool isnum (const string &exp) {
+    for (auto &it : exp) {
+        if (isalpha (it)) return false;
+        if (isspace (it)) return false;
+        if (oper[{it}]) return false;
     }
-    if (dig && alp)  return SUB;
-    if (dig == true) return NUM;
-    if (alp == true) return VAR;
-
-    return 0;
+    return true;
 }
-string interpret (const string &src) {
+int parenthesis (const string &src) {
+    int cnt = count (src.begin(), src.end(), '(');
+    cnt -= count (src.begin(), src.end(), ')');
+    return cnt;
+}
+double num (const string &var) {
+    string val;
+    for (auto &it : var) {
+        if (it == '-' || isdigit (it) || it == '.') {
+            val += it;
+        } else return 0;
+    }
+    return stod (val);
+}
+string mkex (const string &a, const string &op, const string &b) {
+  return '(' + op + ' '+ a + ' ' + b + ')';
+}
+
+string format (const vector<string> &number) {
+    stringstream os;
+
+    int i, cnt = 0;
+    int minx = 99, maxx = 0;
+
+    for (i = 0; i < 4; i++) {
+        if (number[i] != "") {
+            cnt++;
+            minx = min (minx, i);
+            maxx = max (maxx, i + 1);
+        }
+    }
+
+    if (cnt == 1) return number[1];
+
+    i = minx;
+    if (number[0] == "*" && number[1] == "1") i = 2;
+
+    if (number[i].front() != '(') {
+        //cout << cnt << endl;
+        //cout << "[" << number[i] << "]\n";
+        os << "(";
+    }
+    for (; i < maxx; i++) {
+        os << number[i];
+        if (i < maxx - 1) os << " ";
+    }
+
+    cnt = parenthesis (os.str());
+    while (cnt-->0) os << ')';
+
+    return os.str();
+}
+string derivate (const string &src) {
     vector expr = tokenize (src);
+    string op = expr.front();
+    stringstream val;
+    vector<string> number (4);
 
-    string os, op = expr.front(), arg1, arg = expr.back();
-    int type = identify (op);
-
-    os += '(';
-
-    switch (type) {
-        case OPE : {
-            arg1 = expr[1];
-
-            if (op == "+") {
-
-            }
-            if (op == "-") {
-
-            }
-            if (op == "*") {
-
-            }
-            if (op == "/") {
-              
-            }
-            cout << "[" << arg << "]";
-            cout << "[" << op << "]";
-            cout << "[" << arg1 << "]";
-            break;
-        }
-        case FUN : {
-
-            if (op == "cos") {       // cos : cos x => -sin x
-                os += "* -1 ";
-
-                os += "(sin " + arg + ")";
-
-            } else if (op == "sin") { // sin : sin x => cos x
-
-                os += "cos " + arg;
-            } else if (op == "ln") {  // ln  : ln(x) => 1 / x
-
-                os += "/ 1 " + arg;
-            } else if (op == "exp") { // exp : a^x   => a^x . ln (a)
-
-            } else if (op == "tan") { // tan : tan x => 1/(cos²(x))
-
-            }
-            break;
-        }
-        case NUM : return "0";
-        case VAR : return "1";
-
-        default : break;
+    if (expr.size() < 2) {
+        return (op == "x") ? "1" : "0";
     }
-    os += ')';
 
-    return os;
+    if (oper[op]) {
+        double a, b, c;
+        string arg1 = expr[1], arg2 = expr[2];
+        string dx1 = derivate (arg1), dx2 = derivate (arg2);
+
+        if (op == "+") {                  //  add : a + b => a' + b'
+            val << oper[op] (num (dx1), num (dx2));
+        } else if (op == "-") {                 //  add : a - b => a' - b'
+            val << oper[op] (num (dx1), num (dx2));
+        } else if (op == "*") {                //  mul : a * b => a'* b + a * b'
+            a = oper[op] (num (dx1), num (arg2));
+            b = oper[op] (num (arg1), num (dx2));
+            val << a + b;
+        } else if (op == "/") {               //  div : a / b => (a'* b − b'* a) / (b * b)
+            a = num (dx1) * num (arg2);
+            b = num (arg1) * num (dx2);
+            c = num (arg2) * num (arg2);
+
+            val << oper[op] ((a - b), c);
+        } else if (op == "^") {
+            vector<string> tmp (4);
+            // x² => 2 * x^(2-1) : * 2 (^ x (2 - 1))
+            if (num (arg2)) {
+
+                double nb = num (arg2) - 1;
+                val << arg2;
+
+                if (nb > 1) {
+                //    exp << (nb);
+                }
+
+            } else {
+                //tmp[3] = // (^ x (2 - 1)) => "^ " + arg1 + " - 1";
+
+            }
+            number[0] = "*";
+            number[2] = arg1;
+            //tmp[3] = arg2;
+        }
+        /*
+        cout << dx1 << " * " << arg2 << "  -  ";
+        cout << arg1 << " * " << dx2 << endl;
+        */
+        number[1] = val.str();
+    } else {
+        string arg1 = expr[1], arg2;
+
+        if (op == "sin") {
+            arg2 = "(cos " + arg1 + ')';
+            number = {"*", derivate (arg1), arg2};
+            //cout << "[" << op << "][" << arg1 << "]";
+        }
+        if (op == "cos") {
+            arg2 = "(sin " + arg1 + ")";
+            number = {"*", "-1", arg2};
+        }
+        if (op == "ln") {
+            number = {"/", "1", arg1};
+        }
+        if (op == "exp") {
+            arg2 = "(exp " + arg1 + ')';
+            number = {"*", derivate (arg1), arg2};
+        }
+    }
+
+    return format (number);
 }
+
 void Assert (string error, string expect, string input) {
 
-    string actual = interpret (input);
+    string actual = derivate (input);
 
     if (actual != expect) {
-        cout << "actual => " << "[" << actual << "] ";
+        cout << "\nactual => " << "[" << actual << "] ";
         cout << "expect => " << "[" << expect << "] ";
 
-        cout << error << endl;
+        //cout << error << endl;
     }
 }
-
-int main () {
-    // (* (+ x 3) 5)  // same as 5 * (x + 3)
-    string expr = "+ -2 x";
-    // expr = "* 2 (+ x 1)";
-    interpret (expr);
-
-
-    //Assert ("x^2 should return 2*x", "(* 2 x)", "(^ x 2)");
-
-    //expr = "* - A / B C - / A K L";
-    //expr = "+ x 1";
-}
-
 void Test () {
+
+
   /*
-        Assert ("constant should return 0", "0", "5");
-        Assert ("x should return 1", "1", "x");
-        Assert ("x+x should return 2", "2", "(+ x x)");
-        Assert ("x-x should return 0", "0", "(- x x)");
-        Assert ("2*x should return 2", "2", "(* x 2)");
-        Assert ("x/2 should return 0.5", "0.5", "(/ x 2)");
-        Assert ("x+(x+x) should return 3", "3", "(+ x (+ x x))");
-        Assert ("(x+x)-x should return 1", "1", "(- (+ x x) x)");
-
-        Assert ("2*(x+2) should return 2", "2", "(* 2 (+ x 2))"); // ?????
-
-        Assert ("x^2 should return 2*x", "(* 2 x)", "(^ x 2)");
-
-        Assert ("cos(x) should return -1 * sin(x)", "(* -1 (sin x))", "(cos x)");
-        Assert ("sin(x) should return cos(x)", "(cos x)", "(sin x)");
-        Assert ("sin(x+1) should return cos(x+1)", "(cos (+ x 1))", "(sin (+ x 1))"),
-        Assert ("cos(x+1) should return -1 * sin(x+1)", "(* -1 (sin (+ x 1)))", "(cos (+ x 1))"),
-
-        Assert ("exp(x) should return exp(x)", "(exp x)", "(exp x)");
-        Assert ("ln(x) should return 1/x", "(/ 1 x)", "(ln x)")};
-        Assert ("sin(2*x) should return 2*cos(2*x)", "(* 2 (cos (* 2 x)))", "(sin (* 2 x))"),
-        Assert ("exp(2*x) should return 2*exp(2*x)", "(* 2 (exp (* 2 x)))", "(exp (* 2 x))")};
 
         std::string result = diff("(tan x)");
         Assert::That(result, Equals("(+ 1 (^ (tan x) 2))") || Equals("(^ (cos x) -2)") || Equals("(/ 1 (^ (cos x) 2))"));
 
-        mktest ("2/(1+x) should return -2/(1+x)^2", "(/ -2 (^ (+ 1 x) 2))", "(/ 2 (+ 1 x))"),
 
     */
 }
-////////////////////////////////////////////////////////////////////////////////
-/*
-struct token {
-    int type;
-    string ex;
-};
+int main () {
 
-string getstack (stack<string> &s1) {
-    string os = s1.top();
-    s1.pop();
-    return os;
-}
+    ostringstream os;
+    double val = 4;
 
-string getsub2 (string::iterator &it) {
-    int pile = 1;
-    string sub;
+    string input = "(* (* (cos x) 3) (^ (sin x) 2))";
+    vector<string> expr = tokenize (input); // "(/ -2 (^ (+ 1 x) 2))"
+    // div : a / b => (a'* b − b'* a) / b^2
+    string op = expr[0], arg1 = expr[1], arg2 = expr[2];
 
-    while (*it--) {
-        if (*it == '(') pile--;
-        if (*it == ')') pile++;
-        if (pile == 0) return sub;
+    double a, b;
+    if (arg1 == "x") {
+        a = 0;
+    } else if (isnum (arg1)) {
+        a = stod (arg1);
+    } else {
 
-        sub += *it;
-    }
-    return sub;
-}
-string interpret2 (string expr) {
-    string::iterator it = expr.end();
-    bool running = true;
-    stack<string> s1;
-
-    while (running) {
-        string var;
-        bool flag = false;
-
-        if (*it == ')') {
-            var = getsub2 (it);
-            flag = true;
-        } else {
-            while (*it && *it != ' ') var += *it--;
-        }
-
-        if (var.size()){
-            reverse (var.begin(), var.end());
-
-            //cout << "[" << var << "]";
-            if (flag) {
-                var = interpret2(var);
-            }
-
-            if (oper[var]) {
-                string op1 = getstack (s1), op2 = getstack(s1);
-                string temp = "(" + op1 + var + op2 + ")";
-
-                var = temp;
-            }
-
-            s1.push (var);
-        }
-
-        if (it == expr.begin() - 1) running = false;
-        it--;
     }
 
-    return s1.top();
-  }
+    if (arg2 == "x") {
+        a = 0;
+    } else if (isnum (arg2)) {
+        a = stod (arg2);
+    } else {
+
+    }
+
+    //string dx1 = derivate (arg1), dx2 = derivate (arg2);
+
+    vector<string> numb(4);
 
 
-  // Convert prefix to Infix expression
-  string preToInfix(string expr) {
 
-  string::iterator it = expr.end();
-  stack<string> s1;
-  bool running = true;
-  // length of expression
-  int length = expr.size();
-  // reading from right to left
-  while (it != expr.begin() - 1) {
-  cout << *it << " ";
-  // check if symbol is operator
-  if (oper[*it]) {
+    //cout << mkex ("-2","/" , mkex (arg2, "^", "2"));
+    //cout << arg1 << " " << stod (arg1) << endl;
 
-  // pop two operands from stack
-  string op1 = getstack (s1), op2 = getstack (s1);
-  // concat the operands and operator
-  string temp = "(" + op1 + *it + op2 + ")";
+    //Assert ("2/(1+x) should return -2/(1+x)^2", "(/ -2 (^ (+ 1 x) 2))", "(/ 2 (+ 1 x))");
+    /*
+    Assert ("x/2 should return 0.5", "0.5", "(/ x 2)");
 
-  // Push string temp back to stack
-  s1.push(temp);
-} else { // if symbol is an operand
-// push the operand to the stack
-s1.push(string (1, *it));
+
+
+    Assert ("constant should return 0", "0", "5");
+    Assert ("x should return 1", "1", "x");
+    Assert ("x+x should return 2", "2", "(+ x x)");
+    Assert ("x-x should return 0", "0", "(- x x)");
+    Assert ("2*x should return 2", "2", "(* x 2)");
+    Assert ("x+(x+x) should return 3", "3", "(+ x (+ x x))");
+    Assert ("(x+x)-x should return 1", "1", "(- (+ x x) x)");
+
+    Assert ("2*(x+2) should return 2", "2", "(* 2 (+ x 2))"); // ?????
+    Assert ("x^2 should return 2*x", "(* 2 x)", "(^ x 2)");
+
+    Assert ("sin(x) should return cos(x)", "(cos x)", "(sin x)");
+    Assert ("sin(x+1) should return cos(x+1)", "(cos (+ x 1))", "(sin (+ x 1))");
+    Assert ("sin(2*x) should return 2*cos(2*x)", "(* 2 (cos (* 2 x)))", "(sin (* 2 x))"),
+
+
+    Assert ("cos(x) should return -1 * sin(x)", "(* -1 (sin x))", "(cos x)");
+    Assert ("cos(x+1) should return -1 * sin(x+1)", "(* -1 (sin (+ x 1)))", "(cos (+ x 1))");
+
+    Assert ("exp(x) should return exp(x)", "(exp x)", "(exp x)");
+    Assert ("exp(2*x) should return 2*exp(2*x)", "(* 2 (exp (* 2 x)))", "(exp (* 2 x))");
+    Assert ("ln(x) should return 1/x", "(/ 1 x)", "(ln x)");
+
+    */
+
+    cout << "end";
+
+    /*
+    */
+
 }
-it--;
-}
-
-// Stack now contains the Infix expression
-return s1.top();
-}
-
-*/
