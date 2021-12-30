@@ -39,7 +39,7 @@ map<string, func> oper {{"+", plus<double>()},{"-", minus<double>()},
 
 vector<string> tokenize (const string &src) {
   string expr;
-
+  cout << src << endl;
   if (src.front() == '(' && src.back() == ')') {
       expr = src.substr (1, src.size() - 2);
   } else {
@@ -83,10 +83,13 @@ string calc (string a, string op, string b) {
     if (a == "0" || b == "0") {
         if (op == "*") return "0";
         if (op == "+") return a == "0" ? b : a;
+        if (op == "-" && b == "0") return a;
     }
 
-    if (op == "*" && (a == "1" || b == "1")) {
-        return a == "1" ? b : a;
+    if (a == "1" || b == "1") {
+        if (op == "*") return a == "1" ? b : a;
+        if (op == "^") return a;
+        if (op == "/" && b == "1") return a;
     }
 
     if (isnum (a) && isnum (b)) {
@@ -96,21 +99,20 @@ string calc (string a, string op, string b) {
     }
     return os.str();
 }
+string diff (const string &src) {
 
-string derivate (const string &src) {
+    if (count (src.begin(), src.end(), ' ') == 0) {
+        if (src == "x") return "1";
+        return "0";
+    }
+
     vector expr = tokenize (src);
     string op = expr.front();
-    stringstream val;
-    vector<string> number (4);
-
-    if (expr.size() < 2) {
-        return (op == "x") ? "1" : "0";
-    }
 
     if (oper[op]) {
 
         string arg1 = expr[1], arg2 = expr[2];
-        string dx1 = derivate (arg1), dx2 = derivate (arg2);
+        string dx1 = diff (arg1), dx2 = diff (arg2);
 
         if (op == "+") {                   //  add : a + b => a' + b'
             return calc (dx1, op, dx2);
@@ -125,14 +127,13 @@ string derivate (const string &src) {
 
             return calc (nom, "/", den);
         } else if (op == "^") {            // x² => 2 * x^(2-1) : * 2 (^ x (2 - 1))
-            string exp = calc (arg2, "-", "1");
+            string ex = calc (arg2, "-", "1");
+            arg1 = calc ("x", "^", ex);
+
             return calc (arg2, "*", arg1);
         }
-        // cout << dx1 << " * " << arg2 << "  -  ";
-        // cout << arg1 << " * " << dx2 << endl;
-
     } else {
-        string arg1 = expr[1], arg2;
+        string arg1 = expr[1], arg2 = arg1 + ")";
 
         if (op == "ln") {
             return calc ("1", "/", arg1);
@@ -142,25 +143,34 @@ string derivate (const string &src) {
             return calc ("-1", "*", arg2);
         }
         if (op == "sin") {
+            string ex = diff (arg1);
             arg2 = "(cos " + arg1 + ')';
-            return calc ("1", "*", arg2);
+            return calc (ex, "*", arg2);
             //return arg2;
             //cout << "[" << op << "][" << arg1 << "]";
         }
-
         if (op == "exp") {
-            string ex = derivate (arg1);
+            string ex = diff (arg1);
             arg2 = "(exp " + arg1 + ')';
             return calc (ex, "*", arg2);
+        }
+        if (op == "tan") {
+            string ex = diff (arg1);
+            arg2 = "(cos " + arg1 + ')';
+            arg2 = calc (arg2, "^", "2");
+            return calc (ex, "/", arg2);
+            //return diff ("ln " + arg2);
         }
         /*
         */
     }
+
     return "";
 }
+
 void Assert (string error, string expect, string input) {
 
-    string actual = derivate (input);
+    string actual = diff (input);
 
     if (actual != expect) {
         cout << "\nactual => " << "[" << actual << "] ";
@@ -171,10 +181,9 @@ void Assert (string error, string expect, string input) {
 }
 void Test () {
 
-
   /*
 
-        std::string result = diff("(tan x)");
+  std::string result = diff("(tan x)");
         Assert::That(result, Equals("(+ 1 (^ (tan x) 2))") || Equals("(^ (cos x) -2)") || Equals("(/ 1 (^ (cos x) 2))"));
 
 
@@ -185,21 +194,17 @@ int main () {
 
     ostringstream os;
     double val = 4;
-
-    string input = "(cos x)";
-    vector<string> expr = tokenize (input);
-    string op = expr.front(), arg1 = expr[1];
+    // Assert ("x^2 should return 2*x", "(* 2 x)", "(^ x 2)");
+    // (^ x 3) => (* 3 (^ x 2))
+    std::string result = diff(diff("(^ x 3)"));
     /*
-    Assert ("sin(2*x) should return 2*cos(2*x)", "(* 2 (cos (* 2 x)))", "(sin (* 2 x))"),
+    string input = "(^ x 4)";
+    vector<string> expr = tokenize (input);
+    string op = expr.front(), arg1 = expr[1], arg2 = expr[2];
 
-    string dx1 = derivate (arg1), dx2 = derivate (arg2);
-
-    string a = calc (dx1, "*", arg2), b = calc (dx2, "*", arg1);
-
-    string nom = calc (a, "-", b);
-    string den = calc (arg2, "^", "2");
-    cout << calc (nom, "/", den);
-    */
+    // cout << calc ("1", "^", "x");
+    cout << diff("(^ x 3)");
+    Assert::That(result, Equals("(* 3 (* 2 x))") || Equals("(* 6 x)"));
 
     Assert ("constant should return 0", "0", "5");
     Assert ("x should return 1", "1", "x");
@@ -223,6 +228,10 @@ int main () {
     Assert ("exp(2*x) should return 2*exp(2*x)", "(* 2 (exp (* 2 x)))", "(exp (* 2 x))");
     Assert ("exp(x) should return exp(x)", "(exp x)", "(exp x)");
 
+    Assert ("tan (2x) must return 2 / (cos 2x)^2 ","(/ 2 (^ (cos (* 2 x)) 2))", "(tan (* 2 x))");
+
+
+    */
     cout << "\nend";
 
 }
