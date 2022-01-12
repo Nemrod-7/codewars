@@ -3,8 +3,8 @@
 #include <vector>
 #include <map>
 #include <cmath>
-#include <utility>
 #include <functional>
+//#include <utility>
 
 using namespace std;
 
@@ -37,35 +37,23 @@ template<class T = void> struct power {
 map<string, func> oper {{"+", plus<double>()},{"-", minus<double>()},
               {"*", multiplies<double>()}, {"/", divides<double>()}, {"^", power<double>()} };
 
-vector<string> tokenize (const string &src) {
-  string expr;
-  cout << src << endl;
-  if (src.front() == '(' && src.back() == ')') {
-      expr = src.substr (1, src.size() - 2);
-  } else {
-      expr = src;
-  }
-  string::iterator it = expr.begin ();
+vector<string> tokenize2 (string expr) {
+  string::iterator it = expr.begin () + 1;
   vector<string> tok;
+  expr.pop_back();
 
   while (it < expr.end()) {
       string buff;
 
       if (*it == '(') {
-          int pile = 0;
-
-          do {
-              if (*it == '(') pile++;
-              if (*it == ')') pile--;
-              buff += *it++;
-          } while (pile);
-
+          do { buff += *it; } while (*it++ != ')');
       } else {
           while (*it && *it != ' ') buff += *it++;
       }
       tok.push_back(buff);
       it++;
   }
+
   return tok;
 }
 bool isnum (const string &exp) {
@@ -106,7 +94,7 @@ string diff (const string &src) {
         return "0";
     }
 
-    vector expr = tokenize (src);
+    vector expr = tokenize2 (src);
     string op = expr.front();
 
     if (oper[op]) {
@@ -139,8 +127,9 @@ string diff (const string &src) {
             return calc ("1", "/", arg1);
         }
         if (op == "cos") {
+            string ex = "-" + diff (arg1);
             arg2 = "(sin " + arg1 + ")";
-            return calc ("-1", "*", arg2);
+            return calc (ex, "*", arg2);
         }
         if (op == "sin") {
             string ex = diff (arg1);
@@ -196,16 +185,15 @@ int main () {
     double val = 4;
     // Assert ("x^2 should return 2*x", "(* 2 x)", "(^ x 2)");
     // (^ x 3) => (* 3 (^ x 2))
-    std::string result = diff(diff("(^ x 3)"));
-    /*
-    string input = "(^ x 4)";
-    vector<string> expr = tokenize (input);
-    string op = expr.front(), arg1 = expr[1], arg2 = expr[2];
+
+    //std::string result = diff("tan (* 2 x)"); // => expected : "(* 2 (/ 1 (^ (tan (* 2 x)) 2)))"
+    //cout << result;
+    // Expected: equal to "(* 22 (* -1 (sin (* 22 x))))" or equal to "(* -22 (sin (* 22 x)))"
+    cout << diff ("(cos (* 22 x))"); //
 
     // cout << calc ("1", "^", "x");
-    cout << diff("(^ x 3)");
-    Assert::That(result, Equals("(* 3 (* 2 x))") || Equals("(* 6 x)"));
-
+  //  Assert::That(result, Equals("(* 3 (* 2 x))") || Equals("(* 6 x)"));
+    /*
     Assert ("constant should return 0", "0", "5");
     Assert ("x should return 1", "1", "x");
     Assert ("x+x should return 2", "2", "(+ x x)");
@@ -234,6 +222,38 @@ int main () {
     */
     cout << "\nend";
 
+}
+
+vector<string> tokenize (const string &src) {
+  string expr;
+
+  if (src.front() == '(' && src.back() == ')') {
+      expr = src.substr (1, src.size() - 2);
+  } else {
+      expr = src;
+  }
+  string::iterator it = expr.begin ();
+  vector<string> tok;
+
+  while (it < expr.end()) {
+      string buff;
+
+      if (*it == '(') {
+          int pile = 0;
+
+          do {
+              if (*it == '(') pile++;
+              if (*it == ')') pile--;
+              buff += *it++;
+          } while (pile);
+
+      } else {
+          while (*it && *it != ' ') buff += *it++;
+      }
+      tok.push_back(buff);
+      it++;
+  }
+  return tok;
 }
 
 int parenthesis (const string &src) {
