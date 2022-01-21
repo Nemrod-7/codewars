@@ -1,14 +1,23 @@
 #include <iostream>
-#include <vector>
+
 #include <cmath>
 #include <map>
 #include <stack>
 #include <algorithm>
+#include <functional>
 
 using namespace std;
+using func = function<double(double,double)>;
 
+template<class T = void> struct modul {
+    const T operator ()(const T &lhs, const T &rhs) {
+        return fmod (lhs, rhs);
+    }
+};
 map<string, double> value;
-map<char,int> oper {{'+', 1},{'-',1},{'*',2},{'/',2},{'%',2}};
+map<char,int> order {{'+', 1},{'-',1},{'*',2},{'/',2},{'%',2}};
+map<char,func> operate {{'+', plus<double>()},{'-', minus<double>()},
+              {'*', multiplies<double>()}, {'/', divides<double>()}, {'%', modul<double>()} };
 
 template<class T> T getstack (stack<T> &S) {
     if (S.empty()) return 0;
@@ -46,23 +55,10 @@ string getsub (string::iterator &it) {
     return sub;
 }
 
-double operation (double a, double b, char op) {
-    double val;
-
-    switch (op) {
-        case '+' : val = a + b; break;
-        case '-' : val = a - b; break;
-        case '*' : val = a * b; break;
-        case '/' : val = a / b; break;
-        case '%' : val = fmod (a,b); break;
-    }
-
-    return val;
-}
 double interpret (std::string expr) {
 
     expr.erase (remove (expr.begin(), expr.end(), ' '), expr.end());
-    if (!expr.size()) throw runtime_error("Empty expression");
+    if (!expr.size()) throw runtime_error ("Empty expression");
 
     string::iterator it = expr.begin();
     bool running = true;
@@ -73,9 +69,9 @@ double interpret (std::string expr) {
 
     while (running) {
 
-        int op = oper[*it];
+        int op = order[*it];
 
-        if (*it == '-' && oper[*(it - 1)]) {
+        if (*it == '-' && order[*(it - 1)]) {
             sign = -1, op = 0;
         }
         if (*it == '(') {
@@ -83,7 +79,6 @@ double interpret (std::string expr) {
             double num = interpret (sub) * sign;
             val.push (num);
             sign = 1;
-
         } else if (isalpha (*it)) {
             string id = getid (it);
 
@@ -93,7 +88,7 @@ double interpret (std::string expr) {
                 return value[id];
             } else {
                 if (value.find (id) == value.end())
-                    throw::logic_error("invalid identifier");
+                    throw::logic_error ("invalid identifier");
 
                 val.push (value[id] * sign);
                 sign = 1;
@@ -107,10 +102,11 @@ double interpret (std::string expr) {
 
             if (op) {
 
-                while (!ops.empty() && oper[ops.top()] >= op) {
+                while (!ops.empty() && order[ops.top()] >= op) {
                     char op = getstack (ops);
                     double b = getstack(val), a = getstack (val);
-                    val.push(operation (a, b, op));
+                    operate[op] (a, b);
+                    val.push (operate[op] (a, b));
                 }
                 ops.push(*it);
             }
@@ -123,14 +119,13 @@ double interpret (std::string expr) {
     while (!ops.empty()) {
         char op = getstack (ops);
         double b = getstack (val), a = getstack (val);
-        val.push (operation (a, b, op));
+        val.push (operate[op] (a, b));
     }
 
     return !val.empty() ? val.top() : 0;
 }
 
 int main () {
-
 
     string expr;// = "train6=5"; // 18
     //Assert::That(interpret("-5 * -11 + -57 - 34 * -6 / -49 % -48 - -50"), Equals (43.836735));
@@ -190,6 +185,19 @@ void Test () {
 }
 
 /*
+double operation (double a, double b, char op) {
+    double val;
+
+    switch (op) {
+        case '+' : val = a + b; break;
+        case '-' : val = a - b; break;
+        case '*' : val = a * b; break;
+        case '/' : val = a / b; break;
+        case '%' : val = fmod (a,b); break;
+    }
+
+    return val;
+}
 int getop (char c) {
     if (c == '-' || c == '+') return 1;
     if (c == '*' || c == '/' || c == '%') return 2;
