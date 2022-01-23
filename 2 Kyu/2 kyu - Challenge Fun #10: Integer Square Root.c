@@ -1,170 +1,181 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
 
 #define MAX_DIGIT 1000
-#define TO_DIG(x) ((x) - '0')
-#define TO_CHAR(x) ((x) + '0')
 #define MAX(x,y) (((x) > (y)) ? (x) : (y))
 
-void swap (char *a, char *b) {
+enum {SUPER, EQUAL, INFER};
 
-    char *tmp = a;
-    a = b;
-    b = tmp;
+typedef struct _bint {
+    int sign, size;
+    int *dig;
+} Bigint;
+
+void Display (Bigint x) {
+    if (x.sign == 1) printf ("-");
+
+    for (int i = 0; i < x.size; i++)
+        printf ("%i", x.dig[i]);
+
+    printf (" ");
 }
 
-void reverse (char *src) {
+Bigint new (char *src) {
+    char *ptr = src;
+    while (*ptr == '0') ptr++;
+    int size = strlen (src) - (ptr - src), i = 0;
+    Bigint next = {0, size, malloc (size * sizeof (int))};
 
-  int tmp, i = 0, j = strlen (src) - 1;
+    while (*ptr)
+        next.dig[i++] = *ptr++ - '0';
 
-  while (i < j) {
-    tmp = src[i];
-    src[i] = src[j];
-    src[j] = tmp;
-    i++, j--;
+    return next;
   }
-}
-int ismaller (const char *a, const char *b) {
-    int lena = strlen(a), lenb = strlen(b);
-    if (lenb > lena) return 2;
-    if (lenb < lena) return 0;
+Bigint null () {
+    Bigint nl = {0, 1, calloc (1, sizeof(int))};
+    return nl;
+  }
+char *to_string (const Bigint a) {
+    char *os = malloc (a.size + 1 * sizeof (char));
+    int i = 0;
 
-    for (size_t i = 0; i < lenb; i++) {
-        if (b[i] > a[i]) return 2;
-        if (b[i] < a[i]) return 0;
-    }
-    return 1;
-}
-char *add (const char *a, const char *b) {
+    for (; i < a.size; i++)
+        os[i] = a.dig[i] + '0';
 
-    int i = strlen (a), j = strlen (b), size = MAX (i,j);
-    int rem = 0, num;
-    char *os = malloc ((size + 1) * sizeof (char)), *ptr = os;
-
-    while (size-->0) {
-        num = (i > 0 ? TO_DIG (a[--i]) : 0) + (j > 0 ? TO_DIG (b[--j]) : 0) + rem;
-        rem = num / 10;
-        *ptr++ = TO_CHAR (num % 10);
-    }
-
-    if (rem > 0) *ptr++ = TO_CHAR (rem);
-    *ptr = '\0';
-    reverse (os);
-    // printf ("%s", os);
+    os[i] = '\0';
     return os;
 }
-char *mul (const char *a, const char *b) {
+int compare (Bigint a, Bigint b) {
+    if (a.size < b.size) return INFER;
+    if (a.size > b.size) return SUPER;
 
-    int lena = strlen (a), lenb = strlen(b), ans[MAX_DIGIT] = {0};
-    int i,j, size;
-    char arra[lena + 1], arrb[lenb + 1];
-
-    if ((lena == 1 && a[0] == '0')|| (lenb == 1 && b[0] == '0'))
-        return "0";
-
-    strcpy (arra,a), strcpy (arrb,b);
-    reverse (arra), reverse (arrb);
-
-    for (i = 0; i < lena; ++i) {
-        for (j = 0; j < lenb; ++j) {
-            int num = TO_DIG (arra[i]) * TO_DIG (arrb[j]);
-            ans[i + j] += num;
-            ans[i + j + 1] = ans[i + j + 1] + ans[i + j] / 10;
-            ans[i + j] %= 10;
-        }
+    for (int i = 0; i < a.size; i++) {
+        if (a.dig[i] < b.dig[i]) return INFER;
+        if (a.dig[i] > b.dig[i]) return SUPER;
     }
 
-    size = i + j;
-    char *result = calloc (size + 1,sizeof(char));
-    while (ans[size] == 0) size--;
+    return EQUAL;
+}
+
+Bigint add (const Bigint a, const Bigint b) {
+
+    int i = a.size, j = b.size, size = MAX (i,j);
+    int rem = 0, num;
+    int ans[MAX_DIGIT] = {0}, k = 0;
+
+    while (size-->0) {
+        num = (i > 0 ? a.dig[--i] : 0) + (j > 0 ? b.dig[--j] : 0) + rem;
+        rem = num / 10;
+        ans[k++] = num % 10;
+    }
+
+    if (rem > 0) ans[k++] = rem;
+    Bigint res = {0, k, malloc (k * sizeof (int))};
 
     i = 0;
-    do {
-        result[i++] = ans[size] + '0';
-    } while (size-->0);
+    while (k-->0) res.dig[i++] = ans[k];
 
-    return result;
-  }
-char *sub (const char *x, const char *y) {
-
-  int carry = 0;
-  _Bool minus = 0;
-  char *a, *b;
-
-  if (ismaller (x, y) == 2) {
-      a = strdup (y), b = strdup (x);
-      minus = 1;
-  } else {
-      a = strdup (x), b = strdup (y);
-  }
-  int lena = strlen (a), lenb = strlen (b), index = lena - lenb;
-  reverse (a), reverse (b);
-  char *os = malloc (lena * sizeof (char)), *ptr;
-
-  ptr = &b[lenb];
-
-  while (index-->0) *ptr++ = '0';
-
-  ptr = os;
-  for (size_t i = 0; i < lena; i++) {
-      int dig = a[i] - b[i] - carry;
-
-      if (dig < 0) {
-          dig += 10, carry = 1;
-      } else {
-          carry = 0;
-      }
-
-      *ptr++ = TO_CHAR (dig);
-  }
-
-  ptr--;
-  while (*ptr == '0') *ptr-- = '\0';
-  if (minus) *++ptr = '-';
-  reverse (os);
-
-  return os;
+    return res;
 }
+Bigint mul (const Bigint a, const Bigint b) {
+    int ans[MAX_DIGIT] = {0};
+    int i,j, size;
 
-char *trim (char *s) {
-    char *ptr = s;
-    while (*ptr == '0') ptr++;
-    return ptr;
-}
-char *integerSquareRoot(char *src) {
-    char *root = "0", *carr = "0";
-    int size = strlen(src);
-    char num[1200];// = malloc ((size + 1) * sizeof (char));
-    char *ref = malloc (128);
-    if (size % 2) {
-        num[0] = '0';
-    }
-    strcat (num, src);
+    if ((a.size == 1 && a.dig[0] == 0)|| (b.size == 1 && b.dig[0] == 0))
+        return null ();
 
-    for (size_t i = 0; i < size; i += 2) {
-        char *x = "0", *n = mul (root, "20");
-        sprintf (ref, "%s%c%c",carr, num[i], num[i + 1]);
-        ref = trim (ref);
-        char *rr = mul (add (n, x), x);
-
-        while (ismaller (mul (add (n, x), x), ref) > 0) {
-            x = add (x,"1");
+    for (i = a.size - 1; i >= 0; i--) {
+        for (j = b.size - 1; j >= 0; j--) {
+            int num = ans[i + j + 1] + a.dig[i] * b.dig[j];
+            ans[i + j + 1] = num % 10;
+            ans[i + j] += num / 10;
         }
-        x = sub (x, "1");
-        //printf ("[%s][%s]\n",mul (add (n, x), x), ref);
-        carr = sub (ref, mul (add (n, x), x));
-        root = add (mul (root, "10"), x);
-        printf ("[%s][%s]\n",carr, root);
-        //printf ("[%s]", root);
     }
 
-   return NULL;
+    size = a.size + b.size;
+
+    int offset = 0;
+    while (offset < size - 1  && ans[offset]==0)
+        offset++;
+
+    Bigint res = {0, size - offset, malloc ((size) * sizeof (int))};
+
+    for (i = 0; i < size - offset; i++)
+        res.dig[i] = ans[i + offset];
+
+    return res;
+}
+Bigint sub (const Bigint a, const Bigint b) {
+
+    if (compare (a, b) == EQUAL) return null ();
+    int i = a.size, j = b.size, k = 0, size = MAX (i, j), carry = 0;
+    int *aa = a.dig, *bb = b.dig, ans[MAX_DIGIT] = {};
+    int minus = 0;
+
+    if (compare (a, b) == INFER) {
+        i = b.size, j = a.size;
+        aa = b.dig, bb = a.dig;
+        minus = 1;
+    }
+
+    while (size-->0) {
+        int dig = (i > 0 ? aa[--i] : 0) - (j > 0 ? bb[--j] : 0) - carry;
+
+        if (dig < 0) {
+            dig += 10, carry = 1;
+        } else {
+            carry = 0;
+        }
+        ans[k++] = dig;
+    }
+
+    Bigint res = {minus, k, malloc (k * sizeof (int))};
+
+    i = 0;
+    while (k-->0) res.dig[i++] = ans[k];
+
+    return res;
+}
+
+char *integerSquareRoot (char *src) {
+    const int size = strlen (src);
+    const Bigint one = new ("1"), ten = new ("10"), twe = new ("20");
+
+    Bigint root = null (), carr = null ();
+    char num[MAX_DIGIT] = {}, buff[MAX_DIGIT] = {};
+    if (size % 2) num[0] = '0';
+
+    strcat (num, src);
+    int i = 0;
+    // printf ("%i ", strlen (num));
+
+    for (; i < size; i += 2) {
+        sprintf (buff, "%s%c%c",to_string (carr), num[i], num[i + 1]);
+        Bigint x = null (), n = mul (root, twe);
+        Bigint ref = new (buff);
+        //Display (ref);
+        while (compare (mul (add (n, x), x), ref) > SUPER) {
+            x = add (x, one);
+        }
+        //printf ("%i ", compare (mul (add (n, x), x), ref));
+        x = sub (x, one);
+        root = add (mul (root, ten), x);
+        carr = sub (ref, mul (add (n, x), x));
+    }
+
+
+    return to_string (root);
 }
 
 int main () {
 
-    integerSquareRoot ("1522756");
+    char *root = integerSquareRoot ("23232328323215435345345345343458098856756556809400840980980980980809092343243243243243098799634");
+
+    printf ("\nroot -> [%s]\n", root);
+    //Bigint res = sub (new ("799826107820075186796709"), new ("609686192373951474847964"));
+    //printf ("%i", 8 * 2);
+    //Display (res);
+
     return 0;
 }
