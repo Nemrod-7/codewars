@@ -15,7 +15,7 @@ union u_tag {
 int assert_count = 1;
 void Test () ;
 ////////////////////////////////////////////////////////////////////////////////
-#define MAX(x,y) (((x) > (y)) ? (x) : (y))
+#define MAX(x,y) (((x) > (y)) ? (x) : (y))g
 
 #define N 7
 #define NUNITS (N * sizeof (int))

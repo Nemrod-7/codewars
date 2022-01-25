@@ -21,7 +21,7 @@ struct AST {
     AST *a, *b;
 
     AST (const string &label = "", const int &num = 0) : op (label), n (num), a (nullptr), b (nullptr) {}
-    //AST (const string &label, AST *arg1, AST *arg2) : op (label), a (arg1), b (arg2) {}
+    AST (const string &label, AST *arg1, AST *arg2) : op (label), a (arg1), b (arg2) {}
 };
 /////////////////////////////////Assert/////////////////////////////////////////
 class Assert {
@@ -32,8 +32,22 @@ class Assert {
                 cout << endl;
             }
         }
+        template<class T> static void That (const vector<T> &a, const vector<T> &b) {
+            if (a != b) {
+                cout << "actual : ";
+                for (auto &it : a) cout << it << " ";
+
+                cout << " expected : ";
+                for (auto &it : b) cout << it << " ";
+
+                cout << endl;
+            }
+        }
 };
 template<class T> T Equals (const T& entry) { return entry;}
+template<class T> T EqualsContainer (const T& entry) { return entry;}
+/*
+*/
 void Test ();
 ////////////////////////////////////////////////////////////////////////////////
 class Timer {
@@ -94,9 +108,11 @@ class Display {
             }
         }
 };
-int simulate (const vector <string> &assembly, const vector <int> &argv) {
+
+int simulate (const vector<string> &assembly, const vector<int> &argv) {
   int r0 = 0, r1 = 0;
-  stack <int> istack;
+  stack<int> istack;
+
   for (auto &ins : assembly) {
     string code = ins.substr (0, 2);
          if (code == "IM") { r0 = stoi (ins.substr (3)); }
@@ -149,11 +165,10 @@ class Compiler {
                     free (a), free (b);
                 }
             }
-            /*
-            Display::node (curr);
-            */
+
         }
-        void reach (AST *node, int depth, int dest) {
+
+        void reach (AST *node, int depth, int dest) { //  recursion reduction
 
             if (node != nullptr) {
                 if (depth == dest) reduce (node);
@@ -162,7 +177,24 @@ class Compiler {
                 reach (node->b, depth + 1, dest);
             }
         }
+        stack<AST *> postorder (AST *root) {      // post order reduction
 
+            stack<AST *> s1,s2;
+            AST *temp = root;
+            s1.push (temp);
+
+            while (!s1.empty()) {
+                temp = s1.top();
+                s1.pop();
+
+                s2.push (temp);
+
+                if (temp->b) s1.push(temp->b); // Push the right child of the top element
+                if (temp->a) s1.push(temp->a); // Push the left child of the top element
+            }
+
+            return s2;
+        }
         AST *mktree (const vector<string> &expr) { // make AS tree
             if (!expr.size()) throw runtime_error ("Empty expression");
 
@@ -198,7 +230,7 @@ class Compiler {
                     ops.push (temp);
                 } else {
                       //cout << "[" << tile << "]";
-                        throw::logic_error ("invalid identifier");
+                    throw::logic_error ("invalid identifier");
                 }
 
                 it++;
@@ -283,6 +315,14 @@ class Compiler {
             =>  new AST ("+", new AST ("arg", 0), new AST ("imm", 10))
             */
 
+            /*
+
+            stack<AST *> s1 = postorder (ast);
+            while (!s1.empty()) {
+                reduce (getstk (s1));
+            }
+
+            */
             AST *head = ast;
             int depth = probe (ast), index = depth;
 
@@ -296,6 +336,7 @@ class Compiler {
         vector<string> pass3 (AST *ast) { // Returns assembly instructions
         vector<string> Asm;
         /*
+
         "IM n"     // load the constant value n into R0
         "AR n"     // load the n-th input argument into R0
         "SW"       // swap R0 and R1
@@ -309,6 +350,36 @@ class Compiler {
         ex : new AST ("+", new AST ("arg", 0), new AST ("imm", 10)) => [ "IM 10", "SW", "AR 0", "AD" ]
 
         */
+        stack<AST *> prog = postorder (ast);
+        bool sw = false;
+
+        while (!prog.empty()) {
+            AST *curr = getstk (prog);
+            string comm, num;
+
+            if (curr->op == "imm") {
+                comm = "IM";
+                num = " " + to_string (curr->n);
+                sw ^= 1;
+            } else if (curr->op == "arg") {
+                comm = "AR";
+                num = " " + to_string (curr->n);
+                sw ^= 1;
+            } else if (curr->op == "+") {
+                comm = "AD";
+            } else if (curr->op == "-") {
+                comm = "SU";
+            } else if (curr->op == "*") {
+                comm = "MU";
+            } else if (curr->op == "/") {
+                comm = "DI";
+            }
+
+            Asm.push_back(comm + num);
+            if (sw) Asm.push_back("SW");
+            //cout << (comm + num) << ",";
+            //Display::node (getstk (prog));
+        }
         return Asm;
     }
 };
@@ -316,51 +387,47 @@ class Compiler {
 int main () {
     Timer clock;
 
-
     string prog = "[x] x + 2*5";  // AST *ast1 = Bin(+,Arg(arg,0),Bin(*,Arg(imm,2),Arg(imm,5)));
-    /*
-    string prog = "[x] x";      // AST *ast1 = Arg(arg,0);
-    string prog = "[] 1 - 2";   // AST *ast1 = Bin(-,Arg(imm,1),Arg(imm,2));
-    string prog = "[] 1";       // AST *ast1 = Arg(imm,1);
-    string prog = "[x y z] z";  // AST *ast1 = Arg(arg,2);
-    string prog = "[ x y ] ( x + y ) / 2";
-    */
 
+    Test ();
+    /*
 
     Compiler now;
     AST *ASTree = now.pass1 (prog);
-
     ASTree = now.pass2 (ASTree);
 
-    Display::tree (ASTree);
+    vector<string> Asm = now.pass3 (ASTree);
+    //Display::tree (ASTree);
+    for (auto &it : Asm)
+        cout << it << ',';
+
+        */
 
     clock.stop();
     clock.get_duration();
 }
 
 void Test () {
-    /*
 
-    { // AST_creation
+      { // AST_creation
         AST *ast = Bin(+,Arg(imm,1),Arg(imm,2));
         Assert::That (false, Equals (ast == 0));
-    }
 
-    Compiler *compiler = new Compiler ();
-    Assert::That (false, Equals (compiler == 0));
+        Compiler *compiler = new Compiler ();
+        Assert::That (false, Equals (compiler == 0));
+      }
 
-    */
 
-    /*
      {
         string prog = "[ x y z ] ( 2*3*x + 5*y - 3*z ) / (1 + 3 + 2*2)";
-        vector <string> tokens1 ({"[", "x", "y", "z", "]", "(", "2", "*", "3", "*", "x", "+", "5", "*", "y", "-", "3", "*", "z", ")", "/", "(", "1", "+", "3", "+", "2", "*", "2", ")"});
+        vector<string> tokens1 ({"[", "x", "y", "z", "]", "(", "2", "*", "3", "*", "x", "+", "5", "*", "y", "-", "3", "*", "z", ")", "/", "(", "1", "+", "3", "+", "2", "*", "2", ")"});
 
         Compiler compiler;
         auto tokens = compiler.tokenize (prog);
         Assert::That (tokens, EqualsContainer (tokens1));
     }
-
+    /*
+    */
     {
         string prog = "[] 1";
         AST *ast1 = Arg(imm,1);
@@ -415,6 +482,7 @@ void Test () {
         Assert::That (true, Equals (equals (*ast, *ast1)));
     }
 
+    /*
     {
         string prog = "[x] x+2*5";
         AST *ast1 = Bin(+,Arg(arg,0),Arg(imm,10));

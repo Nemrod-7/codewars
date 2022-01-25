@@ -4,16 +4,12 @@
 #include <random>
 #include <algorithm>
 
-#include <iomanip>
-#include <chrono>
-//////////////////////////////////func def//////////////////////////////////////
-void Test () ;
-////////////////////////////////////////////////////////////////////////////////
+#include "../../templates/Assert.hpp"
+
 int DN;
 
 using namespace std;
 
-struct point {int x, y; };
 struct cluster { int comb[8]; };
 
 class Skyscraper {
@@ -23,7 +19,8 @@ class Skyscraper {
     public :
         vector<int> clues;
         vector<vector<int>> grid;
-        vector<list<cluster>> row, col;
+        vector<list<int>> row, col;
+        vector<pair<cluster, pair<int,int>>> combs;
 
         Skyscraper (const vector<int> &src = {}) {
             clues = src;
@@ -34,10 +31,8 @@ class Skyscraper {
             cluster num;
             generate (&num.comb[0], &num.comb[N], [i = 1] () mutable { return i++;});
 
-            vector<pair<cluster, pair<int,int>>> combinations;
-
             do {
-                combinations.push_back({num, check_num(num)});
+                combs.push_back({num, check_num(num)});
             } while (next_permutation (&num.comb[0], &num.comb[N]));
 
             for (int i = 0; i < N; ++i) {
@@ -45,8 +40,8 @@ class Skyscraper {
                 int west = ((N * 4) - 1) - i, east = N + i, south = west - N, north = i;
                 pair<int,int> lateral = {clues[west], clues[east]}, vertical = {clues[north], clues[south]};
 
-                row[i] = make_combs (combinations, lateral);
-                col[i] = make_combs (combinations, vertical);
+                row[i] = make_combs (combs, lateral);
+                col[i] = make_combs (combs, vertical);
             }
         }
 
@@ -67,26 +62,26 @@ class Skyscraper {
             }
             return comb;
         }
-        list<cluster> make_combs (vector<pair<cluster, pair<int,int>>> &input, pair<int,int> p) {
-            list<cluster> stack;
+        list<int> make_combs (vector<pair<cluster, pair<int,int>>> &input, pair<int,int> p) {
+            list<int> stack;
 
-            for (auto &curr : input) {
-                cluster &now = curr.first;
-                pair<int,int> &comb {curr.second};
+            for (int i = 0; i < input.size(); i++) {
+
+                pair<int,int> &comb {input[i].second};
 
                 if (p.first != 0 && p.second != 0) {
                     if ((comb.first == p.first) && (comb.second == p.second))
-                        stack.push_back(now);
+                        stack.push_back (i);
                 }
 
                 else if (p.first != 0 && comb.first == p.first)
-                        stack.push_back(now);
+                        stack.push_back (i);
 
                 else if (p.second != 0 && comb.second == p.second)
-                        stack.push_back(now);
+                        stack.push_back (i);
 
                 else if (p.second == 0 && p.first == 0 )
-                        stack.push_back(now);
+                        stack.push_back (i);
             }
             return stack;
         }
@@ -139,47 +134,57 @@ class Display {
         }
 };
 
+int count (vector<vector<int>> &grid) {
+
+    int size = grid.size(), cnt = 0;
+
+    for (int i = 0; i != size; i++)
+        for (int j = 0; j != size; j++)
+            if (grid[i][j] != 0)
+                cnt++;
+
+    return cnt;
+}
 bool growing (Skyscraper &city) {
 
     const int size = city.size(), total = size * size;
     static int fuse, expansion;
-    int count = 0;
 
-    for (int i = 0; i != size; i++)
-        for (int j = 0; j != size; j++)
-            if (city.grid[i][j] != 0)
-                count++;
+    int cnt = count (city.grid);
 
-    if (count == 0) return true;
-    if (count == total) {
+    //if (cnt == 0) return true;
+    if (cnt == total) {
         fuse = 0;
         return false;
     };
-    if (count == expansion) fuse++;
+    if (cnt == expansion) fuse++;
     if (fuse >= 3) {
         fuse = 0, expansion = 0;
         return false;
     }
 
-    expansion = count;
+    expansion = cnt;
 
     return true;
 }
 
-int reduce (list<cluster> &input, list<cluster> &check, pair<int, int> &p) {
+int reduce (Skyscraper &city, list<int> &input, list<int> &check, pair<int, int> &p) {
 
     bool flag = true;
     vector<int> buffer(8);
     int *cell = buffer.data(), output = 0, curr;
-    list<cluster>::iterator index = input.begin();
-
+    list<int>::iterator index = input.begin();
+    auto *base = city.combs.data();
     auto [x, y] = p;
 
-    for (auto &it : check)
-        cell[it.comb[y]] = true;
+    for (auto &pos : check) {
+        cluster &act = base[pos].first;
+        cell[act.comb[y]] = true;
+    }
 
     while (index != input.end()) {
-        curr = index->comb[x];
+        cluster &act = base[*index].first;
+        curr = act.comb[x];
 
         if (cell[curr] == false) {
             index = input.erase(index);
@@ -200,89 +205,36 @@ void update (Skyscraper &city) {
     pair<int, int> p;
     auto &[x, y] = p;
 
-    while (growing (city))
-        for (y = 0; y != size; y++)
+    while (growing (city)) {
+        for (y = 0; y != size; y++) {
             for (x = 0; x != size ; x++) {
-              city.grid[y][x] = reduce (city.row[y], city.col[x], p);
-              city.grid[x][y] = reduce (city.col[y], city.row[x], p);
+              city.grid[y][x] = reduce (city, city.row[y], city.col[x], p);
+              city.grid[x][y] = reduce (city, city.col[y], city.row[x], p);
             }
+        }
+    }
+    Display::graph (city);
 }
 vector<vector<int>> SolvePuzzle (const vector<int> &clues) {
 
     Skyscraper city (clues);
     const int size = city.size();
-    pair<int, int> p;
-    auto &[x, y] = p;
 
+    update (city);
 
     return city.grid;
 }
 
-int search_rnd (vector<list<cluster>> &now, int size) {
+int main () {
 
-    size_t val = 999;
-    vector<int> hist;
+    Timer clock;
 
-    random_device rd;
-    mt19937 gen(rd());
+    vector clues {3,3,2,1,2,2,3,4,3,2,4,1,4,2,2,4,1,4,5,3,2,3,1,4,2,5,2,3};
+    // 0.265 ms
+    Test();
+    //cout << T / total;
 
-    for (auto &it : now) {
-        if (it.size() > 1)
-            val = min (val, it.size());
-    }
-
-    for (int i = 0; i < size; i++) {
-        if (now[i].size() == val)
-            hist.push_back(i);
-    }
-    uniform_int_distribution<> dis (0, hist.size() - 1);
-
-    return hist[dis(gen)];
-}
-pair<int, int> min_pos (Skyscraper &city) {
-    pair<int, int> p;
-    auto &[x, y] = p;
-    int minx = 999, miny = 999;
-
-    for (int i = 0; i < city.size(); i++) {
-
-        int valx = city.row[i].size();
-        int valy = city.col[i].size();
-
-        if (valx > 1 && valx < minx) {
-            minx = valx;
-            x = i;
-        }
-        if (valy > 1 && valy < miny) {
-            miny = valy;
-            y = i;
-        }
-    }
-    return {x, y};
-}
-int main(void) {
-
-    auto start = std::chrono::high_resolution_clock::now();
-
-    vector<int> clues {3,3,2,1,2,2,3,4,3,2,4,1,4,2,2,4,1,4,5,3,2,3,1,4,2,5,2,3};
-
-    Skyscraper city (clues);
-    const int size = city.size();
-    pair<int, int> p;
-    auto &[x, y] = p;
-    /*
-    */
-
-    p = min_pos (city);
-
-    city.grid[y][x] = 9;
-
-    Display::graph (city);
-    //Test();
-
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> elapsed = end - start;
-    std::cout << "Process took " << elapsed.count()  << " ms" << std::endl;
+    clock.get_duration();
     return 0;
 }
 

@@ -1,0 +1,31 @@
+prog = "[ x y z ] ( 2*3*x + 5*y - 3*z ) / (1 + 3 + 2*2)"
+
+args : [x y z]
+expr : ( 2*3*x + 5*y - 3*z ) / (1 + 3 + 2*2)"
+
+
+                                                                                Bin ('/')
+                                                                            /              \_________
+                                                  _________________________/                        Bin (+)
+                                                /                                   |              /          \
+                            Bin (+) _______________  Bin (-)                        |         Bin (+)           bin (*)
+                      /               \          /              \                   |         /     \            /       \
+    bin (*)      bin (*)                  bin (*)               bin (*)             |   ARG(imm,1) Arg(imm,3) ARG(imm,2)  ARG(imm,2)
+  /         \   /       \                /         \            /         \         |
+Arg(imm,2) ARG(imm,3)  ARG(arg,0)    ARG(imm,5)  ARG(arg,1)  ARG(imm,3)  ARG(arg,2) |
+
+
+
+"IM n"     // load the constant value n into R0
+"AR n"     // load the n-th input argument into R0
+"SW"       // swap R0 and R1
+"PU"       // push R0 onto the stack
+"PO"       // pop the top value off of the stack into R0
+"AD"       // add R1 to R0 and put the result in R0
+"SU"       // subtract R1 from R0 and put the result in R0
+"MU"       // multiply R0 by R1 and put the result in R0
+"DI"       // divide R0 by R1 and put the result in R0
+
+ex : new AST ("+", new AST ("arg", 0), new AST ("imm", 10))
+
+=> : [IM 10, SW, AR 0, AD]
