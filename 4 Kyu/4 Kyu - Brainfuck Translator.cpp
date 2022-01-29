@@ -26,6 +26,7 @@ void Test ();
 #define BYT(x) (((x) == '+') || ((x) == '-'))
 #define IO(x) (((x) == '.')  || ((x) == ','))
 #define LOOP(x) (((x) == '[')|| ((x) == ']'))
+
 vector<string> c_syntax{
   {"if (*p) do {\n"},    // FRWD [
   {"*p += "},            // ADD  +
@@ -37,31 +38,32 @@ vector<string> c_syntax{
   {"*p = getchar();\n"}, // IN   ,
   {"putchar(*p);\n"}     // OUT  .
 };
+
 map<char, int> commands {{'[',-3},{'+',-2},{'<',-1},{' ',0},{'>',1},{'-',2},{']',3},{',',4},{'.',5}};
 
-string reduce (string source) {
+string reduce (const string &source) {
 
-    string buffer;
+    string os;
 
-    for (auto code : source)
+    for (auto &code : source)
         if (commands[code])
-            if (buffer.size() < 1)
-                buffer.push_back(code);
+            if (os.size() < 1)
+                os.push_back(code);
             else {
-                int now = commands [buffer.back()], next = commands[code];
+                int now = commands [os.back()], next = commands[code];
 
                 if (now + next == 0 && now != 3)
-                    buffer.pop_back();
+                    os.pop_back();
                 else
-                    buffer.push_back(code);
+                    os.push_back(code);
             }
 
-    return buffer;
+    return os;
 }
-bool validParentheses (string arr) {
+bool validParentheses (const string &src) {
 
     int pile = 0;
-    for (auto it : arr) {
+    for (auto &it : src) {
         if (pile < 0) return false;
         if (it == '[') pile++;
         if (it == ']') pile--;
@@ -71,8 +73,7 @@ bool validParentheses (string arr) {
 }
 string brainfuck_to_c (string source) {
 
-    if (validParentheses (source) == false)
-        return "Error!";
+    if (!validParentheses (source)) return "Error!";
 
     string srcode = reduce (source); // sanitized
     ostringstream os;
@@ -89,8 +90,7 @@ string brainfuck_to_c (string source) {
 
                 os << c_syntax[commands[code]+3] << stack + 1 << ";\n"; // out += c_syntax[commands[code]+3] + std::to_string(stack + 1) + ";\n";
                 stack = 0;
-            }
-            else
+            } else
                 stack++;
         }
         if (IO (code) || LOOP (code)) {
@@ -100,7 +100,7 @@ string brainfuck_to_c (string source) {
             while (tab-->0)
                 os << "  ";
 
-            os << c_syntax[commands[code]+3];
+            os << c_syntax[commands[code] + 3];
         }
 
         index++;

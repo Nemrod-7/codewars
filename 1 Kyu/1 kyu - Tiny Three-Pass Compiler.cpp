@@ -4,7 +4,6 @@
 #include <map>
 #include <stack>
 //#include <regex>
-//#include <algorithm>
 #include <functional>
 #include <chrono>
 
@@ -46,8 +45,6 @@ class Assert {
 };
 template<class T> T Equals (const T& entry) { return entry;}
 template<class T> T EqualsContainer (const T& entry) { return entry;}
-/*
-*/
 void Test ();
 ////////////////////////////////////////////////////////////////////////////////
 class Timer {
@@ -82,7 +79,7 @@ class Timer {
             return false;
         }
 };
-////////////////////////////////////tools///////////////////////////////////////
+/////////////////////////////////tools//////////////////////////////////////////
 #define Bin(op,a,b) (new AST (#op, (a), (b)))
 #define Arg(op,n) (new AST (#op, (n)))
 
@@ -90,8 +87,33 @@ bool equals (const AST &lhs, const AST &rhs) {
   return lhs.op == rhs.op && lhs.n == rhs.n && (lhs.a && rhs.a ? equals (*lhs.a, *rhs.a) : true) && (lhs.b && rhs.b ? equals (*lhs.b, *rhs.b) : true);
 }
 bool equals (const AST *lhs, const AST *rhs) { return equals (*lhs, *rhs); }
+int simulate (const vector<string> &assembly, const vector<int> &argv) {
+    int r0 = 0, r1 = 0;
+    stack<int> istack;
+
+    for (auto &ins : assembly) {
+        //cout << r0 << " ";
+        string code = ins.substr (0, 2);
+        //cout << ins << " ";
+             if (code == "IM") { r0 = stoi (ins.substr (3)); }
+        else if (code == "AR") { r0 = argv.at (stoi (ins.substr (3))); }
+        else if (code == "SW") { swap (r0, r1); }
+        else if (code == "PU") { istack.push (r0); }
+        else if (code == "PO") { r0 = istack.top (); istack.pop (); }
+        else if (code == "AD") { r0 += r1; }
+        else if (code == "SU") { r0 -= r1; }
+        else if (code == "MU") { r0 *= r1; }
+        else if (code == "DI") { r0 /= r1; }
+    }
+    return r0;
+}
+
 class Display {
     public :
+        template<class T> static void vect (const vector<T> &now) {
+            for (auto &it : now) cout << it << " ";
+            cout << endl;
+        }
         static void node (const AST *now) {
             if (oper[now->op]) {
                 cout << "Bin(" << now->op << ", ";
@@ -108,25 +130,6 @@ class Display {
             }
         }
 };
-
-int simulate (const vector<string> &assembly, const vector<int> &argv) {
-  int r0 = 0, r1 = 0;
-  stack<int> istack;
-
-  for (auto &ins : assembly) {
-    string code = ins.substr (0, 2);
-         if (code == "IM") { r0 = stoi (ins.substr (3)); }
-    else if (code == "AR") { r0 = argv.at (stoi (ins.substr (3))); }
-    else if (code == "SW") { swap (r0, r1); }
-    else if (code == "PU") { istack.push (r0); }
-    else if (code == "PO") { r0 = istack.top (); istack.pop (); }
-    else if (code == "AD") { r0 += r1; }
-    else if (code == "SU") { r0 -= r1; }
-    else if (code == "MU") { r0 *= r1; }
-    else if (code == "DI") { r0 /= r1; }
-  }
-  return r0;
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 class Compiler {
@@ -148,49 +151,18 @@ class Compiler {
             S.pop();
             return now;
         }
-        int probe (AST* node) {           // search for max level
-            if (node == nullptr) return -1;
-            return max (probe (node->a), probe (node->b)) + 1;
-          }
-        void reduce (AST *curr) {         // reduce constant expression if possible
+        stack<AST *> postorder (AST *root) {      // post order traversal
 
-            if (oper[curr->op]) {
-
-                AST *a = curr->a, *b = curr->b;
-
-                if (a->op == "imm" && b->op == "imm") {
-                    curr->n = oper[curr->op] (a->n, b->n);
-                    curr->op = "imm";
-                    curr->a = nullptr, curr->b = nullptr;
-                    free (a), free (b);
-                }
-            }
-
-        }
-
-        void reach (AST *node, int depth, int dest) { //  recursion reduction
-
-            if (node != nullptr) {
-                if (depth == dest) reduce (node);
-
-                reach (node->a, depth + 1, dest);
-                reach (node->b, depth + 1, dest);
-            }
-        }
-        stack<AST *> postorder (AST *root) {      // post order reduction
-
-            stack<AST *> s1,s2;
             AST *temp = root;
+            stack<AST *> s1, s2;
             s1.push (temp);
 
             while (!s1.empty()) {
-                temp = s1.top();
-                s1.pop();
-
+                temp = getstk (s1);
                 s2.push (temp);
 
-                if (temp->b) s1.push(temp->b); // Push the right child of the top element
-                if (temp->a) s1.push(temp->a); // Push the left child of the top element
+                if (temp->a) s1.push(temp->a);
+                if (temp->b) s1.push(temp->b);
             }
 
             return s2;
@@ -215,21 +187,20 @@ class Compiler {
                     it = nxt;
                 } else if (isnum (tile)) {
                     tree.push (new AST ("imm", stoi (tile)));
-                    //cout << "imm" << " " << stoi (tile) << endl;
                 } else if (args[tile]) {
-                    //cout << "arg" << " " << args[tile] - 1 << endl;
                     tree.push ((new AST ("arg", args[tile] - 1)));
                 } else if (oper[tile]) {
-
                     AST *temp = new AST (tile);
-                    /*
-                    while (!ops.empty ()) {
 
+                    while (!ops.empty () && order[ops.top()->op] >= order[tile]) {
+                        AST *op = getstk (ops);
+                        op->b = getstk (tree), op->a = getstk (tree);
+                        tree.push (op);
                     }
-                    */
+
                     ops.push (temp);
                 } else {
-                      //cout << "[" << tile << "]";
+
                     throw::logic_error ("invalid identifier");
                 }
 
@@ -241,7 +212,6 @@ class Compiler {
                 AST *op = getstk (ops);
                 op->b = getstk (tree), op->a = getstk (tree);
                 tree.push (op);
-
             }
 
             return tree.size() ? tree.top() : nullptr;
@@ -271,137 +241,65 @@ class Compiler {
         AST *pass1 (string program) {     // Returns an un-optimized AST
             auto tokens = tokenize (program);
             vector<string>::iterator it = tokens.begin();
+
             int i = 1;
-            /*
-            // Each node is of type 'AST' and has the following fields:
-            // 'string op', 'AST* a', 'AST* b', and 'int n'
-
-            AST ("+", a, b)       // add subtree a to subtree b
-            AST ("-", a, b)       // subtract subtree b from subtree a
-            AST ("*", a, b)       // multiply subtree a by subtree b
-            AST ("/", a, b)       // divide subtree a from subtree b
-            AST ("arg", n)        // reference to n-th argument, n integer
-            AST ("imm", n)        // immediate value n, n integer
-
-            [ x ] x + 2*5  ==>  new AST ("+", new AST ("arg", 0), new AST ("*", new AST ("imm", 2), new AST ("imm", 5)))
-
-            -----------------------
-            args  : [ x ]
-            expr  : x + 2*5
-            -----------------------
-
-                        ("+", a, b)
-                        /          \
-                  ("*", a, b)     ("arg", 0)
-                  /        \
-              ("imm", 2)  ("imm", 5)
-
-            */
-
-            for (it++ ; *it != "]"; it++) {
+            for (it++ ; *it != "]"; it++)
                   args[*it] = i++;
-            }
 
             AST *ASTree = mktree ({it + 1, tokens.end()});
-
-            //Display::tree (ASTree);
 
             return ASTree;
         }
         AST *pass2 (AST *ast) {           // Returns an AST with constant expressions reduced
+
+            if (ast->op == "imm" || ast->op == "arg") return ast;
+            ast->a = pass2 (ast->a), ast->b = pass2 (ast->b);
+
+            if (ast->a->op == "imm" && ast->b->op == "imm") {
+                ast->n = oper[ast->op] (ast->a->n, ast->b->n);
+                ast->op = "imm";
+                ast->a = nullptr, ast->b = nullptr;
+            }
             /*
-            new AST ("+", new AST ("arg", 0), new AST ("*", new AST ("imm", 2), new AST ("imm", 5)))
-
-            =>  new AST ("+", new AST ("arg", 0), new AST ("imm", 10))
-            */
-
-            /*
-
             stack<AST *> s1 = postorder (ast);
             while (!s1.empty()) {
                 reduce (getstk (s1));
             }
-
             */
-            AST *head = ast;
-            int depth = probe (ast), index = depth;
 
-            while (index-->0) {
-                reach (head, 0, index);
-            }
-
-            //Display::tree (head);
-            return head;
+            return ast;
         };
         vector<string> pass3 (AST *ast) { // Returns assembly instructions
-        vector<string> Asm;
-        /*
 
-        "IM n"     // load the constant value n into R0
-        "AR n"     // load the n-th input argument into R0
-        "SW"       // swap R0 and R1
-        "PU"       // push R0 onto the stack
-        "PO"       // pop the top value off of the stack into R0
-        "AD"       // add R1 to R0 and put the result in R0
-        "SU"       // subtract R1 from R0 and put the result in R0
-        "MU"       // multiply R0 by R1 and put the result in R0
-        "DI"       // divide R0 by R1 and put the result in R0
+            vector<string> Asm, pref {"PO", "SW", "PO"};
+            stack<AST *> tree = postorder(ast);
 
-        ex : new AST ("+", new AST ("arg", 0), new AST ("imm", 10)) => [ "IM 10", "SW", "AR 0", "AD" ]
+            while (!tree.empty()) {
+                AST *node = getstk (tree);
 
-        */
-        stack<AST *> prog = postorder (ast);
-        bool sw = false;
+                if (node->op == "imm") { Asm.push_back ("IM " + to_string (node->n));
+                } else if (node->op == "arg") { Asm.push_back ("AR " + to_string (node->n));
+                } else {
+                    Asm.insert (Asm.end(), pref.begin(), pref.end());
 
-        while (!prog.empty()) {
-            AST *curr = getstk (prog);
-            string comm, num;
+                    if (node->op == "+") { Asm.push_back("AD");
+                    } else if (node->op == "-") { Asm.push_back("SU");
+                    } else if (node->op == "*") { Asm.push_back("MU");
+                    } else if (node->op == "/") { Asm.push_back("DI");
+                    }
+                }
 
-            if (curr->op == "imm") {
-                comm = "IM";
-                num = " " + to_string (curr->n);
-                sw ^= 1;
-            } else if (curr->op == "arg") {
-                comm = "AR";
-                num = " " + to_string (curr->n);
-                sw ^= 1;
-            } else if (curr->op == "+") {
-                comm = "AD";
-            } else if (curr->op == "-") {
-                comm = "SU";
-            } else if (curr->op == "*") {
-                comm = "MU";
-            } else if (curr->op == "/") {
-                comm = "DI";
+                Asm.push_back ("PU");
             }
 
-            Asm.push_back(comm + num);
-            if (sw) Asm.push_back("SW");
-            //cout << (comm + num) << ",";
-            //Display::node (getstk (prog));
-        }
-        return Asm;
-    }
+            return Asm ;
+          }
 };
 
 int main () {
     Timer clock;
 
-    string prog = "[x] x + 2*5";  // AST *ast1 = Bin(+,Arg(arg,0),Bin(*,Arg(imm,2),Arg(imm,5)));
-
     Test ();
-    /*
-
-    Compiler now;
-    AST *ASTree = now.pass1 (prog);
-    ASTree = now.pass2 (ASTree);
-
-    vector<string> Asm = now.pass3 (ASTree);
-    //Display::tree (ASTree);
-    for (auto &it : Asm)
-        cout << it << ',';
-
-        */
 
     clock.stop();
     clock.get_duration();
@@ -426,8 +324,7 @@ void Test () {
         auto tokens = compiler.tokenize (prog);
         Assert::That (tokens, EqualsContainer (tokens1));
     }
-    /*
-    */
+
     {
         string prog = "[] 1";
         AST *ast1 = Arg(imm,1);
@@ -482,7 +379,6 @@ void Test () {
         Assert::That (true, Equals (equals (*ast, *ast1)));
     }
 
-    /*
     {
         string prog = "[x] x+2*5";
         AST *ast1 = Bin(+,Arg(arg,0),Arg(imm,10));
@@ -536,5 +432,56 @@ void Test () {
         auto c = compiler.compile (prog);
         Assert::That (simulate (c, {5, 4, 1}), Equals (0));
     }
+    /*
     */
 };
+//////////////////////////////Arkive//////////////////////////////////////////
+/*
+void reduce (AST *curr) {         // reduce constant expression if possible
+
+    if (oper[curr->op]) {
+
+        AST *a = curr->a, *b = curr->b;
+
+        if (a->op == "imm" && b->op == "imm") {
+            curr->n = oper[curr->op] (a->n, b->n);
+            curr->op = "imm";
+            curr->a = nullptr, curr->b = nullptr;
+            free (a), free (b);
+        }
+    }
+
+}
+
+int probe (AST* node) {           // search for max level
+    if (node == nullptr) return -1;
+    return max (probe (node->a), probe (node->b)) + 1;
+}
+stack<AST *> postorder (AST *root) {      // post order reduction
+
+    stack<AST *> s1,s2;
+    AST *temp = root;
+    s1.push (temp);
+
+    while (!s1.empty()) {
+        temp = s1.top();
+        s1.pop();
+
+        s2.push (temp);
+
+        if (temp->b) s1.push(temp->b); // Push the right child of the top element
+        if (temp->a) s1.push(temp->a); // Push the left child of the top element
+    }
+
+    return s2;
+}
+void reach (AST *node, int depth, int dest) { //  recursion reduction
+
+    if (node != nullptr) {
+        if (depth == dest) reduce (node);
+
+        reach (node->a, depth + 1, dest);
+        reach (node->b, depth + 1, dest);
+    }
+}
+*/

@@ -13,7 +13,7 @@ char *passwd_hash (const char *passwd) {
   char *hash = malloc (33 * sizeof (char)), *ptr = hash;
 
   MD5 (passwd, strlen (passwd), buffer);
-  //printf ("%s ",buffer);
+
   for (int i = 0; i < MD5_DIGEST_LENGTH; i++)
       ptr += sprintf (ptr, "%02x", buffer[i]);
 
@@ -34,7 +34,6 @@ void crack (char *hash, char *expected) {
     }
     strcpy (expected, passwd);
 }
-
 
 int main () {
 
@@ -74,4 +73,4 @@ char *hextos (char *hex) {
 
         buffer[idx] = '\0';
         return buffer;
-      }
+}
