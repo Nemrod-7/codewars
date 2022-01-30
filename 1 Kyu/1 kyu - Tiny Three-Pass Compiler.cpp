@@ -3,7 +3,7 @@
 #include <string>
 #include <map>
 #include <stack>
-//#include <regex>
+#include <regex>
 #include <functional>
 #include <chrono>
 
@@ -20,7 +20,7 @@ struct AST {
     AST *a, *b;
 
     AST (const string &label = "", const int &num = 0) : op (label), n (num), a (nullptr), b (nullptr) {}
-    AST (const string &label, AST *arg1, AST *arg2) : op (label), a (arg1), b (arg2) {}
+    AST (const string &label, AST *arg1, AST *arg2) : op (label), n (0), a (arg1), b (arg2) {}
 };
 /////////////////////////////////Assert/////////////////////////////////////////
 class Assert {
@@ -225,9 +225,10 @@ class Compiler {
             // Turn a program string into a vector of tokens.  Each token
             // is either '[', ']', '(', ')', '+', '-', '*', '/', a variable
             // name or a number (as a string)
-            //static regex re ("[-+*/()[\\]]|[A-Za-z]+|\\d+");
-            //sregex_token_iterator it (program.begin (), program.end (), re);
-            //return vector<string> (it, sregex_token_iterator ());
+            static regex re ("[-+*/()[\\]]|[A-Za-z]+|\\d+");
+            sregex_token_iterator it (program.begin (), program.end (), re);
+            return vector<string> (it, sregex_token_iterator ());
+            /*
             string::iterator it = program.begin();
             vector<string> tok;
 
@@ -236,6 +237,7 @@ class Compiler {
                 it++;
             }
             return tok;
+            */
         }
 
         AST *pass1 (string program) {     // Returns an un-optimized AST
@@ -260,12 +262,6 @@ class Compiler {
                 ast->op = "imm";
                 ast->a = nullptr, ast->b = nullptr;
             }
-            /*
-            stack<AST *> s1 = postorder (ast);
-            while (!s1.empty()) {
-                reduce (getstk (s1));
-            }
-            */
 
             return ast;
         };
@@ -299,7 +295,17 @@ class Compiler {
 int main () {
     Timer clock;
 
-    Test ();
+
+    std::string prog = "[] 1 - 2";
+    AST *ast1 = Bin(-,Arg(imm,1),Arg(imm,2));
+
+    Compiler compiler;
+    AST *ast = compiler.pass1 (prog);
+
+    Display::tree (ast);
+    Assert::That (true, Equals (equals (*ast, *ast1)));
+
+    //Test ();
 
     clock.stop();
     clock.get_duration();
