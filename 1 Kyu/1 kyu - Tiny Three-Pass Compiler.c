@@ -5,7 +5,6 @@
 #include <stdbool.h>
 
 #define div divide
-#define IS_DIGIT(x) ((x) >= '0' && (x) <= '9')
 
 typedef struct AST {
     enum op {imm, arg, plus, min, mul, div} op;
@@ -21,6 +20,8 @@ typedef struct node {
 typedef struct {
     Node *root;
 } Stack;
+
+const char *oper = "+-/*", *delim = "[()]";
 
 AST *Arg (int n) {
   AST *next = malloc (sizeof (AST));
@@ -77,26 +78,26 @@ AST *pop (Stack *stack) {
 // Each token is either '[', ']', '(', ')', '+', '-', '*', '/', a variable
 // name or a number (as a string)
 char **tokenize (const char* program) {
+    
+    int size = strlen (src), index = 0;
+    char **tok = malloc (size * sizeof (char*)), *it = src;
 
-    char *ptr = strdup (program), **code = malloc (strlen (program) * sizeof (char *));
-    int index = 0;
+    while (size > (it - src)) {
+        while (*it == ' ') it++;
 
-    do {
-        if (*ptr != ' ') {
+        char buffer[16] = {}, *ptr = buffer;
 
-            code[index] = malloc (3 * sizeof (char));
-            code[index][0] = *ptr;
-            code[index][1] = '\0';
-            index++;
-            //printf ("%c ", *ptr);
+        if (isdigit (*it)) {
+            while (isdigit (*it)) *ptr++ = *it++;
+        } else {
+            *ptr++ = *it++;
         }
-    } while (*ptr++);
+        tok[index++] = strdup (buffer);
+    }
+    tok[index] = strdup ("\0");
 
-    code[index] = malloc (3 * sizeof (char));
-    code[index][0] = '\0';
-
-    return code;
-  }
+    return tok;
+}
 
 Stack *postorder (AST *root) {      // post order traversal
 
@@ -170,7 +171,7 @@ AST *mktree (Stack *args, char **expr) {
     while (running) {
 
         char id = expr[it][0];
-
+        // if (strchr (oper, *it))
         if (id == '(') {
 
         } else if (isalpha (id)) {
