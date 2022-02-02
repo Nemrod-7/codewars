@@ -2,7 +2,8 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
+
+extern char *strdup (const char *);
 
 #define div divide
 
@@ -20,7 +21,7 @@ typedef struct _stack {
     Node *root;
 } Stack;
 
-const char *oper = "+-/*", *delim = "[()]";
+const char *oper = "+-/*";
 ////////////////////////////////////////////////////////////////////////////////
 void showvect (char **code) {
     for (int i = 0; strcmp (code[i], "\0"); i++) {
@@ -76,20 +77,20 @@ Stack *new () {
     next->root = NULL;
     return next;
   }
-bool is_empty (const Stack *stack) {
-  return ((stack->root == NULL) ? true : false);
+_Bool is_empty (const Stack *stack) {
+  return ((stack->root == NULL) ? 1 : 0);
 }
-AST *top (const Stack *stack) {
+AST *stop (const Stack *stack) {
     return (is_empty (stack)) ? NULL : stack->root->data;
 }
-void push (Stack *stack, AST *data) {
+void spush (Stack *stack, AST *data) {
 
     Node *cell = stack->root;
     stack->root = malloc (sizeof (Node));
     stack->root->data = data;
     stack->root->next = cell;
 }
-AST *pop (Stack *stack) {
+AST *spop (Stack *stack) {
     if (is_empty(stack)) return 0;
     Node *cell = stack->root;
     AST *curr = stack->root->data;
@@ -98,6 +99,105 @@ AST *pop (Stack *stack) {
     free (cell);
 
     return curr;
+}
+
+int getop (int op) {
+    if (op == plus || op == min) return 1;
+    if (op == mul || op == div) return 2;
+    return  0;
+}
+int getarg (AST **argv, int val) { // get arguments from stack
+
+    for (int i = 0; argv[i] != NULL; i++)
+        if (argv[i]->n == val) return i;
+
+    return -1;
+}
+int getsub (char **in, char **os) { // get parenthesis routine
+    int pile = 0, index = 0;
+
+    do {
+        if (!strcmp (*in, "(")) pile++;
+        if (!strcmp (*in, ")")) pile--;
+        if (pile == 0) {
+            os[index] = NULL;
+            return index;
+        }
+        os[index++] = strdup (*in);
+    } while (strcmp (*in++, "\0"));
+
+    return 0;
+}
+Stack *postorder (AST *root) {      // post order traversal
+
+    AST *temp = root;
+    Stack *s1 = new (), *s2 = new ();
+    spush (s1, temp);
+
+    while (!is_empty (s1)) {
+        temp = spop (s1);
+        spush (s2, temp);
+
+        if (temp->a) spush(s1, temp->a);
+        if (temp->b) spush(s1, temp->b);
+    }
+
+    return s2;
+}
+AST *mktree (AST **argv, char **expr) { // make an AS tree
+
+    char **it = expr;
+    _Bool running = 1;
+    Stack *ops = new(), *tree = new ();
+
+    while (running) {
+        char id = *it[0];
+
+        if (id == '(') {
+            char *sub[64] ;// = malloc (32 * sizeof (char *));
+            it += getsub (it, sub);
+            spush (tree, mktree (argv, sub + 1));
+
+        } else if (isalpha (id)) {
+
+            int pos = getarg (argv, id);
+            if (pos != -1) spush (tree, Arg (pos));
+            //printf ("%i", pos);
+        } else if (isdigit (id)) {
+            spush (tree, Imm (atoi (*it)));
+        } else if (strchr (oper, id)) {
+            int op;
+
+            switch (id) {
+                case '+' : op = plus; break;
+                case '-' : op = min; break;
+                case '*' : op = mul; break;
+                case '/' : op = div; break;
+                default  : op = 0; break;
+            }
+
+            AST *temp = Bin (op, NULL, NULL);
+
+            while (!is_empty (ops) && getop (stop (ops)->op) >= getop (op)) {
+                AST *curr = spop (ops);
+                curr->b = spop (tree), curr->a = spop (tree);
+                spush (tree, curr);
+            }
+            spush (ops, temp);
+        }
+
+        if (*(it + 1) == NULL) running = 0;
+        it++;
+    }
+
+    while (!is_empty (ops)) {
+        AST *curr = spop (ops);
+        curr->b = spop (tree), curr->a = spop (tree);
+        spush (tree, curr);
+    }
+    /*
+    */
+    return stop (tree);
 }
 
 char **tokenize (const char* src) { // Turn a program string into an array of tokens (last entry is 0)
@@ -118,121 +218,21 @@ char **tokenize (const char* src) { // Turn a program string into an array of to
         }
         tok[index++] = strdup (buffer);
     }
-    tok[index] = strdup ("\0");
+    tok[index] = NULL;
 
     return tok;
 }
-
-int getarg (const Stack *args, int val) { // get arguments from stack
-    Node *root = args->root;
-    int pos = 0;
-
-    while (root) {
-        if (root->data->n == val) return pos;
-        pos++;
-        root = root->next;
-    }
-
-    return -1;
-}
-int getsub (char **in, char **os) { // get parenthesis routine
-    int pile = 0, index = 0;
-
-    do {
-        if (!strcmp (*in, "(")) pile++;
-        if (!strcmp (*in, ")")) pile--;
-        if (pile == 0) {
-            os[index] = strdup ("\0");
-            return index;
-        }
-        os[index++] = strdup (*in);
-    } while (strcmp (*in++, "\0"));
-
-    return 0;
-}
-Stack *postorder (AST *root) {      // post order traversal
-
-    AST *temp = root;
-    Stack *s1 = new (), *s2 = new ();
-    push (s1, temp);
-
-    while (!is_empty (s1)) {
-        temp = pop (s1);
-        push (s2, temp);
-
-        if (temp->a) push(s1, temp->a);
-        if (temp->b) push(s1, temp->b);
-    }
-
-    return s2;
-}
-AST *mktree (const Stack *args, char **expr) { // make an AS tree
-
-    char **it = expr;
-    bool running = true;
-    Stack *ops = new(), *tree = new ();
-
-    while (running) {
-
-        char id = *it[0];
-
-        if (id == '(') {
-            char *sub[64] ;// = malloc (32 * sizeof (char *));
-            it += getsub (it, sub) + 1;
-            push (tree, mktree (args, sub + 1));
-
-        } else if (isalpha (id)) {
-
-            int pos = getarg (args, id);
-            if (pos != -1) push (tree, Arg (pos));
-            //printf ("%i", pos);
-        } else if (isdigit (id)) {
-            push (tree, Imm (atoi (*it)));
-        } else if (strchr (oper, id)) {
-            int op;
-
-            switch (id) {
-                case '+' : op = plus; break;
-                case '-' : op = min; break;
-                case '*' : op = mul; break;
-                case '/' : op = div; break;
-                default  : op = -1; break;
-            }
-            AST *temp = Bin (op, NULL, NULL);
-
-            while (!is_empty (ops) && top (ops)->op >= op) {
-                AST *curr = pop (ops);
-                curr->b = pop (tree), curr->a = pop (tree);
-                push (tree, curr);
-            }
-            /*
-            */
-            push (ops, temp);
-        }
-
-        if (!strcmp (*(it + 1), "\0")) running = false;
-        it++;
-    }
-
-    while (!is_empty (ops)) {
-        AST *curr = pop (ops);
-        curr->b = pop (tree), curr->a = pop (tree);
-        push (tree, curr);
-    }
-    return top (tree);
-}
-
 AST *pass1 (const char *program) {  // Returns an un-optimized AST
+    int i = 0;
     char **tokens = tokenize (program), **it = tokens + 1;
+    AST **argv = malloc (5 * sizeof (AST *));
 
-    Stack *args = new ();
-
-    while (strcmp (*it, "]")) {
-        push (args, Arg (*it[0]));
-        it++;
+    for (; strcmp (*it, "]") ; it++, i++) {
+        argv[i] = Arg (*it[0]);
     }
+    argv[i] = NULL;
 
-    return mktree (args, it + 1);
+    return mktree (argv, it + 1);
 }
 AST *pass2 (AST *ast) { // Returns an AST with constant expressions reduced
 
@@ -241,7 +241,7 @@ AST *pass2 (AST *ast) { // Returns an AST with constant expressions reduced
     AST *a = ast->a, *b = ast->b;
 
     if (a->op == imm && b->op == imm) {
-        int val;
+        int val = 0;
 
         switch (ast->op) {
             case plus : val = a->n + b->n; break;
@@ -265,51 +265,72 @@ char *pass3 (AST *ast) {  // Returns assembly instructions
     Stack *tree = postorder (ast);
 
     while (!is_empty (tree)) {
-        AST *node = pop (tree);
+        AST *node = spop (tree);
 
         if (node->op == imm) {
-            ptr += sprintf (ptr, "IM %i,", node->n);
+            ptr += sprintf (ptr, "IM %i\n", node->n);
         } else if (node->op == arg) {
-            ptr += sprintf (ptr, "AR %i,", node->n);
+            ptr += sprintf (ptr, "AR %i\n", node->n);
         } else {
-            ptr += sprintf (ptr, "PO,SW,PO,");
+            ptr += sprintf (ptr, "PO\nSW\nPO\n");
 
             if (node->op == plus) {
-                ptr += sprintf (ptr, "AD,");
+                ptr += sprintf (ptr, "AD\n");
             } else if (node->op == min) {
-                ptr += sprintf (ptr, "SU,");
+                ptr += sprintf (ptr, "SU\n");
             } else if (node->op == mul) {
-                ptr += sprintf (ptr, "MU,");
+                ptr += sprintf (ptr, "MU\n");
             } else if (node->op == div) {
-                ptr += sprintf (ptr, "DI,");
+                ptr += sprintf (ptr, "DI\n");
             }
         }
 
-        ptr += sprintf (ptr, "PU,");
+        ptr += sprintf (ptr, "PU\n");
     }
 
     return Asm;
 }
 char *compile (const char* program) { return pass3 (pass2 (pass1 (program))); }
 
+void swap (int *a, int *b) {
+    int tmp = *a;
+    *a = *b;
+    *b = tmp;
+}
+
+int simulate (const char *ins, const int *args) {
+  int r0 = 0, r1 = 0, t;
+  for (; ins && *ins; (ins = strchr (ins, '\n')) ? ++ins : 0x60d1510f)
+
+  printf ("%s", ins);
+  /*
+         if (!memcmp (ins, "IM", 2)) r0 = atoi (ins+3);
+    else if (!memcmp (ins, "AR", 2)) r0 = args[atoi (ins+3)];
+    else if (!memcmp (ins, "SW", 2)) t = r0, r0 = r1, r1 = t;
+    else if (!memcmp (ins, "PU", 2)) spush (r0);
+    else if (!memcmp (ins, "PO", 2)) r0 = spop ();
+    else if (!memcmp (ins, "AD", 2)) r0 += r1;
+    else if (!memcmp (ins, "SU", 2)) r0 -= r1;
+    else if (!memcmp (ins, "MU", 2)) r0 *= r1;
+    else if (!memcmp (ins, "DI", 2)) r0 /= r1;
+    */
+  return r0;
+}
+
 int main () {
-    const char *src = "[x] x + 2";
+    const char *src = "[ x y z ] ( 2*3*x + 5*y - 3*z ) / (1 + 3 + 2*2)";
     AST *node = pass1 (src);
-    showtree (node);
+
+    showtree(node);
+    //char *Asm = compile (src);
+    //const int argv[] = {4,0,0};
+    //printf ("%s", Asm);
+    //printf ("%i", simulate (Asm, (int[]) {4,0,0}));
 
     printf ("\nend");
 }
 ////////////////////////////////////////////////////////////////////////////////
-int getop (char c) { // deprecated
 
-    switch (c) {
-        case '-' : return 1;
-        case '+' : return 1;
-        case '*' : return 2;
-        case '/' : return 2;
-        default  : return 0;
-    }
-}
 int operation (int a, int b, char op) {
 
     int val;
