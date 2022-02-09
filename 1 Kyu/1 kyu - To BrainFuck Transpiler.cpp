@@ -31,7 +31,7 @@ bool isnum (string &src) {
     return true;
 }
 
-string sanitize (string &src) {
+string trunc (string &src) {
     size_t end = src.find ("//");
     end = min (end, src.find ("#"));
     end = min (end, src.find ("--"));
@@ -46,8 +46,9 @@ vector<string> format (const string &input) {
 
     while (getline (iss, line)) {
 
-        line = sanitize (line);
-        transform(line.begin(), line.end(), line.begin(), ::tolower);
+        line = trunc (line);
+        transform (line.begin(), line.end(), line.begin(), ::tolower);
+
         if (line.size())
             ins.push_back (line);
     }
@@ -78,19 +79,21 @@ vector<string> tokenize (const string &input) {
 std::string transpiler (const std::string &input) /* throws std::string */ {
 
     bool running = true;
-    int r0, r1;
+
     string os;
     vector<string> code = format (input);
     vector<string>::iterator it = code.begin();
     map<string, int> vars;
+    int tp = 0, in = 0;
 
     while (running) {
         vector<string> line = tokenize (*it);
         string op = line.front();
 
                if (op == "var") {
-                vars[line[1]] = 0;
-                 //cout << op << " " << line[1] << endl;
+                   for (int i = 1; i < line.size(); i++) {
+                        vars[line[i]] = i - 1;
+                   }
         } else if (op == "set") {
             if (vars.find (line[1]) == vars.end())
                 throw::logic_error ("invalid identifier");
@@ -136,7 +139,12 @@ std::string transpiler (const std::string &input) /* throws std::string */ {
         } else if (op == "read") {
             if (vars.find (line[1]) == vars.end())
                 throw::logic_error ("invalid identifier");
-            r0 = vars[line[1]];
+
+            if (tp != vars[line[1]]) {
+
+            }
+            os += ',';
+
         } else if (op == "msg") {
 
         } else if (op == "rem") {
@@ -146,8 +154,7 @@ std::string transpiler (const std::string &input) /* throws std::string */ {
         it++;
         if (it == code.end()) running = false;
     }
-    /*
-    */
+
     return os;
 }
 
@@ -167,8 +174,9 @@ unsigned loop (const string &code, unsigned pos) {
 }
 string brainfuck (const string &code, string &input) {
 
-    string os, tape (1024, 0);
-    auto pos = input.begin(), ptr = tape.begin();
+    string os;
+    char tape[30000] = {}, *ptr = tape;
+    auto pos = input.begin();
     int index = 0;
 
     while (code[index]) {
@@ -202,5 +210,5 @@ int main () {
     //kcuf (code);
 
 
-    //cout << "end";
+    cout << "\nend";
 }

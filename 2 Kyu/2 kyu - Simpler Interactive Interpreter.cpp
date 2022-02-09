@@ -105,6 +105,7 @@ double interpret (std::string expr) {
                 while (!ops.empty() && order[ops.top()] >= op) {
                     char op = getstack (ops);
                     double b = getstack(val), a = getstack (val);
+                    
                     operate[op] (a, b);
                     val.push (operate[op] (a, b));
                 }

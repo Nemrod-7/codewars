@@ -92,7 +92,7 @@ double calc (string src) {
             if (op) {
 
                 while (!ops.empty() && order[ops.top()] >= op) {
-                    char op = getstack (ops);
+                    char op2 = getstack (ops);
                     double b = getstack(val), a = getstack (val);
                     // cout << operate[op] (a, b) << " ";
                     val.push(operate[op](a, b));

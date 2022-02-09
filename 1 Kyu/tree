@@ -1,21 +1,74 @@
+
+
+pass 1 :
+
+// Each node is of type 'AST' and has the following fields:
+// 'string op', 'AST* a', 'AST* b', and 'int n'
+
+AST ("+", a, b)       // add subtree a to subtree b
+AST ("-", a, b)       // subtract subtree b from subtree a
+AST ("*", a, b)       // multiply subtree a by subtree b
+AST ("/", a, b)       // divide subtree a from subtree b
+AST ("arg", n)        // reference to n-th argument, n integer
+AST ("imm", n)        // immediate value n, n integer
+
+[ x ] x + 2*5  ==>  new AST ("+", new AST ("arg", 0), new AST ("*", new AST ("imm", 2), new AST ("imm", 5)))
+
+-----------------------
+args  : [ x ]
+expr  : x + 2*5
+-----------------------
+
+            ("+", a, b)
+            /          \
+      ("*", a, b)     ("arg", 0)
+      /        \
+  ("imm", 2)  ("imm", 5)
+
+
 prog = "[ x y z ] ( 2*3*x + 5*y - 3*z ) / (1 + 3 + 2*2)"
 
 args : [x y z]
 expr : ( 2*3*x + 5*y - 3*z ) / (1 + 3 + 2*2)"
+
+AST *ast1 = Bin(/,Bin(-,Bin(+,Bin(*,Bin(*,Arg(imm,2),Arg(imm,3)),Arg(arg,0)),Bin(*,Arg(imm,5),Arg(arg,1))),Bin(*,Arg(imm,3),Arg(arg,2))),Bin(+,Bin(+,Arg(imm,1),Arg(imm,3)),Bin(*,Arg(imm,2),Arg(imm,2))));
+
+
+
 
 
                                                                                 Bin ('/')
                                                                             /              \_________
                                                   _________________________/                        Bin (+)
                                                 /                                   |              /          \
-                            Bin (+) _______________  Bin (-)                        |         Bin (+)           bin (*)
+                       _____Bin (+) _______________  Bin (-)                        |         Bin (+)           bin (*)
                       /               \          /              \                   |         /     \            /       \
-    bin (*)      bin (*)                  bin (*)               bin (*)             |   ARG(imm,1) Arg(imm,3) ARG(imm,2)  ARG(imm,2)
-  /         \   /       \                /         \            /         \         |
-Arg(imm,2) ARG(imm,3)  ARG(arg,0)    ARG(imm,5)  ARG(arg,1)  ARG(imm,3)  ARG(arg,2) |
+                 bin (*)                 bin (*)                bin (*)             |   ARG(imm,1) Arg(imm,3) ARG(imm,2)  ARG(imm,2)
+                /       \              /         \            /         \           |
+              bin (*)  ARG(arg,0)  ARG(imm,5)  ARG(arg,1)  ARG(imm,3)  ARG(arg,2)   |
+              /      \
+        Arg(imm,2) ARG(imm,3)
+------------------------------------------------------------------------------------------------------------------------------------
+pass 2 :
+
+new AST ("+", new AST ("arg", 0), new AST ("*", new AST ("imm", 2), new AST ("imm", 5)))
+=>  new AST ("+", new AST ("arg", 0), new AST ("imm", 10))
 
 
+                                                                                Bin ('/')
+                                                                            /              \_________
+                                                  _________________________/                        arg (imm, 8)
+                                                /                                   |
+                       _____Bin (+) _______________  Bin (-)                        |
+                      /               \          /              \                   |
+                 bin (*)                 bin (*)                bin (*)             |
+                /       \              /         \            /         \           |
+          arg (imm,6)  ARG(arg,0)  ARG(imm,5)  ARG(arg,1)  ARG(imm,3)  ARG(arg,2)   |
 
+
+AST *ast2 = Bin(/,  Bin(-,  Bin(+,  Bin(*,  Arg(imm,6),Arg(arg,0)), Bin(*,  Arg(imm,5),Arg(arg,1))), Bin(*, Arg(imm,3), Arg(arg,2))), Arg(imm,8));
+
+pass 3 :
 "IM n"     // load the constant value n into R0
 "AR n"     // load the n-th input argument into R0
 "SW"       // swap R0 and R1
@@ -27,5 +80,23 @@ Arg(imm,2) ARG(imm,3)  ARG(arg,0)    ARG(imm,5)  ARG(arg,1)  ARG(imm,3)  ARG(arg
 "DI"       // divide R0 by R1 and put the result in R0
 
 ex : new AST ("+", new AST ("arg", 0), new AST ("imm", 10))
-
 => : [IM 10, SW, AR 0, AD]
+
+Arg(imm,8) push
+
+Arg(arg,2) push
+Arg(imm,3) push
+Bin(*, )   pop pop [AR 2, SW, IM 3, MU, PU] : s1 > 2, s2 == 0 => s1 == 1, s2 == 1
+
+Arg(arg,1) push
+Arg(imm,5) push
+Bin(*, )   pop pop [AR 1, SW, IM 5, MU, PU] : s1 > 2, s2 == 1 => s1 == 1, s2 == 2
+
+Arg(arg,0) Push
+Arg(imm,6) push
+Bin(*, )   pop pop [AR 0, SW, IM 6, MU, PU] : s1 > 2, s2 == 2 => s1 == 1, s2 == 3
+
+Bin(+, )   [PO, SW, PO, AD, PU]             : s1 ==1, s2 == 3 => s1 == 1, s2 == 2
+Bin(-, )   [PO, SW, PO, SU, PU]             : s1 ==1, s2 == 2 => s1 == 1, s2 == 1
+
+Bin(/, )   pop [im 8, SW, PO, DI]           : s1 ==1, s2 == 1 =>

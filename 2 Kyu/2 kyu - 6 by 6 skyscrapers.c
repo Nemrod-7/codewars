@@ -18,7 +18,7 @@ int assert_count = 1;
 #define MAX(x,y) (((x) > (y)) ? (x) : (y))
 #define ROW (*(*(grid + i) + j))
 #define COL (*(*(grid + j) + i))
-#define N 6
+#define N 7
 #define NUNITS (N * sizeof (int))
 
 typedef struct _point {
@@ -39,64 +39,15 @@ typedef struct _board {
     Cluster **row;
     Cluster **col;
 } Board;
-typedef int ** Matrix;
-//typedef unsigned short int int;
-
+typedef int** Matrix;
 //////////////////////////////////func def//////////////////////////////////////
-int **SolvePuzzle (int *clues);
-void **init_matrix (int size);;
-Board *init_v2 (int *clues, Matrix grid);
 
 void read_data (int *input);
 void display_node (Cluster *input);
 void display_clust (Cluster *input);
 void display (Board *now) ;
 void Test () ;
-////////////////////////////////////////////////////////////////////////////////
-static int clues[][N * 4] = {
-  { 3, 2, 2, 3, 2, 1,
-    1, 2, 3, 3, 2, 2,
-    5, 1, 2, 2, 4, 3,
-    3, 2, 1, 2, 2, 4 },
-  { 0, 0, 0, 2, 2, 0,
-    0, 0, 0, 6, 3, 0,
-    0, 4, 0, 0, 0, 0,
-    4, 4, 0, 3, 0, 0 }
-};
-static int expected[][N][N] = {
-  { { 2, 1, 4, 3, 5, 6 },
-    { 1, 6, 3, 2, 4, 5 },
-    { 4, 3, 6, 5, 1, 2 },
-    { 6, 5, 2, 1, 3, 4 },
-    { 5, 4, 1, 6, 2, 3 },
-    { 3, 2, 5, 4, 6, 1 } },
-  { { 5, 6, 1, 4, 3, 2 },
-    { 4, 1, 3, 2, 6, 5 },
-    { 2, 3, 6, 1, 5, 4 },
-    { 6, 5, 4, 3, 2, 1 },
-    { 1, 2, 5, 6, 4, 3 },
-    { 3, 4, 2, 5, 1, 6 } }
-};
 
-int main(void) {
-
-    time_t start = clock(), stop;
-
-    //int clues[] = {0,0,3,0,3,3, 0,4,4,4,0,0, 0,0,5,0,5,0, 0,2,2,0,2,0};
-
-    Test ();
-    //SolvePuzzle (clues[0]);
-
-    stop = clock();
-    printf ("Process took %.06f s", (double)(stop - start) * 2 / CLOCKS_PER_SEC);
-    return 0;
-}
-
-int swap (int *a, int *b) {
-    int temp = *a;
-    *a = *b;
-    *b = temp;
-}
 void push(Cluster *stack, int *data) {
 
     Node *cell = stack->root;
@@ -104,6 +55,12 @@ void push(Cluster *stack, int *data) {
     memcpy (stack->root->data, data, NUNITS);
     stack->root->next = cell;
 }
+int swap (int *a, int *b) {
+    int temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
 Cluster check_num (int data[N]) {
     int i, max = 0;
     Cluster chk = {0};
@@ -123,72 +80,81 @@ Cluster check_num (int data[N]) {
 
     return chk;
 }
-void heapPermutation (int a[], int size, Cluster *now) {
+void make_combs (Node *root, Cluster *actual) {
+
+    while (root) {
+        Cluster comb = check_num (root->data);
+
+        if (actual->head != 0 && actual->tail != 0) {
+            if ((comb.head == actual->head) && (comb.tail == actual->tail))
+                  push (actual, root->data);
+        }
+
+        else if (actual->head != 0 && comb.head == actual->head)
+                  push (actual, root->data);
+
+        else if (actual->tail != 0 && comb.tail == actual->tail)
+                  push (actual, root->data);
+
+        else if (actual->tail == 0 && actual->head == 0 )
+                  push (actual, root->data);
+
+        root = root->next;
+    }
+}
+void permutation (int a[], int size, Cluster *now) {
 
     if (size == 1) {
-        Cluster comb = check_num (a);
-
-        if (now->head != 0 && now->tail != 0) {
-            if ((comb.head == now->head) && (comb.tail == now->tail))
-                  push (now, a);
-        }
-        else if (now->head != 0 && comb.head == now->head)
-                  push (now, a);
-
-        else if (now->tail != 0 && comb.tail == now->tail)
-                  push (now, a);
-
-        else if (now->tail == 0 && now->head == 0 )
-                  push (now, a);
-
+        push (now, a);
         return;
     }
 
     for (int i = 0; i < size; i++) {
-        heapPermutation(a, size - 1, now);
+        permutation(a, size - 1, now);
         (size % 2 == 1) ? swap (&a[i], &a[size-1]) : swap (&a[0], &a[size-1]);
     }
 }
-void **init_matrix (int size) {
+Matrix init_matrix (int size) {
 
-    int **grid = malloc (N * size);
+    Matrix grid = malloc (N * NUNITS);
     for (int i = 0; i < N; ++i) {
-        grid[i] = malloc (size);
-        for (int j = 0; j < N ; ++j)
-            ROW = 0;
+        grid[i] = calloc (size, sizeof(int));
+        //for (int j = 0; j < N ; ++j)
+        //    ROW = 0;
     }
 
     return grid;
 }
 Board *init_board (int *clues, Matrix grid) {
 
-  Board *next = malloc (sizeof (Board));
-  unsigned int comb[8] = {1,2,3,4,5,6,7,8};
+    Board *next = malloc (sizeof (Board));
+    unsigned int comb[7] = {1,2,3,4,5,6,7};
 
-  next->row = init_matrix (sizeof (Cluster));
-  next->col = init_matrix (sizeof (Cluster));
+    next->row = init_matrix (sizeof (Cluster));
+    next->col = init_matrix (sizeof (Cluster));
+    Cluster combinations = {0};
+        permutation(comb, N, &combinations);
 
-  for (int i = 0; i < N; ++i) {
+    for (int i = 0; i < N; ++i) {
 
-      Point up = {.x = ((N * 4) - 1) - i , .y = i }, bt = {.x = N + i , .y = up.x - N};
+        Point up = {.x = ((N * 4) - 1) - i , .y = i }, bt = {.x = N + i , .y = up.x - N};
 
-      next->row[i]->head = clues[up.x], next->row[i]->tail = clues[bt.x];
-      next->row[i]->root = NULL;
+        next->row[i]->head = clues[up.x], next->row[i]->tail = clues[bt.x];
+        next->col[i]->head = clues[up.y], next->col[i]->tail = clues[bt.y];
 
-      next->col[i]->head = clues[up.y], next->col[i]->tail = clues[bt.y];
-      next->col[i]->root = NULL;
+        next->row[i]->root = NULL;
+        next->col[i]->root = NULL;
 
-      for (int j = 0; j < N ; ++j) {
-          next->col[i]->sky[j] = &COL;
-          next->row[i]->sky[j] = &ROW;
-      }
+        for (int j = 0; j < N ; ++j) {
+            next->col[i]->sky[j] = &COL;
+            next->row[i]->sky[j] = &ROW;
+        }
 
-      heapPermutation(comb, N, next->row[i]);
-      heapPermutation(comb, N, next->col[i]);
+        make_combs (combinations.root, next->row[i]);
+        make_combs (combinations.root, next->col[i]);
+    }
 
-  }
-
-  return next;
+    return next;
 }
 void freelist (Node *root) {
 
@@ -207,35 +173,32 @@ void freeboard (Board *actual) {
     free (actual->row);
     free (actual->col);
 }
+
 void update (Cluster *input, Cluster *check, Point coord) {
 
     unsigned int now[N] = {0}, *entry = *input->sky;
     bool flag[N];
     Node *curr = input->root, *trash ;
 
-    memset (flag,1, N * sizeof (bool));
+    memset (flag,1, N * sizeof(bool));
     input->root = NULL;
 
     while (curr) {
-        bool pres = false;
+        bool match = false;
 
         for (Node *temp = check->root; temp; temp = temp->next)
             if(curr->data[coord.x] == temp->data[coord.y]) {
-                pres = true;
+
+                for (int i = 0; i < N; ++i) {
+                    if (now[i] > 0 && now[i] != curr->data[i])
+                          flag[i] = false;
+
+                    now[i] = curr->data[i];
+                }
+
+                push (input, curr->data);
                 break;
             }
-
-        for (int i = 0, cnt = N; i < N; ++i) {
-
-            if (now[i] > 0  && now[i] != curr->data[i])
-                  flag[i] = false;
-
-            if (i == (N - 1) && pres == true) {
-                memcpy (now, curr->data, NUNITS);
-                push (input, curr->data);
-            }
-
-        }
 
         //trash = curr;
         curr = curr->next;
@@ -258,35 +221,54 @@ bool growing (Matrix grid) {
             if (ROW != 0)
                 count++;
 
-    if (count != 0 && count <= expension || count == total)
+    if (count != 0 && count < expension || count == total)
         return false;
 
     expension = count;
 
     return true;
 }
-
 int** SolvePuzzle (int *clues) {
 
-    void **puzzle = init_matrix (NUNITS);
+    Matrix puzzle = init_matrix (NUNITS);
     Board *actual = init_board (clues, puzzle);
-    unsigned index = 1;
+    unsigned index = 5;
 
-    while (growing (puzzle))
+    //while (index--> 0) {
+    while (growing (puzzle)) {
         for (int i = 0; i < N; ++i)
             for (int j = 0; j < N ; ++j) {
                  Point p = {.x = j, .y = i};
                  update (actual->row[i], actual->col[j], p);
                  update (actual->col[i], actual->row[j], p);
             }
+        //    display (actual);
+    }
+
+
 
     display (actual);
-    freeboard (actual);
-    free (actual);
+    //display_node (actual->row[1]);
+    //freeboard (actual);
+    //free (actual);
 
     return puzzle;
 }
 
+int main(void) {
+
+    time_t start = clock(), stop;
+
+    unsigned int comb[10] = {1,2,3,4,5,6,7,8,9,10};
+
+    //printf ("%i\n", 5039 * N * 2);
+    //  SolvePuzzle((int[]){3,3,2,1,2,2,3,4,3,2,4,1,4,2,2,4,1,4,5,3,2,3,1,4,2,5,2,3});
+    Test ();
+
+    stop = clock();
+    printf ("Process took %.06f s", (double)(stop - start) * 2 / CLOCKS_PER_SEC);
+    return 0;
+  }
 /////////////////////////////////////tools//////////////////////////////////////
 void read_data (int input[N]) {
     for (int i = 0; i < N; ++i)
@@ -336,6 +318,34 @@ void display (Board *now) {
 
 }
 /////////////////////////////////////tests//////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+#define SIZE 7
+static int clues[][SIZE * 4] = {
+  { 7, 0, 0, 0, 2, 2, 3,
+    0, 0, 3, 0, 0, 0, 0,
+    3, 0, 3, 0, 0, 5, 0,
+    0, 0, 0, 0, 5, 0, 4 },
+    { 0, 2, 3, 0, 2, 0, 0,
+      5, 0, 4, 5, 0, 4, 0,
+      0, 4, 2, 0, 0, 0, 6,
+      5, 2, 2, 2, 2, 4, 1 }
+    };
+    static int expected[][SIZE][SIZE] = {
+      { { 1, 5, 6, 7, 4, 3, 2 },
+      { 2, 7, 4, 5, 3, 1, 6 },
+      { 3, 4, 5, 6, 7, 2, 1 },
+      { 4, 6, 3, 1, 2, 7, 5 },
+      { 5, 3, 1, 2, 6, 4, 7 },
+      { 6, 2, 7, 3, 1, 5, 4 },
+      { 7, 1, 2, 4, 5, 6, 3 } },
+      { { 7, 6, 2, 1, 5, 4, 3 },
+      { 1, 3, 5, 4, 2, 7, 6 },
+      { 6, 5, 4, 7, 3, 2, 1 },
+      { 5, 1, 7, 6, 4, 3, 2 },
+      { 4, 2, 1, 3, 7, 6, 5 },
+      { 3, 7, 6, 2, 1, 5, 4 },
+      { 2, 4, 3, 5, 6, 1, 7 } }
+    };
 
 void cr_assert(int test,...) {
 
@@ -439,43 +449,53 @@ int check (int **solution, int (*expected)[N]) {
 }
 void Test () {
 
-  cr_assert (check(SolvePuzzle(clues[0]), expected[0]));
-  cr_assert (check(SolvePuzzle(clues[1]), expected[1]));
-  {
-    SolvePuzzle((int[]){0,3,0,5,3,4,0,0,0,0,0,1,0,3,0,3,2,3,3,2,0,3,1,0});
-  }
+    {
+      SolvePuzzle((int[]){
+        2,3,3,4,4,2,1,
+        1,6,4,4,2,2,2,
+        2,2,3,3,1,3,3,
+        2,5,3,3,2,1,5});
+    }
 
     {
-      int clues[] = {0,0,3,0,3,3, 0,4,4,4,0,0, 0,0,5,0,5,0, 0,2,2,0,2,0};
-      SolvePuzzle (clues);
-    }
-    {
-      int clues[] = {3,1,2,3,2,5, 3,2,3,3,2,1, 1,3,3,2,5,3, 3,2,1,3,2,2};
-      SolvePuzzle (clues);
-    }
-    {
-      SolvePuzzle ((int[]){0,4,2,0,3,3, 0,0,0,0,3,2, 4,0,0,3,0,5, 4,0,0,3,0,2});
+      SolvePuzzle((int[]){
+        2,2,0,2,0,2,0,
+        0,3,3,0,3,3,0,
+        5,4,6,3,0,0,0,
+        0,0,4,4,0,0,4
+      });
     }
 
+    cr_assert(check(SolvePuzzle(clues[0]), expected[0]));
+    cr_assert(check(SolvePuzzle(clues[1]), expected[1]));
 
-    { // no solution
-      SolvePuzzle ((int[]){2,3,3,3,2,1, 1,4,2,2,3,5, 4,3,2,2,1,5, 2,3,2,3,1,2});
-    }
-    { // no solution
-      SolvePuzzle ((int[]){2,3,3,1,2,6, 3,4,2,2,2,1, 1,3,5,2,2,3, 4,2,2,3,1,2});
+    {
+      SolvePuzzle((int[]){0,0,5,0,0,0,6,4,0,0,2,0,2,0,0,5,2,0,0,0,5,0,3,0,5,0,0,3});
     }
     {
-      int clues[] = {0,3,0,3,2,3, 3,2,0,3,1,0,0,3,0,5,3,4,0,0,0,0,0,1};
-      int expected[N][N] = {
-        {6,2,3,4,5,1},
-        {5,1,6,2,3,4},
-        {4,3,5,1,6,2},
-        {2,6,4,5,1,3},
-        {1,5,2,3,4,6},
-        {3,4,1,6,2,5}};
-    cr_assert (check(SolvePuzzle (clues), expected));
+      SolvePuzzle((int[]){0,0,5,3,0,2,0,0,0,0,4,5,0,0,0,0,0,3,2,5,4,2,2,0,0,0,0,5});
+    }
+    {
+      SolvePuzzle((int[]){0,2,3,0,2,0,0,5,0,4,5,0,4,0,0,4,2,0,0,0,6,5,2,2,2,2,4,1});
     }
 
-    SolvePuzzle ((int[]){0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,2,3,4,5,6});
-    
+    {
+      SolvePuzzle((int[]){0,2,3,0,2,0,0,5,0,4,5,0,4,0,0,4,2,0,0,0,6,0,0,0,0,0,0,0});
+    }
+
+    {
+      SolvePuzzle((int[]){7,0,0,0,2,2,3,0,0,3,0,0,0,0,3,0,3,0,0,5,0,0,0,0,0,5,0,4});
+    }
+    {
+      SolvePuzzle((int[]){0,0,0,0,5,0,4,7,0,0,0,2,2,3,0,0,3,0,0,0,0,3,0,3,0,0,5,0});
+    }
+
+    {
+      SolvePuzzle((int[]){0,0,0,0,5,0,4,7,0,0,0,2,2,3,0,0,3,0,0,0,0,3,0,3,0,0,5,0});
+    }
+
+    {
+    //  SolvePuzzle((int[]){3,3,2,1,2,2,3,4,3,2,4,1,4,2,2,4,1,4,5,3,2,3,1,4,2,5,2,3});
+    }
+
 }

@@ -64,7 +64,6 @@ bool isnum (const string &exp) {
     }
     return true;
 }
-
 string calc (string a, string op, string b) {
     ostringstream os;
 

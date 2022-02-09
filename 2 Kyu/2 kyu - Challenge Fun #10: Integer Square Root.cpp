@@ -37,15 +37,9 @@ class Bigint {
         Bigint (const string &input = "0") {
           m_value = input;
           m_value.erase(0, min (m_value.find_first_not_of ('0'), m_value.size() - 1));};
-          /*
-        void operator= (const string &x) {
-            m_value = x;
-            cout << x;
-            //m_value.erase(0, min (m_value.find_first_not_of ('0'), m_value.size() - 1));
-        }
-        */
+
         template<class T> operator T() { return m_value; }
-        operator string ()  { return m_value; }
+
         friend ostream &operator<< (ostream &os, const Bigint &x) {
             return os << x.m_value;
         }
@@ -53,8 +47,9 @@ class Bigint {
         void operator++ (int) {
             m_value = to_string (stoi (m_value) + 1);
         }
-        Bigint operator+ (string b) {
-            string add;
+        template<class T> Bigint operator+ (const T &x) {
+
+            string add, b = static_cast<Bigint>(x);
             int i = m_value.size(), j = b.size(), index = max (i,j);
             int rem = 0, num;
 
@@ -71,38 +66,8 @@ class Bigint {
 
             return add;
         }
-        Bigint operator* (string b) {
-            string mul, a = m_value;
-            int lena = a.size(), lenb = b.size(), ans[1000]{0};
-
-            if (m_value == "0") return m_value;
-            if (b == "0") return b;
-            /*
-            if ((lena == 1 && m_value[0] == '0')|| (lenb == 1 && b[0] == '0')) {
-                return  m_value;
-            }
-            */
-            int i,j, size;
-            reverse (a.begin(), a.end()), reverse(b.begin(), b.end());
-
-            for (i = 0; i < lena; ++i) {
-                for (j = 0; j < lenb; ++j) {
-                    ans[i + j] +=  (a[i] - '0') * (b[j] - '0');
-                    ans[i + j + 1] = ans[i + j + 1] + ans[i + j] / 10;
-                    ans[i + j] %= 10;
-                }
-            }
-            size = i + j;
-            while (ans[size] == 0) size--;
-
-            do {
-                mul.push_back ((ans[size] + '0'));
-            } while (size-->0);
-
-            return mul;
-        }
-        Bigint operator- (string b) {
-            string a = m_value;
+        template<class T> Bigint operator- (const T &x) {
+            string a = m_value, b = static_cast<Bigint>(x);
             int carry = 0;
             bool minus = false;
             string sub;
@@ -131,6 +96,32 @@ class Bigint {
 
             return minus ? '-' + sub : sub;
         }
+        template<class T> Bigint operator* (const T &x) {
+            string mul, a = m_value, b = static_cast<Bigint>(x);
+            int lena = a.size(), lenb = b.size(), ans[1000]{0};
+
+            if (m_value == "0") return m_value;
+            if (b == "0") return b;
+
+            int i,j, size;
+            reverse (a.begin(), a.end()), reverse(b.begin(), b.end());
+
+            for (i = 0; i < lena; ++i) {
+                for (j = 0; j < lenb; ++j) {
+                    ans[i + j] +=  (a[i] - '0') * (b[j] - '0');
+                    ans[i + j + 1] = ans[i + j + 1] + ans[i + j] / 10;
+                    ans[i + j] %= 10;
+                }
+            }
+            size = i + j;
+            while (ans[size] == 0) size--;
+
+            do {
+                mul.push_back ((ans[size] + '0'));
+            } while (size-->0);
+
+            return mul;
+        }
 
         bool operator<= (const string &b) {
             if (m_value.size () < b.size()) return true;
@@ -152,7 +143,9 @@ string integer_square_root (string num) {
         num = '0' + num;
     }
 
-    for (size_t i = 0; i < num.size(); i += 2) {
+    size_t i = 0;
+
+    for (; i < 48; i += 2) {
         string cent = carry;
         Bigint ref = cent + num[i] + num[i + 1];
         Bigint x, n = root * "20";
@@ -160,14 +153,14 @@ string integer_square_root (string num) {
         while (((n + x) * x) <= ref) {
             x++;
         }
-        /// x = x - "1";
+        x = x - "1";
+
+        cout << "[" << ref << "]" << "[" << ((n + x) * x) << "]" << endl;
         carry = ref - ((n + x) * x);
         root = root * "10" + x;
-        /*
-        */
-        //cout << ref << " ";
 
     }
+
     return root;
 }
 
@@ -182,8 +175,9 @@ void Test () {
 int main () {
 
     string num = "1";
+    Bigint a;
 
-    cout << integer_square_root (num);
+    cout << integer_square_root ("23232328323215435345345345343458098856756556809400840980980980980809092343243243243243098799634");
 
     return 0;
 }
