@@ -41,8 +41,9 @@ int64_t calc (int64_t m0, int64_t n0, int64_t m, int64_t n, int64_t l) {
         cnt += calc (lm + m0, lm + n0, m, n, l);
 
     } else {
-        cnt = (sumr (lm + (m0^n0), l) - sumr ((m0^n0), l)) * (n - n0);
-        //cout << (cnt) << endl;
+      cnt = (sumr (lm + (m0^n0), l) - sumr ((m0^n0), l)) * (n - n0);
+      //  cnt = (sumr (lm + (m0^n0), l)) * (n - n0);
+        // cout << sumr ((m0^n0), l);
     }
     return cnt;
 }
@@ -53,6 +54,9 @@ int64_t elder_age (int64_t m, int64_t n, int64_t l, int64_t t) {
     if (m < n) swap (m,n);
 
     int64_t cnt = 0;
+
+    cnt = calc (0,0,m,n,l);
+    /*
     int64_t lm = highpow2 (m), ln = highpow2 (n);
 
     if (lm == m) {
@@ -69,7 +73,7 @@ int64_t elder_age (int64_t m, int64_t n, int64_t l, int64_t t) {
           cout << endl;
         }
     }
-
+    */
 
     return cnt % t;
 }
@@ -77,30 +81,23 @@ int64_t elder_age (int64_t m, int64_t n, int64_t l, int64_t t) {
 int main () {
 
   auto start = std::chrono::high_resolution_clock::now();
-  //elder_age2(28827050410, 35165045587, 7109602, 13719506);
-  //cout << elder_age (7, 5 , 0,10000);  // 2
+  //elder_age (28827050410, 35165045587, 7109602, 13719506);
 
   int64_t m = 7, n = 7, l = 0;
   int64_t m0 = 0, n0 = 0;
   int64_t lm = highpow2 (m - m0), cnt = 0;
 
-  cout << calc (0, 0, 7, 7, l);
-  // cnt += calc (lm, n0, m, lm, l);
-  // cnt += calc (m0, lm, lm, n, l);
-   //cnt += calc (lm, lm, m, n, l);
-  /*
-
-  */
-
-  //Assert::That(elder_age2(8, 5, 1, 100), Equals(5));
+  cout << elder_age (7, 7 , 0,10000);  // 2
 
   /*
-  Assert::That(elder_age2(8,8,0,100007), Equals(224));
-  Assert::That(elder_age2(25,31,0,100007), Equals(11925));
-  Assert::That(elder_age2(5,45,3,1000007), Equals(4323));
+   Assert::That(elder_age (8, 5, 1, 100), Equals(5));
+   Assert::That(elder_age (8,8,0,100007), Equals(224));
+
+  Assert::That(elder_age (25,31,0,100007), Equals(11925));
+  Assert::That(elder_age (5,45,3,1000007), Equals(4323));
   Assert::That(elder_age(31,39,7,2345), Equals(1586));
-  Assert::That(elder_age(545,435,342,1000007), Equals(808451));
-  Assert::That (elder_age(28827050410, 35165045587, 7109602, 13719506), Equals(5456283));
+  Assert::That(elder_age (545,435,342,1000007), Equals(808451));
+  Assert::That (elder_age (28827050410, 35165045587, 7109602, 13719506), Equals(5456283));
   */
 
 
