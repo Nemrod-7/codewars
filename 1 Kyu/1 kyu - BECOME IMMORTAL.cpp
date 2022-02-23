@@ -20,36 +20,50 @@ void Test ();
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int64_t mult (int64_t x, int64_t y, int64_t z, int64_t m) { return ((((x % m) * (y % m)) % m) * (z % m) % m); }
-int64_t highpow (int64_t x) { return pow (2, static_cast<int64_t> (log2 (x))); }
+int64_t highpow3 (int64_t x) {
+    int64_t n = 1;
+    while (x >= 2) { n *= 2, x /= 2; }
+    return n;
+}
+uint64_t sumr2 (uint64_t m, uint64_t n, uint64_t l, uint64_t t) {
+
+    uint64_t m2 = std::max (int64_t (0), int64_t (m - l)), n2 = std::max (int64_t (0),  int64_t (n - l));
+    uint64_t fst = m2 + n2 - 1, scd = n2 - m2;
+
+    fst % 2 ? scd /= 2 : fst /= 2;
+
+    return ((fst % t) * (scd % t)) % t;
+}
 int64_t elder_age (int64_t m, int64_t n, int64_t l, int64_t t) {
+
     if (m == 0 or n == 0) return 0;
     if (m < n) std::swap (m,n);
+    if (n == 1) return sumr2 (0, m, l, t);
 
-    const int64_t pm = highpow (m), pn = highpow (n);
-    const int64_t nil = 0, opml = std::max (nil, pm - l) % t, olpm = std::max (nil, l - pm) % t, opml1 = std::max (nil, pm - l - 1) % t;
+    const int64_t pm = highpow3 (m), pn = highpow3 (n);
+    const int64_t pml = std::max (int64_t (0), pm - l) % t;
+  
+    uint64_t cnt = sumr2 (0, pm, l, t);
 
-    int64_t fst = static_cast<int64_t>(opml * 0.5 * opml1) % t;
-    int64_t scd = mult (std::min (pm, n), opml, m - pm, t);
-    cout << m <<  " " << n << endl;
-    //cout << opml << ' ' << olpm << ' ' << opml1  <<endl;
-    if (pm < n) {
-        fst *= pm;
-        fst += mult (pm , std::max (int64_t (0), n - pm) , opml, t);
+    if (pm == pn) {       
+      cnt *= (pm % t);
 
-        scd += elder_age (n - pm, pm, olpm , t);
-        scd += elder_age (m - pm, pn, olpm , t);
-        scd += elder_age (m - pm, n - pn, l, t);
+      uint64_t a = m + n, b = pm * 2;
+      uint64_t c = sumr2 (pm , b, l, t);
+      
+      cnt += (c * ((a - b) % t)) % t;
+      cnt += elder_age (m - pm, n - pn, l, t);
 
     } else {
-        fst *= n;
-
-        scd += elder_age (m - pm, n, olpm , t);
-      /*
-        */
+      cnt *= (n % t);
+      
+      uint64_t a = ((pml % t) * ((m - pm) % t)) % t, b = n % t;
+      
+      cnt += (a * b) % t;
+      cnt += elder_age (m - pm, n, std::max (int64_t (0), l - pm), t);
     }
 
-    return (fst + scd) % t;
+    return cnt % t;
 }
 
 int main () {
@@ -71,98 +85,7 @@ int main () {
 
     //cout << elder_age (182, 503, 11, 76); // 19
 
-
-
   auto end = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = end - start;
   std::cout << "\nProcess took " << elapsed.count()  << " ms" << std::endl;
 }
-/*
-int64_t calc (int64_t m0, int64_t n0, int64_t m, int64_t n, int64_t l) {
-    if (m == m0) return 0;
-    int64_t cnt = 0, lm = highpow2 (m - m0);
-    cnt = sumr (lm + (m0^n0), l);
-    //cout << cnt << " " << (m0^n0) << endl;
-    //cout << m0 << " " << n0 << " " << m << " " << n << endl;
-
-    if (l < (m0^n0)) {
-        cnt  -= sumr ((m0^n0), l);
-    }
-
-    if ((n - n0) > lm) {
-        cnt *= lm;
-        cnt += calc (lm + m0, n0, m, lm + n0, l);
-        cnt += calc (m0, lm + n0, lm + m0, n, l);
-        cnt += calc (lm + m0, lm + n0, m, n, l);
-
-    } else {
-        int64_t len = abs (n - n0);
-
-        if (len)
-            cnt *= len;
-      //  cnt = (sumr (lm + (m0^n0), l)) * (n - n0);
-    }
-    return cnt;
-}
-int64_t elder_age2 (int64_t m, int64_t n, int64_t l, int64_t t) {
-
-    //if (m == 0 || n == 0) return 0;
-    int64_t cnt = 0;
-
-    cnt = calc (0,0,m,n,l);
-    /*
-
-    for (int64_t y = 0; y < n; y++) {
-        for (int64_t x = 0; x < m; x++) {
-            int64_t num =  max (static_cast<int64_t> (0), (x ^ y) - l);
-            cout << setw (2) <<  num << " ";
-            cnt += num;
-        }
-        cout << endl;
-    }
-
-
-    return cnt % t;
-}
-*/
-int64_t sumr (int64_t m, int64_t l, int64_t t) {
-    int64_t n = ((m + l) % t) * 0.5 * ((l - m + 1) % t);
-    return n % t;
-}
-int64_t highpow2 (int64_t x) {
-    int64_t t = 1;
-    while (t < x) t <<= 1;
-    return t;
-}
-int64_t elder_age4 (int64_t m, int64_t n, int64_t l, int64_t t) {
-    if (m == 0 or n == 0) return 0;
-    if (m > n) std::swap (m,n);
-    int64_t lm = highpow2 (m), ln = highpow2 (n), cnt;
-    if (l > ln) return 0;
-
-    if (lm == ln) {
-        cnt = sumr (1, ln - l - 1, t);
-        cnt *= (m + n - ln) % t;
-        cnt += elder_age4 (ln - n, lm - m, l, t);
-        //cout << sumr (1, ln - l - 1, t) * (m + n - ln) << endl;
-    }
-
-    if (lm < ln) {
-        lm = floor (ln / 2);
-
-        int64_t a = sumr (1, ln - l - 1, t) * (m % t);
-        int64_t b = ((ln - n) % t);
-        b *= sumr (std::max ( (int64_t) 0, lm - l), ln - l - 1, t);
-        cnt = a - b;
-        if (l <= lm) {
-            cout << a << "\n" << b << "\n\n";
-
-            cnt += mult (lm - l, lm - m, ln - n, t);
-            cnt += elder_age4 (lm - m, ln - n, 0, t) ;
-        } else {
-            cnt += elder_age4 (lm - m, ln - n, l - lm, t);
-        }
-    }
-
-    return cnt % t;
-  }
