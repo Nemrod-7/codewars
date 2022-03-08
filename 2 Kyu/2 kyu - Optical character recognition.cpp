@@ -205,7 +205,7 @@ vector<pair<int,int>> segment (const Image &img, int &x) {
     return {start, end};
 }
 int recognize (const Image &img, vector<pair<int,int>> lim) {
-  
+
     int ascii, num = 0, hist[10] = {0}, dig = 10;
     int width = lim[1].first - lim[0].first, height = lim[1].second - lim[0].second;
     float sy = 7 / static_cast<float>(height), sx = 5 / static_cast<float>(width);
