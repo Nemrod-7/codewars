@@ -130,13 +130,15 @@ bool scanh2 (graph &curr, int id) {
   int up = 0, dwn = 99, cnt = 0;
 
   for (x = left; x < right; x++) { // scan for highest possible horizontal rectangle
-    pair<int,int> bndy = vertic (curr, p);
-    up = max (up, bndy.first), dwn = min (dwn, bndy.second);
+  	pair<int,int> bndy = vertic (curr, p);
+  	up = max (up, bndy.first), dwn = min (dwn, bndy.second);
   }
 
+  while (((dwn - up) * (right - left)) > curr.size)
+      (dwn - up) > 1 ? dwn-- : right--;
+
   if ((dwn - up) * (right - left) < curr.size) return false;
-  while (((dwn - up) * (right - left)) > curr.size) dwn--;
-  //cout << ((dwn - up) * (right - left)) << endl;
+  //cout << (dwn - up) * (right - left)  << " " << curr.size << endl;
   for (y = up; y < dwn; y++) {
     for (x = left; x < right; x++) {
       curr[p].id = id;
