@@ -15,7 +15,7 @@ class graph {
         vertex nul = {'#', -2};
         vector<vertex> grid;
     public :
-        int width, height, size = 0;
+        int width, height, secsize = 0;
         vector<point> pts;
 
         graph (const string &src = {}) {
@@ -33,7 +33,7 @@ class graph {
 
             if (width) { //
                 width -= 1;
-                size = height * width / pts.size();
+                secsize = height * width / pts.size();
             }
         }
 
@@ -98,62 +98,67 @@ pair<int,int> vertic (graph &grid, const point &p) {
     return {dwn.second + 1, up.second};
 }
 
-bool scanv2 (graph &curr, int id) {
-
-  point p = curr.pts[id];
-  auto &[x,y] = p;
-  auto [up, dwn] = vertic (curr, p);
-  int left = 0, right = 99, cnt = 0;
-
-  for (y = up; y < dwn; y++) {
-    pair<int,int> bndx = horiz (curr, p);
-    left = max (left, bndx.first), right = min (right, bndx.second);
-  }
-
-  if ((dwn - up) * (right - left) < curr.size) return false;
-  while (((dwn - up) * (right - left)) > curr.size) right--;
-
-  for (x = left; x < right; x++) {
-    for (y = up; y < dwn; y++) {
-      curr[p].id = id;
-      cnt++;
-    }
-  }
-
-  return true; // return {{left,up},{right,dwn}};
-}
-bool scanh2 (graph &curr, int id) {
+bool scanh3 (graph &curr, int id) {
 
   point p = curr.pts[id];
   auto &[x,y] = p;
   auto [left, right] = horiz (curr, p);
-  int up = 0, dwn = 99, cnt = 0;
+  int up = 0, dwn = 99, ref = 0;
 
   for (x = left; x < right; x++) { // scan for highest possible horizontal rectangle
-  	pair<int,int> bndy = vertic (curr, p);
-  	up = max (up, bndy.first), dwn = min (dwn, bndy.second);
+      pair<int,int> bndy = vertic (curr, p);
+      up = max (up, bndy.first), dwn = min (dwn, bndy.second);
   }
 
-  while (((dwn - up) * (right - left)) > curr.size)
-      (dwn - up) > 1 ? dwn-- : right--;
+  int size = curr.secsize, height = dwn - up, width = right - left;
+  if (height * width < size) return false;
 
-  if ((dwn - up) * (right - left) < curr.size) return false;
-  //cout << (dwn - up) * (right - left)  << " " << curr.size << endl;
-  for (y = up; y < dwn; y++) {
-    for (x = left; x < right; x++) {
-      curr[p].id = id;
-      cnt++;
-    }
+  for (int i = 1; i <= width; i++) { // check for valid grid size inside it
+      if (size % i == 0 && size / i <= height) {
+          dwn = up + size / i, right = left + i;
+      }
+  }
+
+  for (y = up; y < dwn; y++) { // write sector id
+      for (x = left; x < right; x++) {
+          curr[p].id = id;
+      }
   }
 
   return true;
+}
+bool scanv3 (graph &curr, int id) {
+
+  point p = curr.pts[id];
+  auto &[x,y] = p;
+  auto [up, dwn] = vertic (curr, p);
+  int left = 0, right = 99, ref;
+
+  for (y = up; y < dwn; y++) { // scan for highest possible vertical rectangle
+      pair<int,int> bndx = horiz (curr, p);
+      left = max (left, bndx.first), right = min (right, bndx.second);
+  }
+  int size = curr.secsize, height = dwn - up, width = right - left;
+  if (height * width < size) return false;
+  //cout << height * width << endl;
+  for (int i = 1; i <= height; i++) { // check for valid grid size inside it
+      if (size % i == 0 && size / i <= width) {
+          dwn = up + i, right = left + size / i;
+      }
+  }
+
+  for (y = up; y < dwn; y++) { // write sector id
+      for (x = left; x < right; x++) {
+            curr[p].id = id;
+        }
+  }
+  return true; // return {{left,up},{right,dwn}};
 }
 
 bool isvalid (graph &curr) {
     for (int y = 0; y < curr.height; y++)
         for (int x = 0; x < curr.width; x++) {
-            point p = {x,y};
-            if (curr[p].id == -1)
+            if (curr[make_pair (x,y)].id == -1)
                 return false;
         }
     return true;
@@ -161,19 +166,17 @@ bool isvalid (graph &curr) {
 
 void dfs (graph curr, vector<graph> &res, int id) {
 
-    Display::partition (curr);
-
-    if (isvalid (curr)) {
+    if (isvalid (curr) && !res.size()) {
         res.push_back(curr);
         return ;
     }
     graph right = curr;
 
-    if (scanh2 (curr, id)) {
+    if (scanh3 (curr, id)) {
         dfs (curr, res, id + 1);
     }
-    if (scanv2 (right, id)) {
-         dfs (right, res, id + 1);
+    if (scanv3 (right, id)) {
+      dfs (right, res, id + 1);
     }
 
     return ;
@@ -194,37 +197,30 @@ vector<string> format (graph curr) {
                     cnt++;
                 }
             }
-            if (cnt && cnt < curr.size) segm += '\n';
+            if (cnt && cnt < curr.secsize) segm += '\n';
         }
-        if (cnt)
-            part.push_back (segm);
+        if (cnt) part.push_back (segm);
     }
 
     return part;
 }
-
 vector<string> cut (const string &src) {
 
     graph curr (src);
-    vector<graph> solutions;
+    vector<graph> sector; // sector / sector
     point p = {0,0};
     auto &[x,y] = p;
 
-    dfs (curr, solutions, 0);
+    dfs (curr, sector, 0);
 
-    if (solutions.size() == 0) return {};
+    if (sector.size() == 0) return {};
 
-    vector<string> part;//
-    part = format (solutions.front());
-
-    //cout << part.size();
-    /*
-    for (auto &it : part) {
-        cout << it << "\n\n";
+    for (auto &it : sector) {
+        Display::partition (it);
+        cout << "\n";
     }
-    */
 
-    return part;
+    return format (sector.front());
 }
 
 int main () {
@@ -233,12 +229,37 @@ int main () {
     string 	cake;
 
     cake =
-		".o....o.\n"
-		".o....o.\n"
-		"........\n"
-		"o..oo..o";
+		"................\n"
+		".....o..........\n"
+		"................\n"
+		"...............o\n"
+		"................\n"
+		"................\n"
+		"................\n"
+		".....o..o.....o.\n"
+		"................\n"
+		"................\n"
+		"...o............\n"
+		"................\n"
+		"................\n"
+		"...............o\n"
+		"................\n"
+		".o..............";
 
-    vector<string> part = cut (cake);
+    cake =
+		".o.o....\n"
+		"........\n"
+		"....o...\n"
+		"........\n"
+		".....o..\n"
+		"........";
+
+    graph curr (cake);
+
+    scanh3 (curr, 0);
+
+    Display::partition (curr);
+    //vector<string> part = cut (cake);
 
     /*
     for (auto &it : part) {
@@ -252,6 +273,7 @@ int main () {
 }
 
 void Test () {
+  /*
   std::string cake;
   std::vector<std::string> result;
     cake =
@@ -359,6 +381,7 @@ void Test () {
 		"...............o\n"
 		"................\n"
 		".o..............";
+
 		result = {
 		"................\n"
 		".....o..........",
@@ -404,53 +427,111 @@ void Test () {
 
     */
 }
+void write (graph &curr, const point &a, const point &b, int id) {
+    for (int y = a.second; y < b.second; y++) { // write sector id
+        for (int x = a.first; x < b.first; x++) {
+              curr[make_pair (x,y)].id = id;
+          }
+    }
+}
+bool scanv2 (graph &curr, int id) {
+
+  point p = curr.pts[id];
+  auto &[x,y] = p;
+  auto [up, dwn] = vertic (curr, p);
+  int left = 0, right = 99, cnt = 0;
+
+  for (y = up; y < dwn; y++) {
+    pair<int,int> bndx = horiz (curr, p);
+    left = max (left, bndx.first), right = min (right, bndx.second);
+  }
+
+  if ((dwn - up) * (right - left) < curr.secsize) return false;
+  while (((dwn - up) * (right - left)) > curr.secsize) right--;
+
+  //cout << ((dwn - up) * (right - left))  << " " << curr.size << endl;
+  for (x = left; x < right; x++) {
+    for (y = up; y < dwn; y++) {
+      curr[p].id = id;
+      cnt++;
+    }
+  }
+
+  return true; // return {{left,up},{right,dwn}};
+}
+bool scanh2 (graph &curr, int id) {
+
+  point p = curr.pts[id];
+  auto &[x,y] = p;
+  auto [left, right] = horiz (curr, p);
+  int up = 0, dwn = 99, cnt = 0;
+
+  for (x = left; x < right; x++) { // scan for highest possible horizontal rectangle
+    pair<int,int> bndy = vertic (curr, p);
+    up = max (up, bndy.first), dwn = min (dwn, bndy.second);
+  }
+
+  while (((dwn - up) * (right - left)) > curr.secsize) {
+      (dwn - up) > 1 ? dwn-- : right--;
+  }
+
+  if ((dwn - up) * (right - left) < curr.secsize) return false;
+  for (y = up; y < dwn; y++) {
+    for (x = left; x < right; x++) {
+      curr[p].id = id;
+      cnt++;
+    }
+  }
+
+  return true;
+}
 
 bool scanv (graph &curr, int id) {
 
-    point p = curr.pts[id];
-    auto &[x,y] = p;
-    auto [up, dwn] = vertic (curr, p);
-    int left = 0, right = 99, cnt = 0;
+  point p = curr.pts[id];
+  auto &[x,y] = p;
+  auto [up, dwn] = vertic (curr, p);
+  int left = 0, right = 99, cnt = 0;
 
+  for (y = up; y < dwn; y++) {
+    pair<int,int> bndx = horiz (curr, p);
+    left = max (left, bndx.first), right = min (right, bndx.second);
+  }
+
+  for (x = left; x < right; x++) {
     for (y = up; y < dwn; y++) {
-        pair<int,int> bndx = horiz (curr, p);
-        left = max (left, bndx.first), right = min (right, bndx.second);
+
+      if (curr[p].id == -1) {
+        curr[p].id = id;
+        cnt++;
+        if (cnt == curr.secsize) return true;
+      }
     }
+  }
 
-    for (x = left; x < right; x++) {
-        for (y = up; y < dwn; y++) {
-
-            if (curr[p].id == -1) {
-                curr[p].id = id;
-                cnt++;
-                if (cnt == curr.size) return true;
-            }
-        }
-    }
-
-    return false; // return {{left,up},{right,dwn}};
+  return false; // return {{left,up},{right,dwn}};
 }
 bool scanh (graph &curr, int id) {
 
-    point p = curr.pts[id];
-    auto &[x,y] = p;
-    auto [left, right] = horiz (curr, p);
-    int up = 0, dwn = 99, cnt = 0;
+  point p = curr.pts[id];
+  auto &[x,y] = p;
+  auto [left, right] = horiz (curr, p);
+  int up = 0, dwn = 99, cnt = 0;
 
+  for (x = left; x < right; x++) {
+    pair<int,int> bndy = vertic (curr, p);
+    up = max (up, bndy.first), dwn = min (dwn, bndy.second);
+  }
+
+  for (y = up; y < dwn; y++) {
     for (x = left; x < right; x++) {
-        pair<int,int> bndy = vertic (curr, p);
-        up = max (up, bndy.first), dwn = min (dwn, bndy.second);
+      if (curr[p].id == -1) {
+        curr[p].id = id;
+        cnt++;
+        if (cnt == curr.secsize) return true;
+      }
     }
+  }
 
-    for (y = up; y < dwn; y++) {
-        for (x = left; x < right; x++) {
-            if (curr[p].id == -1) {
-                curr[p].id = id;
-                cnt++;
-                if (cnt == curr.size) return true;
-            }
-        }
-    }
-
-    return false;
+  return false;
 }
