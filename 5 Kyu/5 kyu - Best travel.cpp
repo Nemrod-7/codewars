@@ -1,16 +1,18 @@
 #include <iostream>
 #include <vector>
 #include <map>
+
 #include <queue>
 #include <numeric>
 #include <algorithm>
 
-#include <cstring>
 using namespace std;
-using vertex = pair<int,int>; // id, dist
+using vertex = std::pair<int,int>; // id, dist
 
 class BestTravel {
     private :
+        inline static std::vector<int> ts;
+
         static int nearest_neighbour (int t, int k, const std::vector<int> &ls) {
 
             priority_queue <vertex> q1;
@@ -23,76 +25,65 @@ class BestTravel {
 
             int minv = 9999, nxt = -1;
             for (int i = 0; i < ls.size(); i++) {
+                int alt = t - (ls[i] + dist);
 
-                if (visited[ls[i]] == false) {
-                    int alt = t - (ls[i] + dist);
+                if (visited[ls[i]] == false && alt > 0) {
 
                     cout << alt << "\n";
-                    if (alt > 0 && alt < minv) {
+                    if (alt < minv) {
                       minv = alt;
                       nxt = ls[i];
                     }
                 }
             }
-
             //cout << visited.size();
             return nxt;
-
         }
-        static bool check (const vector<int> &vec, int size) {
-          int hist[size] = {0};
-          for (int i = 0; i < vec.size(); i++) {
-              if (hist[vec[i]]) return false;
-              //cout << vec[i] << " ";
-              hist[vec[i]]++;
-          }
-          return true;
+
+        static void search (std::vector<int> curr, int index, int lim, int &val) {
+
+            if (val == lim) return;
+
+            const int depth = curr.size();
+            int sum = 0;
+
+            for (int i = index; i < ts.size(); i++) {
+                if (std::find (&curr[0], &curr[index], ts[i]) != &curr[index]) continue;
+
+                curr[index] = ts[i];
+
+                if (index == depth - 1) {
+                    sum = std::accumulate (curr.begin(), curr.end(), 0);
+
+                    if (sum <= lim) {
+                        //std::cout << sum << " ";
+                        val = std::max (val, sum);
+                    }
+                } else {
+                    search (curr, index + 1, lim, val);
+                }
+            }
         }
     public:
-        static int chooseBestSum (int t, int depth, const std::vector<int> &ls) { // simulated annealing ?
+        static int chooseBestSum (int t, int k, const std::vector<int> &data) { // simulated annealing ?
 
-            int size = ls.size(), index = 0;
-            vector<int> base (depth);
+            if (k > data.size()) return -1;
+            int maxv = 0;
+            std::vector<int> arr (k);
 
-            while (base[depth] == 0) {
+            nearest_neighbour (t, k, data);
+            ts = data;
+            //search (arr, 0, t, maxv);
 
-                if (check (base, size)) {
-                    int sum = 0;
-                    for (auto &it : base) sum += ls[it];
-
-                    if (sum <= t)
-                        cout << sum << " ";
-
-                }
-
-                base[0]++;
-
-                while (base[index] == size) {
-                    base[index++] = 0;
-                    base[index]++;
-                }
-                index = 0;
-            }
-
-            return 0;
+            return maxv;
         }
 };
 
-void display (const vector<int> &tablex, const string &dict) {
+void display (const std::vector<int> &tablex, const std::string &dict) {
   for (int i = 0; i < tablex.size(); i++) {
-    cout << dict[tablex[i]] << ' ';
+    std::cout << dict[tablex[i]] << ' ';
   }
-  cout << endl;
-}
-
-bool check (const vector<int> &vec, int size) {
-  int hist[size] = {0};
-  for (int i = 0; i < vec.size(); i++) {
-      if (hist[vec[i]]) return false;
-      //cout << vec[i] << " ";
-      hist[vec[i]]++;
-  }
-  return true;
+  std::cout << std::endl;
 }
 
 void combinations (int depth, const string &dict) {
@@ -103,8 +94,8 @@ void combinations (int depth, const string &dict) {
     while (base[depth] == 0) {
 
       string pass;
-      for (auto &it : base) pass += dict[it];
-      cout << pass << endl;
+      //for (auto &it : base) pass += dict[it];
+      //cout << pass << endl;
 
       base[0]++;
 
@@ -115,6 +106,7 @@ void combinations (int depth, const string &dict) {
       index = 0;
     }
 }
+/*
 void combinations2 (int depth, const string &dict) {
   int digits[24], size = dict.size();
   int index, left;
@@ -139,7 +131,7 @@ void combinations2 (int depth, const string &dict) {
       if (index < 0) break;
   }
 }
-
+*/
 void simmulated_annealing () {
 
     int iteration = -1;
@@ -177,12 +169,23 @@ void simmulated_annealing () {
     */
 }
 
+
 int main () {
 
-    //combinations (3, "abccde");
+        std::vector<int> ts = {202,175,407,246,213,383,258,184,253,69,428,134,355,257,40,38,430,149,78,248,109,161,437,93,257};
 
-    cout << "end";
-    vector<int> ts = {50, 55, 57, 58, 60};
-    //cout << BestTravel::chooseBestSum (174, 3, ts);
+        for (int i = 0; i < ts.size(); i++) {
+            for (int j = i; j < ts.size(); j++) {
+
+            }
+        }
+        cout << BestTravel::chooseBestSum (502, 6, ts);
+        std::cout << "end";
+        /*
+        cout << BestTravel::chooseBestSum(230, 4, {100,76,56,44,89,73,68,56,64,123,2333,144,50,132,123,34,89});
+
+        cout << BestTravel::chooseBestSum (1007, 2, {498,288,129,439,237,217,56,273,484,287,240,38,116,456,242,204,107,140,367,128,396,289});
+        */
     // testequal(n, 228);
+
 }
