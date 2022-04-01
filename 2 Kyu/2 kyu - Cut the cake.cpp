@@ -4,7 +4,6 @@
 #include <algorithm>
 
 #include "../../templates/Assert.hpp"
-
 using namespace std;
 
 using point = pair<int,int>;
