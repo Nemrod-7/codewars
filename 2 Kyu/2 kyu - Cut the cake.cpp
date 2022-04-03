@@ -14,7 +14,7 @@ class graph {
         vector<cell> grid;
     public :
         int width, height, capacity = 0;
-        vector<point> seeds, vert;
+        vector<point> seeds;
 
         graph (const string &src = {}) {
 
@@ -29,8 +29,8 @@ class graph {
                 }
             }
 
-            vert = seeds;
-            sort (vert.begin(), vert.end());
+            //vert = seeds;
+            //sort (vert.begin(), vert.end());
 
             if (width) {
                 width -= 1;
@@ -69,6 +69,7 @@ class Display {
     cout << '\n';
   }
 };
+
 bool isvalid (graph &curr) {
   for (int y = 0; y < curr.height; y++)
   for (int x = 0; x < curr.width; x++) {
@@ -97,14 +98,24 @@ pair<int,int> scan_v (graph &grid, const point &p) {
     return {dwn.second + 1, up.second};
 }
 
-bool lateralcut (graph &curr, int id) {
+int get_id (graph &curr) {
+  int maxv = 0;
+  for (int y = 0; y < curr.height; y++) {
+      for (int x = 0; x < curr.width; x++) {
+          maxv = max (curr[{x,y}].id, maxv);
+      }
+  }
 
-  point p = curr.seeds[id];
+  return maxv;
+}
+
+bool lateralcut3 (graph &curr, point p, int id) {
+
   auto &[x,y] = p;
   auto [left, right] = scan_h (curr, p);
   int up = 0, dwn = 99;
 
-  for (x = left; x < right; x++) { // scan for highest possible scan_hontal rectangle
+  for (x = left; x < right; x++) { // scan for highest possible horizontal rectangle
       pair<int,int> bndy = scan_v (curr, p);
       up = max (up, bndy.first), dwn = min (dwn, bndy.second);
   }
@@ -112,93 +123,37 @@ bool lateralcut (graph &curr, int id) {
   int size = curr.capacity, height = dwn - up, width = right - left;
   if (height * width < size) return false;
 
-  for (int i = 1; i <= width; i++) { // check for valid gri size inside it
-      if (size % i == 0 && size / i <= height) {
-          dwn = up + size / i, right = left + i;
+  for (int i = 1; i <= width; i++) { // reduce size to fit sector capacity
+      if (size % i == 0) {
+          height = size / i;
       }
   }
 
-  for (y = up; y < dwn; y++) { // write sector id
-      for (x = left; x < right; x++) {
+  while ((up + height - 1) < p.second) up++; // if seed isnt visible then adjust
+
+  for (y = up; y < up + height; y++) {  // write sector id
+      for (x = left; x < left + width; x++) {
           curr[p].id = id;
       }
   }
 
   return true;
 }
-bool verticalcut (graph &curr, int id) {
+bool verticalcut3 (graph &curr, point p, int id) {
 
-  point p = curr.vert[id];
   auto &[x,y] = p;
   auto [up, dwn] = scan_v (curr, p);
   int left = 0, right = 99;
 
-  for (y = up; y < dwn; y++) { // scan for highest possible scan_val rectangle
+  for (y = up; y < dwn; y++) { // scan for highest possible vertical rectangle
       pair<int,int> bndx = scan_h (curr, p);
       left = max (left, bndx.first), right = min (right, bndx.second);
   }
   int size = curr.capacity, height = dwn - up, width = right - left;
   if (height * width < size) return false;
 
-  for (int i = 1; i <= height; i++) { // check for valid gri size inside it
-      if (size % i == 0 && size / i <= width) {
-          dwn = up + i, right = left + size / i;
-      }
-  }
-
-  for (y = up; y < dwn; y++) { // write sector id
-      for (x = left; x < right; x++) {
-            curr[p].id = id;
-        }
-  }
-
-  return true;
-}
-
-bool lateralcut2 (graph &curr, point p) {
-
-  auto &[x,y] = p;
-  auto [left, right] = scan_h (curr, p);
-  int up = 0, dwn = 99;
-  Display::showpoint (p);
-  for (x = left; x < right; x++) { // scan for highest possible scan_hontal rectangle
-      pair<int,int> bndy = scan_v (curr, p);
-      up = max (up, bndy.first), dwn = min (dwn, bndy.second);
-  }
-
-  int size = curr.capacity, height = dwn - up, width = right - left;
-  if (height * width < size) return false;
-
-  for (int i = 1; i <= width; i++) { // check for valid gri size inside it
-      if (size % i == 0 && size / i <= height) {
-          dwn = up + size / i, right = left + i;
-      }
-  }
-
-  for (y = up; y < dwn; y++) { // write sector id
-      for (x = left; x < right; x++) {
-          //curr[p].id = id;
-      }
-  }
-
-  return true;
-}
-bool verticalcut2 (graph &curr, int id) {
-
-  point p = curr.vert[id];
-  auto &[x,y] = p;
-  auto [up, dwn] = scan_v (curr, p);
-  int left = 0, right = 99;
-
-  for (y = up; y < dwn; y++) { // scan for highest possible scan_val rectangle
-      pair<int,int> bndx = scan_h (curr, p);
-      left = max (left, bndx.first), right = min (right, bndx.second);
-  }
-  int size = curr.capacity, height = dwn - up, width = right - left;
-  if (height * width < size) return false;
-
-  for (int i = 1; i <= height; i++) { // check for valid gri size inside it
-      if (size % i == 0 && size / i <= width) {
+  for (int i = 1; i <= height; i++) { // reduce to fit sector capacity
+      if (size % i == 0 /* && size / i <= width */) {
           dwn = up + i, right = left + size / i;
       }
   }
@@ -219,13 +174,12 @@ void search (graph curr, vector<graph> &res, int id) {
         return ;
     }
     graph vert = curr;
-
-    Display::partition (curr);
-    if (lateralcut (curr, id)) {
+    point p = curr.seeds[id];
+    if (lateralcut3 (curr, p, id)) {
         search (curr, res, id + 1);
     }
 
-    if (verticalcut (vert, id)) {
+    if (verticalcut3 (vert, p, id)) {
         search (vert, res, id + 1);
     }
 
@@ -263,103 +217,34 @@ vector<string> cut (const string &src) {
       cout << static_cast<int> (it) << ',';
   cout << '\n';
   */
+
+    // cout << src << "\n";
+
     graph curr (src);
     vector<graph> sector;
 
-    cout << src;
-
-    verticalcut (curr, 0);
-    verticalcut (curr, 1);
-    verticalcut (curr, 2);
-    verticalcut (curr, 3);
-    verticalcut (curr, 4);
-    lateralcut2 (curr, curr.vert[7]);
-
-
-  Display::partition (curr);
-    //search (curr, sector, 0); // horizontal segmentation
-    //sort (curr.seeds.begin(), curr.seeds.end());
-    //search (curr, sector, 0);  // vertical segmentation
+    search (curr, sector, 0); // horizontal segmentation
+    sort (curr.seeds.begin(), curr.seeds.end());
+    search (curr, sector, 0);  // vertical segmentation
 
     if (sector.size() == 0) return {};
 
     /*
     for (auto &it : sector) {
         Display::partition (it);
-        cout << "\n";
+        //cout << "\n";
     }
     */
     return format (sector.front());
 }
 
-
-
 int main () {
 
     string 	cake;
 
-    cake = {46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,10,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,10,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,111,46,46,46,46,46,46,46,46,46,46,46,10,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,111,46,46,10,46,46,46,46,46,46,46,111,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46};
-
-    cake =
-		"................\n"
-		".....o..........\n"
-		"................\n"
-		"...............o\n"
-		"................\n"
-		"................\n"
-		"................\n"
-		".....o..o.....o.\n"
-		"................\n"
-		"................\n"
-		"...o............\n"
-		"................\n"
-		"................\n"
-		"...............o\n"
-		"................\n"
-		".o..............";
 
 
-    cake =
-		".o.o....\n"
-		"........\n"
-		"....o...\n"
-		"........\n"
-		".....o..\n"
-		"........";
-
-    cake = {46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,10,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,10,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,10,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,111,46,46,46,46,46,46,46,46,46,10,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,10,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,10,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,111,46,46,46,46,10,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,10,46,46,46,46,111,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,10,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46};
-
-    cake = {46,46,46,46,111,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,111,46,46,10,46,46,46,111,46,46,46,46,46,46,46,46,46,46,46,46,46,46,111,46,46,46,46,46,46,46,46,46,46,46,46,46,10,46,46,46,46,46,46,46,46,46,46,111,46,46,111,46,46,46,46,46,46,46,46,46,46,111,46,111,46,46,46,46,46};
-
-
-
-    vector<string> part = cut (cake);
-    /*
-    cout << cake << "\n";
-    graph curr (cake);
-
-    for (auto &p : curr.horiz) {
-        Display::showpoint (p);
-    }
-
-    //cout << cake;
-    verticalcut (curr, 2);
-    verticalcut (curr, 0);
-    verticalcut (curr, 1);
-
-    verticalcut (curr, 0);
-    verticalcut (curr, 1);
-    Display::partition (curr);
-    */
-    //lateralcut (curr, 1);
-
-    /*
-    for (auto &it : part) {
-        cout << it << "\n\n";
-    }
-
-    Test ();
-    */
+    //Test ();
 
     cout << "end";
 }
@@ -367,7 +252,6 @@ int main () {
 #include "../../templates/Assert.hpp"
 
 void Test () {
-  /*
   std::string cake;
   std::vector<std::string> result;
     cake =
@@ -518,17 +402,20 @@ void Test () {
 		".o.............."
 		};
 		//Assert::That (cut(std::string(cake)), result);
+    /*
+    cake = {46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,10,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,10,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,10,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,111,46,46,46,46,46,46,46,46,46,10,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,10,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,10,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,111,46,46,46,46,10,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,10,46,46,46,46,111,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,10,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46};
+    cut (cake);
+
+    cake = {46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,10,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,10,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,111,46,46,46,46,46,46,46,46,46,46,46,10,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,111,46,46,10,46,46,46,46,46,46,46,111,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46};
+    cut (cake);
+
+    cake = {46,46,46,46,111,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,111,46,46,10,46,46,46,111,46,46,46,46,46,46,46,46,46,46,46,46,46,46,111,46,46,46,46,46,46,46,46,46,46,46,46,46,10,46,46,46,46,46,46,46,46,46,46,111,46,46,111,46,46,46,46,46,46,46,46,46,46,111,46,111,46,46,46,46,46};
+
+    cut (cake);
 
     */
 }
 
-void write (graph &curr, const point &a, const point &b, int id) {
-    for (int y = a.second; y < b.second; y++) { // write sector id
-        for (int x = a.first; x < b.first; x++) {
-              curr[make_pair (x,y)].id = id;
-          }
-    }
-}
 
 string join (const string &sep, const vector<string> &to_join) {
     string os;
@@ -537,4 +424,64 @@ string join (const string &sep, const vector<string> &to_join) {
         os += it + sep;
 
     return os;
+}
+bool lateralcut2 (graph &curr, point p, int id) {
+
+  auto &[x,y] = p;
+  auto [left, right] = scan_h (curr, p);
+  int up = 0, dwn = 99;
+
+  for (x = left; x < right; x++) { // scan for highest possible scan_hontal rectangle
+      pair<int,int> bndy = scan_v (curr, p);
+      up = max (up, bndy.first), dwn = min (dwn, bndy.second);
+  }
+
+  int size = curr.capacity, height = dwn - up, width = right - left; // capcity, height = max height, width =
+  if (height * width < size) return false;
+
+  for (int i = 1; i <= width; i++) { // check for valid gri size inside it
+      if (size % i == 0 /* && size / i <= height */ ) {
+          height = size / i;
+          //cout << size / i << ' ';
+          // right = left + i;
+      }
+  }
+
+  //height = dwn - up;
+  while ((up + height - 1) < p.second) up++;
+  //cout << (up + height - 1) << " ";
+  for (y = up; y < up + height; y++) { // write sector id
+      for (x = left; x < left + width; x++) {
+          curr[p].id = id;
+      }
+  }
+
+  return true;
+}
+bool verticalcut2 (graph &curr, point p, int id) {
+
+  auto &[x,y] = p;
+  auto [up, dwn] = scan_v (curr, p);
+  int left = 0, right = 99;
+
+  for (y = up; y < dwn; y++) { // scan for highest possible scan_val rectangle
+      pair<int,int> bndx = scan_h (curr, p);
+      left = max (left, bndx.first), right = min (right, bndx.second);
+  }
+  int size = curr.capacity, height = dwn - up, width = right - left;
+  if (height * width < size) return false;
+
+  for (int i = 1; i <= height; i++) { // check for valid gri size inside it
+      if (size % i == 0 && size / i <= width) {
+          dwn = up + i, right = left + size / i;
+      }
+  }
+
+  for (y = up; y < dwn; y++) { // write sector id
+      for (x = left; x < right; x++) {
+            curr[p].id = id;
+        }
+  }
+
+  return true;
 }
