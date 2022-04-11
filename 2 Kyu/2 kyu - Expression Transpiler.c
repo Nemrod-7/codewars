@@ -53,13 +53,15 @@ char **tokenize (const char* src) { // Turn a program string into an array of to
     int size = strlen (src), index = 0;
     char *expr = strdup (src);
     char **tok = malloc (size * sizeof (char*)), *it = expr;
-
+    // char **error = malloc (sizeof(char*));
+    // *error = NULL;
     int par = 0, brace = 0;
 
     while (size > (it - expr)) {
         while (*it == ' ') it++;
         char buffer[16] = {}, *ptr = buffer;
         // check for validity
+
         if (*it == '(') par++;
         if (*it == ')') par--;
         if (*it == '{') brace++;
@@ -77,16 +79,17 @@ char **tokenize (const char* src) { // Turn a program string into an array of to
             if (*it == '-' && *(it + 1) == '>') {
                 *ptr++ = *it++;
             }
-            if (ispunct (*it))
+            if (ispunct (*it)) {
                 *ptr++ = *it++;
-            else
+
+            } else {
                 *it++;
+            }
         }
         if (ptr - buffer) tok[index++] = strdup (buffer);
     }
-    /*
-    */
-    if (par || brace) index = 0;
+
+    if (par || brace) index = 0; // invalid braces or parenthesis
 
     tok[index] = NULL;
 
@@ -131,8 +134,10 @@ char *transpile (const char* source) {
 
                 if (strcmp (*code, "{") == 0) {
                     code = lambda (code + 1, &sub[size++]) + 1;
-                } else if (strcmp (*code, ",") && strcmp (*code, "}") ) {
+                } else if (strcmp (*code, ",") /* && strcmp (*code, "}") */) {
                     sub[size++] = strdup (*code);
+                } else {
+
                 }
 
                 if (strcmp (*code, ")") == 0) break;
@@ -238,19 +243,14 @@ void Test () {
 int main () {
 
   //Test ();
-  fromTo ("f( a v)" , "");
-/*
+
   fromTo ("i(,{})" , "");
   fromTo ("f(a,)" , "");
   fromTo ("f (,a)" , "");
-  */
-  printf ("\nfinish");
-  /*
-  Test2 ();
+  fromTo ("f( a v)" , "");
 
-  //fromTo ("f { a }","f((){a;})");
-  printf ("%i", param ("a, b"));
-  */
+  printf ("\nfinish");
+
 }
 
 void Test2 () {
