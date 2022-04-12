@@ -6,46 +6,11 @@
 
 extern char* strdup(const char*);
 
-char **lambda (char **expr, char **sub) {
-
-    char buffer[64], *ptr = buffer;
-    char **lmb = expr;
-    bool flag = false;
-
-    while (strcmp (*lmb, "}")) {
-        if (strcmp (*lmb, "->") == 0) flag = true;
-        lmb++;
-    }
-    *ptr++ = '(';
-    if (flag == false) {
-        ptr += sprintf(ptr, "){");
-
-        while (strcmp (*expr, "}")) {
-            ptr += sprintf(ptr, "%s;", *expr++);
-        }
-    } else {
-        while (strcmp (*expr, "->")) {
-            ptr += sprintf (ptr, "%s", *expr++);
-        }
-
-        expr++;
-        ptr += sprintf(ptr, "){");
-
-        while (strcmp (*expr, "}")) {
-            ptr += sprintf(ptr, "%s;", *expr++);
-        }
-    }
-    ptr += sprintf(ptr, "}");
-
-    *sub = strdup (buffer);
-
-    return expr;
-}
 char **tokenize (const char* src) { // Turn a program string into an array of tokens (last entry is 0)
 
     int size = strlen (src), index = 0;
     char *expr = strdup (src);
-    char **tok = malloc (size * sizeof (char*)), *it = expr;
+    char **tok = malloc ((size + 1) * sizeof (char*)), *it = expr;
 
     while (size > (it - expr)) {
         while (*it == ' ') it++;
@@ -58,11 +23,10 @@ char **tokenize (const char* src) { // Turn a program string into an array of to
             if (*it == '-' && *(it + 1) == '>') {
                 *ptr++ = *it++;
             }
-            if (ispunct (*it)) {
-                *ptr++ = *it++;
-            } else {
-                *it++;
-            }
+
+            if (ispunct (*it)) *ptr++ = *it;
+
+            it++;
         }
 
         if (ptr - buffer) tok[index++] = strdup (buffer);
@@ -72,110 +36,138 @@ char **tokenize (const char* src) { // Turn a program string into an array of to
 
     return tok;
 }
-
 bool isvalid (char **code) {
 
-    int para = 0, parb = 0, braca = 0, bracb = 0;
-    char *tok, last;
+    // int para = 0, parb = 0, braca = 0, bracb = 0;
+    int index = 0;
+    int pam = 0, sep = 0;
+    int paren = 0, brace = 0;
+    char *tok = *code, id, last;
 
-    if (*code[0] == '(') return false; // function parameters without function name
+    if (tok[0] == '(') return false; // function parameters without function name
 
-    while (tok = *code++) {
-        char id = tok[0];
+    while ((tok = code[index++])) {
+        id = tok[0], last = index > 1 ? code[index - 2][0] : ' ';
 
         if (isdigit (id)) {      // expression begining with digit
-            for (int i = 0; tok[i]; i++) {
-                if (isalpha(tok[i])) return false;
+            for (int i = 1; tok[i]; i++) {
+                if (isalpha (tok[i])) return false;
             }
         }
-        else if (id == '(') para++;
-        else if (id == ')') parb++;
-        else if (id == '{') braca++;
-        else if (id == '}') bracb++;
+        else if (id == '(') paren++; // para++;
+        else if (id == ')') paren--; // parb++,
+        else if (id == '}') brace++; // bracb++,
+        else if (id == '{') {
+            brace--; // braca++,
+            if (paren) pam++;
+        }
         else if (id == ',') {
-            if (*(code - 2)[0] == '(' || *code[0] == ')') return false;
+            if (last == '(' || code[index][0] == ')') return false;
+            if (paren) sep++;
         }
         else if (id == '-') { // strcmp (tok, "->") == 0
-            last = *(code - 2)[0];
             if (last == '(' || last == '{') return false;
         }
+        else {
+            if (paren && !brace) pam++;
+        }
     }
-    
-    last = *(code - 2)[0];
+    //printf ("%i \n", index);
+    last = code[index - 2][0];
+
     if (last != ')' && last != '}') return false;
-    if (para - parb || braca - bracb) return false; // invalid parenthesis or brace number
+    if (paren || brace) return false; // invalid parenthesis or brace number
+    if (pam - sep >= 2) return false;
     //if (para == 0 && braca == 0) return false;      // function without parameter or lambda
 
     return true;
+  }
+
+char *lambda4 (char **expr, int *it) {
+
+    int size = *it + 1, flag = size;
+    char buffer[64], *ptr = buffer;
+
+    if (expr[size][0] == '}') {
+        *it = size; return strdup ("(){}");
+    }
+
+    while (expr[size][0] != '}') {
+        if (strcmp (expr[size], "->") == 0) flag = size;
+        size++;
+    }
+
+    *ptr++ = '(';
+    for (int i = *it + 1; i < size; i++) {
+      //printf ("%d %d %d %s\n", *it + 1, flag, size, expr[i]);
+        if (i == flag) {
+            ptr += sprintf (ptr, "){");
+        }
+        if (i < flag) ptr += sprintf (ptr, "%s", expr[i]);
+        else if (expr[i][0] != '-')ptr += sprintf (ptr, "%s;", expr[i]);
+    }
+
+    sprintf (ptr, "}");
+
+    *it = size;
+    return strdup (buffer);
 }
 char *transpile (const char* source) {
 
     // if (strcmp (source, "{}{}") == 0) return strdup ("(){}((){})");
+    int index = 0;
     char **expre = tokenize (source), **code = expre;
     char *os = malloc (64 * sizeof (char)), *ptr = os;
-
     if (!isvalid (code)) return strdup ("");
 
-    while (*code) {
+    while (code[index]) {
 
-        char id = *code[0];
+        char id = code[index][0];
 
         if (id == '(') {
             char *sub[64];
-            int param = 0, separ = 0;
-            code++;
+            int param = 0;
+            index++;
 
-            while (*code[0] != ')') {
+            while (code[index][0] != ')') {
 
-                if (*code[0] != ',') {
+                if (code[index][0] != ',') {
 
-                    if (*code[0] == '{') {
-                        code = lambda (code + 1, &sub[param++]);
+                    if (code[index][0] == '{') {
+                        sub[param++] = lambda4 (code, &index);
                     } else {
-                        sub[param++] = strdup (*code);
+                        sub[param++] = strdup (code[index]);
                     }
 
-                    if (*code[0] == ')') break;
-                } else {
-                    separ++;
+                    if (code[index][0] == ')') break;
                 }
-                code++;
-            }
-
-            if (param || separ) {
-                //if (param - separ == 2) return strdup ("");
-                //if (param <= separ) return strdup ("");
+                index++;
             }
 
             *ptr++ = '(';
             for (int i = 0; i < param; i++) {
-              //printf ("[%s]", sub[i]);
               ptr += sprintf (ptr, "%s", sub[i]);
               if (i < param - 1) *ptr++ = ',';
             }
-            //printf ("\n");
-
+            /*
+            */
         } else if (id == '{') {
-
-            char *sub;
-
-            if (*(code - 2)) {
-                if (strcmp (*(code - 1), ")") == 0 && strcmp (*(code - 2), "(")) {
+            //printf ("%d", index);
+            if (index >= 2) {
+                if (code[index - 1][0] == ')' && code[index - 2][0] != '(') {
                     *ptr++ = ',';
                 }
             }
-
-            code = lambda (code + 1, &sub);
+            char *sub = lambda4 (code, &index);
             ptr += sprintf (ptr, "%s", sub);
         } else {
 
-            ptr += sprintf (ptr, "%s", *code);
-            if (*(code + 1) && strcmp (*(code + 1), "(")) *ptr++ = '(';
+            ptr += sprintf (ptr, "%s", code[index]);
+            if (code[index + 1] && code[index + 1][0] != '(') *ptr++ = '(';
         }
 
-        code++;
+        index++;
     }
-
     int cnt = 0;
     for (int i = 0; os[i] != '\0'; i++) {
         if (os[i] == '(') cnt++;
@@ -183,7 +175,7 @@ char *transpile (const char* source) {
     }
 
     if (cnt > 0) sprintf (ptr, ")");
-    //printf ("%s\n", os);
+
     return os;
 }
 ///////////////////////////Assert////////////////////////////////
@@ -267,53 +259,235 @@ void Test () {
 
   }
 /////////////////////////////////////////////////////////////////
+
+void parenthesis (char **expr) {
+
+}
+
+char *lambda5 (char **expr, int *it) {
+
+    int size = *it + 1, flag = size;
+    char buffer[64], *ptr = buffer;
+
+    if (expr[size][0] == '}') {
+        *it = size; return strdup ("(){}");
+    }
+
+    while (expr[size][0] != '}') {
+        if (strcmp (expr[size], "->") == 0) flag = size;
+        size++;
+    }
+
+    *ptr++ = '(';
+    for (int i = *it + 1; i < size; i++) {
+      //printf ("%d %d %d %s\n", *it + 1, flag, size, expr[i]);
+        if (i == flag) {
+            ptr += sprintf (ptr, "){");
+        }
+        if (i < flag) ptr += sprintf (ptr, "%s", expr[i]);
+        else if (expr[i][0] != '-')ptr += sprintf (ptr, "%s;", expr[i]);
+    }
+
+    sprintf (ptr, "}");
+
+    *it = size;
+    return strdup (buffer);
+}
+int getsize (char **expr, char c) {
+    char **it = expr;
+    while (*it[0] != '}') {
+        it++;
+    }
+}
+
 int main () {
 
   Test ();
+//Transpile from "{a,b,c->a  b c }  (233 , 666, 999)" to "(a,b,c){a;b;c;}(233,666,999)" failed, result was ""
+  const char *source = "(23){as we can} (23, 666, 79)";
+  char **expre = tokenize (source), **code = expre;
+  int index = 3;
 
-  //fromTo ("{}{}","(){}((){})");
+  char *res = lambda4 (expre, &index);
+  printf ("%s ", res);
 
-  /*
-  */
+/*
+Transpile from "{a->a}(cde,y,z){x y d -> stuff} invalid lambda param separator
+Transpile from "{a->a}(cde,y,z){x y,d -> stuff}  invalid lambda param separator
+
+Transpile from "{a->a}(cde,y,z){x,    y,d ->stuff,g,h} invalid lambda tmt separator
+Transpile from "{a}(cde,y,z){x,y,d jj}  invalid lambda tmt separator
+Transpile from "{a o , p}(cde,y,z){x,y,d,jj} ] invalid lambda tmt separator
+
+*/
+
 
   printf ("\nfinish");
 
 }
 
-void Test2 () {
-
-
-  fromTo ("f( a v)" , "");
-  fromTo ("i(,{})" , "");
-  fromTo ("f(a,)" , "");
-  fromTo ("f (,a)" , "");
-
-  fromTo ("f({1a->a})" , "");
-  fromTo ("1a()" , "");
-  fromTo ("f(12,ab)c" , "");
-  fromTo ("(12,ab)" , "");
-  fromTo ("call(1a)" , "");
-
-  fromTo ("a b c" , "");
-  fromTo ("run{->a}" , "");
-
-
-  fromTo ("gg     (  a  )  " , "gg(a)");
-  fromTo ("f(->)" , "");
-
-
-}
 void Test3() {
 
   /*
   Transpile from "{a->a}(cde,y,z){x y,d -> stuff}  " to "" failed, result was "(a){a;}(cde,y,z,(y,d){stuff;})"
+Transpile from "    { a   -> a }(cde,y,z){x,y,d -> stuff}  " to "(a){a;}(cde,y,z,(x,y,d){stuff;})" failed, result was ""
+Transpile from "{}(){}" , "(){}((){})"
 
   Transpile from "{}{}{}" , "" failed, result was "(){},(){},(){}"
-  Transpile from "{}(){}" , "(){}((){})" failed, result was "(){},(){}"
 
   */
 }
 ///////////////////////////Arkive////////////////////////////////
+char **lambda (char **expr, char **sub) {
+
+    char buffer[64], *ptr = buffer;
+    char **lmb = expr;
+    bool flag = false;
+
+    while (strcmp (*lmb, "}")) {
+        if (strcmp (*lmb, "->") == 0) flag = true;
+        lmb++;
+    }
+
+    *ptr++ = '(';
+    if (flag == false) {
+        ptr += sprintf(ptr, "){");
+
+        while (strcmp (*expr, "}")) {
+            ptr += sprintf (ptr, "%s;", *expr++);
+        }
+    } else {
+        while (strcmp (*expr, "->")) {
+            ptr += sprintf (ptr, "%s", *expr++);
+        }
+
+        ptr += sprintf (ptr, "){");
+
+        expr++;
+        while (strcmp (*expr, "}")) {
+            ptr += sprintf (ptr, "%s;", *expr++);
+        }
+    }
+    ptr += sprintf (ptr, "}");
+
+    *sub = strdup (buffer);
+
+    return expr;
+}
+char *lambda3 (char **expr, int *it) {
+
+    int index = *it + 1;
+    char buffer[64], *ptr = buffer;
+    bool flag = false;
+
+    for (int i = index; strcmp (expr[i], "}"); i++) {
+        if (strcmp (expr[i], "->") == 0) flag = true;
+    }
+
+    *ptr++ = '(';
+    if (flag == false) {
+        ptr += sprintf (ptr, "){");
+
+        while (strcmp (expr[index], "}")) {
+            ptr += sprintf (ptr, "%s;", expr[index++]);
+        }
+    } else {
+
+        while (strcmp (expr[index], "->")) {
+            ptr += sprintf (ptr, "%s", expr[index++]);
+        }
+
+        ptr += sprintf (ptr, "){");
+
+        index++;
+        while (strcmp (expr[index], "}")) {
+            ptr += sprintf (ptr, "%s;", expr[index++]);
+        }
+
+    }
+    *it = index;
+    ptr += sprintf (ptr, "}");
+
+    return strdup (buffer);
+  }
+char *transpile2 (const char* source) {
+
+    // if (strcmp (source, "{}{}") == 0) return strdup ("(){}((){})");
+    char **expre = tokenize (source), **code = expre;
+    char *os = malloc (64 * sizeof (char)), *ptr = os;
+
+    if (!isvalid (code)) return strdup ("");
+
+    while (*code) {
+
+        char id = *code[0];
+
+        if (id == '(') {
+            char *sub[64];
+            int param = 0, separ = 0;
+            code++;
+
+            while (*code[0] != ')') {
+
+                if (*code[0] != ',') {
+
+                    if (*code[0] == '{') {
+                        code = lambda (code + 1, &sub[param++]);
+                    } else {
+                        sub[param++] = strdup (*code);
+                    }
+
+                    if (*code[0] == ')') break;
+                } else {
+                    separ++;
+                }
+                code++;
+            }
+
+            if (param || separ) {
+                //if (param - separ == 2) return strdup ("");
+                //if (param <= separ) return strdup ("");
+            }
+
+            *ptr++ = '(';
+            for (int i = 0; i < param; i++) {
+              //printf ("[%s]", sub[i]);
+              ptr += sprintf (ptr, "%s", sub[i]);
+              if (i < param - 1) *ptr++ = ',';
+            }
+            //printf ("\n");
+
+        } else if (id == '{') {
+
+            char *sub;
+
+            if (*(code - 2)) {
+                if (strcmp (*(code - 1), ")") == 0 && strcmp (*(code - 2), "(")) {
+                    *ptr++ = ',';
+                }
+            }
+
+            code = lambda (code + 1, &sub);
+            ptr += sprintf (ptr, "%s", sub);
+        } else {
+
+            ptr += sprintf (ptr, "%s", *code);
+            if (*(code + 1) && strcmp (*(code + 1), "(")) *ptr++ = '(';
+        }
+
+        code++;
+    }
+
+    int cnt = 0;
+    for (int i = 0; os[i] != '\0'; i++) {
+        if (os[i] == '(') cnt++;
+        if (os[i] == ')') cnt--;
+    }
+
+    if (cnt > 0) sprintf (ptr, ")");
+    //printf ("%s\n", os);
+    return os;
+}
 
 #define IS_VAR(x) ((x) == '_' || isalnum(x))
 enum {NONE, FUNC, VAR, LAMB};
