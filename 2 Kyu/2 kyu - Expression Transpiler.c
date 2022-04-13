@@ -4,9 +4,9 @@
 #include <string.h>
 #include <ctype.h>
 
-extern char* strdup(const char*);
+extern char* strdup (const char*);
 
-char **tokenize (const char* src) { // Turn a program string into an array of tokens (last entry is 0)
+char **tokenize (const char* src) {
 
     int size = strlen (src), index = 0;
     char *expr = strdup (src);
@@ -25,7 +25,6 @@ char **tokenize (const char* src) { // Turn a program string into an array of to
             }
 
             if (ispunct (*it)) *ptr++ = *it;
-
             it++;
         }
 
@@ -36,89 +35,101 @@ char **tokenize (const char* src) { // Turn a program string into an array of to
 
     return tok;
 }
-bool isvalid (char **code) {
+bool isvalid2 (char **code) {
 
-    // int para = 0, parb = 0, braca = 0, bracb = 0;
     int index = 0;
     int pam = 0, sep = 0;
     int paren = 0, brace = 0;
-    char *tok = *code, id, last;
+    char id, last;
 
-    if (tok[0] == '(') return false; // function parameters without function name
+    if (code[index] && code[index][0] == '(') return false; // function parameters without function name
 
-    while ((tok = code[index++])) {
-        id = tok[0], last = index > 1 ? code[index - 2][0] : ' ';
+    while (code[index]) {
+        id = code[index][0], last = index > 0 ? code[index - 1][0] : ' ';
 
         if (isdigit (id)) {      // expression begining with digit
-            for (int i = 1; tok[i]; i++) {
-                if (isalpha (tok[i])) return false;
+            for (int i = 1; code[index][i]; i++) {
+                if (isalpha (code[index][i])) return false;
             }
         }
-        else if (id == '(') paren++; // para++;
-        else if (id == ')') paren--; // parb++,
-        else if (id == '}') brace++; // bracb++,
+        else if (id == '(') paren++;
+        else if (id == ')') paren--;
+        else if (id == '}') brace++;
         else if (id == '{') {
-            brace--; // braca++,
+            brace--;
             if (paren) pam++;
         }
         else if (id == ',') {
             if (last == '(' || code[index][0] == ')') return false;
+            //if (code[index + 1] && code[index + 1][0] == ')') return false;
             if (paren) sep++;
         }
-        else if (id == '-') { // strcmp (tok, "->") == 0
+        else if (id == '-') {
             if (last == '(' || last == '{') return false;
         }
         else {
             if (paren && !brace) pam++;
         }
+        index++;
     }
-    //printf ("%i \n", index);
-    last = code[index - 2][0];
+
+    last = index > 0 ? code[index - 1][0] : ' ';
 
     if (last != ')' && last != '}') return false;
     if (paren || brace) return false; // invalid parenthesis or brace number
     if (pam - sep >= 2) return false;
-    //if (para == 0 && braca == 0) return false;      // function without parameter or lambda
-
+    printf ("%d %d ", pam , sep);
     return true;
-  }
+}
+char *lambda5 (char **expr, int *it) {
 
-char *lambda4 (char **expr, int *it) {
+      int size = *it + 1, mid = size;
+      char buffer[64] = {'('}, *ptr = buffer + 1;
 
-    int size = *it + 1, flag = size;
-    char buffer[64], *ptr = buffer;
+      if (expr[*it + 1][0] == '}') {
+          *it = size; return strdup ("(){}");
+      }
 
-    if (expr[size][0] == '}') {
-        *it = size; return strdup ("(){}");
-    }
+      while (expr[size][0] != '}') {
+          if (strcmp (expr[size], "->") == 0) mid = size;
+          size++;
+      }
 
-    while (expr[size][0] != '}') {
-        if (strcmp (expr[size], "->") == 0) flag = size;
-        size++;
-    }
+      int sep = 0, param = 0;
 
-    *ptr++ = '(';
-    for (int i = *it + 1; i < size; i++) {
-      //printf ("%d %d %d %s\n", *it + 1, flag, size, expr[i]);
-        if (i == flag) {
-            ptr += sprintf (ptr, "){");
-        }
-        if (i < flag) ptr += sprintf (ptr, "%s", expr[i]);
-        else if (expr[i][0] != '-')ptr += sprintf (ptr, "%s;", expr[i]);
-    }
+      for (int i = *it + 1; i < size; i++) {
+          if (expr[i][0] == ',') {
+              sep++;
+          } else {
+              if (i == mid) {
+                  sep = 0;
+                  ptr += sprintf (ptr, "){");
+              }
 
-    sprintf (ptr, "}");
+              if (i < mid) {
+                  if (sep != param++) return NULL;
+                  ptr += sprintf (ptr, "%s", expr[i]);
+                  if (i < mid - 1) *ptr++ = ',';
+              } else if (expr[i][0] != '-') {
+                  if (sep) return NULL;
+                  ptr += sprintf (ptr, "%s", expr[i]);
+                  if (i < size ) *ptr++ = ';';
+              }
+          }
+      }
 
-    *it = size;
-    return strdup (buffer);
+      sprintf (ptr, "}");
+
+      *it = size;
+      return strdup (buffer);
 }
 char *transpile (const char* source) {
 
-    // if (strcmp (source, "{}{}") == 0) return strdup ("(){}((){})");
+    // if (strcmp (source, "{}{}{}") == 0) return strdup ("");
     int index = 0;
     char **expre = tokenize (source), **code = expre;
     char *os = malloc (64 * sizeof (char)), *ptr = os;
-    if (!isvalid (code)) return strdup ("");
+    if (!isvalid2 (code)) return strdup ("");
 
     while (code[index]) {
 
@@ -134,7 +145,7 @@ char *transpile (const char* source) {
                 if (code[index][0] != ',') {
 
                     if (code[index][0] == '{') {
-                        sub[param++] = lambda4 (code, &index);
+                        sub[param++] = lambda5 (code, &index);
                     } else {
                         sub[param++] = strdup (code[index]);
                     }
@@ -149,25 +160,23 @@ char *transpile (const char* source) {
               ptr += sprintf (ptr, "%s", sub[i]);
               if (i < param - 1) *ptr++ = ',';
             }
-            /*
-            */
+
         } else if (id == '{') {
-            //printf ("%d", index);
             if (index >= 2) {
                 if (code[index - 1][0] == ')' && code[index - 2][0] != '(') {
                     *ptr++ = ',';
                 }
             }
-            char *sub = lambda4 (code, &index);
+            char *sub = lambda5 (code, &index);
             ptr += sprintf (ptr, "%s", sub);
         } else {
-
             ptr += sprintf (ptr, "%s", code[index]);
             if (code[index + 1] && code[index + 1][0] != '(') *ptr++ = '(';
         }
 
         index++;
     }
+
     int cnt = 0;
     for (int i = 0; os[i] != '\0'; i++) {
         if (os[i] == '(') cnt++;
@@ -191,7 +200,7 @@ void fromTo (const char *tested, const char *expect) {
   static int idx;
 
   if (strcmp (res, expect) != 0) {
-      printf ("test %i got : [%s] expected : [%s]\n",idx, res, expect);
+      printf ("test %i [%s] :: got : [%s] expected : [%s]\n",idx, tested, res, expect);
   }
   /*
   */
@@ -254,71 +263,60 @@ void Test () {
 
   fromTo ("run{->a}" , "");
   fromTo ("f(->)" , "");
+
+  fromTo ("{a->a}(cde,y,z){x y d -> stuff}","");
+  fromTo ("{a->a}(cde,y,z){x y,d -> stuff}","");
+  fromTo ("{a->a}(cde,y,z){x,    y,d ->stuff,g,h}","");
+  fromTo ("{a}(cde,y,z){x,y,d jj}","");
+  fromTo ("{a o , p}(cde,y,z){x,y,d,jj}","");
   /*
     */
 
   }
 /////////////////////////////////////////////////////////////////
 
-void parenthesis (char **expr) {
-
-}
-
-char *lambda5 (char **expr, int *it) {
-
-    int size = *it + 1, flag = size;
-    char buffer[64], *ptr = buffer;
-
-    if (expr[size][0] == '}') {
-        *it = size; return strdup ("(){}");
-    }
-
-    while (expr[size][0] != '}') {
-        if (strcmp (expr[size], "->") == 0) flag = size;
-        size++;
-    }
-
-    *ptr++ = '(';
-    for (int i = *it + 1; i < size; i++) {
-      //printf ("%d %d %d %s\n", *it + 1, flag, size, expr[i]);
-        if (i == flag) {
-            ptr += sprintf (ptr, "){");
-        }
-        if (i < flag) ptr += sprintf (ptr, "%s", expr[i]);
-        else if (expr[i][0] != '-')ptr += sprintf (ptr, "%s;", expr[i]);
-    }
-
-    sprintf (ptr, "}");
-
-    *it = size;
-    return strdup (buffer);
-}
-int getsize (char **expr, char c) {
-    char **it = expr;
-    while (*it[0] != '}') {
-        it++;
-    }
-}
-
 int main () {
 
-  Test ();
+  //Test ();
 //Transpile from "{a,b,c->a  b c }  (233 , 666, 999)" to "(a,b,c){a;b;c;}(233,666,999)" failed, result was ""
-  const char *source = "(23){as we can} (23, 666, 79)";
-  char **expre = tokenize (source), **code = expre;
-  int index = 3;
 
-  char *res = lambda4 (expre, &index);
-  printf ("%s ", res);
+  const char source[32] = {32};
 
-/*
-Transpile from "{a->a}(cde,y,z){x y d -> stuff} invalid lambda param separator
-Transpile from "{a->a}(cde,y,z){x y,d -> stuff}  invalid lambda param separator
 
-Transpile from "{a->a}(cde,y,z){x,    y,d ->stuff,g,h} invalid lambda tmt separator
-Transpile from "{a}(cde,y,z){x,y,d jj}  invalid lambda tmt separator
-Transpile from "{a o , p}(cde,y,z){x,y,d,jj} ] invalid lambda tmt separator
+  //char **expr = tokenize (source), **code = expr;
+  char *res = transpile ("f(a,)");
 
+  printf ("[%s]\n", res);
+
+  /*
+  "{f({_->})"
+  "{f({asWeCan->})"
+  "{f({a->)"
+  "{f(a->})"
+  "{"
+
+  */
+
+  int index = 12;
+
+
+
+  /*
+  :: transpile({32});
+
+
+ :: {10,10};
+   call    (     )      :: {32,32,32,99,97,108,108,32,32,32,32,40,32,32,32,32,32,41,32,32,32,32,32};
+
+  call
+
+
+(
+
+
+ )
+
+    :: {32,10,32,32,99,97,108,108,10,32,32,10,32,32,10,40,10,32,32,32,10,32,10,32,41,10,32,32,10,32,32,32};
 */
 
 
@@ -410,6 +408,93 @@ char *lambda3 (char **expr, int *it) {
 
     return strdup (buffer);
   }
+
+bool checkparen (char **expr) {
+    int size = 1, separ = 0, param = 0;
+    if (!expr[size]) return false;
+    if (expr[size][0] == ')') return true;
+
+    while (expr[size][0] != ')') {
+        (expr[size][0] ==',') ? separ++ : param++;
+        if (expr[size][0] == '{') {
+            while (expr[size] && expr[size][0] != '}') size++;
+        }
+
+        size++;
+        if (expr[size] == NULL) return false;
+        if (expr[size][0] == ')') break;
+    }
+    return (param - separ != 1) ? false : true;
+}
+bool checklambd (char **expr) {
+
+      int size = 0, mid = size;
+
+      while (expr[size][0] != '}') {
+          if (strcmp (expr[size], "->") == 0) mid = size;
+          size++;
+          if (expr[size] == NULL) return false;
+      }
+
+      int sep = 0, param = 0;
+
+      for (int i = 1; i < size; i++) {
+          //printf ("[%s]", expr[i]);
+          if (expr[i][0] == ',') {
+              sep++;
+          } else {
+              if (i == mid)  sep = 0;
+              if (i < mid) {
+                  if (sep != param++) return false;
+              }
+              else if (expr[i][0] != '-' && sep > 0) return false;
+          }
+      }
+
+      return true;
+}
+bool isvalid (char **code) {
+
+  int index = 0;
+  int pam = 0, sep = 0;
+  int paren = 0, brace = 0;
+  char id, last;
+
+  if (code[index] && code[index][0] == '(') return false; // function parameters without function name
+
+  while (code[index]) {
+      id = code[index][0], last = index > 1 ? code[index - 1][0] : ' ';
+
+      if (isdigit (id)) {      // expression begining with digit
+          for (int i = 1; code[index][i]; i++) {
+              if (isalpha (code[index][i])) return false;
+          }
+      }
+      if (id == '(') { // check parenthesis expression
+      //    paren++;
+          if (checkparen (&code[index]) == false) return false;
+      }
+      if (id == '{') { // chenk lambda expression
+      //    brace++;
+          if (checklambd (&code[index]) == false) return false;
+      }
+      //if (id == ')') paren--;
+      //if (id == '}') brace--;
+      if (id == '-') {
+          if (last == '(' || last == '{') return false;
+          char nxt = code[index + 1] ? code[index + 1][0] : ' ';
+          if (nxt == ')') return false;
+      }
+
+      index++;
+  }
+
+  //if (paren != 0 || brace!= 0) return false;
+  last = index > 1 ? code[index - 1][0] : ' ';
+  if (last != ')' && last != '}') return false;
+
+  return true;
+}
 char *transpile2 (const char* source) {
 
     // if (strcmp (source, "{}{}") == 0) return strdup ("(){}((){})");
@@ -564,6 +649,35 @@ char *segment2 (const char *s, const char *e) {  // create string from character
 
     return os;
 };
+char *lambda4 (char **expr, int *it) {
+
+    int size = *it + 1, flag = size;
+    char buffer[64], *ptr = buffer;
+
+    if (expr[size][0] == '}') {
+        *it = size; return strdup ("(){}");
+    }
+
+    while (expr[size][0] != '}') {
+        if (strcmp (expr[size], "->") == 0) flag = size;
+        size++;
+    }
+
+    *ptr++ = '(';
+    for (int i = *it + 1; i < size; i++) {
+      //printf ("%d %d %d %s\n", *it + 1, flag, size, expr[i]);
+        if (i == flag) {
+            ptr += sprintf (ptr, "){");
+        }
+        if (i < flag) ptr += sprintf (ptr, "%s", expr[i]);
+        else if (expr[i][0] != '-')ptr += sprintf (ptr, "%s;", expr[i]);
+    }
+
+    sprintf (ptr, "}");
+
+    *it = size;
+    return strdup (buffer);
+  }
 char *lambda2 (char *expr) {
   const int size = strlen (expr);
   if (size == 0) return strdup ("(){}");
