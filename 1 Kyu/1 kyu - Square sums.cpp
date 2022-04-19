@@ -4,61 +4,108 @@
 #include <list>
 #include <map>
 #include <cmath>
+#include <random>
 
 using namespace std;
 
-vector<int> gonext (int num, list<pair<int,int>> ls) {
-    vector<int> next;
-    //if (ls.size() == 0) return {};
-    cout << num << " ";
-    for (auto it = ls.begin(); it != ls.end(); ) {
-        auto &[fst, scd] = *it;
-        if (fst == num || scd == num) {
-            if (fst == num) next.push_back (scd);
-            if (scd == num) next.push_back (fst);
-            it = ls.erase (it);
-            gonext (next.back(), ls);
-        } else {
-          it++;
+void display (vector<list<int>> graph) {
+    for (int i = 1; i < graph.size(); i++) {
+        cout << setw(2) << i << " -> ";
+        for (auto &edge : graph[i]) {
+          cout << setw(2) << edge << " ";
         }
+        cout << endl;
     }
 
-    return next;
+    cout << endl;
 }
-int main(){
 
-    int N = 15;
-    list<pair<int,int>> ls;
-    map<int,int> hist;
+void mkpath (int start, vector<list<int>> &graph) {
+
+    map<int, bool> visit;
+    int k = start, nxt;
+
+    random_device rd;
+    mt19937 gen (rd());
+
+    while (true) {
+        visit[k] = true;
+
+        cout << setw(2) << k << " ";
+        auto it = graph[k].begin();
+
+        while (it != graph[k].end()) {
+            if (visit[*it]) {
+                it = graph[k].erase (it);
+            } else {
+                it++;
+            }
+        }
+
+        if (graph[k].size() == 0) break;
+
+        uniform_int_distribution<> dist (0, graph[k].size() - 1);
+        //cout << index << endl;
+        it = next (graph[k].begin(), dist (gen));
+
+        nxt = *it;
+        graph[k].erase (it);
+        k = nxt;
+    }
+
+}
+
+vector<int> squaresums (int N) {
+
+    if (N < 15) return {};
+
+    vector<int> order;
+    vector<vector<int>> graph (N + 1);
 
     for (int a = 1; a < N; a++) {
         for (int b = a + 1; b < N + 1 ; b++) {
-            int sum = a + b;
-            cout << a * a << " " << b * b << " :: " << sum * sum << endl;
+            int sum = a + b, sq = sqrt (sum);
 
-            if ((((a * a) + (b * b))) == (2 * a * b) ) {
-                hist[a]++, hist[b]++;
-                ls.push_back ({a,b});
-                cout << setw(2) << a << " " << setw(2) << b << " :: " << sum << endl;
+            if (sq * sq == sum) {
+                graph[a].push_back (b);
+                graph[b].push_back (a);
+                //cout << setw(2) << a << " " << setw(2) << b << " :: " << sum << endl;
             }
         }
     }
 
-    int minv = 999;
-    for (auto num : hist) {
-        //cout << num.first << " :: freq -> " << num.second << endl;
-        minv = min (minv, num.second);
+    return order;
+}
+
+int main () {
+
+    int N = 20;
+    vector<list<int>> graph (N + 1);
+
+    for (int a = 1; a < N; a++) {
+        for (int b = a + 1; b < N + 1 ; b++) {
+            int sum = a + b, sq = sqrt (sum);
+
+            if (sq * sq == sum) {
+                graph[a].push_back (b);
+                graph[b].push_back (a);
+                //cout << setw(2) << a << " " << setw(2) << b << " :: " << sum << endl;
+            }
+        }
     }
 
-    vector<int> nxt;
-    for (auto num : hist) {
-        if (num.second == minv) nxt.push_back(num.first);
+    //display (graph);
+    size_t minv = 999;
+
+    for (int i = 1; i < N; i++)
+        minv = min (minv, graph[i].size());
+
+    vector<int> start;
+    for (int i = 1; i < N; i++) {
+        if (graph[i].size() == minv)
+            start.push_back (i);
     }
 
-    for (auto it = ls.begin(); it != ls.end(); it++) {
-        auto &[fst, scd] = *it;
-        //if (fst == 9 || scd == 9) gonext (9, ls);
-    }
-
+    mkpath (start.front(), graph);
 
 }
