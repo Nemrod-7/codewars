@@ -199,7 +199,33 @@ int reduce (Skyscraper &city, list<int> &input, list<int> &check, pair<int, int>
 
     return  (flag == true) ? output : 0;
 }
+int reduce1 (list<cluster> &input, list<cluster> &check, pair<int,int> p) {
 
+    vector<int> buffer(8);
+    bool flag = true;
+    int *cell = buffer.data(), output = 0, curr;
+
+    for (auto &it : check)
+        cell[it.comb[p.second]] = true;
+
+    list<cluster>::iterator index = input.begin();
+
+    while (index != input.end()) {
+        curr = index->comb[p.first];
+
+        if (cell[curr] == false)
+            index = input.erase(index);
+        else {
+            if (output > 0 && output != curr)
+                flag = false;
+
+            output = curr;
+            index++;
+        }
+    }
+
+    return  (flag == true) ? output : 0;
+}
 void update (Skyscraper &city) {
     const int size = city.size();
     pair<int, int> p;
