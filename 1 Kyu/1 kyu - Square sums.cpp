@@ -1,16 +1,16 @@
 #include <iostream>
+#include <fstream>
 #include <iomanip>
 #include <vector>
-
-#include <stack>
-
 #include <map>
+#include <stack>
 #include <cmath>
-#include <random>
 #include <algorithm>
+#include <random>
 
 #include <chrono>
 
+#define MAXN 60
 using namespace std;
 
 class Timer {
@@ -18,7 +18,7 @@ class Timer {
     private :
         chrono::steady_clock::time_point alpha, end;
         chrono::duration<double> elapsed;
-        uint64_t index;
+        uint64_t cycle;
 
         void update () {
             end = chrono::steady_clock::now ();
@@ -27,7 +27,7 @@ class Timer {
     public :
         Timer () {
             alpha = chrono::steady_clock::now ();
-            index = 0;
+            cycle = 0;
         }
         void start () { alpha = chrono::steady_clock::now ();}
         void stop () { update();}
@@ -39,14 +39,13 @@ class Timer {
         }
         bool running (double total) {
             update();
-            index++;
+            cycle++;
             if (elapsed.count() < total) return true;
-                cout << "index :: " << index << endl;
+                cout << "cycles :: " << cycle << endl;
             return false;
         }
 };
 
-using edge = pair<int,int>;
 class Display {
     public :
         static void grph (vector<vector<int>> graph) {
@@ -60,129 +59,315 @@ class Display {
 
             cout << endl;
         }
-        static void path (vector<int> src) {
+        static void vect (vector<int> src) {
 
             for (auto &it : src)
-                cout << it << " ";
+                cout << setw(2) << it << " ";
 
             cout << endl;
         }
 };
 
+random_device rd;
+mt19937 gen(rd());
 
 bool isquare (int a, int b) {
     int sum = a + b, sq = sqrt (sum);
     return (sq * sq == sum) ? true : false;
+}
+vector<int> readpath (int order[MAXN], int N) {
+    vector<int> path;
+
+    for (int i = 1; i < N + 1; i++) {
+        for (int j = 0; j < N + 1; j++)
+            if (order[j] == i)
+                path.push_back (j);
+    }
+
+    return path;
+}
+/*
+int choose (list<int> &hist) {
+    uniform_int_distribution<> dist (0, hist.size() - 1);
+    auto it = hist.begin();
+
+    advance (it, dist(rd));
+    int nxt = *it;
+    hist.erase (it);
+    return nxt;
+}
+*/
+vector<int> a_star (int start, vector<vector<int>> &graph) { // 8.324
+
+    struct vertex { int num, idx, visit[MAXN]; };
+    vertex src = {start, 1, {}};
+    vector<vertex> q2;
+
+    int cnt = 0, cnt2 = 0;
+
+    q2.push_back (src);
+
+    while (q2.size()) {
+
+        auto [u, index, visit] = q2.back();
+        q2.pop_back();
+
+        visit[u] = index;
+
+        if (index == graph.size() - 1) {
+            Display::vect (readpath (visit, graph.size()));
+            return readpath (visit, graph.size());
+        }
+
+        //vector<pair<int,int>> hist;
+        for (int &nxt : graph[u]) {
+            if (!visit[nxt]) {
+                //hist.push_back({graph[nxt].size(), nxt});
+                vertex nxtv = {nxt, index + 1};
+
+                for (int i = 0; i < graph.size(); i++) {
+                  nxtv.visit[i] = visit[i];
+                }
+
+                q2.push_back (nxtv);
+            }
+        }
+
+        //sort (hist.begin(), hist.end(), greater());
+        /*
+        for (auto &it : hist) {
+            vertex nxtv = {it.second, index + 1};
+
+            for (int i = 0; i < graph.size(); i++) {
+              nxtv.visit[i] = visit[i];
+            }
+
+            q2.push_back (nxtv);
+        }
+        */
+    }
+    /*
+    */
+    return {};
+}
+vector<int> rndwalk (int start, vector<vector<int>> &graph) { // 0~1 s
+
+    const int size = graph.size() + 1;
+    random_device rd;
+    mt19937 gen(rd());
+
+    int hist[size];
+    const float tmin = 0.01, alpha = 0.999;
+    float T = 20000;
+
+    while (T > tmin) {
+        int u = start, index = 1;
+        int visit[size] = {};
+        //fill (visit, visit + size, 0);
+
+        while (true) {
+
+            visit[u] = index++;
+
+            if (index == graph.size()) {
+                Display::vect (readpath (visit, graph.size()));
+                return readpath (visit, graph.size());
+            }
+
+            int pos = 0;
+            for (int &nxt : graph[u]) {
+                if (!visit[nxt]) {
+                    hist[pos++] = nxt;
+                }
+            }
+
+            if (pos == 0) break;
+            uniform_int_distribution<> dist (0, pos - 1);
+            u = hist[dist(rd)];
+        }
+
+        T *= alpha;
+    }
+
+    return {};
+}
+bool dfs2 (int num, vector<vector<int>> &adj, int visit[MAXN], int index) { // 12.265
+
+  	if (index == adj.size() - 1) {
+        for (int i = 1; i < adj.size(); i++) {
+            if (!visit[i]) return false;
+        }
+
+        Display::vect (readpath (visit, adj.size() - 1));
+    		return true;
+  	}
+  	for (int nxt : adj[num]) {
+    		if (!visit[nxt]) {
+      			visit[nxt] = index + 1;
+
+      			if (dfs2 (nxt, adj, visit, index + 1)) return true;
+
+      			visit[nxt] = false;
+    		}
+
+    }
+
+    return false;
   }
 
-void mkpath (int start, vector<vector<int>> &graph) {
+vector<vector<int>> mkgraph (int N) {
+    vector<vector<int>> adjlist (N + 1);
 
-    map<int, bool> visit;
-    int k = start, nxt;
+    for (int a = 1; a < N; a++) {
+        for (int b = a + 1; b < N + 1 ; b++) {
+            int sum = a + b, sq = sqrt (sum);
 
-    random_device rd;
-    mt19937 gen (rd());
-
-    while (true) {
-        visit[k] = true;
-
-        cout << k << " ";
-        auto it = graph[k].begin();
-
-        while (it != graph[k].end()) {
-            if (visit[*it]) {
-                it = graph[k].erase (it);
-            } else {
-                it++;
-            }
-        }
-
-        if (graph[k].size() == 0) break;
-
-        uniform_int_distribution<> dist (0, graph[k].size() - 1);
-        //cout << index << endl;
-        it = next (graph[k].begin(), dist (gen));
-
-        nxt = *it;
-        graph[k].erase (it);
-        k = nxt;
-    }
-    cout << " :: " << visit.size();
-
-}
-void search2 (int start, vector<vector<int>> graph) {
-
-    vector<int> res;
-    vector<bool> visit (graph.size() + 1);
-    stack<pair<int, vector<int>>> q1;
-
-    q1.push ({start, {}});
-
-    while (!q1.empty()) {
-
-        auto [u, path] = q1.top();
-        q1.pop();
-
-        path.push_back (u);
-
-      //  Display::path (path);
-        if (path.size() == graph.size() - 1) {
-            res = path;
-            break;
-        }
-
-        vector<int> poss;
-
-        for (auto &nxt : graph[u]) {
-            if (find (path.begin(), path.end(),nxt) == path.end()) {
-                //poss.push_back (nxt);
-                q1.push ({ nxt, path });
-            }
-        }
-
-    }
-    cout << " -> ";
-    Display::path (res);
-
-}
-void search (int start, vector<vector<int>> graph) {
-
-    string res;
-    stack<pair<int,string>> q1;
-    q1.push ({start, {}});
-
-    while (!q1.empty()) {
-
-        auto [u, path] = q1.top();
-        q1.pop();
-
-        path += u;
-
-        if (path.size() == graph.size() - 1) {
-            res = path;
-            break;
-        }
-
-        for (auto &nxt : graph[u]) {
-            if (path.find (nxt) == string::npos) {
-                q1.push ({nxt, path});
+            if (sq * sq == sum) {
+                adjlist[a].push_back (b);
+                adjlist[b].push_back (a);
+                //cout << setw(2) << a << " " << setw(2) << b << " :: " << sum << endl;
             }
         }
     }
+    return adjlist;
+}
+vector<vector<int>> mkadj (int N) {
+  vector<vector<int>> adj (N + 1, vector<int> (N + 1));
 
-    for (auto &it : res) {
-        cout << static_cast<int> (it) << ' ';
+  for (int i = 1; i < N; i++) {
+      for (int j = i + 1; j < N + 1 ; j++) {
+          int sum = i + j, sq = sqrt (sum);
+          //cout << setw(2) << i << " " << setw(2) << j << " :: " << sum << endl;
+          if (sq * sq == sum) {
+              adj[i][j] = true;
+              adj[j][i] = true;
+          }
+      }
+  }
+  return adj;
+}
+
+vector<int> squaresums (int N) {
+
+    if (N < 15) return {};
+
+    vector<vector<int>> graph = mkgraph (N);
+
+    size_t minv = 999;
+
+    for (int i = 1; i < N + 1; i++)
+        minv = min (minv, graph[i].size());
+
+    vector<int> start;
+
+    for (int i = 1; i < N + 1; i++) {
+        if (graph[i].size() == minv)
+            start.push_back (i);
+    }
+    vector<int> path (1), visit (N + 1);
+
+    path = rndwalk (start.back(), graph);
+    return path;
+}
+
+int main () {
+
+    Timer clock;
+    //ofstream out ("squaresums.csv");
+    int N = 50;
+
+    auto graph = mkgraph (N);
+    Display::grph (graph);
+    int cycle = 30;
+
+    rndwalk (50, graph);
+    //squaresums (50);
+    /*
+
+    while (cycle-->0) {
+
     }
 
-    cout << endl;
+
+    /*
+    for (int i = 0; i < N; i++) {
+        table[i][index] = start;
+    }
+
+
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < N; j++) {
+          cout << table[i][j] << ' ';
+      }
+      cout << endl;
+    }
+
+    //Display::path (search (1, graph));
+
+    for (int i = 1; i < N + 1; i++) {
+        path.push_back (i);
+        visit[i] = true;
+
+        cout << setw(2) << i << " --> ";
+        dfs (i, graph, visit, path);
+
+        visit[i] = false;
+        path.clear ();
+
+        cout << endl;
+    }
+
+    for (int i = 50; i < 51; i++) {
+        cout << i << " --> ";
+        for (int num : squaresums (i)) {
+            cout << num << ';';
+        }
+        cout << '\n';
+    }
+    */
+    // out.close();
+
+    clock.stop();
+    clock.get_duration();
 }
-void search3 (int start, vector<vector<int>> graph) {
 
-    vector<int> res;
-    vector<bool> base (graph.size() + 1);
-    stack<tuple<int, vector<bool>, vector<int>>> q1;
+bool dfs (int num, vector<vector<int>> &adj, vector<int> visit, vector<int> &path) { // 42.013
 
-    q1.push ({start, base, {}});
+  	if (path.size() == adj.size() - 1) {
+        for (int i : path)
+            cout << i << ' ';
+        cout << endl;
+    		return true;
+  	}
+
+    //cout << num << ' ';
+  	for (int nxt : adj[num]) {
+      //cout << nxt << ' ';
+    		if (!visit[nxt]) {
+      			visit[nxt] = true;
+      			path.push_back (nxt);
+
+      			if (dfs (nxt, adj, visit, path)) return true;
+
+      			visit[nxt] = false;
+      			path.pop_back();
+    		}
+        /*
+        */
+    }
+
+    return false;
+}
+
+vector<int> search (int start, vector<vector<int>> graph) {
+    struct vertex2 {
+        int num;
+        vector<int> visit, path;
+    };
+    vertex2 src = {start, vector<int>(graph.size() + 1), {}};
+    stack<vertex2> q1;
+
+    q1.push (src);
 
     while (!q1.empty()) {
 
@@ -191,95 +376,98 @@ void search3 (int start, vector<vector<int>> graph) {
 
         visit[u] = true;
         path.push_back (u);
+
         //Display::path (path);
         if (path.size() == graph.size() - 1) {
-            res = path;
-            break;
+            return path;
         }
 
-        for (auto &nxt : graph[u]) {
+        for (int nxt : graph[u]) {
             if (!visit[nxt]) {
                 q1.push ({nxt, visit, path});
             }
         }
     }
 
-    cout << " -> ";
-    Display::path (res);
+    return {};
+  }
+vector<int> search2 (int start, vector<vector<int>> graph) {
 
-}
-void hamiltonpath (vector<vector<int>> &adjlist, int v, vector<bool> visited, vector<int> &path, int N) {
+    stack<tuple<int, uint64_t, string>> q1;
 
-  	if (path.size() == N) {
-  		for (int i : path)
-  			cout << i << " ";
-  		cout << endl;
+    q1.push ({start, 0, {}});
+    while (!q1.empty()) {
 
-  		return;
-  	}
+        auto [u, visit, path] = q1.top();
+        q1.pop();
 
-  	for (int w : adjlist[v]) {
-    		if (!visited[w]) {
-      			visited[w] = true;
-      			path.push_back(w);
+        visit |= 1UL << u;
+        path += u;
 
-      			hamiltonpath (adjlist, w, visited, path, N);
+        if (path.size() == graph.size() - 1) {
+            for (auto &dig : path)
+                cout << static_cast<int> (dig) << ' ';
+            cout << '\n';
+            return {};
+        }
 
-      			visited[w] = false;
-      			path.pop_back();
-    		}
-    }
-}
-vector<int> squaresums (int N) {
-
-    if (N < 15) return {};
-
-    vector<int> order;
-    vector<vector<int>> graph (N + 1);
-
-    for (int a = 1; a < N; a++) {
-        for (int b = a + 1; b < N + 1 ; b++) {
-            int sum = a + b, sq = sqrt (sum);
-
-            if (sq * sq == sum) {
-                graph[a].push_back (b);
-                graph[b].push_back (a);
-                //cout << setw(2) << a << " " << setw(2) << b << " :: " << sum << endl;
+        for (int nxt : graph[u]) {
+            //cout << ((visit >> nxt & 1));
+            if ((visit >> nxt & 1UL) == 0) {
+                q1.push ({nxt, visit, path});
             }
         }
     }
-    size_t minv = 999;
+    cout << "not found" ;
+    /*
+*/
+    return {};
+  }
+vector<int> search4 (int start, vector<vector<int>> &graph) {
 
-    for (int i = 1; i < N; i++)
-        minv = min (minv, graph[i].size());
+      struct vertex { int num, idx, visit[MAXN]; };
+      vertex src = {start, 1, {}};
+      stack<vertex> q1;
+      int N = graph.size(), adj[N][N] = {{0}};
+      size_t maxv= 0;
 
-    vector<int> start;
+      for (int i = 1; i < N; i++) {
+          maxv = max (maxv, graph[i].size());
+          for (int j = 0; j < graph[i].size(); j++) {
+              adj[i][j] = graph[i][j];
+              //cout << adj[i][j] << ' ';
+          }
+          //cout << endl;
+      }
+      q1.push (src);
 
-    for (int i = 1; i < N; i++) {
-        if (graph[i].size() == minv)
-            start.push_back (i);
-    }
+      while (!q1.empty()) {
 
-    vector<bool> visited (N + 1);
-    order.push_back (start.front());
-    visited[start.front()] = true;
+          auto [u, index, visit] = q1.top();
+          q1.pop();
 
-    //hamiltonpath (graph, start.front(), visited, order, N);
-    //search2 (start.front(), graph);
-    search3 (start.front(), graph);
-    return order;
-}
-int main () {
+          visit[u] = index;
 
-    Timer clock;
-    int N = 15;
+          if (index == graph.size() - 1) {
+              //Display::vect (readpath (visit, graph.size()));
+              return readpath (visit, graph.size());
+          }
 
-    int mid = N / 2;
+          for (int i = 0; i < maxv; i++) {
+              int nxt = adj[u][i];
+              if (nxt && !visit[nxt]) {
+                  vertex nxtv = {nxt, index + 1};
 
-    int a = 12, b = 13;
+                  for (int i = 0; i < graph.size(); i++) {
+                    nxtv.visit[i] = visit[i];
+                  }
 
-    squaresums (35);
+                  q1.push (nxtv);
+              }
+          }
 
-    clock.stop();
-    clock.get_duration();
+      }
+      /*
+      */
+      return {};
 }
