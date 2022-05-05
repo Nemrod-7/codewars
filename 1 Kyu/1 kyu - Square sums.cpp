@@ -9,6 +9,7 @@
 #include <random>
 
 #include <chrono>
+#define MAXN 128
 
 using namespace std;
 
@@ -94,17 +95,7 @@ vector<int> readpath (int order[MAXN], int N) {
 
     return path;
 }
-/*
-int choose (list<int> &hist) {
-    uniform_int_distribution<> dist (0, hist.size() - 1);
-    auto it = hist.begin();
 
-    advance (it, dist(rd));
-    int nxt = *it;
-    hist.erase (it);
-    return nxt;
-}
-*/
 vector<int> a_star (int start, vector<vector<int>> &graph) { // 8.324
 
     struct vertex { int num, idx, visit[MAXN]; };
@@ -156,6 +147,34 @@ vector<int> a_star (int start, vector<vector<int>> &graph) { // 8.324
     }
     /*
     */
+    return {};
+}
+vector<int> a_star2 (int start, vector<vector<int>> &graph, vector<int> hist) { // 8.324
+
+    struct vertex { int num, idx; vector<int> v; };
+    vertex src = {start, 1, hist};
+    vector<vertex> q2;
+
+    q2.push_back (src);
+
+    while (q2.size()) {
+
+        auto [u, index, visit] = q2.back();
+        q2.pop_back();
+
+        visit[u] = index;
+
+        if (index == graph.size() - 1) {
+            return visit;
+        }
+
+        for (int &nxt : graph[u]) {
+            if (!visit[nxt]) {
+                q2.push_back ({nxt, index + 1, visit});
+            }
+        }
+    }
+
     return {};
 }
 vector<int> rndwalk (int start, vector<vector<int>> &graph) { // 0~1 s
@@ -257,25 +276,47 @@ vector<vector<int>> mkadj (int N) {
 
 vector<int> squaresums (int N) {
 
+    if (N == 24) return {};
     if (N < 15) return {};
+    if (N > 17 && N < 23) return {};
 
     vector<vector<int>> graph = mkgraph (N);
-
+    //Display::grph (graph);
     size_t minv = 999;
 
-    for (int i = 1; i < N + 1; i++)
-        minv = min (minv, graph[i].size());
-
-    vector<int> start;
-
     for (int i = 1; i < N + 1; i++) {
-        if (graph[i].size() == minv)
-            start.push_back (i);
+        minv = min (minv, graph[i].size());
     }
-    vector<int> path (1), visit (N + 1);
 
-    path = rndwalk (start.back(), graph);
-    return path;
+    int start = N;
+    while (graph[start].size() != minv) start--;
+
+    return rndwalk (start, graph);
+}
+bool is_valid (vector<vector<int>> graph) {
+
+    size_t minv = 999, hist[graph.size()] = {0};
+
+    for (int i = 1; i < graph.size(); i++) {
+        //cout << graph[i].size() << ' ';
+        hist[graph[i].size()]++;
+    }
+
+    if (hist[0]) return false;
+    if (hist[1] > 2) return false;
+
+    return true;
+}
+void addedge (vector<vector<int>> &graph, int a) {
+    if (a >= graph.size()) graph.resize (a + 1);
+    for (int b = 1; b < a; b++) {
+        int sum = a + b, sq = sqrt (sum);
+        if (sq * sq == sum) {
+            //cout << setw(2) << a << " " << setw(2) << b << " :: " << sum << endl;
+            graph[a].push_back (b);
+            graph[b].push_back (a);
+        }
+    }
 }
 
 int main () {
@@ -286,16 +327,26 @@ int main () {
 
     auto graph = mkgraph (N);
     Display::grph (graph);
-    int cycle = 30;
 
-    rndwalk (50, graph);
-    //squaresums (50);
+    auto history = a_star2 (50, graph, vector<int> (N + 1));
+
+  //addedge (graph, 16);
+
+//Display::grph (graph);
+    //squaresums (N);
     /*
 
-    while (cycle-->0) {
+    for (int N = 50; N < 65; N++) {
+        auto graph = mkgraph (N);
 
+
+        cout << N << " --> " ;
+
+          cout << endl;
     }
+    */
 
+    /*
 
     /*
     for (int i = 0; i < N; i++) {
@@ -339,6 +390,17 @@ int main () {
     clock.get_duration();
 }
 
+/*
+int choose (list<int> &hist) {
+    uniform_int_distribution<> dist (0, hist.size() - 1);
+    auto it = hist.begin();
+
+    advance (it, dist(rd));
+    int nxt = *it;
+    hist.erase (it);
+    return nxt;
+}
+*/
 bool dfs (int num, vector<vector<int>> &adj, vector<int> visit, vector<int> &path) { // 42.013
 
   	if (path.size() == adj.size() - 1) {
@@ -433,7 +495,7 @@ vector<int> search2 (int start, vector<vector<int>> graph) {
   }
 vector<int> search4 (int start, vector<vector<int>> &graph) {
 
-      struct vertex { int num, idx, visit[MAXN]; };
+      struct vertex { int num, idx, visit[128]; };
       vertex src = {start, 1, {}};
       stack<vertex> q1;
       int N = graph.size(), adj[N][N] = {{0}};
