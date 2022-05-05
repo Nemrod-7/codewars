@@ -10,7 +10,6 @@
 
 #include <chrono>
 
-#define MAXN 60
 using namespace std;
 
 class Timer {
@@ -25,23 +24,32 @@ class Timer {
             elapsed = end - alpha;
         }
     public :
-        Timer () {
+
+        Timer() {
             alpha = chrono::steady_clock::now ();
             cycle = 0;
         }
         void start () { alpha = chrono::steady_clock::now ();}
         void stop () { update();}
         void get_duration () {
-            update();
-            cout << "\nDuration "
+            std::cout << "\nDuration "
                       <<fixed<< elapsed.count()
-                      << " ms" << endl;
+                      << " ms" << std::endl;
         }
         bool running (double total) {
             update();
             cycle++;
             if (elapsed.count() < total) return true;
-                cout << "cycles :: " << cycle << endl;
+            cout << "cycles :: " ;
+
+            string num = to_string (cycle);
+            int size = num.size(), index = 0;
+
+            while (size-->0) {
+                cout << num[index++];
+                if (size % 3 == 0) cout << ' ';
+            }
+            cout << endl;
             return false;
         }
 };
