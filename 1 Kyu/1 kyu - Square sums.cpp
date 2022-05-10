@@ -2,7 +2,7 @@
 #include <fstream>
 #include <iomanip>
 #include <vector>
-#include <map>
+#include <list>
 #include <stack>
 #include <cmath>
 #include <algorithm>
@@ -96,13 +96,11 @@ vector<int> readpath (int order[MAXN], int N) {
     return path;
 }
 
-vector<int> a_star (int start, vector<vector<int>> &graph) { // 8.324
+vector<int> idfs (int start, vector<vector<int>> &graph) { // 8.324
 
     struct vertex { int num, idx, visit[MAXN]; };
     vertex src = {start, 1, {}};
     vector<vertex> q2;
-
-    int cnt = 0, cnt2 = 0;
 
     q2.push_back (src);
 
@@ -149,34 +147,55 @@ vector<int> a_star (int start, vector<vector<int>> &graph) { // 8.324
     */
     return {};
 }
-vector<int> a_star2 (int start, vector<vector<int>> &graph, vector<int> hist) { // 8.324
+vector<int> idfs2 (int start, vector<vector<int>> &graph) {
+    vector<int> solution;
+    vector<int> q1;
+    vector<bool> visit (graph.size());
 
-    struct vertex { int num, idx; vector<int> v; };
-    vertex src = {start, 1, hist};
-    vector<vertex> q2;
+    q1.push_back (start);
 
-    q2.push_back (src);
+    while (!q1.empty()) {
+        int u = q1.back();
 
-    while (q2.size()) {
-
-        auto [u, index, visit] = q2.back();
-        q2.pop_back();
-
-        visit[u] = index;
-
-        if (index == graph.size() - 1) {
-            return visit;
+        if (!visit[u]) {
+            solution.push_back(u);
+            visit[u] = true;
         }
 
-        for (int &nxt : graph[u]) {
-            if (!visit[nxt]) {
-                q2.push_back ({nxt, index + 1, visit});
+        for (auto &n: graph[u]) {
+            if (!visit[n]) {
+                q1.push_back(n);
+            }
+        }
+
+        if (solution.size() == graph.size() - 1) {
+            Display::vect (solution);
+            return solution;
+        }
+
+        if (q1.back() == u) {
+            vector<int> unwinder;
+
+            while (!q1.empty()) {
+                if (!visit[q1.back()]) {
+                    for (auto &n: unwinder) {
+                        visit[n] = false;
+
+                        if (n == solution.back())
+                            solution.pop_back();
+                    }
+                    unwinder.clear();
+                    break;
+                }
+                unwinder.push_back (q1.back());
+                q1.pop_back();
             }
         }
     }
 
     return {};
 }
+
 vector<int> rndwalk (int start, vector<vector<int>> &graph) { // 0~1 s
 
     const int size = graph.size() + 1;
@@ -218,29 +237,6 @@ vector<int> rndwalk (int start, vector<vector<int>> &graph) { // 0~1 s
 
     return {};
 }
-bool dfs2 (int num, vector<vector<int>> &adj, int visit[MAXN], int index) { // 12.265
-
-  	if (index == adj.size() - 1) {
-        for (int i = 1; i < adj.size(); i++) {
-            if (!visit[i]) return false;
-        }
-
-        Display::vect (readpath (visit, adj.size() - 1));
-    		return true;
-  	}
-  	for (int nxt : adj[num]) {
-    		if (!visit[nxt]) {
-      			visit[nxt] = index + 1;
-
-      			if (dfs2 (nxt, adj, visit, index + 1)) return true;
-
-      			visit[nxt] = false;
-    		}
-
-    }
-
-    return false;
-  }
 
 vector<vector<int>> mkgraph (int N) {
     vector<vector<int>> adjlist (N + 1);
@@ -258,6 +254,22 @@ vector<vector<int>> mkgraph (int N) {
     }
     return adjlist;
 }
+list<pair<int,int>> mklist (int N) {
+
+    list<pair<int,int>> adj;
+
+    for (int a = 1; a < N; a++) {
+        for (int b = a + 1; b < N + 1 ; b++) {
+            int sum = a + b, sq = sqrt (sum);
+
+            if (sq * sq == sum) {
+
+                cout << setw(2) << a << " " << setw(2) << b << endl;
+            }
+        }
+    }
+    return adj;
+}
 vector<vector<int>> mkadj (int N) {
   vector<vector<int>> adj (N + 1, vector<int> (N + 1));
 
@@ -274,6 +286,17 @@ vector<vector<int>> mkadj (int N) {
   return adj;
 }
 
+int getstart (vector<vector<int>> &graph) {
+    size_t minv = 999, start = graph.size();
+
+    for (int i = 1; i < graph.size() + 1; i++) {
+        minv = min (minv, graph[i].size());
+    }
+
+    while (graph[start].size() != minv) start--;
+
+    return start;
+}
 vector<int> squaresums (int N) {
 
     if (N == 24) return {};
@@ -282,31 +305,10 @@ vector<int> squaresums (int N) {
 
     vector<vector<int>> graph = mkgraph (N);
     //Display::grph (graph);
-    size_t minv = 999;
 
-    for (int i = 1; i < N + 1; i++) {
-        minv = min (minv, graph[i].size());
-    }
-
-    int start = N;
-    while (graph[start].size() != minv) start--;
-
-    return rndwalk (start, graph);
+    return idfs (getstart(graph), graph);
 }
-bool is_valid (vector<vector<int>> graph) {
 
-    size_t minv = 999, hist[graph.size()] = {0};
-
-    for (int i = 1; i < graph.size(); i++) {
-        //cout << graph[i].size() << ' ';
-        hist[graph[i].size()]++;
-    }
-
-    if (hist[0]) return false;
-    if (hist[1] > 2) return false;
-
-    return true;
-}
 void addedge (vector<vector<int>> &graph, int a) {
     if (a >= graph.size()) graph.resize (a + 1);
     for (int b = 1; b < a; b++) {
@@ -319,71 +321,63 @@ void addedge (vector<vector<int>> &graph, int a) {
     }
 }
 
+vector<int> searchrnd (vector<vector<int>> &graph, vector<int> path) {
+
+    random_device rd;
+    mt19937 gen(rd());
+
+    int hist[graph.size()];
+
+    while (true) {
+
+        int u = path.back(), pos = 0;
+
+        for (auto &nxt : graph[u]) {
+            if (find (path.begin(), path.end(), nxt) == path.end())
+                hist[pos++] = nxt;
+        }
+
+        if (pos == 0 || path.size() == graph.size()) break;
+        uniform_int_distribution<> dist (0, pos - 1);
+        path.push_back (hist[dist(rd)]);
+    }
+
+    return path;
+}
+
 int main () {
 
     Timer clock;
     //ofstream out ("squaresums.csv");
-    int N = 50;
 
-    auto graph = mkgraph (N);
-    Display::grph (graph);
+    random_device rd;
+    mt19937 gen(rd());
 
-    auto history = a_star2 (50, graph, vector<int> (N + 1));
+    vector<int> test = {15};
 
-  //addedge (graph, 16);
+    for (auto N : test) {
+        vector<vector<int>> graph = mkgraph (N);
+        //vector<vector<int>> cost (N + 1, vector<int> (N + 1));
 
-//Display::grph (graph);
+        const int size = graph.size();
+        int num = getstart (graph), index = 0;
+        vector<int> path {num};
+
+        path = searchrnd (graph, path);
+        cout << path.size();
+        //Display::vect (path);
+
+    }
     //squaresums (N);
+
     /*
-
-    for (int N = 50; N < 65; N++) {
-        auto graph = mkgraph (N);
-
-
-        cout << N << " --> " ;
-
-          cout << endl;
+    for (auto &level : graph) {
+        sort (level.begin(), level.end(), [&graph] (int a, int b) {
+            return graph[a].size() < graph[b].size();
+        });
     }
     */
 
-    /*
-
-    /*
-    for (int i = 0; i < N; i++) {
-        table[i][index] = start;
-    }
-
-
-    for (int i = 0; i < N; i++) {
-      for (int j = 0; j < N; j++) {
-          cout << table[i][j] << ' ';
-      }
-      cout << endl;
-    }
-
-    //Display::path (search (1, graph));
-
-    for (int i = 1; i < N + 1; i++) {
-        path.push_back (i);
-        visit[i] = true;
-
-        cout << setw(2) << i << " --> ";
-        dfs (i, graph, visit, path);
-
-        visit[i] = false;
-        path.clear ();
-
-        cout << endl;
-    }
-
-    for (int i = 50; i < 51; i++) {
-        cout << i << " --> ";
-        for (int num : squaresums (i)) {
-            cout << num << ';';
-        }
-        cout << '\n';
-    }
-    */
     // out.close();
 
     clock.stop();
@@ -428,6 +422,29 @@ bool dfs (int num, vector<vector<int>> &adj, vector<int> visit, vector<int> &pat
 
     return false;
 }
+bool dfs2 (int num, vector<vector<int>> &adj, int visit[MAXN], int index) { // 12.265
+
+  	if (index == adj.size() - 1) {
+        for (int i = 1; i < adj.size(); i++) {
+            if (!visit[i]) return false;
+        }
+
+        Display::vect (readpath (visit, adj.size() - 1));
+    		return true;
+  	}
+  	for (int nxt : adj[num]) {
+    		if (!visit[nxt]) {
+      			visit[nxt] = index + 1;
+
+      			if (dfs2 (nxt, adj, visit, index + 1)) return true;
+
+      			visit[nxt] = false;
+    		}
+
+    }
+
+    return false;
+  }
 
 vector<int> search (int start, vector<vector<int>> graph) {
     struct vertex2 {
