@@ -76,31 +76,31 @@ class graph {
           vector<vertex> vmap;
 
       public :
-          int N;
+          int size;
 
           graph (int n) {
-              N = n;
+              size = n;
 
-              for (int i = 2; i * i < N * 2; i++) {
+              for (int i = 2; i * i < (size * 2); i++) {
                   sqr.push_back (i * i);
               }
 
-              for (int i = 0; i < N + 1 ; i++) {
+              for (int i = 0; i < size + 1 ; i++) {
                   vmap.push_back ({i, false, vector<vertex *>()});
               }
 
-              for (int i = 1; i < vmap.size(); i++) {
+              for (int i = 1; i < size + 1; i++) {
                   update (&vmap[i]);
               }
+
           }
           void update (vertex *v) {
 
               v->edges.clear();
-
               for (auto &sq : sqr) {
                   int val = sq - v->id;
 
-                  if (val > 0 && val <= N && val != v->id && !vmap[val].visit) {
+                  if (val > 0 && val <= size && val != v->id && !vmap[val].visit) {
                         v->edges.push_back (&vmap[val]);
                   }
               }
@@ -110,17 +110,17 @@ class graph {
 };
 
 int getstart (graph &curr) {
-  int minv = 99, start;
+  size_t minv = 99, start;
 
-  for (int i = 1; i < curr.N + 1; i++) {
+  for (int i = 1; i < curr.size + 1; i++) {
       if (curr[i]->edges.size() <= minv) {
-        minv = curr[i]->edges.size();
-        start = i;
+          minv = curr[i]->edges.size();
+          start = i;
       }
   }
   return start;
 }
-bool dfs (int index, graph &curr, vector<int> &seq) {
+bool dfs (size_t index, graph &curr, vector<int> &seq) {
 
     if (index == seq.size() - 1) return true;
 
@@ -147,29 +147,15 @@ bool dfs (int index, graph &curr, vector<int> &seq) {
 
     return false;
 }
-vector<int> square_sums_row (int N) {
+vector<int> square_sums_row (int size) {
 
-    graph curr (N);
-    vector<int> seq (N);
+    graph curr (size);
+    vector<int> seq (size);
 
-    bool found = false;
     seq[0] = getstart (curr);
     curr[seq[0]]->visit = true;
 
-
-    found = dfs (0, curr, seq);
-    /*
-    for (int i = 1; i < N + 1; i++) {
-      cout << curr[i]->visit << " -> ";
-      for (auto it : curr[i]->edges) {
-        cout << it->visit << " ";
-      }
-      cout << endl;
-    }
-    */
-    //curr.close();
-
-    return found ? seq : vector<int>{};
+    return dfs (0, curr, seq) == true ? seq : vector<int>{};
 }
 
 int main () {
