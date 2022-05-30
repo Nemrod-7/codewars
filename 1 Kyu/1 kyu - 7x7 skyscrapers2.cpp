@@ -1,26 +1,23 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
-#include <bitset>
 #include <algorithm>
 
+#include <random>
 #include <chrono>
-
+/*------------------------------------------------------------------------------
+ 7 x 7 skyscraper solution - use of bitmask - adaptive combinations of sets
+ use of board ==> vector<vector<int>>
+------------------------------------------------------------------------------*/
 using namespace std;
+
+random_device rd;
+mt19937 gen(rd());
 //////////////////////////////////func def//////////////////////////////////////
 void Test () ;
-
 ////////////////////////////////////////////////////////////////////////////////
-int bitcnt (int byte) {
-    int cnt = 0;
 
-    do {
-        cnt += (byte &1);
-    } while (byte >>= 1);
-
-    return cnt;
-}
-int bit2int (int byte) {
+int bitpos (int byte) {
     int dig = 0;
 
     do {
@@ -30,89 +27,80 @@ int bit2int (int byte) {
 
     return 0;
 }
+int bitcnt (int x) { return (x &(x - 1));  }
 
-class Skyscraper {
+class Board {
     private :
-        vector<int> fill_c (int N, int clue) {
-            int num = N - clue + 2;
-            if (num == N + 1) return { N };
+        int N;
+        int setmask (int N, int clue) {
+            int dig = N - clue + 2, mask = 0;
+            if (dig == N + 1) return mask |= 1 << N;
 
-            vector<int> dig;
+            while (dig-->1) mask |= 1 << dig;
 
-            while (num-->1)
-                dig.push_back (num);
-
-            return dig;
-        }
-        int setcell (int N, int clue) {
-            int dig = N - clue + 2, cell = 0;
-            if (dig == N + 1) return cell |= 1 << N;
-
-            while (dig-->1) cell |= 1 << dig;
-
-            return cell;
+            return mask;
         }
 
     public :
-        int N;
-        vector<int> clues, grid, cell;
+        vector<int> clues;
+        vector<vector<int>> grid, mask;
 
-        Skyscraper (const vector<int> src = {}) {
-            clues = src;
+        Board (const vector<int> src = {}) {
             N = src.size() / 4;
+            clues = src;
 
-            cell.resize (N * N);
-            grid.resize (N * N);
+            grid.resize (N, vector<int>(N));
+            mask.resize (N, vector<int>(N));
 
-            int full = 0;
-            for (int i = 1; i <= N; i++) {
+            int full = 0, i, j;
+            for (i = 1; i <= N; i++) {
                 full |= 1 << i;
             }
 
-            for (int i = 0; i < N; ++i) {   // make cells for vertical borders
+            for (i = 0; i < N; ++i) {   // make masks for vertical borders
                 int west = ((N * 4) - 1) - i, east = N + i;
 
                 if (clues[west] == N) {
-                    for (int j = 0; j < N; ++j) {
-                        cell[i * N + j] |= 1 << (j + 1);
+                    for (j = 0; j < N; ++j) {
+                        mask[i][j] |= 1 << (j + 1);
                     }
                 } else if (clues[east] == N) {
-                    for (int j = 0; j < N; ++j) {
-                        cell[i * N + j] |= 1 << (N - j);
+                    for (j = 0; j < N; ++j) {
+                        mask[i][j] |= 1 << (N - j);
                     }
                 } else {
-                    cell[i * N + 0]     = clues[west] == 0 ? full : setcell (N, clues[west]);
-                    cell[i * N + (N - 1)] = clues[east] == 0 ? full : setcell (N, clues[east]);
+                    mask[i][0]     = clues[west] == 0 ? full : setmask (N, clues[west]);
+                    mask[i][N - 1] = clues[east] == 0 ? full : setmask (N, clues[east]);
                 }
             }
 
-            for (int i = 0; i < N; ++i) {   // make cells for horizontal borders
+            for (i = 0; i < N; ++i) {   // make masks for horizontal borders
                 int south = ((N * 4) - 1) - i - N, north = i;
 
                 if (clues[north] == N) {
-                    for (int j = 0; j < N; ++j) {
-                        cell[j * N + i] |= 1 << (j + 1);
+                    for (j = 0; j < N; ++j) {
+                        mask[j][i] |= 1 << (j + 1);
                     }
                 } else if (clues[south] == N) {
-                    for (int j = 0; j < N; ++j) {
-                        cell[j * N + i] |= 1 << (N - j);
+                    for (j = 0; j < N; ++j) {
+                        mask[j][i] |= 1 << (N - j);
                     }
                 } else {
-                    int up  = clues[north] == 0 ? full : setcell (N, clues[north]);
-                    int dwn = clues[south] == 0 ? full : setcell (N, clues[south]);
+                    int up  = clues[north] == 0 ? full : setmask (N, clues[north]);
+                    int dwn = clues[south] == 0 ? full : setmask (N, clues[south]);
 
-                    if (cell[0 * N + i] == 0 || bitcnt (cell[0 * N + i]) > bitcnt (up))
-                        cell[0 * N + i] = up;
+                    if (mask[0][i] == 0 || bitcnt (mask[0][i]) > bitcnt (up))
+                        mask[0][i] = up;
 
-                    if (cell[(N - 1) * N + i] == 0 || bitcnt (cell[(N - 1) * N + i]) > bitcnt (dwn))
-                        cell[(N - 1) * N + i] = dwn;
+                    if (mask[N - 1][i] == 0 || bitcnt (mask[N - 1][i]) > bitcnt (dwn))
+                        mask[N - 1][i] = dwn;
                 }
             }
 
-            for (int y = 1; y < N - 1; y++) { // make inner cells
+            for (int y = 1; y < N - 1; y++) { // make inner masks
                 for (int x = 1; x < N - 1; x++) {
-                    if (cell[y * N + x] == 0)
-                        cell[y * N + x] = full;
+                    if (mask[y][x] == 0)
+                        mask[y][x] = full;
                 }
             }
         }
@@ -130,7 +118,7 @@ class Skyscraper {
             vector<int*> line (N);
 
             for (int y = 0; y < N; y++) {
-                line[y] = &cell[y * N + x];
+                line[y] = &mask[y][x];
             }
             return line;
         }
@@ -138,29 +126,29 @@ class Skyscraper {
             vector<int*> line (N);
 
             for (int x = 0; x < N; x++) {
-                line[x] = &cell[y * N + x];
+                line[x] = &mask[y][x];
             }
             return line;
         }
-        int index (pair<int,int> p) {
-            return p.second * N + p.first;
-        }
+        int size() { return N; }
 };
+
 class combinations {
     private :
         vector<int*> line;
-
+        int size;
         void helper (vector<int> data, int i) {
             int *arr = data.data();
 
-            for (int j = 0; j < line.size(); j++) {
+            for (int j = 0; j < size; j++) {
                 int dig = j + 1;
+
                 if (*line[i] &1 << dig) {
 
                     if (find (&arr[0], &arr[i], dig) != &arr[i]) continue;
                     arr[i] = dig;
 
-                    if (i == line.size() - 1) {
+                    if (i == size - 1) {
                         combs.push_back (data);
                     } else {
                         helper (data, i + 1);
@@ -170,8 +158,10 @@ class combinations {
         }
     public :
         vector<vector<int>> combs;
+
         combinations (const vector<int*> &data) {
             line = data;
+            size = data.size();
             vector<int> arr (data.size());
 
             helper (arr, 0);
@@ -180,8 +170,8 @@ class combinations {
 
 class Display {
     public :
-        static void board (Skyscraper &curr) {
-            int N = curr.N, i, j, up;
+        static void board (Board &curr) {
+            int i, j, up, N = curr.size();
 
             cout << " ";
             for (i = 0; i != N; ++i)
@@ -193,8 +183,8 @@ class Display {
 
                 cout << curr.clues[up];
                 for (j = 0; j != N; ++j) {
-                    if (curr.grid[i * N + j])
-                        cout <<  "[" << curr.grid[i * N + j] << "]";
+                    if (curr.grid[i][j])
+                        cout <<  "[" << curr.grid[i][j] << "]";
                     else
                         cout << ("[ ]");
                 }
@@ -220,7 +210,21 @@ class Display {
         }
 };
 
-pair<int,int> check_num (vector<int> &now) {
+bool equals (const pair<int,int> &a, const pair<int,int> &b) {
+
+    if (b.first == 0 && b.second == 0) {
+        return true;
+    } else if (b.first == 0 && a.second == b.second) {
+        return true;
+    } else if (b.second == 0 && a.first == b.first) {
+        return true;
+    } else if (a == b) {
+        return true;
+    }
+
+    return false;
+}
+pair<int,int> check_num (const vector<int> &now) {
     const int N = now.size();
     int end = N - 1, first = 0, sec = 0, index = N;
     pair comb = {0,0};
@@ -237,31 +241,19 @@ pair<int,int> check_num (vector<int> &now) {
     }
 
     return comb;
-  }
-bool equals (const pair<int,int> &a, const pair<int,int> &b) {
-
-    if (b.first == 0 && b.second == 0) {
-        return true;
-    } else if (b.first == 0 && a.second == b.second) {
-        return true;
-    } else if (b.second == 0 && a.first == b.first) {
-        return true;
-    } else if (a == b) {
-        return true;
-    }
-    //Display::point (a);
-    return false;
 }
+
 void reduce (vector<int*> line) {
     int N = line.size(), i;
 
-    int hist[N + 1] = {};
-    bool uniq[N + 1] = {};
+    vector<int> hist (N + 1);
+    vector<bool> uniq (N + 1);
 
-    for (i = 0; i < N; i++) {
+    for (i = 0; i < N; i++) { // find uniq position of number
         int mask = *line[i], dig = 0;
+
         if ((mask & (mask - 1)) == 0)
-            uniq[bit2int (mask)] = true;
+            uniq[bitpos (mask)] = true;
 
         do {
             if (mask &1) hist[dig]++;
@@ -269,56 +261,53 @@ void reduce (vector<int*> line) {
         } while (mask >>= 1);
     }
 
-    for (i = 0; i < N; i++) {
-        int &curr = *line[i];
+    for (i = 0; i < N; i++) { // adjust mask when uniq position of a number
+        int &mask = *line[i];
 
-        if (bitcnt (curr) > 1) {
+        if (bitcnt (mask) > 1) { // bitset<8>(mask).count() > 1
             for (int j = 1; j < N + 1; j++) {
-                bool exist = (curr &1 << j);
+                bool exist = (mask &1 << j);
 
                 if (exist) {
                     if (hist[j] == 1) {
-                        curr = 0;
-                        curr |= 1 << j;
+                        mask = 0;
+                        mask |= 1 << j;
                     }
                     if (uniq[j]) {
-                        curr ^= 1 << j;
+                        mask ^= 1 << j;
                     }
                 }
             }
         }
     }
 }
-void filter (vector<int*> input, const pair<int,int> &clue) {
-
+void filter (vector<int*> line, const pair<int,int> &clue) {
+    const int N = line.size();
     if (clue == pair {0,0}) return;
-    combinations line (input);
+    combinations cmb (line);
 
-    for (int i = 0; i < input.size(); i++) {
-        *input[i] = 0;
-    }
+    for (int i = 0; i < N; i++)
+        *line[i] = 0;
 
-    for (auto &comb : line.combs) {
+    for (auto &comb : cmb.combs) {
         pair<int,int> curr = check_num (comb);
 
-        if (equals (curr, clue)) {
-            for (int i = 0; i < input.size(); i++) {
-                *input[i] |= 1 << comb[i];
+        if (equals (curr, clue))
+            for (int i = 0; i < N; i++) {
+                *line[i] |= 1 << comb[i];
             }
-        }
     }
-}
-void reduce2 (Skyscraper &city) {
-    const int N = city.N;
+  }
+void reduce2 (Board &city) {
 
-    for (int i = 0; i < N; i++) {
+    for (int i = 0; i < city.size(); i++) {
         auto row = city.getrow (i), col = city.getcol(i);
         reduce (row), reduce (col);
     }
 }
+void upgrade_grid (Board &city) {
 
-void upgrade_grid (Skyscraper &city) {
-    const int N = city.N;
+    const int N = city.size();
     int loop = 4;
 
     while (loop-->0) {
@@ -333,28 +322,26 @@ void upgrade_grid (Skyscraper &city) {
 
     for (int y = 0; y < N; y++) {
         for (int x = 0; x < N; x++) {
-            int num = city.cell[y * N + x];
-
-            if ((num & (num - 1)) == 0) {      // if is pow of 2 => one solution for this cell
-                city.grid[y * N + x] = bit2int (num);
-            }
+            int num = city.mask[y][x];
+            if ((num & (num - 1)) == 0)  // if is pow of 2 -> on possible number
+                city.grid[y][x] = bitpos (num);
         }
     }
 }
 
-bool is_valid (Skyscraper &city) {
+bool is_valid (Board &city) {
 
-    const int N = city.N;
+    const int N = city.size();
     vector<int> col (N), row (N);
 
     for (int i = 0; i < N; i++) {
-        int west = ((N * 4) - 1) - i, east = N + i, south = west - N, north = i;
-        pair<int,int> horiz {city.clues[west], city.clues[east]}, vert {city.clues[north], city.clues[south]};
 
         for (int j = 0; j < N; j++) {
-            row[j] = city.grid[i * N + j];
-            col[j] = city.grid[j * N + i];
+            row[j] = city.grid[i][j];
+            col[j] = city.grid[j][i];
         }
+
+        pair<int,int> horiz = city.getcluer (i), vert = city.getcluec(i);
 
         if (!equals (check_num (row), horiz) || !equals (check_num (col), vert))
             return false;
@@ -362,92 +349,136 @@ bool is_valid (Skyscraper &city) {
 
     return true;
 }
+bool checkcol (Board &city, pair<int,int> &p, int num) {
 
-bool checkcol (Skyscraper &city, pair<int,int> &p, int num) {
-
-    for (int y = 0; y < city.N; y++) {
-        int index = y * city.N + p.first;
-        if (y != p.second && city.grid[index] == num)
+    for (int y = 0; y < city.size(); y++)
+        if (city.grid[y][p.first] == num)
             return false;
-    }
 
     return true;
 }
-bool checkrow (Skyscraper &city, pair<int,int> &p, int num) {
+bool checkrow (Board &city, pair<int,int> &p, int num) {
 
-    for (int x = 0; x < city.N; x++) {
-        int index = p.second * city.N + x;
-        if (x != p.first && city.grid[index] == num)
+    for (int x = 0; x < city.size(); x++)
+        if (city.grid[p.second][x] == num)
             return false;
-    }
 
     return true;
 }
-bool backtrack (Skyscraper &city, pair<int,int> p) {
+bool backtrack (Board &city, pair<int,int> p) {
 
     auto &[x, y] = p;
-    int index = y * city.N + x;
-    if (x == city.N) {
+
+
+    if (x == city.size()) {
         x = 0;
         y++;
     }
 
-    if (y == city.N) {
-        return (is_valid (city)) ? true : false;
+    if (y == city.size()) {
+        return (is_valid(city)) ? true : false;
     }
+    if (city.grid[y][x]) return backtrack (city, {x + 1, y});
 
-    if (city.grid[index]) return backtrack (city, {x + 1, y});
+    for (int dig = 1; dig < city.size() + 1; dig++) {
+        if ((city.mask[y][x] &1 << dig) && checkrow (city, p, dig) && checkcol (city, p, dig)) {
 
-    for (int dig = 1; dig < city.N + 1; dig++) {
+            city.grid[y][x] = dig;
 
-        if (city.cell[index] &1 << dig) {
-            city.grid[index] = dig;
-
-            if (checkrow (city, p, dig) && checkcol (city, p, dig)) {
-
-                  if (backtrack (city, {x + 1, y}))
-                      return true;
-            }
+            if (backtrack (city, {x + 1, y}))
+                return true;
         }
     }
 
-    city.grid[index] = 0;
+    city.grid[y][x] = 0;
 
     return false;
 }
 
 vector<vector<int>> SolvePuzzle (const vector<int> &clues) {
 
-    Skyscraper city (clues);
+    Board city (clues);
 
-    //upgrade_grid(city);
-    auto row = city.getrow (0);
-    pair lateral = city.getcluer(0);
-    reduce2 (city);
+    upgrade_grid (city);
+    backtrack (city, {0,0});
 
-    combinations line (row);
+    Display::board (city);
+    return city.grid;
+}
 
-    //filter (row, lateral);
-    //backtrack(city, {0,0});
-    /*
-    for (int y = 0; y != city.N; ++y) {
-        for (int x = 0; x != city.N ; ++x) {
-            cout << bitcnt(city.cell[y][x]) << " ";
-        }
-        cout << endl;
+int getnum (vector<vector<int>> &grid, int limx, int limy) { // find rnd unused number
+
+    vector<int> hist (grid.size() + 1), rnd;
+
+    for (int i = 0; i < limy; i++) {
+        hist[grid[i][limx]] = true;
     }
-    */
-    //Display::board (city);
+    for (int i = 0; i < limx; i++) {
+        hist[grid[limy][i]] = true;
+    }
 
+    for (int i = 1; i < grid.size() + 1; i++) {
+        if (!hist[i]) rnd.push_back (i);
+    }
+    if (rnd.size() == 0) return 0;
 
-    return {};
+    uniform_int_distribution<> dist (0, rnd.size() - 1);
+    return rnd[dist(gen)];
+}
+vector<vector<int>> gen_latin_sq (int size) { // generate a random latin square
+
+    vector<vector<int>> grid (size, vector<int>(size));
+
+    for (int y = 0; y < size; y++) {
+        for (int x = 0; x < size; x++) {
+            int dig = getnum (grid, x, y);
+
+            if (dig != 0) {
+                grid[y][x] = dig;
+            } else {
+                x = -1;
+            }
+        }
+    }
+
+    return grid;
+}
+vector<int> gen_puzzle (int size) { // generate random skyskraper clues
+
+    vector<vector<int>> board = gen_latin_sq (size);
+    vector<int> clues (size * 4);
+
+    for (int i = 0; i < size; ++i) {
+        int west = ((size * 4) - 1) - i, east = size + i;
+        int south = west - i - size, north = i;
+
+        vector<int> line (size), col (size);
+        for (int j = 0; j  < size; j++) {
+            line[j] = board[i][j], col[j] = board[j][i];
+        }
+        pair<int,int> horiz = check_num (line);
+        pair<int,int> verti = check_num (col);
+
+        clues[west] = horiz.first, clues[east] = horiz.second;
+        clues[north] = verti.first, clues[south] = verti.second;
+    }
+
+    for (auto &it : clues) {
+    //    cout << it << " ";
+    }
+
+    return clues;
 }
 
 int main () {
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    SolvePuzzle ({2,2,1,3,2,2,3,1,1,2,2,3,3,2,1,3});
+    auto vs = gen_puzzle (4);
+
+
+    SolvePuzzle (vs);
+    //SolvePuzzle ({2,2,1,3,2,2,3,1,1,2,2,3,3,2,1,3});
 
     //SolvePuzzle({0,0,5,0,0,0,6,4,0,0,2,0,2,0,0,5,2,0,0,0,5,0,3,0,5,0,0,3});
     //Test();
@@ -459,9 +490,6 @@ int main () {
 }
 
 void Test() {
-
-  /*
-  */
 
     //4 x 4 skycrapers
     SolvePuzzle({ 2, 2, 1, 3,  2, 2, 3, 1,  1, 2, 2, 3,  3, 2, 1, 3 });
@@ -574,7 +602,6 @@ void Test() {
       SolvePuzzle({7,0,0,0,2,2,3,0,0,3,0,0,0,0,3,0,3,0,0,5,0,0,0,0,0,5,0,4});
       SolvePuzzle({0,0,0,0,5,0,4,7,0,0,0,2,2,3,0,0,3,0,0,0,0,3,0,3,0,0,5,0});
       SolvePuzzle({0,0,0,0,5,0,4,7,0,0,0,2,2,3,0,0,3,0,0,0,0,3,0,3,0,0,5,0});
-      // no solutions
 
       SolvePuzzle ({2,3,3,3,2,1, 1,4,2,2,3,5, 4,3,2,2,1,5, 2,3,2,3,1,2});
       SolvePuzzle ({2,3,3,1,2,6, 3,4,2,2,2,1, 1,3,5,2,2,3, 4,2,2,3,1,2});
@@ -582,3 +609,14 @@ void Test() {
 
 }
 ///////////////////////////////////////////////////////////////////////////////
+/*
+int bitcnt (int byte) {
+    int cnt = 0;
+
+    do {
+        cnt += (byte &1);
+    } while (byte >>= 1);
+
+    return cnt;
+}
+*/
