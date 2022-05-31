@@ -6,7 +6,7 @@
 #include <random>
 #include <chrono>
 /*------------------------------------------------------------------------------
- 7 x 7 skyscraper solution - use of bitmask - adaptive combinations of sets
+ N x N skyscraper solution - use of bitmask - adaptive combinations of sets
  use of board ==> vector<vector<int>>
 ------------------------------------------------------------------------------*/
 using namespace std;
@@ -142,42 +142,6 @@ class Board {
         int size() { return N; }
 };
 
-class combinations {
-    private :
-        vector<int*> line;
-        int size;
-
-        void helper (vector<int> curr, int i) {
-            int *arr = curr.data();
-
-            for (int j = 0; j < size; j++) {
-                int dig = j + 1;
-
-                if (*line[i] &1 << dig) {
-
-                    if (find (&arr[0], &arr[i], dig) != &arr[i]) continue;
-                    arr[i] = dig;
-
-                    if (i == size - 1) {
-                        combs.push_back (curr);
-                    } else {
-                        helper (curr, i + 1);
-                    }
-                }
-            }
-        }
-    public :
-        vector<vector<int>> combs;
-
-        combinations (const vector<int*> &data) {
-            line = data;
-            size = data.size();
-            vector<int> arr (data.size());
-
-            helper (arr, 0);
-        }
-};
-
 class Display {
     public :
         static void board (Board &curr) {
@@ -251,23 +215,56 @@ pair<int,int> check_num (const vector<int> &now) {
 
     return comb;
 }
-void searchcomb (vector<int*> line, const pair<int,int> &clue) {
-    const int N = line.size();
-    if (clue == pair {0,0}) return;
-    combinations cmb (line);
 
-    for (int i = 0; i < N; i++)
+void searchcomb (vector<int*> line, const pair<int,int> &hint) {
+
+    if (hint == pair {0,0}) return;
+
+    const int last = line.size();
+    vector<string> s1 ({""});
+    vector<int> base;
+
+    for (int i = 0; i < last; i++) {
+        base.push_back (*line[i]);
         *line[i] = 0;
-
-    for (auto &comb : cmb.combs) {
-        pair<int,int> curr = check_num (comb);
-
-        if (equals (curr, clue))
-            for (int i = 0; i < N; i++) {
-                *line[i] |= 1 << comb[i];
-            }
     }
 
+    while (!s1.empty()) {
+        string comb = s1.back();
+        int index = comb.size();
+        s1.pop_back();
+
+        if (index == last) {
+            // check_num //
+            int end = last - 1, first = 0, sec = 0;
+            pair clue = {0,0};
+
+            while (index-->0) {
+                if (comb[index] > sec) {
+                    sec = comb[index];
+                    clue.second++;
+                }
+                if (comb[last - 1 - index] > first) {
+                    first = comb[end - index];
+                    clue.first++;
+                }
+            }
+            // mark mask //
+            if (equals (clue, hint)) {
+                for (int i = 0; i < last; i++) {
+                    *line[i] |= 1 << comb[i];
+                }
+            }
+        } else {
+            for (char dig = 1; dig <= last; dig++) {
+                if (base[index] &1 << dig) {
+                    if (comb.find (dig) != string::npos) continue;
+
+                    s1.push_back (comb + dig);
+                }
+            }
+        }
+    }
 }
 void reduce (vector<int*> line) {
     int N = line.size(), i;
@@ -318,7 +315,7 @@ void reduce2 (Board &city) {
 void upgrade_grid (Board &city) {
 
     const int N = city.size();
-    int loop = 1; // loop = 4
+    int loop = 4; // loop = 4
 
     while (loop-->0) {
         for (int i = 0; i < N; i++) {
@@ -326,7 +323,7 @@ void upgrade_grid (Board &city) {
             pair vertical = city.getcluec(i), lateral = city.getcluer(i);
 
             reduce2 (city);
-            //searchcomb (row, lateral), searchcomb (col, vertical);
+            searchcomb (row, lateral), searchcomb (col, vertical);
         }
     }
 
@@ -339,6 +336,26 @@ void upgrade_grid (Board &city) {
         }
         //cout << endl;
     }
+}
+vector<pair<int,int>> mkorder (Board &city) {
+
+    const int N = city.size();
+    vector<pair<int,pair<int,int>>> hist;
+    vector<pair<int,int>> order;
+
+    for (int y = 0; y < N; y++) {
+        for (int x = 0; x < N; x++) {
+            int num = city.mask[y][x];
+            if (num > 1) hist.push_back ({num, {x,y}});
+        }
+    }
+    sort (hist.begin(), hist.end());
+
+    for (auto &it : hist) {
+        order.push_back (it.second);
+    }
+
+    return order;
 }
 
 bool is_valid (Board &city) {
@@ -377,33 +394,27 @@ bool checkrow (Board &city, pair<int,int> &p, int num) {
 
     return true;
 }
-bool backtrack (Board &city, pair<int,int> p) {
+bool backtrack (Board &city, vector<pair<int,int>>::iterator p) {
 
-    auto &[x, y] = p;
+    auto &[x, y] = *p;
 
-
-    if (x == city.size()) {
-        x = 0;
-        y++;
+    //city.grid[y][x] = 9;
+    if (is_valid (city)) {
+        return true;
     }
-
-    if (y == city.size()) {
-        return (is_valid(city)) ? true : false;
-    }
-    if (city.grid[y][x]) return backtrack (city, {x + 1, y});
 
     for (int dig = 1; dig < city.size() + 1; dig++) {
-        if ((city.mask[y][x] &1 << dig) && checkrow (city, p, dig) && checkcol (city, p, dig)) {
+        if ((city.mask[y][x] &1 << dig) && checkrow (city, *p, dig) && checkcol (city, *p, dig)) {
 
             city.grid[y][x] = dig;
 
-            if (backtrack (city, {x + 1, y}))
+            if (backtrack (city, p + 1))
                 return true;
         }
     }
-
+    /*
     city.grid[y][x] = 0;
-
+    */
     return false;
 }
 
@@ -411,7 +422,9 @@ vector<vector<int>> SolvePuzzle (const vector<int> &clues) {
 
     Board city (clues);
     upgrade_grid (city);
-    //backtrack (city, {0,0});
+
+    auto order =  mkorder (city);
+    backtrack (city, order.begin());
 
     Display::board (city);
     return city.grid;
@@ -470,6 +483,7 @@ vector<int> gen_puzzle (int size) { // generate random skyskraper clues
         }
         pair<int,int> horiz = check_num (line);
         pair<int,int> verti = check_num (col);
+
         clues[west] = horiz.first, clues[east] = horiz.second;
         clues[north] = verti.first, clues[south] = verti.second;
     }
@@ -481,70 +495,6 @@ vector<int> gen_puzzle (int size) { // generate random skyskraper clues
     return clues;
 }
 
-class combinations2 {
-    private :
-        vector<int*> line;
-        vector<vector<int>> subs;
-        int size;
-
-        void helper (vector<int> curr, int i) {
-            int *arr = curr.data();
-
-            for (int j = 0; j < size; j++) {
-                int dig = j + 1;
-
-                if (*line[i] &1 << dig) {
-
-                    if (find (&arr[0], &arr[i], dig) != &arr[i]) continue;
-                    arr[i] = dig;
-
-                    if (i == size - 1) {
-                        combs.push_back (curr);
-                    } else {
-                        helper (curr, i + 1);
-                    }
-                }
-            }
-        }
-
-        void helper2 (vector<int> curr, int i) {
-            int *arr = curr.data();
-
-            for (int j = 0; j < subs[i].size(); j++) {
-                int dig = subs[i][j];
-
-                if (find (&arr[0], &arr[i], dig) != &arr[i]) continue;
-                arr[i] = dig;
-
-                if (i == size - 1) {
-                    combs.push_back (curr);
-                } else {
-                    helper2 (curr, i + 1);
-                }
-            }
-        }
-    public :
-        vector<vector<int>> combs;
-
-        combinations2 (const vector<int*> &data) {
-
-            line = data;
-            size = data.size();
-            vector<int> arr (data.size());
-
-            subs.resize (size);
-
-            for (int i = 0; i < size; i++) {
-                for (int j = 1; j < 10; j++) {
-                    if (*line[i] &1 << j)
-                        subs[i].push_back (j);
-                }
-            }
-
-            helper2 (arr, 0);
-        }
-};
-
 int main () {
 
     auto start = std::chrono::high_resolution_clock::now();
@@ -553,19 +503,19 @@ int main () {
     auto vs = gen_puzzle (size);
     vs = {2,2,5,2,2,1,3,4,3,4,2,3,2,2,3,5,4,1,1,4,2,3,3,3,2,4,3,6,3,1,3,3,3,3,2,2};
 
-    Board city (vs);
-
-    upgrade_grid (city);
-
-    auto row = city.getrow (3);
-
-    combinations2 combs (row);
-    //searchcomb (row, lateral);
-
     //SolvePuzzle (vs);
     //SolvePuzzle ({2,2,1,3,2,2,3,1,1,2,2,3,3,2,1,3});
 
-    //SolvePuzzle({0,0,5,0,0,0,6,4,0,0,2,0,2,0,0,5,2,0,0,0,5,0,3,0,5,0,0,3});
+    SolvePuzzle({3,3,2,1,2,2,3,4,3,2,4,1,4,2,2,4,1,4,5,3,2,3,1,4,2,5,2,3});
+
+    SolvePuzzle({0,2,3,0,2,0,0,5,0,4,5,0,4,0,0,4,2,0,0,0,6,0,0,0,0,0,0,0});
+
+    /*
+    recursive combs : vector<int> => 0.237
+    iterative combs : string      => 0.189
+    */
+
+
     //Test();
 
     auto end = std::chrono::high_resolution_clock::now();
@@ -693,9 +643,6 @@ void Test() {
       SolvePuzzle({3,3,2,1,2,2,3,4,3,2,4,1,4,2,2,4,1,4,5,3,2,3,1,4,2,5,2,3});
 
       // 8 x 8
-      SolvePuzzle({2,1,2,4,5,3,6,4, 3,6,3,2,2,1,4,2, 2,1,2,4,2,2,3,3,4,2,5,4,4,2,1,2});
+      //SolvePuzzle({2,1,2,4,5,3,6,4, 3,6,3,2,2,1,4,2, 2,1,2,4,2,2,3,3,4,2,5,4,4,2,1,2});
 }
 ///////////////////////////////////////////////////////////////////////////////
-/*
-
-*/
