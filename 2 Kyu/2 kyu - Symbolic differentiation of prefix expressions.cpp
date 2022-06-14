@@ -4,6 +4,7 @@
 #include <map>
 #include <cmath>
 #include <functional>
+#include <regex>
 //#include <utility>
 
 using namespace std;
@@ -37,35 +38,24 @@ template<class T = void> struct power {
 map<string, func> oper {{"+", plus<double>()},{"-", minus<double>()},
               {"*", multiplies<double>()}, {"/", divides<double>()}, {"^", power<double>()} };
 
-vector<string> tokenize2 (string expr) {
-  string::iterator it = expr.begin () + 1;
+vector<string> tokenize3 (string expr) {
+
   vector<string> tok;
   expr.pop_back();
 
-  while (it < expr.end()) {
-      string buff;
+  const regex pattern ("\\w+|(\\(.*?\\))|[*/^+-]");
+  auto it = sregex_iterator (expr.begin() + 1, expr.end(), pattern), end = sregex_iterator();
 
-      if (*it == '(') {
-          do { buff += *it; } while (*it++ != ')');
-      } else {
-          while (*it && *it != ' ') buff += *it++;
-      }
-      tok.push_back(buff);
+  while (it != end) {
+      tok.push_back (it->str());
       it++;
   }
 
   return tok;
 }
-bool isnum (const string &exp) {
-    for (auto &it : exp) {
-        if (isalpha (it)) return false;
-        if (isspace (it)) return false;
-        if (oper[{it}]) return false;
-    }
-    return true;
-}
 string calc (string a, string op, string b) {
     ostringstream os;
+    regex num ("-?[0-9]*");
 
     if (a == "0" || b == "0") {
         if (op == "*") return "0";
@@ -79,7 +69,7 @@ string calc (string a, string op, string b) {
         if (op == "/" && b == "1") return a;
     }
 
-    if (isnum (a) && isnum (b)) {
+    if (regex_match (a, num) && regex_match (b, num)) {
         os << oper[op] (stod (a), stod (b));
     } else {
         os << "(" << op << " " << a << " " << b << ")";
@@ -89,12 +79,12 @@ string calc (string a, string op, string b) {
 string diff (const string &src) {
 
     if (count (src.begin(), src.end(), ' ') == 0) {
-        if (src == "x") return "1";
-        return "0";
+        return (src == "x") ? "1" : "0";
     }
 
-    vector expr = tokenize2 (src);
+    vector expr = tokenize3 (src);
     string op = expr.front();
+
 
     if (oper[op]) {
 
@@ -134,8 +124,6 @@ string diff (const string &src) {
             string ex = diff (arg1);
             arg2 = "(cos " + arg1 + ')';
             return calc (ex, "*", arg2);
-            //return arg2;
-            //cout << "[" << op << "][" << arg1 << "]";
         }
         if (op == "exp") {
             string ex = diff (arg1);
@@ -147,10 +135,7 @@ string diff (const string &src) {
             arg2 = "(cos " + arg1 + ')';
             arg2 = calc (arg2, "^", "2");
             return calc (ex, "/", arg2);
-            //return diff ("ln " + arg2);
         }
-        /*
-        */
     }
 
     return "";
@@ -174,7 +159,6 @@ void Test () {
   std::string result = diff("(tan x)");
         Assert::That(result, Equals("(+ 1 (^ (tan x) 2))") || Equals("(^ (cos x) -2)") || Equals("(/ 1 (^ (cos x) 2))"));
 
-
     */
 }
 
@@ -182,17 +166,17 @@ int main () {
 
     ostringstream os;
     double val = 4;
+
     // Assert ("x^2 should return 2*x", "(* 2 x)", "(^ x 2)");
     // (^ x 3) => (* 3 (^ x 2))
 
     //std::string result = diff("tan (* 2 x)"); // => expected : "(* 2 (/ 1 (^ (tan (* 2 x)) 2)))"
     //cout << result;
     // Expected: equal to "(* 22 (* -1 (sin (* 22 x))))" or equal to "(* -22 (sin (* 22 x)))"
-    cout << diff ("(cos (* 22 x))"); //
+    //cout << diff ("(cos (* 22 x))"); //
 
     // cout << calc ("1", "^", "x");
   //  Assert::That(result, Equals("(* 3 (* 2 x))") || Equals("(* 6 x)"));
-    /*
     Assert ("constant should return 0", "0", "5");
     Assert ("x should return 1", "1", "x");
     Assert ("x+x should return 2", "2", "(+ x x)");
@@ -218,11 +202,20 @@ int main () {
     Assert ("tan (2x) must return 2 / (cos 2x)^2 ","(/ 2 (^ (cos (* 2 x)) 2))", "(tan (* 2 x))");
 
 
+    /*
     */
     cout << "\nend";
 
 }
 
+bool isnum (const string &exp) {
+    for (auto &it : exp) {
+        if (isalpha (it)) return false;
+        if (isspace (it)) return false;
+        if (oper[{it}]) return false;
+    }
+    return true;
+}
 vector<string> tokenize (const string &src) {
   string expr;
 
@@ -254,7 +247,25 @@ vector<string> tokenize (const string &src) {
   }
   return tok;
 }
+vector<string> tokenize2 (string expr) {
+  string::iterator it = expr.begin () + 1;
+  vector<string> tok;
+  expr.pop_back();
 
+  while (it < expr.end()) {
+      string buff;
+
+      if (*it == '(') {
+          do { buff += *it; } while (*it++ != ')');
+      } else {
+          while (*it && *it != ' ') buff += *it++;
+      }
+      tok.push_back(buff);
+      it++;
+  }
+
+  return tok;
+}
 int parenthesis (const string &src) {
   int cnt = count (src.begin(), src.end(), '(');
   cnt -= count (src.begin(), src.end(), ')');
