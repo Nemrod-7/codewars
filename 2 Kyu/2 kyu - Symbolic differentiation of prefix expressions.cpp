@@ -40,18 +40,11 @@ map<string, func> oper {{"+", plus<double>()},{"-", minus<double>()},
 
 vector<string> tokenize3 (string expr) {
 
-  vector<string> tok;
   expr.pop_back();
 
-  const regex pattern ("\\w+|(\\(.*?\\))|[*/^+-]");
-  auto it = sregex_iterator (expr.begin() + 1, expr.end(), pattern), end = sregex_iterator();
-
-  while (it != end) {
-      tok.push_back (it->str());
-      it++;
-  }
-
-  return tok;
+  regex re ("\\w+|(\\(.*?\\))|[*/^+-]");
+  sregex_token_iterator it (expr.begin() + 1, expr.end(), re);
+  return vector<string> (it, sregex_token_iterator ());
 }
 string calc (string a, string op, string b) {
     ostringstream os;
