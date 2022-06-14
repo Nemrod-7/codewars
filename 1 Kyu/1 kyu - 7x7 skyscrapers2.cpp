@@ -450,9 +450,10 @@ vector<int> gen_puzzle (int size) { // generate random skyskraper clues
 
     for (int i = 0; i < size; ++i) {
         int west = ((size * 4) - 1) - i, east = size + i;
-        int south = west - i - size, north = i;
+        int south = west - size, north = i;
 
         vector<int> line (size), col (size);
+
         for (int j = 0; j  < size; j++) {
             line[j] = board[i][j], col[j] = board[j][i];
         }
@@ -461,10 +462,6 @@ vector<int> gen_puzzle (int size) { // generate random skyskraper clues
 
         clues[west] = horiz.first, clues[east] = horiz.second;
         clues[north] = verti.first, clues[south] = verti.second;
-    }
-
-    for (auto &it : clues) {
-    //    cout << it << " ";
     }
 
     return clues;
@@ -481,7 +478,7 @@ int main () {
     //SolvePuzzle ({2,2,1,3,2,2,3,1,1,2,2,3,3,2,1,3});
 
     //SolvePuzzle({0,0,5,0,0,0,6,4,0,0,2,0,2,0,0,5,2,0,0,0,5,0,3,0,5,0,0,3});
-    //Test();
+    Test();
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;

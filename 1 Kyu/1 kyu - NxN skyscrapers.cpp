@@ -345,7 +345,7 @@ vector<pair<int,int>> mkorder (Board &city) {
 
     for (int y = 0; y < N; y++) {
         for (int x = 0; x < N; x++) {
-            int num = city.mask[y][x];
+            int num = bitcnt2 (city.mask[y][x]);
             if (num > 1) hist.push_back ({num, {x,y}});
         }
     }
@@ -398,6 +398,7 @@ bool backtrack (Board &city, vector<pair<int,int>>::iterator p) {
 
     auto &[x, y] = *p;
 
+    //cout << city.grid[y][x] << ' ';
     //city.grid[y][x] = 9;
     if (is_valid (city)) {
         return true;
@@ -412,8 +413,8 @@ bool backtrack (Board &city, vector<pair<int,int>>::iterator p) {
                 return true;
         }
     }
-    /*
     city.grid[y][x] = 0;
+    /*
     */
     return false;
 }
@@ -424,7 +425,8 @@ vector<vector<int>> SolvePuzzle (const vector<int> &clues) {
     upgrade_grid (city);
 
     auto order =  mkorder (city);
-    backtrack (city, order.begin());
+    //backtrack (city, order.begin());
+
 
     Display::board (city);
     return city.grid;
