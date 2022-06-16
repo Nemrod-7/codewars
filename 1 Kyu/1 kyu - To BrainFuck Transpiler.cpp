@@ -1,8 +1,11 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <regex>
 #include <map>
 #include <algorithm>
+
+#include "../../templates/Assert.hpp"
 
 using namespace std;
 using std::string_literals::operator""s;
@@ -10,149 +13,151 @@ using std::string_literals::operator""s;
 const char eol = '\n';
 const int overflow = 255;
 
-bool isvar (string &src) {
-    string::iterator it = src.begin();
-    if (src.front() == '_' || src.front() == '$') it++;
+const regex varprefix ("[$|_A-Za-z]+") , digit ("(-?\\d+.?\\d+)"), quote ("\".+\"|\'.\'"), nocomment ("(?:(?!//|--|#|rem).)*");
 
-    while (it != src.end()) {
-        if (!isalpha (*it)) return false;
-        it++;
-    }
-    return true;
-}
-bool isnum (string &src) {
-    string::iterator it = src.begin();
-    if (src.front() == '-') it++;
-
-    while (it != src.end()) {
-        if (!isdigit (*it) && *it != '.') return false;
-        it++;
-    }
-    return true;
-}
-
-string trunc (string &src) {
-    size_t end = src.find ("//");
-    end = min (end, src.find ("#"));
-    end = min (end, src.find ("--"));
-    //end = min (end, src.find ("rem"));
-    return src.substr (0, end);
-}
-vector<string> format (const string &input) {
-
-    istringstream iss (input);
-    string line;
-    vector<string> ins;
-
-    while (getline (iss, line)) {
-
-        line = trunc (line);
-        transform (line.begin(), line.end(), line.begin(), ::tolower);
-
-        if (line.size())
-            ins.push_back (line);
-    }
-
-    return ins;
-}
-vector<string> tokenize (const string &input) {
-    vector<string> code;
-    auto it = input.begin();
-    string ins;
-
-    while (it - input.begin() < input.size()) {
-        if (*it == ' ') {
-            it++;
-
+bool isvar (const string &src) { return regex_match (src, varprefix); }
+bool isnum (const string &src) { return regex_match (src, digit); }
+int get_val (map<string, int>& reg, string op) { return isalpha (op.at(0)) ? reg[op] : stoi (op); }
+string mkmsg (map<string, int>& reg, vector<string> &line) {
+    string os;
+    for (size_t i = 1; i < line.size(); ++i) {
+        if (regex_match (line[i], quote)) {
+            os += line[i].substr (1, line[i].size() - 2);
         } else {
-
-            while (*it && *it != ' ') ins += *it++;
-
-            code.push_back (ins);
-            ins.clear();
+            os += to_string (reg[line[i]]);
         }
     }
-
-    return code;
+    return os;
 }
 
-std::string transpiler (const std::string &input) /* throws std::string */ {
+vector<string> format3 (vector<string> line) {
+  for (auto &tok : line) {
+    if (!regex_match (tok, quote))
+        transform (tok.begin(), tok.end(), tok.begin(), ::tolower);
+  }
+  return line;
+}
+vector<vector<string>> tokenize3 (const string &input) {
+  istringstream iss (input);
+  vector<string> vect;
+  string line;
+  smatch match;
+  regex re ("[$|_A-Za-z]+|-?\\d+.?\\d+|\".+\"|\'.\'");
+  vector<vector<string>> prog;
 
+  while (getline (iss, line)) {
+
+    if (regex_search (line, match, nocomment)) {
+      string str = match[0].str();
+      sregex_token_iterator it (str.begin(), str.end(), re);
+      vector<string> token (it, sregex_token_iterator());
+
+      format3 (token);
+      if (!token.empty()) prog.push_back(format3 (token));
+    }
+  }
+  return prog;
+}
+
+string asm_interpreter (const string &input) {  /* throws std::string */
+
+    using code = vector<vector<string>>;
     bool running = true;
-
     string os;
-    vector<string> code = format (input);
-    vector<string>::iterator it = code.begin();
-    map<string, int> vars;
-    int tp = 0, in = 0;
+
+    map<string, int> reg;
+    vector<vector<string>> prog = tokenize3 (input);
+    vector<vector<string>>::iterator it = prog.begin();
+    stack<vector<vector<string>>::iterator> pos;
 
     while (running) {
-        vector<string> line = tokenize (*it);
-        string op = line.front();
+        //if (it - prog.begin() == 3) break;
+        vector<string> line = *it;
+        string op = line[0];
+        //Display::vect (line);
 
                if (op == "var") {
+                   //cout << ":" << op << " :: ";
                    for (int i = 1; i < line.size(); i++) {
-                        vars[line[i]] = i - 1;
+                        reg[line[i]] = i - 1;
+                        //cout << '[' << line[i] << " -> " << i - 1 << ']';
                    }
         } else if (op == "set") {
-            if (vars.find (line[1]) == vars.end())
+            if (reg.find (line[1]) == reg.end() || !isnum (line[2]))
                 throw::logic_error ("invalid identifier");
 
-        } else if (op == "inc") {
-
-        } else if (op == "dec") {
-
-        } else if (op == "add") {
-
-        } else if (op == "sub") {
-
-        } else if (op == "mul") {
-
-        } else if (op == "div") {
-
-        } else if (op == "mod") {
-
-        } else if (op == "divmod") {
-
-        } else if (op == "cmp") {
-
-        } else if (op == "a2b") {
-
-        } else if (op == "b2a") {
-
-        } else if (op == "lset") {
-
-        } else if (op == "lget") {
-
-        } else if (op == "ifreq") {
-
-        } else if (op == "ifneq") {
-
-        } else if (op == "wneq") {
-
-        } else if (op == "proc") {
-
-        } else if (op == "end") {
-
-        } else if (op == "call") {
-
-        } else if (op == "read") {
-            if (vars.find (line[1]) == vars.end())
-                throw::logic_error ("invalid identifier");
-
-            if (tp != vars[line[1]]) {
-
+            reg[line[1]] = stoi (line[2]);
+        } else if (op == "inc") {   // Increase a b : a += b
+            reg[line[1]] += reg[line[2]];
+        } else if (op == "dec") {   // decrease a b : a -= b
+            reg[line[1]] -= reg[line[2]];
+        } else if (op == "add") {   // add a + b to c :
+            reg[line[3]] = reg[line[1]] + reg[line[2]];
+        } else if (op == "sub") {   // sub a - b to c
+            reg[line[3]] = reg[line[1]] - reg[line[2]];
+        } else if (op == "mul") {   // mul a * b to c
+            reg[line[3]] = reg[line[1]] * reg[line[2]];
+        } else if (op == "div") {   // div a / b to c
+            reg[line[3]] = reg[line[1]] / reg[line[2]];
+        } else if (op == "mod") {   // mod a % b to c
+            reg[line[3]] = reg[line[1]] % reg[line[2]];
+        } else if (op == "divmod") {// divm a / b to c, a % b to d
+            reg[line[3]] = reg[line[1]] / reg[line[2]];
+            reg[line[4]] = reg[line[1]] % reg[line[2]];
+        } else if (op == "cmp") {   // comp a & b to set c
+            if (reg[line[1]] < reg[line[2]]) {
+                reg[line[3]] = -1;
+            } else if (reg[line[1]] == reg[line[2]]) {
+                reg[line[3]] = 0;
+            } else if (reg[line[1]] > reg[line[2]]) {
+                reg[line[3]] = 1;
             }
-            os += ',';
+        } else if (op == "a2b") {   // ascii to byte
 
-        } else if (op == "msg") {
+        } else if (op == "b2a") {   // byte to ascii
 
-        } else if (op == "rem") {
+        } else if (op == "lset") {  // set c into index b of list a
+
+        } else if (op == "lget") {  // Read index b of list a into c
+
+        } else if (op == "ifreq") { // execute block when a == b
+
+        } else if (op == "ifneq") { // execute bloc when a != b
+
+        } else if (op == "wneq") {  // loop block when a != b
+
+        } else if (op == "proc") {  // begin block
+
+        } else if (op == "end") {   // end block
+
+        } else if (op == "call") {  // call block proc "name"
+
+            string label = line[1], var = line[2];
+
+            for (auto fnd = prog.begin(); fnd != prog.end(); fnd++) {
+                if (fnd->at(0) == "proc" && fnd->at(1) == label) {
+                    reg[fnd->at(2)] = reg[var];
+                    break;
+                }
+            }
+            //jump = true;
+        } else if (op == "read") {  // read into a : BF operator ','
+
+            if (reg.find (line[1]) == reg.end())
+                throw::logic_error ("invalid identifier");
+
+            //os += ',';
+
+        } else if (op == "msg") {   // print msg : BF operator '.'
+            os += mkmsg (reg, line);
+        } else if (op == "rem") {   // Error Handling
 
         }
 
+        /*
+        */
         it++;
-        if (it == code.end()) running = false;
+        if (it == prog.end()) running = false;
     }
 
     return os;
@@ -172,7 +177,7 @@ unsigned loop (const string &code, unsigned pos) {
 
     return index;
 }
-string brainfuck (const string &code, string &input) {
+string bnf_interpreter (const string &code, string &input) {
 
     string os;
     char tape[30000] = {}, *ptr = tape;
@@ -198,17 +203,84 @@ string brainfuck (const string &code, string &input) {
 
 int main () {
 
-    string code =
+    Timer clock;
+
+    string input =
 		"var   X//This is a comment\n"
 		"read X--This is also a comment\n"
 		"msg \"Bye\" X#No doubt it is a comment\n"
 		"rem &&Some comment~!@#$\":<";
 		//"?","Bye?";
-    string brnfk = transpiler (code);
 
+    input =
+    "var A\n"
+    "set a 20\n"
+    "call Wrap a\n"
+    "proc Say x\n"
+    "    msg \"It is \"x\n"
+    "    call Wrap X\n"
+    "end\n"
+    "rem loop\n"
+    "Proc Wrap X\n"
+    "    call Say x\n"
+    "eNd";
+
+    asm_interpreter (input);
+
+    // to => Any valid BrainFuck code with the same functionality.
+    //string brnfk = transpiler (input);
 
     //kcuf (code);
 
+    clock.stop();
+    clock.get_duration();
 
-    cout << "\nend";
+}
+////////////////////////////////////////////////////////////////////////////////
+string trunc (string &src) {
+    size_t end = src.find ("//");
+    end = min (end, src.find ("#"));
+    end = min (end, src.find ("--"));
+    //end = min (end, src.find ("rem"));
+    return src.substr (0, end);
+}
+vector<string> format2 (const string &input) {
+
+    istringstream iss (input);
+    string line;
+    vector<string> ins;
+
+    while (getline (iss, line)) {
+
+        line = trunc (line);
+        transform (line.begin(), line.end(), line.begin(), ::tolower);
+
+        if (line.size())
+            ins.push_back (line);
+    }
+
+    return ins;
+}
+
+vector<string> format (const string &input) {
+
+    istringstream iss (input);
+    vector<string> vect;
+    string line;
+    smatch match;
+
+    while (getline (iss, line)) {
+        if (regex_search (line, match, nocomment)) {
+            if (match[0] != "")
+                vect.push_back(match[0]);
+
+        }
+    }
+
+    return vect;
+}
+vector<string> tokenize2 (const string &line) {
+    regex re ("[$|_A-Za-z]+|-?\\d+.?\\d+|\".+\"|\'.\'");
+    sregex_token_iterator it (line.begin (), line.end (), re);
+    return vector<string> (it, sregex_token_iterator ());
 }

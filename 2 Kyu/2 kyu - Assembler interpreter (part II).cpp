@@ -2,93 +2,74 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include <algorithm>
 #include <map>
 #include <stack>
 #include <regex>
+#include <algorithm>
 
 #include <iomanip>
 #include <chrono>
 
 using namespace std;
 
-vector<string> format2 (const string &input) {
+vector<string> format3 (const string &input) {
+    regex form ("[;|\\w].+");
+    sregex_token_iterator it (input.begin(), input.end(), form);
+    return vector<string> (it, sregex_token_iterator());
+}
+vector<string> tokenize (string line) {
+    line = line.substr (0, line.find (";"));
+    regex tok ("\\w+|\'.+?\'");
+    sregex_token_iterator it (line.begin(), line.end(), tok);
 
-    istringstream iss (input);
-    vector<string> v;
-    string line;
+    return vector<string> (it, sregex_token_iterator());
+}
 
-    while (getline (iss, line)) {
-        int pos = 0;
-        while ((line[pos]) == ' ') pos++;
+string mkmsg (map<string, int>& reg, vector<string> &line) {
 
-        string sanit = line.substr (pos, line.find (';') - pos);
-        if (sanit.size())
-            v.push_back (sanit);
+    string os;
+    regex quote ("\".+\"|\'.+\'");
+
+    for (size_t i = 1; i < line.size(); ++i) {
+        if (regex_match (line[i], quote)) {
+            os += line[i].substr (1, line[i].size() - 2);
+        } else {
+            os += to_string (reg[line[i]]);
+        }
     }
 
-    return v;
+    return os;
 }
-vector<string> format3 (const string &input) {
-    regex tok1 ("[;|\\w].+");
-    sregex_token_iterator it (input.begin(), input.end(), tok1);
-    return vector<string> (it, sregex_token_iterator());
-}
-vector<string> tokenize (const string &line) {
-
-    regex re ("\\w+|\'.+?\'");
-    sregex_token_iterator it (line.begin(), line.end(), re);
-
-    return vector<string> (it, sregex_token_iterator());
-}
-
-static int get_val (map<string, int>& reg, string op) { return isalpha (op.at(0)) ? reg[op] : stoi (op); }
+int get_val (map<string, int>& reg, string op) { return isalpha (op.at(0)) ? reg[op] : stoi (op); }
 string assembler_interpreter (string input) {
 
-    bool jump;
+    bool jump, running = true;
     int val, cmp = 0;
     string com, key, os;
 
     map<string, int> reg;
-    vector<string> op, prog = format2 (input);
+    vector<string> code, prog = format3 (input);
     vector<string>::iterator line = prog.begin();
     stack<vector<string>::iterator> pos;
 
-    const regex msg ("\'.+\'");
+    while (running) {
 
-    while (line != prog.end()) {
-
-          op = tokenize (*line);
-          com = op[0];
+          code = tokenize (*line);
           jump = false;
 
-          if (op.size() > 1)
-              key = op[1];
+          com = code.size() > 0 ? code[0] : "";
+          key = code.size() > 1 ? code[1] : "";
+          val = (code.size() > 2 && com != "msg") ? get_val (reg, code[2]) : 0;
 
-          val = (op.size() > 2 && com != "msg") ? get_val (reg, op[2]) : 0;
-
-          if (com == "mov") reg[key] = val;
+          if (com == "end") return os;
           if (com == "inc") reg[key]++;
           if (com == "dec") reg[key]--;
+          if (com == "mov") reg[key] = val;
           if (com == "add") reg[key] += val;
           if (com == "sub") reg[key] -= val;
           if (com == "mul") reg[key] *= val;
           if (com == "div") reg[key] /= val;
           if (com == "cmp") cmp = reg[key] - val;
-
-          if (com == "msg") {
-
-              for (size_t i = 1; i < op.size(); ++i) {
-
-                  if (regex_match (op[i], msg)) {
-                      os += op[i].substr (1, op[i].size() - 2);
-                  } else {
-                      os += to_string (reg[op[i]]);
-                  }
-              }
-          }
-
-          if (com == "end") return os;
 
           if (com == "call") {
               pos.push (line + 1);
@@ -106,8 +87,10 @@ string assembler_interpreter (string input) {
           if (com == "jle" && cmp <= 0) jump = true;
           if (com == "jl"  && cmp  < 0) jump = true;
 
-          if (jump == true)
-              line = find (prog.begin(), prog.end(), op[1] + ':');
+          if (com == "msg") os += mkmsg (reg, code);
+
+          if (jump == true) line = find (prog.begin(), prog.end(), code[1] + ':');
+          if (line == prog.end()) running = false;
 
           line++;
     }
@@ -322,51 +305,24 @@ int main () {
   auto start = chrono::high_resolution_clock::now();
 
   //assembler({"mov a -10", "mov b a", "inc a", "dec b", "jnz a -2"});
-  string   program = R"(
-  mov   a, 8            ; value
-  mov   b, 0            ; next
-  mov   c, 0            ; counter
-  mov   d, 0            ; first
-  mov   e, 1            ; second
-  call  proc_fib
-  call  print
+  string    program = R"(
+  ; My first program
+  mov  a, 5
+  inc  a
+  call function
+  msg  '(5+1)/2 = ', a    ; output message
   end
 
-  proc_fib:
-  cmp   c, 2
-  jl    func_0
-  mov   b, d
-  add   b, e
-  mov   d, e
-  mov   e, b
-  inc   c
-  cmp   c, a
-  jle   proc_fib
-  ret
+  function:
+      div  a, 2
+      ret)";
 
-  func_0:
-  mov   b, c
-  inc   c
-  jmp   proc_fib
-
-  print:
-  msg   'Term ', a, ' of Fibonacci series is: ', b        ; output text
-  ret)";
-
+  //cout << assembler_interpreter (program);
   Test ();
 
   auto end = chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = end - start;
   cout << "\nProcess took " << elapsed.count()  << " ms" << endl;
-  return EXIT_SUCCESS;
-}
 
-void display_code (vector<string> &code) {
-    for (auto it : code) {
-        cout << it << endl;
-    }
-}
-void display_map (map<string, int> input) {
-    for (auto now : input)
-        cout<<"["<< now.first<<","<<setw(3)<<setfill(' ')<<now.second<<"]\n";
+  return EXIT_SUCCESS;
 }

@@ -1,6 +1,5 @@
 #include <iostream>
 
-#include <regex>
 #include <cmath>
 #include <map>
 #include <stack>
@@ -126,58 +125,15 @@ double interpret (std::string expr) {
 
     return !val.empty() ? val.top() : 0;
 }
-double interpret2 (std::string expr) {
-
-    if (!expr.size()) throw runtime_error ("Empty expression");
-
-    const regex alpha ("\\w+"), number ("(-?[0-9]+(.[0-9]+)?)"), oper ("(\\+|\\-|\\/|\\*|=)"), par ("(\\(|\\))");
-    const regex pattern ("\\w+|(-?[0-9]+(.[0-9]+)?)|(\\+|\\-|\\/|\\*|=)|(\\(|\\))");
-
-    bool running = true;
-    stack<double> val;
-    stack<char> ops;
-
-    auto it = sregex_iterator (expr.begin(), expr.end(), pattern), end = sregex_iterator();
-
-    while (running) {
-        string tok = it->str();
-
-        if (regex_match (tok, alpha)) {
-            it++;
-
-            if (it->str() == "=") {
-                cout << "inc : [" << it->str() << "]";
-            } else {
-
-            }
-        } else if (regex_match (tok, number)) {
-            cout << "num : [" << tok << "]";
-        } else if (regex_match (tok, oper)) {
-            cout << "ope : [" << tok << "]";
-        } else if (regex_match (tok, par)) {
-            cout << "oth : [" << tok << "]";
-        } else {
-            cout << "dev : [" << tok << "]";
-        }
-
-        if (it == end) running = false;
-
-        cout << endl;
-        it++;
-    }
 
 
-    return val.top();
-}
 int main () {
-
+    void Test ();
     string expr;// = "train6=5"; // 18
-    //Assert::That(interpret("-5 * -11 + -57 - 34 * -6 / -49 % -48 - -50"), Equals (43.836735));
 
+    expr = "afkd = -72 % (-80 / 64 * -69) - -96";
     /*
-    */
     interpret2 ("afkd = -72 % (-80 / 64 * -69) - -96");
-    /*
     interpret ("urvv = -12 % (34 % -19 * -70) - -15");
     interpret ("eef = 24 * (-5 * 14 - -25) - -53");
     interpret ("mzcol = 46 / -(-22 / -51 - -17) * 32");
@@ -185,8 +141,8 @@ int main () {
     */
     //value = {{"afkd", 24},{"eef", -1027}, {"iyinw", -120}, {"mzcol", -84.4454},{"urvv", 3}};
 
-    //cout << interpret (expr);
-    //Test();
+    Test();
+    cout << "end";
 }
 
 /////////////////////////////////Assert/////////////////////////////////////////

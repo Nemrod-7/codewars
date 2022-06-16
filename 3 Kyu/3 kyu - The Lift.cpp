@@ -1,7 +1,7 @@
 #include <iostream>
 #include <vector>
 
-#include "/home/wintermute/code/templates/Assert.hpp"
+#include "../../templates/Assert.hpp"
 
 using namespace std;
 

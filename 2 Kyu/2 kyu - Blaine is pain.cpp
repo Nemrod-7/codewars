@@ -270,12 +270,12 @@ int train_crash (const string &src, const string &a_train, int a_train_pos, cons
     size_t sleep = A.size, sleepb = B.size, cnt = 0;
 
     if (collision (A, B)) return 0;
-    Display::grph (track,A,B);
 
     while (limit-->0) {
         advance (track, A, sleep);
         advance (track, B, sleepb);
 
+        Display::grph (track,A,B);
         cnt++;
         if (collision (A, B)) return cnt;
     }

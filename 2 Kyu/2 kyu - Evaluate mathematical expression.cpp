@@ -1,8 +1,11 @@
 #include <iostream>
-#include <algorithm>
+#include <vector>
+#include <regex>
 #include <map>
-#include <stack>
+#include <algorithm>
 #include <functional>
+
+#include <chrono>
 
 using namespace std;
 using index = string::iterator;
@@ -29,10 +32,10 @@ template<class T> const T& Equals (const T& entry) { return entry;}
 void Test();
 ////////////////////////////////////////////////////////////////////////////////
 
-template<class T> T getstack (stack<T> &S) {
+template<class T> T getstack (vector<T> &S) {
     if (S.empty()) return 0;
-    T val = S.top();
-    S.pop();
+    T val = S.back();
+    S.pop_back();
     return val;
 }
 double getnum (index &it) {
@@ -56,15 +59,13 @@ string getsub (index &it) {
     }
     return sub;
 }
-
-double calc (string src) {
-    // convert expression to reverse polish notation using shunting-yard algorithm
+double calc (string src) {   // convert expression to reverse polish notation using shunting-yard algorithm
     src.erase(remove (src.begin(), src.end(), ' '), src.end());
     index it = src.begin();
     double num, sign = 1;
 
-    stack<double> val;
-    stack<char> ops;
+    vector<double> val;
+    vector<char> ops;
 
     while (it != src.end()) {
 
@@ -79,113 +80,156 @@ double calc (string src) {
         if (tok == '(') {
             string sub = getsub (it);
             num = calc (sub) * sign;
-            //cout << num << " ";
-            val.push (num);
+
+            val.push_back  (num);
             num = 0, sign = 1;
 
         } else if (isdigit (*it)) {
             num = getnum (it) * sign;
-            val.push (num);
+            val.push_back (num);
             sign = 1;
 
         } else {
             if (op) {
-
-                while (!ops.empty() && order[ops.top()] >= op) {
+                while (!ops.empty() && order[ops.back()] >= op) {
                     char op2 = getstack (ops);
-                    double b = getstack(val), a = getstack (val);
-                    // cout << operate[op] (a, b) << " ";
-                    val.push(operate[op](a, b));
-                    //cout << a << " " << op << " " << b << " = " << operation (a, b, op) << endl;
+                    double b = getstack (val), a = getstack (val);
+
+                    val.push_back (operate[op2](a, b));
                 }
-                /*
-                */
-                ops.push(tok);
+
+                ops.push_back (tok);
             }
 
             it++;
         }
     }
-
     while (!ops.empty()) {
         char op = getstack (ops);
         double b = getstack (val), a = getstack (val);
-        val.push(operate[op](a,b));
-        //cout << a << " " << op << " " << b << " = " << operation (a, b, op) << endl;
+        val.push_back (operate[op](a,b));
 
     }
-    //cout << (!val.empty() ? val.top() : 0) << " ";
-    return !val.empty() ? val.top() : 0;
+
+    return !val.empty() ? val.back() : 0;
 }
 
 int main () {
 
+    auto start = std::chrono::high_resolution_clock::now();
+
+
     string expression  = "(9.46+8.56+(7.55)/7.56/9.51/7.56/ -5.27-8.63*7.54/7.23* -0.84-5.64/(9.47* -7.40+ -5.94/6.80)/ -7.39*7.45-8.26/ -0.33+ -6.96+7.72-6.12+ -8.59+7.38*8.87+ -0.44+ -3.20+ -2.25- -2.13/(7.99-8.69*9.26-8.33+(7.12/6.71+6.75)+6.49+ -4.73+5.36*9.52/ -0.84/6.71-8.94/ -3.07-(9.52+ -3.57)+8.22- -8.54-5.09+ -1.97/ -3.68/7.13)/7.15*6.67-9.87+7.78/7.96*9.97/(9.50)/(9.02+7.97)+(((7.20+ -8.52+9.04/8.07/ -7.91/8.38/8.54))))";
 
-    //expression = "-7 * -(6 / 3)";
+    Assert::That(calc ("(64) * (-97 / 51 * -(55)) - (21 * -((((71 - -33)))) - 44)"), 8922.901960784315);
 
-    Assert::That(calc("2 + 3 * 4 / 3 - 6 / 3 * 3 + 8"), 8.0);
-    //Assert::That(calc("63 - -20 / 84 - 33 * 87 + -17 * 41 + -10"), -3514.761905);
-    Assert::That(calc("(64) * (-97 / 51 * -(55)) - (21 * -((((71 - -33)))) - 44)"), 8922.901960784315);
-    Assert::That(calc("-7 * -6 / 3"), Equals(14.0));
-    Assert::That(calc("10- 2- -5"), Equals(13.0));
-    Assert::That(calc("(1 + 1) / 3"), 0.6666666666666666);
-    Assert::That(calc("3 -(-1)"), Equals(4.0));
-    Assert::That(calc("1 + 1"), Equals(2.0));
-    Assert::That(calc("8/16"), Equals(0.5));
-    Assert::That(calc(""), 0.0);
-    Assert::That(calc("1 + 1 / 3"), 1.3333333333333333);
-    Assert::That(calc("(1 + 1) / 3"), 0.6666666666666666);
-    Assert::That(calc("6 + - (-4)"), 10.0);
-    Assert::That(calc("6 + - (4)"), 2.0);
-    Assert::That(calc("2 + -2"), Equals(0.0));
-    Assert::That(calc("(((10)))"), Equals(10.0));
-    Assert::That(calc("3 * 5"), Equals(15.0));
-    Assert::That(calc("(123.45*(678.90 / (-2.5+ 11.5)-(((80 -(19))) *33.25)) / 20) - (123.45*(678.90 / (-2.5+ 11.5)-(((80 -(19))) *33.25)) / 20) + (13 - 2)/ -(-11)"), Equals(1.0));
+    Assert::That(calc ("2 + 3 * 4 / 3 - 6 / 3 * 3 + 8"), 8.0);
+    Assert::That(calc ("-7 * -6 / 3"), Equals(14.0));
+    Assert::That(calc ("10- 2- -5"), Equals(13.0));
+    Assert::That(calc ("8/16"), Equals(0.5));
+    Assert::That(calc ("1 + 1 / 3"), 1.3333333333333333);
+    Assert::That(calc ("2 + -2"), Equals(0.0));
+    Assert::That(calc ("3 * 5"), Equals(15.0));
+    Assert::That(calc (""), 0.0);
+    Assert::That(calc ("(1 + 1) / 3"), 0.6666666666666666);
+    Assert::That(calc ("3 -(-1)"), Equals(4.0));
+    Assert::That(calc ("1 + 1"), Equals(2.0));
+    Assert::That(calc ("6 + - (-4)"), 10.0);
+    Assert::That(calc ("6 + - (4)"), 2.0);
+    Assert::That(calc ("(((10)))"), Equals(10.0));
+    Assert::That(calc ("(123.45*(678.90 / (-2.5+ 11.5)-(((80 -(19))) *33.25)) / 20) - (123.45*(678.90 / (-2.5+ 11.5)-(((80 -(19))) *33.25)) / 20) + (13 - 2)/ -(-11)"), Equals(1.0));
+//    Assert::That(calc2("63 - -20 / 84 - 33 * 87 + -17 * 41 + -10"), -3514.761905);
 
-    /*
-        */
-    //cout << expression;
+    cout << "end";
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+    std::cout << "\nProcess took " << elapsed.count()  << " ms" << std::endl;
 
-    //while ()
-
-    //cout << calc (expression);
-    //cout << 1 + 1 / (double)3;
 }
+
 void Test () {
 
 }
 ////////////////////////////////////////////////////////////////////////////////
 /*
+vector<string> tokenize (string src) {
+  regex re ("\\w+|(-?[0-9]+(.[0-9]+)?)|(\\+|\\-|\\/|\\*|=)|(\\(|\\))");
+  sregex_token_iterator it (src.begin(), src.end(), re);
 
-double operation (double a, double b, char op) {
+  return vector<string> (it, sregex_token_iterator());
+}
+int getsub2 (vector<string>::iterator str) {
+  int pile = 0;
+  vector<string>::iterator it = str;
 
-    double val;
-    switch (op) {
-        case '+' : val = a + b; break;
-        case '-' : val = a - b; break;
-        case '*' : val = a * b; break;
-        case '/' : val = a / b; break;
+  while (true) {
+    if (*it == "(") pile++;
+    if (*it == ")") pile--;
+    if (pile <= 0) return it - str;
+    it++;
+  }
+
+  return 0;
+}
+double interpret (vector<string> expr) {
+
+  //  if (!expr.size()) return 0;// throw runtime_error ("Empty expression");
+  const regex alpha ("[a-zA-Z]+"), number ("(-?[0-9]+(.[0-9]+)?)"), oper ("(\\+|\\-|\\/|\\*|=)"), par ("(\\(|\\))");
+  //bool running = true;
+  stack<double> val;
+  stack<string> ops;
+  auto it = expr.begin();
+
+  map<string,int> order {{"+", 1},{"-",1},{"*",2},{"/",2},{"%",2}};
+  map<string,func> operate {{"+", plus<double>()},{"-", minus<double>()},
+  {"*", multiplies<double>()}, {"/", divides<double>()}};
+  double sign = 1;
+
+  while (it != expr.end()) {
+    string tok = *it;
+
+    if (regex_match (tok, alpha)) {
+      cout << "var : [" << tok << "]";
+    } else if (regex_match (tok, number)) {
+      val.push (stod(tok) * sign);
+      sign = 1;
+    } else if (regex_match (tok, oper)) {
+      int op = order[tok];
+
+      if (tok == "-" && order[*(it - 1)]) {
+        sign = -1;
+      } else {
+        while (!ops.empty() && order[ops.top()] >= op) {
+          string op2 = getstack (ops);
+          double b = getstack (val), a = getstack (val);
+          val.push  (operate[op2](a, b));
+        }
+
+        ops.push (tok);
+      }
+    } else if (regex_match (tok, par)) {
+      auto nxt = it + getsub2 (it);
+      double num = interpret ({it + 1, nxt}) * sign;
+      val.push (num);
+      it = nxt, sign = 1;
+    } else {
+      //    cout << "dev : [" << tok << "]";
     }
 
-    return val;
-}
+    it++;
+  }
 
-bool isnumber (index it) {
-  if (isdigit (*it)) return true;
-  if (*it == '-') {
-      if (isdigit (*(it - 1))) return false;
-      if (isdigit (*(it + 1))) return true;
+  while (!ops.empty()) {
+    string op2 = getstack (ops);
+    double b = getstack (val), a = getstack (val);
+    //cout << a << op2 << b << " = " << operate[op2](a, b) << endl;
+    val.push  (operate[op2](a, b));
   }
-  return false;
+
+  return !val.empty() ? val.top() : 0;
 }
-int getop (char c) {
-    switch (c) {
-        case '-' : return 1;
-        case '+' : return 1;
-        case '*' : return 2;
-        case '/' : return 2;
-        default  : return 0;
-    }
-  }
+double calc2 (string expr) {
+
+  return interpret (tokenize(expr));
+}
 */
