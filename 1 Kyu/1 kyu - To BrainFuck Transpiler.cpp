@@ -5,30 +5,18 @@
 #include <map>
 #include <algorithm>
 
-#include "../../templates/Assert.hpp"
+#include "/home/wintermute/code/templates/Assert.hpp"
 
 using namespace std;
 using std::string_literals::operator""s;
 
 const char eol = '\n';
-const int overflow = 255;
 
-const regex varprefix ("[$|_A-Za-z]+") , digit ("(-?\\d+.?\\d+)"), quote ("\".+\"|\'.\'"), nocomment ("(?:(?!//|--|#|rem).)*");
+const regex varprefix ("[$|_A-Za-z]+") , digit ("(-?[0-9]+(.[0-9]+)?)"), quote ("\".+?\"|\'.?\'"), nocomment ("(?:(?!//|--|#|rem).)*");
 
 bool isvar (const string &src) { return regex_match (src, varprefix); }
 bool isnum (const string &src) { return regex_match (src, digit); }
 int get_val (map<string, int>& reg, string op) { return isalpha (op.at(0)) ? reg[op] : stoi (op); }
-string mkmsg (map<string, int>& reg, vector<string> &line) {
-    string os;
-    for (size_t i = 1; i < line.size(); ++i) {
-        if (regex_match (line[i], quote)) {
-            os += line[i].substr (1, line[i].size() - 2);
-        } else {
-            os += to_string (reg[line[i]]);
-        }
-    }
-    return os;
-}
 
 vector<string> format3 (vector<string> line) {
   for (auto &tok : line) {
@@ -42,7 +30,7 @@ vector<vector<string>> tokenize3 (const string &input) {
   vector<string> vect;
   string line;
   smatch match;
-  regex re ("[$|_A-Za-z]+|-?\\d+.?\\d+|\".+\"|\'.\'");
+  regex re ("[$|_A-Za-z]+|(-?[0-9]+(.[0-9]+)?)|\".+?\"|\'.?\'");
   vector<vector<string>> prog;
 
   while (getline (iss, line)) {
@@ -59,11 +47,11 @@ vector<vector<string>> tokenize3 (const string &input) {
   return prog;
 }
 
-string asm_interpreter (const string &input) {  /* throws std::string */
+string asm_interpreter (const string &input) {
 
-    using code = vector<vector<string>>;
+    //using code = vector<vector<string>>;
     bool running = true;
-    string os;
+    stringstream os, bf;
 
     map<string, int> reg;
     vector<vector<string>> prog = tokenize3 (input);
@@ -88,7 +76,7 @@ string asm_interpreter (const string &input) {  /* throws std::string */
 
             reg[line[1]] = stoi (line[2]);
         } else if (op == "inc") {   // Increase a b : a += b
-            reg[line[1]] += reg[line[2]];
+            reg[line[1]] += reg[line[2]]; // [-<+>]
         } else if (op == "dec") {   // decrease a b : a -= b
             reg[line[1]] -= reg[line[2]];
         } else if (op == "add") {   // add a + b to c :
@@ -146,10 +134,18 @@ string asm_interpreter (const string &input) {  /* throws std::string */
             if (reg.find (line[1]) == reg.end())
                 throw::logic_error ("invalid identifier");
 
-            //os += ',';
+            cout << "enter variable : ";
+            cin >> reg[line[1]];
 
         } else if (op == "msg") {   // print msg : BF operator '.'
-            os += mkmsg (reg, line);
+
+            for (size_t i = 1; i < line.size(); ++i) {
+                if (regex_match (line[i], quote)) {
+                    os << line[i].substr (1, line[i].size() - 2);
+                } else {
+                    os << reg[line[i]];
+                }
+            }
         } else if (op == "rem") {   // Error Handling
 
         }
@@ -160,7 +156,7 @@ string asm_interpreter (const string &input) {  /* throws std::string */
         if (it == prog.end()) running = false;
     }
 
-    return os;
+    return os.str();
 }
 
 unsigned loop (const string &code, unsigned pos) {
@@ -180,20 +176,20 @@ unsigned loop (const string &code, unsigned pos) {
 string bnf_interpreter (const string &code, string &input) {
 
     string os;
-    char tape[30000] = {}, *ptr = tape;
+    char tape[30000] = {}, *ptr = &tape[15000];
     auto pos = input.begin();
     int index = 0;
 
     while (code[index]) {
         switch (code[index]) {
-            case '>': ptr++; break;
-            case '<': ptr--; break;
-            case '+': (*ptr)++; break;
-            case '-': (*ptr)--; break;
-            case '.': os += *ptr; break; // putchar (*ptr)
-            case ',': *ptr = pos != input.end() ? *pos++ : *ptr = overflow; break; // *ptr = getchar()
-            case '[': if (*ptr == 0) index = loop (code,index); break; // while (*ptr) {
-            case ']': if (*ptr != 0) index = loop (code,index); break; // }
+            case '>': ptr++; break;      // increment the data pointer (to point to the next cell to the right)
+            case '<': ptr--; break;      // decrement the data pointer (to point to the next cell to the left).
+            case '+': (*ptr)++; break;   // increment (increase by one, truncate overflow: 255 + 1 = 0) the byte at the data pointer
+            case '-': (*ptr)--; break;   // decrement (decrease by one, treat as unsigned byte: 0 - 1 = 255 ) the byte at the data pointer.
+            case '.': os += *ptr; break; // output the byte at the data pointer.
+            case ',': *ptr = pos != input.end() ? *pos++ : 0; break; // store one byte of input to the data pointer.
+            case '[': if (*ptr == 0) index = loop (code,index); break; // loop until data pointer != 0 then jump to command after ]
+            case ']': if (*ptr != 0) index = loop (code,index); break; // until data pointer != 0, got to command after [
         }
         index++;
     }
@@ -212,10 +208,13 @@ int main () {
 		"rem &&Some comment~!@#$\":<";
 		//"?","Bye?";
 
+    cout << asm_interpreter (input);
+
     input =
     "var A\n"
     "set a 20\n"
     "call Wrap a\n"
+
     "proc Say x\n"
     "    msg \"It is \"x\n"
     "    call Wrap X\n"
@@ -225,7 +224,12 @@ int main () {
     "    call Say x\n"
     "eNd";
 
-    asm_interpreter (input);
+    input =
+    "var q w e\n"
+    "read q\n"
+    "read w\n"
+    "add q w e\n"
+    "msg q \" \" w \" \" e";
 
     // to => Any valid BrainFuck code with the same functionality.
     //string brnfk = transpiler (input);
@@ -236,6 +240,7 @@ int main () {
     clock.get_duration();
 
 }
+
 ////////////////////////////////////////////////////////////////////////////////
 string trunc (string &src) {
     size_t end = src.find ("//");

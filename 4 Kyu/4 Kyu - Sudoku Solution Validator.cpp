@@ -1,4 +1,4 @@
-bool validSolution (unsigned int board[9][9]){
+bool validSolution (unsigned int board[9][9]) {
 
     for (int i = 0; i < 9; i++) {
         int line = 0, col = 0;
