@@ -8,7 +8,7 @@
 //#include "/home/wintermute/code/templates/Assert.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
-enum {norm, point, star, choice, fst, cat};
+enum {norm, point, star, choi , fst, cat};
 
 struct RegExp {
 
@@ -32,7 +32,7 @@ RegExp *zeroOrMore (RegExp *node) {         // Zero or more occurances of the sa
     return new RegExp (star, node, nullptr);
 }
 RegExp *orr (RegExp *left, RegExp *right) { // A choice between 2 regexps
-    return new RegExp (choice, left, right);
+    return new RegExp (choi , left, right);
 }
 RegExp *str (RegExp *node) {                // A sequence of regexps, first element
     return new RegExp (fst, node, nullptr);
@@ -41,23 +41,24 @@ RegExp *add (RegExp *str, RegExp *next) {   // A sequence of regexps, additional
     return new RegExp (cat, str, next);
 }
 
-char *pretty (RegExp *re) {
-  RegExp *root = re;
-  char *os = new char[8];
+char *pretty (RegExp *node) {
+
+  RegExp *root = node;
+  char *os = new char[256];
 
   if (root) {
 
       switch (root->id) {
           case norm  : os[0] = root->op ; break;
-          case point : os[0] = '.' ;  break;
+          case point : os[0] = '.' ; break;
           case star  : os[0] = '*' ; break;
-          case choice: os[0] = '|' ; break;
-          case fst   :  break;
+          case choi  : os[0] = '|' ; break;
+          case fst   :               break;
           case cat   : os[0] = '(' ; break;
       }
-      pretty (root->left);
-      pretty (root->right);
-
+      printf ("%c",os[0]);
+      char *a = pretty (root->left);
+      char *b = pretty (root->right);
   }
 
   return os;
@@ -76,18 +77,6 @@ void shouldBe (const char *input, const char *expected) {
   */
 }
 
-std::string shownode (RegExp *node) {
-
-    const std::vector<std::string> oper = {"normal", "any", "zeroOrMore", "orr", "str", "add"};
-    std::string os;
-
-    if (node) {
-      os += oper[node->id] + " (";
-      if (node->id == norm) os += node->op;
-    }
-
-    return os;
-}
 std::string showtree (RegExp *node) {
     RegExp *root = node;
     std::string os;
@@ -95,11 +84,10 @@ std::string showtree (RegExp *node) {
 
     if (root) {
 
-        os = oper[node->id] + " (";
-        if (node->id == norm) os += node->op;
+        os = oper[root->id] + " (";
+        if (root->id == norm) os += root->op;
 
-        os += showtree (root->left);
-        os += showtree (root->right);
+        os += showtree (root->left) + showtree (root->right);
         os += ")";
     }
 
@@ -127,118 +115,176 @@ bool check (const char *input) {
     return true;
 }
 
-RegExp *getstack (std::stack<RegExp *> &stk) {
-    if (stk.empty()) return nullptr;
-    RegExp *ex = stk.top();
+template<class T> T getstack (std::stack<T> &stk) {
+    //if (stk.empty()) return 0;
+    T ex = stk.top();
     stk.pop();
     return ex;
 }
-void regroup (std::stack<RegExp *> &stk) {
 
+int order (char op) {
+    if (op == '*') return 2;
+    if (op == '|') return 1;
+    return 0;
+}
+void regroup (std::stack<RegExp *> &stk) {
     if (stk.size() > 1) {
-        RegExp *right = getstack (stk), *left = getstack (stk);
+        RegExp *right = getstack (stk), *left = str (getstack (stk));
         stk.push (add (left, right));
+    }
+}
+void getnxt (std::stack<RegExp *> &tree, char op) {
+
+    if (op == '|') {
+        RegExp *right = getstack (tree), *left = getstack (tree);
+        tree.push (orr (left, right));
+    } else if (op == '.') {
+        tree.push (any ());
+    } else if (op == '*') {
+        RegExp *act = getstack (tree);
+        tree.push (zeroOrMore (act));
     }
 }
 
 RegExp *mktree (std::string code) {
 
-    std::string::iterator it = code.begin();
     int index = 0;
-    std::stack<RegExp *> tree, ops;
+    const int size = code.size();
+    std::stack<RegExp *> tree;
+    std::stack<char> ops;
 
-    while (index < code.size()) {
-
+    while (index < size) {
         char tile = code[index];
+        RegExp *next;
 
         if (isalpha (tile)) {
-            RegExp *now = normal(tile);
+            tree.push (normal (tile));
+        } else if (tile == '(') {
 
-            if (tree.size() > 0) {
-                RegExp *left = str (getstack (tree));
-                tree.push (left);
-                //now = add (left, now);
-            }
+            index++;
+            int pile = 1;
+            std::string sub;
 
-            tree.push (now);
+            do {
+
+                if (code[index] == '(') pile++;
+                if (code[index] == ')') pile--;
+                if (pile == 0) break;
+
+                sub += code[index++];
+
+            } while (index < size);
+
+            next = mktree (sub);
+            tree.push (next);
         } else {
 
-            if (tile == '|') {
-                RegExp *right = getstack (tree), *left = getstack (tree);
-                tree.push (orr (left, right));
-
-            } else if (tile == '.') {
-                ops.push (any ());
-            } else if (tile == '*') {
-                RegExp *act = getstack (tree);
-                tree.push (zeroOrMore (act));
-
-            } else if (tile == '(') {
-
-                index++;
-                int pile = 1;
-                std::string sub;
-
-                do {
-
-                    if (code[index] == '(') pile++;
-                    if (code[index] == ')') pile--;
-                    if (pile == 0) break;
-
-                    sub += code[index++];
-
-                } while (index < code.size());
-
-                RegExp *now = mktree (sub);
-                tree.push (now);
-
+            while (!ops.empty() && order (ops.top()) >= order (tile)) {
+                char op = getstack (ops);
+                getnxt (tree, op);
             }
-        }
 
+            ops.push (tile);
+        }
         index++;
     }
 
-    regroup (tree);
+    while (!ops.empty()) {
+        char op = getstack (ops);
+        getnxt (tree, op);
+    }
+
+    if (tree.size() > 1) {
+        RegExp *right = getstack (tree), *left = str (getstack (tree));
+        tree.push (add (left, right));
+    }
     //std::cout << showtree (tree.top()) << '\n';
     return !tree.empty() ? tree.top() : nullptr;
 }
+
 RegExp *parseRegExp (const char *code) {
 
     if (check (code) == false) return nullptr;
+    int index = 0;
+    const int size = strlen (code);
+    std::stack<RegExp *> tree;
+    std::stack<char> ops;
 
-    return mktree (code);
+    while (index < size) {
+        char tile = code[index];
+        RegExp *next;
+
+        if (isalpha (tile)) {
+            tree.push (normal (tile));
+        } else if (tile == '(') {
+
+            index++;
+            int pile = 1;
+            char sub2[1024] = {}, *it = sub2;
+
+            do {
+
+                if (code[index] == '(') pile++;
+                if (code[index] == ')') pile--;
+                if (pile == 0) break;
+
+                *it++ = code[index++];
+
+            } while (index < size);
+
+            next = parseRegExp (sub2);
+            tree.push (next);
+        } else {
+
+            while (!ops.empty() && order (ops.top()) >= order (tile)) {
+                char op = getstack (ops);
+                getnxt (tree, op);
+            }
+
+            ops.push (tile);
+        }
+        index++;
+    }
+
+    while (!ops.empty()) {
+        char op = getstack (ops);
+        getnxt (tree, op);
+    }
+
+    if (tree.size() > 1) {
+        RegExp *right = getstack (tree), *left = str (getstack (tree));
+        tree.push (add (left, right));
+    }
+    //std::cout << showtree (tree.top()) << '\n';
+    return !tree.empty() ? tree.top() : nullptr;
 }
-
 
 int main () {
 
   /*
+  RegExp *tree = parseRegExp ("ab|c");
+  std::cout << showtree (tree) << '\n';  orr (add (str (normal ('a')), normal ('b')), normal ('a'))
+  orr (
+       add (str (normal ('a')), normal ('b')),
 
-  "ab*"     -> add (str (normal ('a')), zeroOrMore (normal ('b')))
-  "(ab)*"   -> zeroOrMore (add (str (normal ('a')), normal ('b')))
+       normal ('a'))
+       */
 
-  "ab|a"    -> orr (add (str (normal ('a')), normal ('b')), normal ('a'))
+  std::cout << showtree (parseRegExp ("a")) << '\n';   // normal ('a')
+  std::cout << showtree (parseRegExp ("ab")) << '\n';  // add (str (normal ('a')), normal ('b'))
+  std::cout << showtree (parseRegExp ("ab*")) << '\n'; // add (str (normal ('a')), zeroOrMore (normal ('b')))
+  std::cout << showtree (parseRegExp ("a.*")) << '\n'; // add (str (normal ('a')), zeroOrMore (any ()))
+  std::cout << showtree (parseRegExp ("(ab)*")) << '\n'; // zeroOrMore (add (str (normal ('a')), normal ('b')))
 
-  "a(b|a)"  -> add (str (normal ('a')), orr (normal ('b'), normal ('a')))
+  std::cout << showtree (parseRegExp ("a|b*")) << '\n'; // orr (normal ('a'), zeroOrMore (normal ('b')))
+  std::cout << showtree (parseRegExp ("(a|b)*")) << '\n'; // zeroOrMore (orr (normal ('a'), normal ('b')))
+  std::cout << showtree (parseRegExp ("a(b|a)")) << '\n'; // add (str (normal ('a')), orr (normal ('b'), normal ('a')))
+  std::cout << showtree (parseRegExp ("(a.*)|(bb)")) << '\n';
+  /*
 
-  "a|b*"    -> orr (normal ('a'), zeroOrMore (normal ('b')))
-
-  "(a|b)*"  -> zeroOrMore (orr (normal ('a'), normal ('b')))
-
-  "a"          -> normal ('a')
-  "ab"         -> add (str (normal ('a')), normal ('b'))
-  "a.*"        -> add (str (normal ('a')), zeroOrMore (any ()))
-
-  "(a.*)|(bb)" -> orr (add (str (normal ('a')), zeroOrMore (any ())) ,
-  add (str (normal ('b')), normal (b)))
-
+  "(a.*)|(bb)" // orr (add (str (normal ('a')), zeroOrMore (any ())) ,
+                       add (str (normal ('b')), normal (b)))
   */
-
-  std::cout << showtree (parseRegExp ("a")) << '\n' ;
-  std::cout << showtree (parseRegExp ("ab")) << '\n' ;
-  std::cout << showtree (parseRegExp ("ab*")) << '\n' ;
-  std::cout << showtree (parseRegExp ("(ab)*")) << '\n' ;
-  //"(ab)*"   // zeroOrMore (add (str (normal ('a')), normal ('b')))
 
   printf ("\nend\n");
 }
@@ -284,3 +330,58 @@ void Test () {
     shouldBe ("((aa)|ab)*|a", "(((aa)|(ab))*|a)");
     shouldBe ("((a.)|.b)*|a", "(((a.)|(.b))*|a)");
 };
+
+RegExp *parseRegExp2 (const char *code) {
+
+    if (check (code) == false) return nullptr;
+    const int size = strlen (code);
+    int index = 0;
+    std::stack<RegExp *> tree;
+    std::stack<char> ops;
+
+    while (index < size) {
+        char tile = code[index];
+        RegExp *next;
+
+        if (isalpha (tile)) {
+            tree.push (normal (tile));
+        } else if (tile == '(') {
+
+            index++;
+            int pile = 1;
+            std::string sub;
+
+            do {
+
+                if (code[index] == '(') pile++;
+                if (code[index] == ')') pile--;
+                if (pile == 0) break;
+
+                sub += code[index++];
+
+            } while (index < size);
+
+            next = mktree (sub);
+            tree.push (next);
+        } else {
+            std::cout << tree.size() << " ";
+            if (tile == '|') {
+                RegExp *right = getstack (tree), *left = str (getstack (tree));
+                next = add (left, right);
+
+            } else if (tile == '.') {
+                next = any ();
+
+            } else if (tile == '*') {
+                RegExp *act = getstack (tree);
+                next = zeroOrMore (act);
+            }
+            tree.push (next);
+        }
+
+        index++;
+    }
+
+    regroup (tree);
+    return !tree.empty() ? tree.top() : nullptr;
+  }
