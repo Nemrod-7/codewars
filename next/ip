@@ -1,0 +1,13 @@
+#include <iostream>
+#include <cstdint>
+#include <string>
+
+uint32_t ip_to_int32 (const std::string& ip) {
+
+    return 0;
+}
+
+int main () {
+
+
+}

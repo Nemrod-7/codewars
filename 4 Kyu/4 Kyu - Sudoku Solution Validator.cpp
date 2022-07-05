@@ -1,3 +1,5 @@
+#include <iostream>
+
 bool validSolution (unsigned int board[9][9]) {
 
     for (int i = 0; i < 9; i++) {
@@ -21,4 +23,25 @@ bool validSolution (unsigned int board[9][9]) {
     }
 
     return true;
+}
+
+int main () {
+
+    unsigned int board[9][9];
+
+    for (int i = 0; i < 9; i++) {
+        for (int j = 0; j < 9; j++) {
+            board[i][j] = i * 9 + j;
+        }
+    }
+
+    for (int i = 0; i < 9; i++) {
+        for (int j = 0; j < 9; j++) {
+            int ix = i / 3 * 3 + j / 3, iy = i % 3 * 3 + j % 3;
+
+            std::cout << board[ix][iy] << ' ';
+        }
+        std::cout << '\n';
+    }
+
 }
