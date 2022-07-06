@@ -7,38 +7,26 @@
 #include "regexparser.hpp"
 //#include "/home/wintermute/code/templates/Assert.hpp"
 
-template<class T> T getfront (std::deque<T> &dq) {
-  //if (dq.empty()) return 0;
-  T ex = dq.front();
+RegExp *getfront (std::deque<RegExp*> &dq) {
+  RegExp *ex = dq.front();
   dq.pop_front();
   return ex;
 }
-template<class T> T getback (std::deque<T> &dq) {
-  //if (dq.empty()) return 0;
-  T ex = dq.back();
+RegExp *getback (std::deque<RegExp*> &dq) {
+  RegExp *ex = dq.back();
   dq.pop_back();
   return ex;
 }
 
-RegExp *getstack (std::stack<RegExp *> &s1) {
-    RegExp *ex = s1.top();
-    s1.pop();
-    return ex;
-}
-std::stack<RegExp *> reverse (std::stack<RegExp *> s1) {
-  std::stack<RegExp *> s2;
+void reduce (std::deque<RegExp *> &tree) {
 
-  while (!s1.empty()) s2.push (getstack (s1));
+    if (tree.size() > 1) {
+        tree.front() = str (tree.front());
 
-  return s2;
-}
-void reduce (std::stack<RegExp *> &tree) {
-    tree = reverse (tree);
-    if (tree.size() > 1) tree.top() = str (tree.top());
-
-    while (tree.size() > 1) {
-        RegExp *left = getstack (tree), *right = getstack (tree);
-        tree.push (add (left, right));
+        while (tree.size() > 1) {
+            RegExp *left = getfront (tree), *right = getfront (tree);
+            tree.push_front (add (left, right));
+        }
     }
 }
 bool check (const char *input) {
@@ -74,7 +62,7 @@ RegExp *parseRegExp (const char *code) {
     if (check (code) == false) return nullptr;
     const int size = strlen (code);
     int index = 0;
-    std::stack<RegExp *> tree, ops;
+    std::deque<RegExp *> tree, ops;
 
     while (index < size) {
         char tile = code[index];
@@ -97,42 +85,39 @@ RegExp *parseRegExp (const char *code) {
             } while (index < size);
 
             next = parseRegExp (sub);
-            tree.push (next);
-        } else if (tile == ')') {
+            tree.push_back (next);
+
         } else if (tile == '.') {
-            tree.push(any());
+            tree.push_back (any());
         } else if (tile == '*') {
-            RegExp *back = getstack (tree);
-            tree.push (zeroOrMore (back));
+            RegExp *back = getback (tree);
+            tree.push_back (zeroOrMore (back));
         } else if (tile == '|') {
-            //std::cout << showtree (tree.top());
+
             reduce (tree);
-            ops.push (getstack(tree));
-        } else {
-            tree.push (normal (tile));
+            ops.push_back (getback(tree));
+        } else if (tile != ')') {
+            tree.push_back (normal (tile));
         }
         index++;
     }
 
     while (!ops.empty()) {
         reduce (tree);
-        RegExp *right = getstack (tree), *left = getstack (ops);
-        tree.push (orr (left, right));
+        RegExp *right = getback (tree), *left = getback (ops);
+        tree.push_back (orr (left, right));
     }
 
-    tree = reverse (tree);
-    tree.push (str (getstack (tree)));
+    reduce (tree);
 
-    while (tree.size() > 1) {
-        RegExp *left = getstack (tree), *right = getstack (tree);
-        tree.push (add (left, right));
-    }
-
-    return !tree.empty() ? tree.top() : nullptr;
+    return !tree.empty() ? tree.back() : nullptr;
 }
 
 int main () {
 
+  shouldBe ("((aa)|ab)*|a", "(((aa)|(ab))*|a)");
+  shouldBe ("((a.)|.b)*|a", "(((a.)|(.b))*|a)");
+  /*
   RegExp *tree = parseRegExp ("(aa)|ab");
   //std::cout << showtree (tree) << '\n';
 
@@ -147,7 +132,7 @@ int main () {
   std::cout << showtree (parseRegExp ("(a|b)*")) << '\n'; // zeroOrMore (orr (normal ('a'), normal ('b')))
   std::cout << showtree (parseRegExp ("a(b|a)")) << '\n'; // add (str (normal ('a')), orr (normal ('b'), normal ('a')))
   std::cout << showtree (parseRegExp ("(a.*)|(bb)")) << '\n';
-  /*
+
 
   std::cout << showtree (parseRegExp (""));
   std::cout << showtree (parseRegExp ("("));
@@ -179,4 +164,17 @@ int main () {
   */
 
   printf ("\nend\n");
+}
+
+template<class T> T getstack (std::stack<T> &stk) {
+  T ex = stk.top();
+  stk.pop();
+  return ex;
+}
+std::stack<RegExp *> reverse (std::stack<RegExp *> s1) {
+  std::stack<RegExp *> s2;
+
+  while (!s1.empty()) s2.push (getstack (s1));
+
+  return s2;
 }
