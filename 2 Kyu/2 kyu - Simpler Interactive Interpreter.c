@@ -267,7 +267,7 @@ int check (char *input) {
     if (nop >= nval) return OPER_ERR;
 
     return OK_CODE;
-  }
+}
 int initInterpreter () {
     return OK_CODE;
 }

@@ -8,11 +8,13 @@
 //#include "/home/wintermute/code/templates/Assert.hpp"
 
 RegExp *getfront (std::deque<RegExp*> &dq) {
+  if (dq.empty()) return nullptr;
   RegExp *ex = dq.front();
   dq.pop_front();
   return ex;
 }
 RegExp *getback (std::deque<RegExp*> &dq) {
+  if (dq.empty()) return nullptr;
   RegExp *ex = dq.back();
   dq.pop_back();
   return ex;
@@ -37,29 +39,35 @@ bool check (const char *input) {
     if (size == 0) return false;
 
     while (*it) {
+        char prev = it - expr > 0 ? *(it - 1) : 0;
 
+        if (prev == '*' && *it == '*') return false;
         switch (*it) {
             case '(' : par++; break;
             case ')' : par--; break;
             case '|' : op++ ; break;
             case '*' : op++ ; break;
-            case '.' :      ; break;
-            default  : var++; break;
+            case '.' : var++; break;
+            default  : var++;
+            break;
         }
 
         if (par < 0) return false;
         if ((it - expr) < size) it++;
     }
 
-    if (op > var) return false;
+    //if (op > var) return false;
     if (par != 0) return false;
 
     return true;
 }
-
 RegExp *parseRegExp (const char *code) {
 
+    static int cycle = 0;
+    cycle++;
     if (check (code) == false) return nullptr;
+    //std::cout << cycle << " -> [ " << code << " ]\n\n";
+
     const int size = strlen (code);
     int index = 0;
     std::deque<RegExp *> tree, ops;
@@ -72,7 +80,7 @@ RegExp *parseRegExp (const char *code) {
 
             index++;
             int pile = 1;
-            char sub[1024] = {}, *it = sub;
+            char sub[2048] = {}, *it = sub;
 
             do {
 
@@ -115,12 +123,22 @@ RegExp *parseRegExp (const char *code) {
 
 int main () {
 
-  shouldBe ("((aa)|ab)*|a", "(((aa)|(ab))*|a)");
-  shouldBe ("((a.)|.b)*|a", "(((a.)|(.b))*|a)");
   /*
-  RegExp *tree = parseRegExp ("(aa)|ab");
+  const char *expr =
+  "((.aqevo(.obwm*(.abyznqnnt.fl)hx(wsdfn.cnf*sbl*.fm(q|.)(p|j)).(u|m)(.|m).htktfovj(g|d)(cx..fz(hs.kmbkaccot(.wlm*m((b(x|z)jikykavejhrifawzu)gpypafgcdxcng)ojh)v..mm)(u|k)x(.otcrdtvggg*(h|l).ey.)jsazm(x|y).aepjlkzu)d(miet*u.l*ubn(v|r)zq(r|e)(epi*(xq..d*apimllgsykwlposszu)g.u.zqgztuq.okyzr.qjfv).eom)nfvz)ttasnxzm*(ck.*jk.oucimmg..k)lq*bw.bx.r(sm(d*m(v|(.ogixlhtjwga(p*|m).b.zfcklqfr))q(vlvjbgvtjdzodupjhmmfyyg)...ycqcfaokhqojtqiasacutj)(n|q)(dhr..wancvuelfq)je(r|q)(b|f)s.)v*f*(l|c)qh(j*(f|j)(.|n)r(su(h|q)((o|.)|.)wxsn(q|.)v*lsqbcsbrzvw(.qqlu(ruw.yf(n|a).rldrddksmhua.iphq)rhu(ieq)xhutmrgozxk.lk)s*lriheqft)cj*))|d*)";
+
+  const char *exp =
+  "((.aqevo(.obwm*(.abyznqnnt.fl)hx(wsdfn.cnf*sbl*.fm(q|.)(p|j)).(u|m)(.|m).htktfovj(g|d)(cx..fz(hs.kmbkaccot(.wlm*m((b(x|z)jikykavejhrifawzu)gpypafgcdxcng)ojh)v..mm)(u|k)x(.otcrdtvggg*(h|l).ey.)jsazm(x|y).aepjlkzu)d(miet*u.l*ubn(v|r)zq(r|e)(epi*(xq..d*apimllgsykwlposszu)g.u.zqgztuq.okyzr.qjfv).eom)nfvz)ttasnxzm*(ck.*jk.oucimmg..k)lq*bw.bx.r(sm(d*m(v|(.ogixlhtjwga(p*|m).b.zfcklqfr))q(vlvjbgvtjdzodupjhmmfyyg)...ycqcfaokhqojtqiasacutj)(n|q)(dhr..wancvuelfq)je(r|q)(b|f)s.)v*f*(l|c)qh(j*(f|j)(.|n)r(su(h|q)wxsn(q|.)v*lsqbcsbrzvw(.qqlu(ruw.yf(n|a).rldrddksmhua.iphq)rhu(ieq)xhutmrgozxk.lk)s*lriheqft)cj*))|d*)";
+
+  const char *got =
+  "((.aqevo(.obwm*(.abyznqnnt.fl)hx(wsdfn.cnf*sbl*.fm(q|.)(p|j)).(u|m)(.|m).htktfovj(g|d)(cx..fz(hs.kmbkaccot(.wlm*m((b(x|z)jikykavejhrifawzu)gpypafgcdxcng)ojh)v..mm)(u|k)x(.otcrdtvggg*(h|l).ey.)jsazm(x|y).aepjlkzu)d(miet*u.l*ubn(v|r)zq(r|e)(epi*(xq..d*apimllgsykwlposszu)g.u.zqgztuq.okyzr.qjfv).eom)nfvz)ttasnxzm*(ck.*jk.oucimmg..k)lq*bw.bx.r(sm(d*m(v|(.ogixlhtjwga(p*|m).b.zfcklqfr))q(vlvjbgvtjdzodupjhmmfyyg)...ycqcfaokhqojtqiasacutj)(n|q)(dhr..wancvuelfq)je(r|q)(b|f)s.)v*f*(l|c)qh(j*(f|j)(.|n)r(su(h|q)((o|.)|.)wxsn(q|.)v*lsqbcsbrzvw(.qqlu(ruw.yf(n|a).rldrddksmhua.iphq)rhu(ieq)xhutmrgozxk.lk)s*lriheqft)cj*))|d*)";
+
+  */
+
+  RegExp *tree = parseRegExp ("((o|.)|.)");
   //std::cout << showtree (tree) << '\n';
 
+  /*
   std::cout << showtree (parseRegExp ("a")) << '\n';      // normal ('a')
   std::cout << showtree (parseRegExp ("ab")) << '\n';     // add (str (normal ('a')), normal ('b'))
   std::cout << showtree (parseRegExp ("a.*")) << '\n';    // add (str (normal ('a')), zeroOrMore (any ()))
@@ -133,15 +151,12 @@ int main () {
   std::cout << showtree (parseRegExp ("a(b|a)")) << '\n'; // add (str (normal ('a')), orr (normal ('b'), normal ('a')))
   std::cout << showtree (parseRegExp ("(a.*)|(bb)")) << '\n';
 
-
   std::cout << showtree (parseRegExp (""));
   std::cout << showtree (parseRegExp ("("));
   std::cout << showtree (parseRegExp (")("));
   std::cout << showtree (parseRegExp ("a("));
   std::cout << showtree (parseRegExp ("()"));
 
-
-  /*
   RegExp *tree = parseRegExp ("ab|c");
   std::cout << showtree (tree) << '\n';  orr (add (str (normal ('a')), normal ('b')), normal ('a'))
   orr (
@@ -149,10 +164,8 @@ int main () {
 
     normal ('a'))
     */
-  //shouldBe ("a.*", "(a.*)");
-//shouldBe ("(a.*)|(bb)", "((a.*)|(bb))");
 
-  //std::cout << pretty (tree);
+  //std::cout << pretty ("((o|.)|.)");
 
 
   //std::cout << check ("a*|b") << '\n';
@@ -164,17 +177,4 @@ int main () {
   */
 
   printf ("\nend\n");
-}
-
-template<class T> T getstack (std::stack<T> &stk) {
-  T ex = stk.top();
-  stk.pop();
-  return ex;
-}
-std::stack<RegExp *> reverse (std::stack<RegExp *> s1) {
-  std::stack<RegExp *> s2;
-
-  while (!s1.empty()) s2.push (getstack (s1));
-
-  return s2;
 }
