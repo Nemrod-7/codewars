@@ -7,7 +7,7 @@
 #include <functional>
 #include <chrono>
 
-#include "../../templates/Assert.hpp"
+//#include "../../templates/Assert.hpp"
 
 using namespace std;
 using func = function<double(double,double)>;
@@ -33,27 +33,6 @@ bool equals (const AST &lhs, const AST &rhs) {
   return lhs.op == rhs.op && lhs.n == rhs.n && (lhs.a && rhs.a ? equals (*lhs.a, *rhs.a) : true) && (lhs.b && rhs.b ? equals (*lhs.b, *rhs.b) : true);
 }
 bool equals (const AST *lhs, const AST *rhs) { return equals (*lhs, *rhs); }
-
-int simulate (const vector<string> &assembly, const vector<int> &argv) {
-    int r0 = 0, r1 = 0;
-    stack<int> istack;
-
-    for (auto &ins : assembly) {
-        //cout << r0 << " ";
-        string code = ins.substr (0, 2);
-        //cout << ins << " ";
-             if (code == "IM") { r0 = stoi (ins.substr (3)); }
-        else if (code == "AR") { r0 = argv.at (stoi (ins.substr (3))); }
-        else if (code == "SW") { swap (r0, r1); }
-        else if (code == "PU") { istack.push (r0); }
-        else if (code == "PO") { r0 = istack.top (); istack.pop (); }
-        else if (code == "AD") { r0 += r1; }
-        else if (code == "SU") { r0 -= r1; }
-        else if (code == "MU") { r0 *= r1; }
-        else if (code == "DI") { r0 /= r1; }
-    }
-    return r0;
-}
 
 class Display {
     public :
@@ -219,6 +198,27 @@ class Compiler {
             return Asm ;
           }
 };
+
+int simulate (const vector<string> &assembly, const vector<int> &argv) {
+    int r0 = 0, r1 = 0;
+    stack<int> istack;
+
+    for (auto &ins : assembly) {
+        //cout << r0 << " ";
+        string code = ins.substr (0, 2);
+        //cout << ins << " ";
+             if (code == "IM") { r0 = stoi (ins.substr (3)); }
+        else if (code == "AR") { r0 = argv.at (stoi (ins.substr (3))); }
+        else if (code == "SW") { swap (r0, r1); }
+        else if (code == "PU") { istack.push (r0); }
+        else if (code == "PO") { r0 = istack.top (); istack.pop (); }
+        else if (code == "AD") { r0 += r1; }
+        else if (code == "SU") { r0 -= r1; }
+        else if (code == "MU") { r0 *= r1; }
+        else if (code == "DI") { r0 /= r1; }
+    }
+    return r0;
+}
 
 int main () {
     Timer clock;
