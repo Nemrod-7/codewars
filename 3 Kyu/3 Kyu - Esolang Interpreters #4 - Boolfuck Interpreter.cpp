@@ -1,17 +1,12 @@
+#include <iostream>
 #include <cstdlib>
-
-#define BUFFSIZE 1024
-#define BUFFER 30000
-#define MID BUFFER/2
-#define CODE *(code + index)
 
 unsigned loop (const char *code, unsigned index) {
     int pile = 0;
-    const bool fwd = CODE == '[' ? true : false;
+    const bool fwd = code[index] == '[' ? true : false;
 
-    while (CODE) {
-       if (CODE == '[') pile++;
-       if (CODE == ']') pile--;
+    while (code[index]) {
+       pile += code[index] == '[' - code[index] == ']';
        if (pile == 0) return index;
 
        fwd == true ? index++ : index--;
@@ -19,38 +14,44 @@ unsigned loop (const char *code, unsigned index) {
 }
 char *boolfuck (const char *code, const char *input) {
 
-  char *output = new char [BUFFSIZE], *byte = output;
+  char *output = new char [1024], *out = output;
   unsigned index = 0, bit = 0, bin = 0;
-  bool tape[BUFFER] = {0}, *data = &tape[MID] ;
+  bool tape[30000] = {0}, *data = &tape[30000 / 2] ;
 
-  while (CODE) {
-      switch (CODE) {
-          case '+' : *data = ((*data == 0) ? 1 : 0); break;
-          case ',' : if (bin == 8)
-                        input++, bin = 0;
-
-                     *data = *input >> bin++ &1;
+  while (code[index]) {
+      switch (code[index]) {
+          case '+' : *data ^= 1; break;
+          case ',' : *data = input[bin / 8] >> (bin % 8) &1;
+                     bin++;
                      break;
 
-          case ';' : if (bit == 8)
-                        byte++, bit = 0;
-
-                     *byte += *data << bit++;  // little endian
+          case ';' : output[bit / 8] |= *data << (bit % 8);
+                     bit++;
                      break;
 
           case '<' : data--; break;
           case '>' : data++; break;
-          case '[' : if (*data == NULL) index = loop (code,index); break;
-          case ']' : if (*data != NULL) index = loop (code,index); break;
+          case '[' : if (*data == 0) index = loop (code,index); break;
+          case ']' : if (*data != 0) index = loop (code,index); break;
           default : break;
       }
       index++;
     }
 
-  while (bit < 8)
-        *byte += 0 << bit++;
+    return output;
+}
 
-    *(byte + 1) = '\0';
+int main () {
 
-  return output;
+  const char *code = ";;;+;+;;+;+;+;+;+;+;;+;;+;;;+;;+;+;;+;;;+;;+;+;;+;+;;;;+;+;;+;;;+;;+;+;+;;;;;;;+;+;;+;;;+;+;;;+;+;;;;+;+;;+;;+;+;;+;;;+;;;+;;+;+;;+;;;+;+;;+;;+;+;+;;;;+;+;;;+;+;+;";
+
+  std::cout << boolfuck(code,"Hello, world!\n");
+
+  int data = 9;
+
+  for (int bit = 0; bit < 8; bit++) {
+      int ex = data >> bit &1;
+  }
+
+
 }
