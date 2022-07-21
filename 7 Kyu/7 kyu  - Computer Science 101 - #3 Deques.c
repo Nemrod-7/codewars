@@ -56,7 +56,7 @@ void deque_push_back(Deque *deque, int data) {
     else
         cell->prev = deque->back;
         deque->back = deque->back->next = cell;
- }
+}
 int deque_pop_back(Deque *deque) {
 
     int value = deque->back->data;

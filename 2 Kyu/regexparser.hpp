@@ -50,11 +50,12 @@ char *pretty (RegExp *node) {
         case star  : c = '*' ; break;
         case choi  : c = '|' ; break;
         case fst   :               break;
-        case cat   : c = '(' ; break;
+        case cat   : c = ' ' ; break;
       }
 
       ptr += sprintf (ptr, "%c", c);
       ptr += sprintf (ptr, "%s", pretty (root->right));
+
   }
 
   return os;

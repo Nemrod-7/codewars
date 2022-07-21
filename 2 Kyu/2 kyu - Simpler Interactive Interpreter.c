@@ -80,7 +80,7 @@ void push (Stack *stack, void *raw) {
     stack->root = malloc (sizeof (Node));
     stack->root->data = data;
     stack->root->next = cell;
-  }
+}
 Data pop (Stack *stack) {
 
     if (is_empty(stack)) return nul;

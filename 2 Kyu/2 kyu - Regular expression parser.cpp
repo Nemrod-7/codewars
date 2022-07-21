@@ -65,12 +65,13 @@ RegExp *parseRegExp (const char *code) {
 
     static int cycle = 0;
     cycle++;
+    //std::cout << cycle << " -> [ " << code << " ]" << "\n\n";
     if (check (code) == false) return nullptr;
-    //std::cout << cycle << " -> [ " << code << " ]\n\n";
 
     const int size = strlen (code);
     int index = 0;
     std::deque<RegExp *> tree, ops;
+
 
     while (index < size) {
         char tile = code[index];
@@ -113,30 +114,60 @@ RegExp *parseRegExp (const char *code) {
     while (!ops.empty()) {
         reduce (tree);
         RegExp *right = getback (tree), *left = getback (ops);
+        //std::cout << showtree (left) << " " << showtree (right) << "\n";
         tree.push_back (orr (left, right));
     }
-
+    std::cout << tree.size();
     reduce (tree);
-
     return !tree.empty() ? tree.back() : nullptr;
 }
 
+char *pretty2 (RegExp *node) {
+
+  RegExp *root = node;
+  char *os = new char[10000], *ptr = os;
+
+  if (root) {
+      char c;
+
+      switch (root->id) {
+        case norm  : c = root->op ; break;
+        case point : c = '.' ; break;
+        case star  : c = '*' ; break;
+        case choi  : c = '|' ; break;
+        case fst   : c = '(' ; break;
+        case cat   : c = 1 ; break;
+        //default : c = 0; break;
+      }
+
+      ptr += sprintf (ptr, "%s", pretty2 (root->left));
+      /*
+      */
+      ptr += sprintf (ptr, "%c", c);
+      ptr += sprintf (ptr, "%s", pretty2 (root->right));
+
+  }
+
+  return os;
+}
 int main () {
 
-  /*
-  const char *expr =
-  "((.aqevo(.obwm*(.abyznqnnt.fl)hx(wsdfn.cnf*sbl*.fm(q|.)(p|j)).(u|m)(.|m).htktfovj(g|d)(cx..fz(hs.kmbkaccot(.wlm*m((b(x|z)jikykavejhrifawzu)gpypafgcdxcng)ojh)v..mm)(u|k)x(.otcrdtvggg*(h|l).ey.)jsazm(x|y).aepjlkzu)d(miet*u.l*ubn(v|r)zq(r|e)(epi*(xq..d*apimllgsykwlposszu)g.u.zqgztuq.okyzr.qjfv).eom)nfvz)ttasnxzm*(ck.*jk.oucimmg..k)lq*bw.bx.r(sm(d*m(v|(.ogixlhtjwga(p*|m).b.zfcklqfr))q(vlvjbgvtjdzodupjhmmfyyg)...ycqcfaokhqojtqiasacutj)(n|q)(dhr..wancvuelfq)je(r|q)(b|f)s.)v*f*(l|c)qh(j*(f|j)(.|n)r(su(h|q)((o|.)|.)wxsn(q|.)v*lsqbcsbrzvw(.qqlu(ruw.yf(n|a).rldrddksmhua.iphq)rhu(ieq)xhutmrgozxk.lk)s*lriheqft)cj*))|d*)";
 
-  const char *exp =
-  "((.aqevo(.obwm*(.abyznqnnt.fl)hx(wsdfn.cnf*sbl*.fm(q|.)(p|j)).(u|m)(.|m).htktfovj(g|d)(cx..fz(hs.kmbkaccot(.wlm*m((b(x|z)jikykavejhrifawzu)gpypafgcdxcng)ojh)v..mm)(u|k)x(.otcrdtvggg*(h|l).ey.)jsazm(x|y).aepjlkzu)d(miet*u.l*ubn(v|r)zq(r|e)(epi*(xq..d*apimllgsykwlposszu)g.u.zqgztuq.okyzr.qjfv).eom)nfvz)ttasnxzm*(ck.*jk.oucimmg..k)lq*bw.bx.r(sm(d*m(v|(.ogixlhtjwga(p*|m).b.zfcklqfr))q(vlvjbgvtjdzodupjhmmfyyg)...ycqcfaokhqojtqiasacutj)(n|q)(dhr..wancvuelfq)je(r|q)(b|f)s.)v*f*(l|c)qh(j*(f|j)(.|n)r(su(h|q)wxsn(q|.)v*lsqbcsbrzvw(.qqlu(ruw.yf(n|a).rldrddksmhua.iphq)rhu(ieq)xhutmrgozxk.lk)s*lriheqft)cj*))|d*)";
+const char *parse = "(u(mj(p|(w.v(jxgpubqtoengmvillcf(fujft.saewudv(y|t)ri.trnroqsc)hvtjyzl)rw.))jp(u|f)der((s|p)|(y|o))m)wc*(h|m)(m*(y|(z|b))(j|z*)u*nw(d|n*)s)p(l*|z*)(m|.)*u(.|((towljnt(i|c)mjue.n.(owc*gcswlni.)oj*r(d.zxcukadicwaxgmtgfwjivewidbm)h)scx.ha(vne.)))l(g*|r)(b|(p|(c|v)))y*x.bun(q|(r(((c|c)|(i|v))|b)xy.imo(k|v)c*ay(mawidwri(.w)wnyuqux*)*zna*pc*zx)))";
 
-  const char *got =
-  "((.aqevo(.obwm*(.abyznqnnt.fl)hx(wsdfn.cnf*sbl*.fm(q|.)(p|j)).(u|m)(.|m).htktfovj(g|d)(cx..fz(hs.kmbkaccot(.wlm*m((b(x|z)jikykavejhrifawzu)gpypafgcdxcng)ojh)v..mm)(u|k)x(.otcrdtvggg*(h|l).ey.)jsazm(x|y).aepjlkzu)d(miet*u.l*ubn(v|r)zq(r|e)(epi*(xq..d*apimllgsykwlposszu)g.u.zqgztuq.okyzr.qjfv).eom)nfvz)ttasnxzm*(ck.*jk.oucimmg..k)lq*bw.bx.r(sm(d*m(v|(.ogixlhtjwga(p*|m).b.zfcklqfr))q(vlvjbgvtjdzodupjhmmfyyg)...ycqcfaokhqojtqiasacutj)(n|q)(dhr..wancvuelfq)je(r|q)(b|f)s.)v*f*(l|c)qh(j*(f|j)(.|n)r(su(h|q)((o|.)|.)wxsn(q|.)v*lsqbcsbrzvw(.qqlu(ruw.yf(n|a).rldrddksmhua.iphq)rhu(ieq)xhutmrgozxk.lk)s*lriheqft)cj*))|d*)";
+/*
+shouldBe
+'(u(mj(p|(w.v(jxgpubqtoengmvillcf(fujft.saewudv(y|t)ri.trnroqsc)hvtjyzl)rw.))jp(u|f)der((s|p)|(y|o))m)wc*(h|m)(m*(y|(z|b))(j|z*)u*nw(d|n*)s)p(l*|z*)(m|.)*u(.|((towljnt(i|c)mjue.n.(owc*gcswlni.)oj*r(d.zxcukadicwaxgmtgfwjivewidbm)h)scx.ha(vne.)))l(g*|r)(b|(p|(c|v)))y*x.bun(q|(r(((c|c)|(i|v))|b)xy.imo(k|v)c*ay(mawidwri(.w)wnyuqux*)*zna*pc*zx)))'
+
+ =
+'(u(mj(p|(w.v(jxgpubqtoengmvillcf(fujft.saewudv(y|t)ri.trnroqsc)hvtjyzl)rw.))jp(u|f)der((s|p)|(y|o))m)wc*(h|m)(m*(y|(z|b))(j|z*)u*nw(d|n*)s)p(m|.)*u(.|((towljnt(i|c)mjue.n.(owc*gcswlni.)oj*r(d.zxcukadicwaxgmtgfwjivewidbm)h)scx.ha(vne.)))l(g*|r)(b|(p|(c|v)))y*x.bun(q|(r(((c|c)|(i|v))|b)xy.imo(k|v)c*ay(mawidwri(.w)wnyuqux*)*zna*pc*zx)))'
 
   */
 
-  RegExp *tree = parseRegExp ("((o|.)|.)");
-  //std::cout << showtree (tree) << '\n';
+  RegExp *tree = parseRegExp ("l*|r*");
+  std::cout << showtree (tree) << '\n';
+
+  //std::cout << pretty2 (tree);
 
   /*
   std::cout << showtree (parseRegExp ("a")) << '\n';      // normal ('a')
