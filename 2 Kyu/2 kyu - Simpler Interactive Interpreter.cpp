@@ -117,6 +117,7 @@ double interpret (std::string expr) {
 
         if (it >= expr.end()) running = false;
     }
+    
     while (!ops.empty()) {
         char op = getstack (ops);
         double b = getstack (val), a = getstack (val);

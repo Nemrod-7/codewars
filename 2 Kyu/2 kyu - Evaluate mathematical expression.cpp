@@ -8,7 +8,7 @@
 #include <chrono>
 
 using namespace std;
-using index = string::iterator;
+
 using func = function<double(double,double)>;
 
 map<char,int> order {{'+', 1},{'-',1},{'*',2},{'/',2},{'%',2}};
@@ -31,14 +31,18 @@ class Assert {
 template<class T> const T& Equals (const T& entry) { return entry;}
 void Test();
 ////////////////////////////////////////////////////////////////////////////////
-
+vector<string> tokenize (const string &expr) {
+  regex token ("\\*|\\+|/|-?[0-9]+(\\.[0-9]+)?|-|\\(|\\)");
+  sregex_token_iterator it (expr.begin(), expr.end(), token);
+  return vector<string> (it, sregex_token_iterator());
+}
 template<class T> T getstack (vector<T> &S) {
     if (S.empty()) return 0;
     T val = S.back();
     S.pop_back();
     return val;
 }
-double getnum (index &it) {
+double getnum (string::iterator &it) {
     string num;
 
     num += *it++;
@@ -46,7 +50,7 @@ double getnum (index &it) {
 
     return stod (num);
 }
-string getsub (index &it) {
+string getsub (string::iterator &it) {
     int pile = 1;
     string sub;
 
@@ -60,8 +64,9 @@ string getsub (index &it) {
     return sub;
 }
 double calc (string src) {   // convert expression to reverse polish notation using shunting-yard algorithm
+
     src.erase(remove (src.begin(), src.end(), ' '), src.end());
-    index it = src.begin();
+    string::iterator it = src.begin();
     double num, sign = 1;
 
     vector<double> val;
@@ -118,9 +123,18 @@ int main () {
 
     auto start = std::chrono::high_resolution_clock::now();
 
+    string expression = "(123.45*(678.90 / (-2.5+ 11.5)-(((80 -(19))) *33.25)) / 20) - (123.45*(678.90 / (-2.5+ 11.5)-(((80 -(19))) *33.25)) / 20) + (13 - 2)/ -(-11)";
 
-    string expression  = "(9.46+8.56+(7.55)/7.56/9.51/7.56/ -5.27-8.63*7.54/7.23* -0.84-5.64/(9.47* -7.40+ -5.94/6.80)/ -7.39*7.45-8.26/ -0.33+ -6.96+7.72-6.12+ -8.59+7.38*8.87+ -0.44+ -3.20+ -2.25- -2.13/(7.99-8.69*9.26-8.33+(7.12/6.71+6.75)+6.49+ -4.73+5.36*9.52/ -0.84/6.71-8.94/ -3.07-(9.52+ -3.57)+8.22- -8.54-5.09+ -1.97/ -3.68/7.13)/7.15*6.67-9.87+7.78/7.96*9.97/(9.50)/(9.02+7.97)+(((7.20+ -8.52+9.04/8.07/ -7.91/8.38/8.54))))";
+    /*
+    regex token ("\\*|\\+|/|-?[0-9]+(\\.[0-9]+)?|-|\\(|\\)");
+    sregex_token_iterator it (expression.begin(), expression.end(), token);
+    return vector<string> (it, sregex_token_iterator());
 
+    for (auto &it : V) {
+        cout << "[" << it << "]";
+    }
+
+    /*
     Assert::That(calc ("(64) * (-97 / 51 * -(55)) - (21 * -((((71 - -33)))) - 44)"), 8922.901960784315);
 
     Assert::That(calc ("2 + 3 * 4 / 3 - 6 / 3 * 3 + 8"), 8.0);
@@ -139,7 +153,7 @@ int main () {
     Assert::That(calc ("(((10)))"), Equals(10.0));
     Assert::That(calc ("(123.45*(678.90 / (-2.5+ 11.5)-(((80 -(19))) *33.25)) / 20) - (123.45*(678.90 / (-2.5+ 11.5)-(((80 -(19))) *33.25)) / 20) + (13 - 2)/ -(-11)"), Equals(1.0));
 //    Assert::That(calc2("63 - -20 / 84 - 33 * 87 + -17 * 41 + -10"), -3514.761905);
-
+  */
     cout << "end";
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
