@@ -37,7 +37,7 @@ int main () {
   cout << "Process took " << elapsed.count()  << " ms" << endl;
   return EXIT_SUCCESS;
 }
-    //assembler({"mov a -10", "mov b a", "inc a", "dec b", "jnz a -2"});
+
 std::unordered_map<std::string, int> assembler(const std::vector<std::string>& input) {
 
     unordered_map<string,int> reg;
@@ -67,8 +67,6 @@ std::unordered_map<std::string, int> assembler(const std::vector<std::string>& i
 
     return reg;
 }
-
-
 
 void display_map (unordered_map<string, int> input) {
     for (auto now : input)
@@ -100,5 +98,3 @@ void Test () {
     }
 
 }
-
-// static int& getReg(std::unordered_map<std::string, int>& regs, std::string name) {}

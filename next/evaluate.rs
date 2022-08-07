@@ -1,23 +1,25 @@
 
-fn order (expr: &str) -> usize {
-    match expr {
-        "*" => return 2,
-        "/" => return 2,
-        "+" => return 1,
-        "-" => return 1,
-        _  => return 0,
+fn order (expr: char) -> usize {
+    if expr == '*' || expr == '/' { return 2 }
+    if expr == '+' || expr == '-' { return 1 }
+    0
+}
+fn operate (a:f64, op:char, b:f64) -> f64 {
+    match op {
+        '+' => return a + b,
+        '-' => return a - b,
+        '*' => return a * b,
+        '/' => return a / b,
+        _  => return 0.0,
     }
 }
 
-fn is_var (tok: &String) -> bool {
-    tok.chars().last().unwrap().is_numeric()
-}
-fn is_num (tok: &String) -> bool {
+fn is_var (expr: &Vec<char>, it: usize) -> bool {
 
-    if tok.len() == 1 && !tok.chars().next().unwrap().is_numeric() {
-        return false;
-    }
-    return true;
+    if it == 0 { return true }
+    if order (expr[it - 1]) > 0 { return true; }
+
+    return false;
 }
 
 fn getstk (n:Option<f64>) -> f64 {
@@ -57,70 +59,53 @@ fn getsub (expr: &Vec<char>, it: &mut usize) -> String {
     sub
 }
 
-fn operate (a:f64, op:&str, b:f64) -> f64 {
-    //print!("{} {} {}\n", a, op, b);
-    match op {
-        "+" => return a + b,
-        "-" => return a - b,
-        "*" => return a * b,
-        "/" => return a / b,
-         _  => return 0.0,
-    }
-}
 fn calc (expr: &str) -> f64 {
 
+    let expr:Vec<char> = expr.chars().filter (|x| !x.is_whitespace()).collect();
     let size = expr.len();
-    let expr:Vec<char> = expr.chars().collect();
     let mut index = 0;
+    let mut sign = 1.0;
     let mut stack:Vec<f64> = Vec::new();
-    let mut opers:Vec<String> = Vec::new();
-
-    let mut prev = String::from(" ");
+    let mut opers:Vec<char> = Vec::new();
 
     while index < size {
 
-        while expr[index] == ' ' { index += 1 }
+        let tok = expr[index];
+        let mut op = order (tok);
 
-        let mut tok;
-
-        if expr[index].is_numeric() {
-            tok = getnum (&expr, &mut index);
-        } else {
-            tok = expr[index].to_string();
-
-            if expr[index] == '-' && !is_var (&prev) {
-                index += 1;
-                tok += &getnum (&expr, &mut index);
-            }
+        if tok == '-' && is_var (&expr, index) {
+            sign = -1.0;
+            op = 0;
         }
 
-        if is_num (&tok) {
-            stack.push (tok.parse::<f64>().unwrap());
-        } else {
-            if tok == "(" {
-                let sub = getsub (&expr, &mut index);
-                let num = calc (&sub);
-                stack.push (num);
+        if tok == '(' {
+            let sub = getsub (&expr, &mut index);
+            stack.push (calc (&sub) * sign);
+            sign = 1.0;
+        } else if expr[index].is_numeric() {
+            let num = getnum (&expr, &mut index).parse::<f64>().unwrap();
+            stack.push (num * sign);
+            sign = 1.0;
+        } else if op > 0 {
 
-            } else if tok != ")" {
-
-                while !opers.is_empty() && order (opers.last().unwrap()) > order (&tok)   {
-                    let op = opers.pop().unwrap();
-                    let b = getstk (stack.pop()); let a = getstk (stack.pop());
-                    stack.push (operate (a, &op, b));
-                }
-                opers.push (tok.clone());
+            while !opers.is_empty() && order (*opers.last().unwrap()) >= order (tok)   {
+                let op = opers.pop().unwrap();
+                let b = getstk (stack.pop()); let a = getstk (stack.pop());
+                print! ("{} {} {}\n", a, op, b);
+                stack.push (operate (a, op, b));
             }
+            opers.push (tok.clone());
+
+            print! ("[{}]", tok);
         }
-        prev = tok;
+
         index += 1;
     }
 
     while !opers.is_empty() {
         let op = opers.pop().unwrap();
         let b = getstk(stack.pop()); let a = getstk(stack.pop());
-
-        stack.push (operate (a, &op, b));
+        stack.push (operate (a, op, b));
     }
 
     getstk (stack.pop())
@@ -128,13 +113,11 @@ fn calc (expr: &str) -> f64 {
 
 fn main () {
     //"1 - -(-(-(-4)))"
-    //"(123.45*(678.90 / (-2.5+ 11.5)-(((80 -(19))) *33.25)) / 20)";
 
-    let expr = "1 - -(-(-(-4)))" ;
-    //let res = calc (&expr);
-    let a = 1;
-    let b = -4;
-    let op = "-";
+    //
 
-    print! ("{} {} {} => {}\n", a,op,b, a - b);
+    let expr = "123.45*(678.90 / (-2.5+ 11.5)-(80 -19) *33.25) / 20 + 11" ;
+    let res = calc (&expr);
+
+    print! ("{} => {}\n", expr, res);
 }
