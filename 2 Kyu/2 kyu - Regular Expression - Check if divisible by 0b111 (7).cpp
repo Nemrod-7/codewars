@@ -11,12 +11,9 @@ string clean (string str) {
 
     return str;
 }
+void test2 () {
 
-int main () {
-
-    // ^(0|(1(01*0)*10*)+)$
-    string input;// = "(1(01*0)*10*)*";
-
+    string input;
     while (cin >> input) {
 
         if (input == "exit") break;
@@ -38,6 +35,25 @@ int main () {
             }
         }
     }
+}
+int main () {
+
+    // ^(0|(1(01*0)*10*)+)$
+    string input;// = "(1(01*0)*10*)*";
+
+    for (int i = 0; i < 100; i++) {
+
+        bitset<32> num (i);
+        string str = clean(num.to_string());
+
+        if (i % 7 == 0) {
+
+          cout << setw(3) << i << " ";
+          cout << setw(8) << str;
+          cout <<  "\n";
+        }
+    }
+
     /*
     */
 }

@@ -64,7 +64,7 @@ void showtree (RegExp *node) {
         printf (")");
     }
 }
-///////////////////////////////////////////////////////////////////
+////////////////////////deque implementation//////////////////////////
 typedef struct _node {
     RegExp *data;
     struct _node *prev, *next;
@@ -154,46 +154,35 @@ Deque *newdeque () {
     nxt->front = nxt->back = NULL;
     return nxt;
 }
-void delete_deque (Deque *deque) {
-  Node *nd = deque->front;
-  while (nd) {
-    Node *tmp = nd->next;
-    free(nd);
-    nd = tmp;
-  }
-  free(deque);
-}
-///////////////////////////////////////////////////////////////////
+////////////////////////////regex parser/////////////////////////////
 bool check (const char *input) {
 
     const int size = strlen (input);
-    char *expr = strdup (input), *it = expr;
-    int par = 0, op = 0, var = 0;
-    if (size == 0) return false;
+    int par = 0, op = 0, var = 0, index = 0;
 
-    while (*it) {
-      char prev = it - expr > 0 ? *(it - 1) : 0;
+    while (index < size) {
+        char prev = index > 0 ? input[index - 1]: 0;
+        char curr = input[index];
+        if (prev == '*' && curr == '*') return false;
 
-      if (prev == '*' && *it == '*') return false;
-      switch (*it) {
-        case '(' : par++; break;
-        case ')' : par--; break;
-        case '|' : op++ ; break;
-        case '*' : op++ ; break;
-        case '.' : var++; break;
-        default  : var++;
-        break;
-      }
+        switch (curr) {
+            case '(' : par++; break;
+            case ')' : par--; break;
+            case '*' : op++ ; break;
+            default  : var++; break;
+        }
 
-      if (par < 0) return false;
-      if ((it - expr) < size) it++;
+        if (par < 0) return false;
+        index++;
     }
 
+    if (size == 0) return false;
     if (op > var) return false;
     if (par != 0) return false;
 
     return true;
 }
+
 void reduce (Deque *tree) {
 
     if (tree->size > 1) {
@@ -207,11 +196,10 @@ void reduce (Deque *tree) {
 }
 RegExp *parseRegExp (char *input) {
 
-    if (check (input) == false) return NULL;
     const int size = strlen (input);
+    if (check (input) == false) return NULL;
     int index = 0;
     Deque *tree = newdeque(), *ops = newdeque();
-    //printf ("%s\n\n", input);
 
     while (index < size) {
         char tile = input[index];
@@ -234,8 +222,8 @@ RegExp *parseRegExp (char *input) {
             } while (index < size);
 
             next = parseRegExp (sub);
-
             push_back (tree, next);
+
         } else if (tile == '.') {
             push_back (tree, any());
         } else if (tile == '*') {
@@ -249,7 +237,6 @@ RegExp *parseRegExp (char *input) {
         } else if (tile != ')') {
             push_back (tree, normal (tile));
         }
-
         index++;
     }
 
@@ -260,7 +247,7 @@ RegExp *parseRegExp (char *input) {
     }
 
     reduce (tree);
-    //showtree (peek_front (tree));
+
     return !is_empty (tree) ? peek_back (tree) : NULL;
 }
 ///////////////////////////////////////////////////////////////////
@@ -270,7 +257,7 @@ int main () {
   const char *parse = "(k|(zk*(wn*ux*y.b(rxw((clmlekr*pai.xj.yt(o.nlxwgde)qaxj(pigiifrqqti)(z|t)ta*.ikp)(awt.l.ept.jkjesfl.jeuprqlkxt)hbo(k|k)uzhfuw(r|h)dsgmmzgi)l(t|v)btm((p|o)|o)pk(m*gbvvfcj.((dabwtaco(v|b).(cw.zkaay)zlwfmcipcgn)|r).myiusomjfotef(rualk(v|s)n(k|e)aamyduuyms)x)foa(pega.(zbgv*.floaz(cu.pecdjg*tiekfs.s.gm)y*z*fi(.|.).ltuuowlmblxp)gnx*wivhv..ik*hagy)(x(ozqz)gxmonmayggp(j|v)wafilgaffuyos)wal.s)gd((w|v)|g)((c|g)x))o(xi((wxgktia*kl(tpfqc.ibcnuko..vkuxzmjvkksejj)mj(f|h)o(k|.)u*w(holrkwnnzzioiwnysukcst)kx)|.)kx*e*fvrlkkunaakf(e|.)nxtii(q.)r)y(i|h)cn*(b|.)c(m|w)r.ql*jy))";
 
   tree = parseRegExp("(.|.)");
-  showtree (tree);
+  //showtree (tree);
 
   /*
   shouldBe '(k|(zk*(wn*ux*y.b(rxw((clmlekr*pai.xj.yt(o.nlxwgde)qaxj(pigiifrqqti)(z|t)ta*.ikp)(awt.l.ept.jkjesfl.jeuprqlkxt)hbo(k|k)uzhfuw(r|h)dsgmmzgi)l(t|v)btm((p|o)|o)pk(m*gbvvfcj.((dabwtaco(v|b).(cw.zkaay)zlwfmcipcgn)|r).myiusomjfotef(rualk(v|s)n(k|e)aamyduuyms)x)foa(pega.(zbgv*.floaz(cu.pecdjg*tiekfs.s.gm)y*z*fi(.|.).ltuuowlmblxp)gnx*wivhv..ik*hagy)(x(ozqz)gxmonmayggp(j|v)wafilgaffuyos)wal.s)gd((w|v)|g)((c|g)x))o(xi((wxgktia*kl(tpfqc.ibcnuko..vkuxzmjvkksejj)mj(f|h)o(k|.)u*w(holrkwnnzzioiwnysukcst)kx)|.)kx*e*fvrlkkunaakf(e|.)nxtii(q.)r)y(i|h)cn*(b|.)c(m|w)r.ql*jy))'

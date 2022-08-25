@@ -8,16 +8,16 @@
 //#include "/home/wintermute/code/templates/Assert.hpp"
 
 RegExp *getfront (std::deque<RegExp*> &dq) {
-  if (dq.empty()) return nullptr;
-  RegExp *ex = dq.front();
-  dq.pop_front();
-  return ex;
+    if (dq.empty()) return nullptr;
+    RegExp *ex = dq.front();
+    dq.pop_front();
+    return ex;
 }
 RegExp *getback (std::deque<RegExp*> &dq) {
-  if (dq.empty()) return nullptr;
-  RegExp *ex = dq.back();
-  dq.pop_back();
-  return ex;
+    if (dq.empty()) return nullptr;
+    RegExp *ex = dq.back();
+    dq.pop_back();
+    return ex;
 }
 
 void reduce (std::deque<RegExp *> &tree) {
@@ -31,41 +31,42 @@ void reduce (std::deque<RegExp *> &tree) {
         }
     }
 }
+
 bool check (const char *input) {
 
     const int size = strlen (input);
-    char *expr = strdup (input), *it = expr;
-    int par = 0, op = 0, var = 0;
+    int par = 0, op = 0, var = 0, index = 0;
     if (size == 0) return false;
 
-    while (*it) {
-        char prev = it - expr > 0 ? *(it - 1) : 0;
+      while (index < size) {
+        char prev = index > 0 ? input[index - 1]: 0;
+        char curr = input[index];
+        if (prev == '*' && curr == '*') return false;
 
-        if (prev == '*' && *it == '*') return false;
-        switch (*it) {
+        switch (curr) {
             case '(' : par++; break;
             case ')' : par--; break;
-            case '|' : op++ ; break;
             case '*' : op++ ; break;
-            case '.' : var++; break;
-            default  : var++;
-            break;
+            default  : var++; break;
         }
 
         if (par < 0) return false;
-        if ((it - expr) < size) it++;
+        index++;
     }
 
-    //if (op > var) return false;
+    if (op > var) return false;
     if (par != 0) return false;
 
     return true;
 }
 RegExp *parseRegExp (const char *code) {
 
+<<<<<<< HEAD
     static int cycle = 0;
     cycle++;
     //std::cout << cycle << " -> [ " << code << " ]" << "\n\n";
+=======
+>>>>>>> f93690170342421b022abdcea3458bec7b404f00
     if (check (code) == false) return nullptr;
 
     const int size = strlen (code);
@@ -74,10 +75,10 @@ RegExp *parseRegExp (const char *code) {
 
 
     while (index < size) {
-        char tile = code[index];
+        char curr = code[index];
         RegExp *next;
 
-        if (tile == '(') {
+        if (curr == '(') {
 
             index++;
             int pile = 1;
@@ -96,17 +97,17 @@ RegExp *parseRegExp (const char *code) {
             next = parseRegExp (sub);
             tree.push_back (next);
 
-        } else if (tile == '.') {
+        } else if (curr == '.') {
             tree.push_back (any());
-        } else if (tile == '*') {
+        } else if (curr == '*') {
             RegExp *back = getback (tree);
             tree.push_back (zeroOrMore (back));
-        } else if (tile == '|') {
+        } else if (curr == '|') {
 
             reduce (tree);
             ops.push_back (getback(tree));
-        } else if (tile != ')') {
-            tree.push_back (normal (tile));
+        } else if (curr != ')') {
+            tree.push_back (normal (curr));
         }
         index++;
     }
@@ -164,11 +165,14 @@ shouldBe
 
   */
 
+<<<<<<< HEAD
   RegExp *tree = parseRegExp ("l*|r*");
   std::cout << showtree (tree) << '\n';
 
   //std::cout << pretty2 (tree);
 
+=======
+>>>>>>> f93690170342421b022abdcea3458bec7b404f00
   /*
   std::cout << showtree (parseRegExp ("a")) << '\n';      // normal ('a')
   std::cout << showtree (parseRegExp ("ab")) << '\n';     // add (str (normal ('a')), normal ('b'))
