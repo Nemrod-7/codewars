@@ -87,7 +87,7 @@ double calc (string src) {   // convert expression to reverse polish notation us
             num = calc (sub) * sign;
 
             val.push_back  (num);
-            num = 0, sign = 1;
+            sign = 1;
 
         } else if (isdigit (*it)) {
             num = getnum (it) * sign;
@@ -125,6 +125,7 @@ int main () {
 
     string expression = "(123.45*(678.90 / (-2.5+ 11.5)-(((80 -(19))) *33.25)) / 20) - (123.45*(678.90 / (-2.5+ 11.5)-(((80 -(19))) *33.25)) / 20) + (13 - 2)/ -(-11)";
 
+    cout << calc ("1 - -(-(-(-4)))");
     /*
     regex token ("\\*|\\+|/|-?[0-9]+(\\.[0-9]+)?|-|\\(|\\)");
     sregex_token_iterator it (expression.begin(), expression.end(), token);

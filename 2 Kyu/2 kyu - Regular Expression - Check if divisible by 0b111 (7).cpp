@@ -1,14 +1,22 @@
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <iomanip>
 #include <regex>
 #include <algorithm>
 #include <bitset>
 
 using namespace std;
-string clean (string str) {
-    str.erase (0, str.find_first_not_of ('0'));
-    //reverse(str.begin(), str.end());
 
+const string powtwo = "^0|10+$";
+const string divtwo = "^0|1(0|1)*0$";
+const string divtre = "^0|(1(01*0)*10*)*$";
+const string divfor = "^0|1(0|1)*(0|1)?00$";
+
+
+string clean (string str) {
+    int end = min (str.find_first_not_of ('0'), str.size() - 1);
+    str.erase (0, end);
     return str;
 }
 void test2 () {
@@ -36,59 +44,35 @@ void test2 () {
         }
     }
 }
-int main () {
-
-    // ^(0|(1(01*0)*10*)+)$
-    string input;// = "(1(01*0)*10*)*";
-
-    for (int i = 0; i < 100; i++) {
-
-        bitset<32> num (i);
-        string str = clean(num.to_string());
-
-        if (i % 7 == 0) {
-
-          cout << setw(3) << i << " ";
-          cout << setw(8) << str;
-          cout <<  "\n";
-        }
-    }
-
-    /*
-    */
-}
-
-
 
 enum {q0,q1,q2,q3,q4,q5,q6};
 
-bool read_commands(const string& commands) {
-  int state = q1;
-
-  for (auto &c : commands)
-  switch (state) {
-    case q1 : if (c == '1') state = q2; break;
-    case q2 : if (c == '0') state = q3; break;
-    case q3 : state = q2; break;
+bool dfa_7 (const string& binary) {
+  int state = q0;
+  // "1(0|1)"
+  for (auto &c : binary) {
+      switch (state) {
+          case q0 : if (c == '0') state = q0; else state = q1; break;
+          case q1 : if (c == '0') state = q2; else state = q3; break;
+          case q2 : if (c == '0') state = q4; else state = q5; break;
+          case q3 : if (c == '0') state = q6; else state = q0; break;
+          case q4 : if (c == '0') state = q1; else state = q2; break;
+          case q5 : if (c == '0') state = q3; else state = q4; break;
+          case q6 : if (c == '0') state = q5; else state = q6; break;
+      }
   }
 
-  return state == q2;
+  return state == q0;
 }
+int main () {
 
-bool isinv (char c) { return c != '0' && c != '1'; }
 
-bool ismod7 (string str) {
+    regex divseven ("^(0|111|100((1|00)0)*011|(101|100((1|00)0)*(1|00)1)(1((1|00)0)*(1|00)1)*(01|1((1|00)0)*011)|(110|100((1|00)0)*010|(101|100((1|00)0)*(1|00)1)(1((1|00)0)*(1|00)1)*(00|1((1|00)0)*010))(1|0(1((1|00)0)*(1|00)1)*(00|1((1|00)0)*010))*0(1((1|00)0)*(1|00)1)*(01|1((1|00)0)*011))+$");
 
-  if (str == "") return false;
-  if (str == "0") return true;
+    str = "1";
+    if (regex_match (str, divseven)) {
+        cout << " :: " << setw(8) << str;
+        cout <<  "\n";
+    }
 
-  int A = 0;
-
-  for (auto &c : str) {
-    if (isinv (c)) return false;
-    A = 2 * A + (c - '0');
-  }
-  cout << " " << A << " :: ";
-
-  return A % 7 == 0;
 }
