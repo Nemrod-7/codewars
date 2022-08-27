@@ -6,41 +6,31 @@
 
 using namespace std;
 
-pair<int,int> getpos (const vector<vector<int>> &grid, int val) {
+pair<int,int> getpos2 (const vector<vector<int>> &grid) {
+
+    int minv = numeric_limits<int>::max();
+    pair<int,int> pos;
 
     for (size_t y = 0; y < grid.size(); y++) {
         for (size_t x = 0; x < grid[0].size(); x++) {
             int depth = grid[y][x];
 
-            if (depth == val) {
-                return {x,y};
+            if (depth < minv) {
+                pos = {x,y};
+                minv = depth;
             }
         }
     }
 
-    return {0,0};
+    return pos;
 }
-pair<int,int> scanz (const vector<vector<int>> &grid) {
 
-    int minv = numeric_limits<int>::max(), maxv = numeric_limits<int>::min();
-
-    for (size_t y = 0; y < grid.size(); y++) {
-        for (size_t x = 0; x < grid[0].size(); x++) {
-            int val = grid[y][x];
-
-            minv = min (minv, val);
-            maxv = max (maxv, val);
-        }
-    }
-
-    return {minv, maxv};
-}
 bool flooded (const vector<vector<int>> &grid) {
-    const int maxv = scanz(grid).second;
+    const int ref = grid[0][0];
 
     for (size_t y = 0; y < grid.size(); y++) {
         for (size_t x = 0; x < grid[0].size(); x++) {
-            if (grid[y][x] != maxv) return false;
+            if (grid[y][x] != ref) return false;
         }
     }
     return true;
@@ -49,7 +39,7 @@ bool is_inside (const vector<vector<int>> &grid, int x, int y) { return x >= 0 &
 int scanarea (vector<vector<int>> &grid, pair<int,int> src) {
 
     const vector<pair<int,int>> compass {{0,-1},{1,0},{0,1},{-1,0}};
-    static int cycle;
+
     bool valid = true;
     int sum = 0;
     int depth = grid[src.second][src.first], minv = numeric_limits<int>::max();
@@ -60,7 +50,6 @@ int scanarea (vector<vector<int>> &grid, pair<int,int> src) {
     while (!s1.empty()) {
         pair<int,int> u = s1.back();
         s1.pop_back();
-        cycle++;
         hist[u] = true;
 
         for (auto &dir : compass) {
@@ -79,16 +68,16 @@ int scanarea (vector<vector<int>> &grid, pair<int,int> src) {
             }
         }
     }
-    //cout << " ::: " << minv << "\n";
+
     vector<pair<int,int>> area;
-    // map bool int int
+
     for (auto &[pt, inside] : hist) {
         int x = pt.first, y = pt.second;
         if (valid) sum += minv - grid[y][x];
 
         grid[y][x] = minv;
     }
-    cout << cycle << ' ';
+
     return sum;
 }
 
@@ -110,32 +99,19 @@ int main () {
        {8,0,0,8,6,0,0,6},
        {8,8,8,8,6,6,6,0}};
 
-    grid = large_test(); // 233884
+    //grid = large_test(); // 233884
 
-    int area = 0;
-    int index = 5;
-
-    auto [bott, top] = scanz (grid);
-
-    int hist[1024] = {0};
-    for (int y = 0; y < grid.size(); y++) {
-        for (int x = 0; x < grid[0].size(); x++) {
-          int cell = grid[y][x] + abs(bott);
-          hist[cell]++;
-        }
-    }
-
-    for (int z = bott; z < top; z++) {
-        cout << "depth : " << z << " => " << hist[z + abs(bott)] << "\n";ls
-    }
-
+    int area = 0, tmp = 0;
+    int index = 5, cycle = 0;
 
 
     /*
-    //while (!flooded (grid)) {
-        int sweep = scanz (grid).first;
-        area += scanarea (grid, getpos (grid, 150));
-    //}
+    while (!flooded (grid)) {
+        pair<int,int> p = getpos2 (grid);
+        area += scanarea (grid, p);
+    }
+
+
     //cout << " => " << grid[ny][nx] << "\n";
     for (int y = 0; y < grid.size(); y++) {
         for (int x = 0; x < grid[0].size(); x++) {
@@ -144,9 +120,39 @@ int main () {
         cout << "\n";
     }
     */
-    //cout << area;
+    //cout << " :: "<< cycle;
 
     auto end = chrono::high_resolution_clock::now();
     chrono::duration<double> elapsed = end - start;
     cout << "\nProcess took " << elapsed.count()  << " ms\n" << endl;
+}
+
+pair<int,int> getpos (const vector<vector<int>> &grid, int val) {
+
+    for (size_t y = 0; y < grid.size(); y++) {
+        for (size_t x = 0; x < grid[0].size(); x++) {
+            int depth = grid[y][x];
+
+            if (depth == val) {
+                return {x,y};
+            }
+        }
+    }
+
+    return {0,0};
+  }
+pair<int,int> scanz (const vector<vector<int>> &grid) {
+
+    int minv = numeric_limits<int>::max(), maxv = numeric_limits<int>::min();
+
+    for (size_t y = 0; y < grid.size(); y++) {
+        for (size_t x = 0; x < grid[0].size(); x++) {
+            int val = grid[y][x];
+
+            minv = min (minv, val);
+            maxv = max (maxv, val);
+        }
+    }
+
+    return {minv, maxv};
 }
