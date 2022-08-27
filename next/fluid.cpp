@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <map>
 #include <limits>
@@ -6,7 +7,7 @@
 
 using namespace std;
 
-pair<int,int> getpos2 (const vector<vector<int>> &grid) {
+pair<int,int> getpos (const vector<vector<int>> &grid) {
 
     int minv = numeric_limits<int>::max();
     pair<int,int> pos;
@@ -25,6 +26,20 @@ pair<int,int> getpos2 (const vector<vector<int>> &grid) {
     return pos;
 }
 
+pair<int,int> getpos2 (const vector<vector<int>> &grid, int val) {
+
+    for (size_t y = 0; y < grid.size(); y++) {
+        for (size_t x = 0; x < grid[0].size(); x++) {
+            int depth = grid[y][x];
+
+            if (depth == val) {
+                return {x,y};
+            }
+        }
+    }
+
+    return {0,0};
+  }
 bool flooded (const vector<vector<int>> &grid) {
     const int ref = grid[0][0];
 
@@ -88,6 +103,38 @@ vector<vector<int>> large_test () {
 
         return hmap;
 }
+void to_img (vector<vector<int>> grid, string name) {
+
+    int minv = numeric_limits<int>::max(), maxv = numeric_limits<int>::min();
+    const int height = grid.size(), width = grid[0].size();
+    string img;
+
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            int pix = grid[y][x];
+            maxv = max (maxv, pix);
+            minv = min (minv, pix);
+        }
+    }
+
+    if (minv < 0) maxv += abs (minv);
+
+    ofstream os (name + ".pgm", std::ios::binary);
+
+    os << "P2\n";
+    os << "#\n";
+    os << width << ' ' << height << endl;
+    os << maxv << '\n';
+
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            int pix = minv < 0 ? grid[y][x] + abs (minv) : grid[y][x];
+            os << pix << ' ';
+        }
+    }
+    os.close();
+}
+
 
 int main () {
 
@@ -100,47 +147,74 @@ int main () {
        {8,8,8,8,6,6,6,0}};
 
     //grid = large_test(); // 233884
-
-    int area = 0, tmp = 0;
-    int index = 5, cycle = 0;
-
-
     /*
-    while (!flooded (grid)) {
-        pair<int,int> p = getpos2 (grid);
-        area += scanarea (grid, p);
-    }
+    grid =
+    {{8,8,4,7,7,5,6,3,8,8,8,8,6,6,6,6},
+     {8,0,0,9,9,0,0,1,2,9,5,4,6,0,6,4},
+     {8,0,0,9,9,0,0,1,3,8,0,0,9,0,6,6},
+     {8,8,8,8,6,6,6,7,8,8,0,0,6,6,3,6}};
+     */
+    int area = 0, index = 4500;
 
+    const int height = grid.size(), width = grid[0].size();
+    int minv = numeric_limits<int>::max(), maxv = numeric_limits<int>::min();
 
-    //cout << " => " << grid[ny][nx] << "\n";
-    for (int y = 0; y < grid.size(); y++) {
-        for (int x = 0; x < grid[0].size(); x++) {
-            cout << grid[y][x] << ' ';
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            maxv = max (maxv, grid[y][x]);
+            minv = min (minv, grid[y][x]);
         }
-        cout << "\n";
     }
-    */
-    //cout << " :: "<< cycle;
+
+    vector<vector<int>> flood (height, vector<int> (width, maxv));
+
+    for (int alt = 0; alt < maxv + 1; alt++) {
+
+        for (int y = 0; y < height; y++) {
+            int left = 0, right = width - 1;
+
+            while (grid[y][left] < alt) {
+                if (flood[y][left] >= alt) flood[y][left] = alt - 1;
+                left++;
+            }
+            while (grid[y][right] < alt) {
+                if (flood[y][right] >= alt) flood[y][right] = alt - 1;
+                right--;
+            }
+        }
+
+        for (int x = 0; x < width; x++) {
+            int up = 0, dwn = height - 1;
+
+            while (up < height && grid[up][x] < alt) {
+                if (flood[up][x] >= alt) flood[up][x] = min (flood[up][x], alt - 1);
+                up++;
+            }
+
+            while (dwn > 0 && grid[dwn][x] < alt) {
+                if (flood[dwn][x] >= alt) flood[dwn][x] = min (flood[up][x], alt - 1);
+                dwn--;
+            }
+        }
+        //cout << "\n";
+    }
+
+      cout << "\n";
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+
+            if (flood[y][x] > grid[y][x]) {
+                area += flood[y][x] - grid[y][x];
+            }
+        }
+    }
+    cout << ":: "<< area;
 
     auto end = chrono::high_resolution_clock::now();
     chrono::duration<double> elapsed = end - start;
     cout << "\nProcess took " << elapsed.count()  << " ms\n" << endl;
 }
 
-pair<int,int> getpos (const vector<vector<int>> &grid, int val) {
-
-    for (size_t y = 0; y < grid.size(); y++) {
-        for (size_t x = 0; x < grid[0].size(); x++) {
-            int depth = grid[y][x];
-
-            if (depth == val) {
-                return {x,y};
-            }
-        }
-    }
-
-    return {0,0};
-  }
 pair<int,int> scanz (const vector<vector<int>> &grid) {
 
     int minv = numeric_limits<int>::max(), maxv = numeric_limits<int>::min();
