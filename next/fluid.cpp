@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <queue>
 #include <map>
 #include <limits>
 #include <chrono>
@@ -25,7 +26,6 @@ pair<int,int> getpos (const vector<vector<int>> &grid) {
 
     return pos;
 }
-
 pair<int,int> getpos2 (const vector<vector<int>> &grid, int val) {
 
     for (size_t y = 0; y < grid.size(); y++) {
@@ -40,6 +40,7 @@ pair<int,int> getpos2 (const vector<vector<int>> &grid, int val) {
 
     return {0,0};
   }
+
 bool flooded (const vector<vector<int>> &grid) {
     const int ref = grid[0][0];
 
@@ -60,13 +61,14 @@ int scanarea (vector<vector<int>> &grid, pair<int,int> src) {
     int depth = grid[src.second][src.first], minv = numeric_limits<int>::max();
 
     vector<pair<int,int>> s1 = {src};
+    vector<vector<bool>> visit (grid.size(), vector<bool> (grid[0].size(), false));
     map<pair<int,int>,bool> hist;
 
     while (!s1.empty()) {
         pair<int,int> u = s1.back();
         s1.pop_back();
         hist[u] = true;
-
+        //visit[u.second][u.first] = true;
         for (auto &dir : compass) {
             int nx = u.first + dir.first, ny = u.second + dir.second;
 
@@ -106,11 +108,11 @@ vector<vector<int>> large_test () {
 void to_img (vector<vector<int>> grid, string name) {
 
     int minv = numeric_limits<int>::max(), maxv = numeric_limits<int>::min();
-    const int height = grid.size(), width = grid[0].size();
+    const int row = grid.size(), col = grid[0].size();
     string img;
 
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
+    for (int y = 0; y < row; y++) {
+        for (int x = 0; x < col; x++) {
             int pix = grid[y][x];
             maxv = max (maxv, pix);
             minv = min (minv, pix);
@@ -123,11 +125,11 @@ void to_img (vector<vector<int>> grid, string name) {
 
     os << "P2\n";
     os << "#\n";
-    os << width << ' ' << height << endl;
+    os << col << ' ' << row << endl;
     os << maxv << '\n';
 
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
+    for (int y = 0; y < row; y++) {
+        for (int x = 0; x < col; x++) {
             int pix = minv < 0 ? grid[y][x] + abs (minv) : grid[y][x];
             os << pix << ' ';
         }
@@ -135,81 +137,157 @@ void to_img (vector<vector<int>> grid, string name) {
     os.close();
 }
 
+int volume (const vector<vector<int>> &grid) {
 
-int main () {
 
-    auto start = chrono::high_resolution_clock::now();
+    int vol = 0, height = numeric_limits<int>::min();
+    const int row = grid.size(), col = grid[0].size();
 
-    vector<vector<int>> grid =
-      {{8,8,8,8,6,6,6,6},
-       {8,0,0,8,6,0,0,6},
-       {8,0,0,8,6,0,0,6},
-       {8,8,8,8,6,6,6,0}};
-
-    //grid = large_test(); // 233884
-    /*
-    grid =
-    {{8,8,4,7,7,5,6,3,8,8,8,8,6,6,6,6},
-     {8,0,0,9,9,0,0,1,2,9,5,4,6,0,6,4},
-     {8,0,0,9,9,0,0,1,3,8,0,0,9,0,6,6},
-     {8,8,8,8,6,6,6,7,8,8,0,0,6,6,3,6}};
-     */
-    int area = 0, index = 4500;
-
-    const int height = grid.size(), width = grid[0].size();
-    int minv = numeric_limits<int>::max(), maxv = numeric_limits<int>::min();
-
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            maxv = max (maxv, grid[y][x]);
-            minv = min (minv, grid[y][x]);
+    for (int y = 0; y < row; y++) {
+        for (int x = 0; x < col; x++) {
+            height = max (height, grid[y][x]);
         }
     }
 
-    vector<vector<int>> flood (height, vector<int> (width, maxv));
+    vector<vector<int>> flood (row, vector<int> (col, height));
 
-    for (int alt = 0; alt < maxv + 1; alt++) {
+    for (int level = 0; level < height + 1; level++) {
 
-        for (int y = 0; y < height; y++) {
-            int left = 0, right = width - 1;
+        for (int y = 0; y < row; y++) {
+            int left = 0, right = col - 1;
 
-            while (grid[y][left] < alt) {
-                if (flood[y][left] >= alt) flood[y][left] = alt - 1;
+            while (left < col && grid[y][left] < level) {
+                if (flood[y][left] >= level) flood[y][left] = level - 1;
                 left++;
             }
-            while (grid[y][right] < alt) {
-                if (flood[y][right] >= alt) flood[y][right] = alt - 1;
+            while (right > 0 && grid[y][right] < level) {
+                if (flood[y][right] >= level) flood[y][right] = level - 1;
                 right--;
             }
         }
 
-        for (int x = 0; x < width; x++) {
-            int up = 0, dwn = height - 1;
+        for (int x = 0; x < col; x++) {
+            int up = 0, dwn = row - 1;
 
-            while (up < height && grid[up][x] < alt) {
-                if (flood[up][x] >= alt) flood[up][x] = min (flood[up][x], alt - 1);
+            while (up < row && grid[up][x] < level) {
+                if (flood[up][x] >= level) flood[up][x] = min (flood[up][x], level - 1);
                 up++;
             }
 
-            while (dwn > 0 && grid[dwn][x] < alt) {
-                if (flood[dwn][x] >= alt) flood[dwn][x] = min (flood[up][x], alt - 1);
+            while (dwn > 0 && grid[dwn][x] < level) {
+                if (flood[dwn][x] >= level) flood[dwn][x] = min (flood[up][x], level - 1);
                 dwn--;
             }
         }
         //cout << "\n";
     }
 
-      cout << "\n";
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
+    for (int y = 0; y < row; y++) {
+        for (int x = 0; x < col; x++) {
 
             if (flood[y][x] > grid[y][x]) {
-                area += flood[y][x] - grid[y][x];
+                vol += flood[y][x] - grid[y][x];
             }
         }
     }
-    cout << ":: "<< area;
+    return vol;
+}
+int main () {
 
+    auto start = chrono::high_resolution_clock::now();
+
+    vector<vector<int>> grid =
+      {{8,8,8,8,6,6,6,6},
+       {-2,0,-2,9,6,0,0,6},
+       {8,0,-3,8,6,0,0,6},
+       {8,8,8,8,6,6,6,0}};
+
+
+
+    grid =
+    {{8,8,4,7,7,5,6,3,8,8,8,8,6,6,6,6},
+     {8,0,0,9,9,0,0,1,2,9,5,4,6,0,6,4},
+     {8,0,0,9,9,0,0,1,3,8,0,0,9,0,6,6},
+     {8,8,8,8,6,6,6,7,8,8,0,0,6,6,3,6}};
+
+     grid =
+     {{3, 3, 3, 3, 3},
+     {3, 0, 0, 0, 3},
+     {3, 3, 3, 0, 3},
+     {3, 0, 0, 0, 3},
+     {3, 0, 3, 3, 3},
+     {3, 0, 0, 0, 3},
+     {3, 3, 3, 0, 3}};
+
+     grid = large_test(); // 233884
+
+    int vol = 0, index = 4500;
+
+    const int row = grid.size(), col = grid[0].size();
+    int height = numeric_limits<int>::min();
+
+    for (int y = 0; y < row; y++) {
+        for (int x = 0; x < col; x++) {
+            height = max (height, grid[y][x]);
+        }
+    }
+
+    using vertex = pair<int,pair<int,int>>;
+    const vector<pair<int,int>> compass {{0,-1},{1,0},{0,1},{-1,0}};
+
+    vector<vector<int>> water (row, vector<int> (col, height));
+    vector<vector<bool>> visit (row, vector<bool> (col, false));
+    priority_queue<vertex,vector<vertex>,greater<vertex>> q1;
+
+    for (int y = 0; y < row; y++) {
+        for (int x = 0; x < col; x++) {
+            if (x == 0 || y == 0 || x == col - 1 || y == row - 1) {
+                int val = grid[y][x];
+
+                if (val < height) {
+                    vertex u = {val, {x,y}};
+
+                    water[y][x] = val;
+                    visit[y][x] = true;
+                    q1.push(u);
+                }
+            }
+        }
+    }
+
+    while (!q1.empty()) {
+
+        auto [dist, p] = q1.top();
+        auto [x,y] = p;
+        q1.pop();
+
+        visit[y][x] = true;
+        water[y][x] = dist;
+
+        for (auto &dir : compass) {
+            int nx = x + dir.first, ny = y + dir.second;
+
+            if (is_inside (grid, nx, ny)) {
+                int alt = max (grid[ny][nx], min (water[ny][nx], dist));
+
+                if (alt != water[ny][nx] && !visit[ny][nx]) {
+                    q1.push ({alt,{nx,ny}});
+                }
+            }
+        }
+    }
+
+    for (int y = 0; y < row; y++) {
+        for (int x = 0; x < col; x++) {
+            vol += water[y][x] - grid[y][x];
+            //cout << water[y][x] << " ";
+        }
+        //cout << "\n";
+    }
+
+    cout << ":: " << vol;
+    /*
+    */
     auto end = chrono::high_resolution_clock::now();
     chrono::duration<double> elapsed = end - start;
     cout << "\nProcess took " << elapsed.count()  << " ms\n" << endl;
@@ -217,16 +295,16 @@ int main () {
 
 pair<int,int> scanz (const vector<vector<int>> &grid) {
 
-    int minv = numeric_limits<int>::max(), maxv = numeric_limits<int>::min();
+    int minv = numeric_limits<int>::max(), height = numeric_limits<int>::min();
 
     for (size_t y = 0; y < grid.size(); y++) {
         for (size_t x = 0; x < grid[0].size(); x++) {
             int val = grid[y][x];
 
             minv = min (minv, val);
-            maxv = max (maxv, val);
+            height = max (height, val);
         }
     }
 
-    return {minv, maxv};
+    return {minv, height};
 }
