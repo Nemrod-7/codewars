@@ -8,94 +8,71 @@
 
 using namespace std;
 
-pair<int,int> getpos (const vector<vector<int>> &grid) {
-
-    int minv = numeric_limits<int>::max();
-    pair<int,int> pos;
-
-    for (size_t y = 0; y < grid.size(); y++) {
-        for (size_t x = 0; x < grid[0].size(); x++) {
-            int depth = grid[y][x];
-
-            if (depth < minv) {
-                pos = {x,y};
-                minv = depth;
-            }
-        }
-    }
-
-    return pos;
-}
-pair<int,int> getpos2 (const vector<vector<int>> &grid, int val) {
-
-    for (size_t y = 0; y < grid.size(); y++) {
-        for (size_t x = 0; x < grid[0].size(); x++) {
-            int depth = grid[y][x];
-
-            if (depth == val) {
-                return {x,y};
-            }
-        }
-    }
-
-    return {0,0};
-  }
-
-bool flooded (const vector<vector<int>> &grid) {
-    const int ref = grid[0][0];
-
-    for (size_t y = 0; y < grid.size(); y++) {
-        for (size_t x = 0; x < grid[0].size(); x++) {
-            if (grid[y][x] != ref) return false;
-        }
-    }
-    return true;
-}
 bool is_inside (const vector<vector<int>> &grid, int x, int y) { return x >= 0 && y >= 0 && x < grid[0].size() && y < grid.size(); }
-int scanarea (vector<vector<int>> &grid, pair<int,int> src) {
+int volume (const vector<vector<int>> &grid) {
 
+    const int row = grid.size(), col = grid[0].size();
+    int vol = 0, height = numeric_limits<int>::min();
+
+    for (int y = 0; y < row; y++) {
+        for (int x = 0; x < col; x++) {
+            height = max (height, grid[y][x]);
+        }
+    }
+
+    using vertex = pair<int,pair<int,int>>;
     const vector<pair<int,int>> compass {{0,-1},{1,0},{0,1},{-1,0}};
 
-    bool valid = true;
-    int sum = 0;
-    int depth = grid[src.second][src.first], minv = numeric_limits<int>::max();
+    vector<vector<int>> water (row, vector<int> (col, height));
+    vector<vector<int>> visit (row, vector<int> (col, false));
+    priority_queue<vertex,vector<vertex>,greater<vertex>> q1;
 
-    vector<pair<int,int>> s1 = {src};
-    vector<vector<bool>> visit (grid.size(), vector<bool> (grid[0].size(), false));
-    map<pair<int,int>,bool> hist;
+    for (int y = 0; y < row; y++) {
+        for (int x = 0; x < col; x++) {
+            if (x == 0 || y == 0 || x == col - 1 || y == row - 1) {
+                int val = grid[y][x];
 
-    while (!s1.empty()) {
-        pair<int,int> u = s1.back();
-        s1.pop_back();
-        hist[u] = true;
-        //visit[u.second][u.first] = true;
-        for (auto &dir : compass) {
-            int nx = u.first + dir.first, ny = u.second + dir.second;
+                if (val < height) {
+                    vertex u = {val, {x,y}};
 
-            if (is_inside (grid, nx, ny)) {
-                if (grid[ny][nx] == depth) {
-                    if (!hist[{nx,ny}]) {
-                        s1.push_back ({nx,ny});
-                    }
-                } else {
-                    minv = min (minv, grid[ny][nx]);
+                    water[y][x] = val;
+                    visit[y][x] = true;
+                    q1.push(u);
                 }
-            } else {
-                valid = false;
             }
         }
     }
 
-    vector<pair<int,int>> area;
+    while (!q1.empty()) {
 
-    for (auto &[pt, inside] : hist) {
-        int x = pt.first, y = pt.second;
-        if (valid) sum += minv - grid[y][x];
+        auto [dist, p] = q1.top();
+        auto [x,y] = p;
+        q1.pop();
 
-        grid[y][x] = minv;
+        visit[y][x] = true;
+        water[y][x] = dist;
+
+        for (auto &dir : compass) {
+            int nx = x + dir.first, ny = y + dir.second;
+
+            if (is_inside (grid, nx, ny)) {
+                int alt = max (grid[ny][nx], min (water[ny][nx], dist));
+
+                if (alt < water[ny][nx] && !visit[ny][nx]) {
+                    q1.push ({alt,{nx,ny}});
+                }
+            }
+        }
     }
 
-    return sum;
+    for (int y = 0; y < row; y++) {
+        for (int x = 0; x < col; x++) {
+            vol += water[y][x] - grid[y][x];
+            //cout << water[y][x] << " ";
+        }
+        //cout << "\n";
+    }
+    return vol;
 }
 
 vector<vector<int>> large_test () {
@@ -137,7 +114,92 @@ void to_img (vector<vector<int>> grid, string name) {
     os.close();
 }
 
-int volume (const vector<vector<int>> &grid) {
+int main () {
+
+    auto start = chrono::high_resolution_clock::now();
+
+    vector<vector<int>> grid;
+
+    grid =
+    {{8,8,4,7,7,5,6,3,8,8,8,8,6,6,6,6},
+     {8,0,0,9,9,0,0,1,2,9,5,4,6,0,6,4},
+     {8,0,0,9,9,0,0,1,3,8,0,0,9,0,6,6},
+     {8,8,8,8,6,6,6,7,8,8,0,0,6,6,3,6}};
+
+     grid =
+     {{3, 3, 3, 3, 3},
+     {3, 0, 0, 0, 3},
+     {3, 3, 3, 0, 3},
+     {3, 0, 0, 0, 3},
+     {3, 0, 3, 3, 3},
+     {3, 0, 0, 0, 3},
+     {3, 3, 3, 0, 3}};
+
+
+     grid =
+     {{8,8,8,8,6,6,6,6},
+     {8,0,0,8,6,0,0,6},
+     {8,0,0,8,6,0,0,6},
+     {8,8,8,8,6,6,6,0}};
+
+     grid = large_test(); // 233884
+
+     cout << volume (grid);
+    /*
+    */
+    auto end = chrono::high_resolution_clock::now();
+    chrono::duration<double> elapsed = end - start;
+    cout << "\nProcess took " << elapsed.count()  << " ms\n" << endl;
+}
+
+pair<int,int> getpos (const vector<vector<int>> &grid) {
+
+  int minv = numeric_limits<int>::max();
+  pair<int,int> pos;
+
+  for (size_t y = 0; y < grid.size(); y++) {
+    for (size_t x = 0; x < grid[0].size(); x++) {
+      int depth = grid[y][x];
+
+      if (depth < minv) {
+        pos = {x,y};
+        minv = depth;
+      }
+    }
+  }
+
+  return pos;
+}
+pair<int,int> getpos2 (const vector<vector<int>> &grid, int val) {
+
+  for (size_t y = 0; y < grid.size(); y++) {
+    for (size_t x = 0; x < grid[0].size(); x++) {
+      int depth = grid[y][x];
+
+      if (depth == val) {
+        return {x,y};
+      }
+    }
+  }
+
+  return {0,0};
+}
+pair<int,int> scanz (const vector<vector<int>> &grid) {
+
+    int minv = numeric_limits<int>::max(), height = numeric_limits<int>::min();
+
+    for (size_t y = 0; y < grid.size(); y++) {
+        for (size_t x = 0; x < grid[0].size(); x++) {
+            int val = grid[y][x];
+
+            minv = min (minv, val);
+            height = max (height, val);
+        }
+    }
+
+    return {minv, height};
+}
+int volume2 (const vector<vector<int>> &grid) {
 
 
     int vol = 0, height = numeric_limits<int>::min();
@@ -190,121 +252,61 @@ int volume (const vector<vector<int>> &grid) {
             }
         }
     }
+
     return vol;
 }
-int main () {
-
-    auto start = chrono::high_resolution_clock::now();
-
-    vector<vector<int>> grid =
-      {{8,8,8,8,6,6,6,6},
-       {-2,0,-2,9,6,0,0,6},
-       {8,0,-3,8,6,0,0,6},
-       {8,8,8,8,6,6,6,0}};
-
-
-
-    grid =
-    {{8,8,4,7,7,5,6,3,8,8,8,8,6,6,6,6},
-     {8,0,0,9,9,0,0,1,2,9,5,4,6,0,6,4},
-     {8,0,0,9,9,0,0,1,3,8,0,0,9,0,6,6},
-     {8,8,8,8,6,6,6,7,8,8,0,0,6,6,3,6}};
-
-     grid =
-     {{3, 3, 3, 3, 3},
-     {3, 0, 0, 0, 3},
-     {3, 3, 3, 0, 3},
-     {3, 0, 0, 0, 3},
-     {3, 0, 3, 3, 3},
-     {3, 0, 0, 0, 3},
-     {3, 3, 3, 0, 3}};
-
-     grid = large_test(); // 233884
-
-    int vol = 0, index = 4500;
-
-    const int row = grid.size(), col = grid[0].size();
-    int height = numeric_limits<int>::min();
-
-    for (int y = 0; y < row; y++) {
-        for (int x = 0; x < col; x++) {
-            height = max (height, grid[y][x]);
-        }
-    }
-
-    using vertex = pair<int,pair<int,int>>;
-    const vector<pair<int,int>> compass {{0,-1},{1,0},{0,1},{-1,0}};
-
-    vector<vector<int>> water (row, vector<int> (col, height));
-    vector<vector<bool>> visit (row, vector<bool> (col, false));
-    priority_queue<vertex,vector<vertex>,greater<vertex>> q1;
-
-    for (int y = 0; y < row; y++) {
-        for (int x = 0; x < col; x++) {
-            if (x == 0 || y == 0 || x == col - 1 || y == row - 1) {
-                int val = grid[y][x];
-
-                if (val < height) {
-                    vertex u = {val, {x,y}};
-
-                    water[y][x] = val;
-                    visit[y][x] = true;
-                    q1.push(u);
-                }
-            }
-        }
-    }
-
-    while (!q1.empty()) {
-
-        auto [dist, p] = q1.top();
-        auto [x,y] = p;
-        q1.pop();
-
-        visit[y][x] = true;
-        water[y][x] = dist;
-
-        for (auto &dir : compass) {
-            int nx = x + dir.first, ny = y + dir.second;
-
-            if (is_inside (grid, nx, ny)) {
-                int alt = max (grid[ny][nx], min (water[ny][nx], dist));
-
-                if (alt != water[ny][nx] && !visit[ny][nx]) {
-                    q1.push ({alt,{nx,ny}});
-                }
-            }
-        }
-    }
-
-    for (int y = 0; y < row; y++) {
-        for (int x = 0; x < col; x++) {
-            vol += water[y][x] - grid[y][x];
-            //cout << water[y][x] << " ";
-        }
-        //cout << "\n";
-    }
-
-    cout << ":: " << vol;
-    /*
-    */
-    auto end = chrono::high_resolution_clock::now();
-    chrono::duration<double> elapsed = end - start;
-    cout << "\nProcess took " << elapsed.count()  << " ms\n" << endl;
-}
-
-pair<int,int> scanz (const vector<vector<int>> &grid) {
-
-    int minv = numeric_limits<int>::max(), height = numeric_limits<int>::min();
+bool flooded (const vector<vector<int>> &grid) {
+    const int ref = grid[0][0];
 
     for (size_t y = 0; y < grid.size(); y++) {
         for (size_t x = 0; x < grid[0].size(); x++) {
-            int val = grid[y][x];
+            if (grid[y][x] != ref) return false;
+        }
+    }
+    return true;
+  }
+int scanarea (vector<vector<int>> &grid, pair<int,int> src) {
 
-            minv = min (minv, val);
-            height = max (height, val);
+    const vector<pair<int,int>> compass {{0,-1},{1,0},{0,1},{-1,0}};
+
+    bool valid = true;
+    int sum = 0;
+    int depth = grid[src.second][src.first], minv = numeric_limits<int>::max();
+
+    vector<pair<int,int>> s1 = {src};
+    vector<vector<bool>> visit (grid.size(), vector<bool> (grid[0].size(), false));
+    map<pair<int,int>,bool> hist;
+
+    while (!s1.empty()) {
+        pair<int,int> u = s1.back();
+        s1.pop_back();
+        hist[u] = true;
+        //visit[u.second][u.first] = true;
+        for (auto &dir : compass) {
+            int nx = u.first + dir.first, ny = u.second + dir.second;
+
+            if (is_inside (grid, nx, ny)) {
+                if (grid[ny][nx] == depth) {
+                    if (!hist[{nx,ny}]) {
+                        s1.push_back ({nx,ny});
+                    }
+                } else {
+                    minv = min (minv, grid[ny][nx]);
+                }
+            } else {
+                valid = false;
+            }
         }
     }
 
-    return {minv, height};
+    vector<pair<int,int>> area;
+
+    for (auto &[pt, inside] : hist) {
+        int x = pt.first, y = pt.second;
+        if (valid) sum += minv - grid[y][x];
+
+        grid[y][x] = minv;
+    }
+
+    return sum;
 }

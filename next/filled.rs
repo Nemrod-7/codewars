@@ -2,6 +2,7 @@ use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
+
 struct Vertex {
     dist: i32,
     pos: (usize,usize),
@@ -10,10 +11,8 @@ struct Vertex {
 impl Ord for Vertex {
     fn cmp(&self, other: &Self) -> Ordering {
         other.dist.cmp(&self.dist)
-            .then_with(|| self.pos.cmp(&other.pos))
     }
 }
-
 impl PartialOrd for Vertex {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
@@ -25,9 +24,9 @@ fn isinside (grid: &Vec<Vec<i32>>, x: i32, y: i32) -> bool {
 }
 fn volume (grid: &Vec<Vec<i32>>) -> i32 {
 
-    let top = *grid.iter().flatten().max().unwrap();
     let row = grid.len();
     let col = grid[0].len();
+    let top = *grid.iter().flatten().max().unwrap();
     let compas = [(0,-1),(1,0),(0,1),(-1,0)];
 
     let mut sum = 0;
@@ -69,13 +68,11 @@ fn volume (grid: &Vec<Vec<i32>>) -> i32 {
 
     for y in 0..row {
         for x in 0..col {
-            print! ("{} ", water[y][x]);
-            sum += grid[y][x] - water[y][x]
+            sum += water[y][x] - grid[y][x];
         }
-        print! ("\n");
     }
 
-    print! ("\n");
+    print! ("{}\n", sum);
     sum
 }
 
@@ -92,7 +89,7 @@ fn main () {
              vec![8,0,0,8,6,0,0,6],
              vec![8,8,8,8,6,6,6,0]];
 
-    //grid = large_test ();
+    grid = large_test ();
 
     volume (&grid);
     /*
