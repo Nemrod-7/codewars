@@ -4,6 +4,7 @@
 #include <queue>
 #include <tuple>
 #include <map>
+#include <cmath>
 #include <limits>
 #include <chrono>
 
@@ -17,7 +18,7 @@ const vector<pair<int,int>> compas {{0,-1},{1,0},{0,1},{-1,0}};
 
 struct vertex2 {
     int dist, state;
-    vector<pair<int,int>> p;
+    vector<point> p;
     vector<vector<int>> visit;
     string route;
 };
@@ -36,13 +37,20 @@ void display (vector<string> &floor, vector<vector<int>> &grid) {
             if (floor[y][x] == '0') {
                 cout << ' ';
             } else {
-                cout << grid[y][x];
+                if (grid[y][x])
+                    cout << grid[y][x];
+                else
+                    cout << ".";
             }
         }
         cout << "\n";
     }
+    cout << "\n";
 }
 
+int distance (const point &a, const point &b) {
+    return abs (a.first - b.first) + abs (a.second - b.second);
+}
 bool is_inside (const vector<string> &grid, int x, int y) {
     if (x >= 0 && y >= 0 && x < grid[0].size() && y < grid.size()) {
         if (grid[y][x] != '0') return true;
@@ -56,47 +64,54 @@ bool direct (vector<pair<int,int>> bloc, int x, int y) {
 
 string dijsktra (vector<string> level, vector<vector<int>> hist, point start, point exit) {
 
-    int cycle = 10;
-    vertex2 ver = {1, 1, {start}, hist};
+    vertex2 ver = {distance (start, exit), 1, {start}, hist};
     priority_queue<vertex2,vector<vertex2>, comp> q1;
+    map<vector<vector<int>>,bool> visited;
 
     q1.push (ver);
 
-    while (cycle-->0) {
+    while (!q1.empty()) {
 
-        auto [dist, size, p, visit, route] = q1.top();
+        auto [dist, size, p, grid, route] = q1.top();
         q1.pop();
 
-        for (auto &it : p) {
-            visit[it.second][it.first] = dist;
-        }
+        visited[grid] = true;
+        //display (level, grid);
         if (size == 1 && p[0] == exit) {
+            cout << route << "\n";
             return route;
         }
 
-        display (level, visit);
-
-        for (auto &[nx,ny] : compas) {
-            int x1 = p[0].first + nx, y1 = p[0].second + ny;
+        for (int i = 0; i < 4; i++) {
+            const int nx = compas[i].first, ny = compas[i].second;
+            const int x1 = p[0].first + nx, y1 = p[0].second + ny;
+            int x2, y2;
 
             if (size == 1) {
-                int x2 = p[0].first + nx * 2, y2 = p[0].second + ny * 2;
+                x2 = p[0].first + nx * 2, y2 = p[0].second + ny * 2;
+            } else {
+                x2 = p[1].first + nx, y2 = p[1].second + ny;
+            }
 
-                if (is_inside (level, x2, y2) && !visit[y2][x2] ) {
-                    vertex2 nextv = {dist + 1, 2, {{x1,y1},{x2,y2}}, visit};
-                    q1.push (nextv);
-                }
+            int alt = distance ({x2, y2}, exit) + 1;
 
-            } else if (size == 2) {
-                int x2 = p[1].first + nx, y2 = p[1].second + ny;
+            if (is_inside (level, x2, y2)) {
 
-                if (is_inside (level, x2, y2) && !visit[y2][x2] ) {
+                auto path = grid;
+                path[y2][x2] = alt;
 
-                    if (direct (p, nx, ny)) {
-                        vertex2 nextv = {dist + 1, 1, {{x2,y2}}, visit};
+                if (direct (p, nx, ny)) {
+
+                    if (!visited[path]) {
+                        vertex2 nextv = {alt, 1, {{x2,y2},{x2,y2}}, path, route + alpha[i]};
                         q1.push (nextv);
-                    } else if (is_inside (level, x1, y1)  && !visit[y1][x1] ) {
-                        vertex2 nextv = {dist + 1, 2, {{x1,y1},{x2,y2}}, visit};
+                    }
+
+                } else if (is_inside (level, x1, y1)) {
+                    path[y1][x1] = alt;
+
+                    if (!visited[path]) {
+                        vertex2 nextv = {alt, 2, {{x1,y1},{x2,y2}}, path, route + alpha[i]};
                         q1.push (nextv);
                     }
                 }
@@ -104,73 +119,39 @@ string dijsktra (vector<string> level, vector<vector<int>> hist, point start, po
         }
     }
 
+  //display (level, path);
+
     return "";
 }
+string blox_solver (vector<string> level) {
 
-void dijsktra2 (vector<string> level, vector<vector<int>> hist, point start, point exit) {
-
-    int cycle = 15;
-    queue<vertex> q1;
-    q1.push ({1, 1, {start}});
-
-    while (cycle-->0) {
-
-        auto [size, index, p] = q1.front();
-        q1.pop();
-
-        for (auto &it : p) {
-            hist[it.second][it.first] = index;
-        }
-        if (size == 1 && p[0] == exit) {
-            break;
-        }
-
-        display (level, hist);
-
-        for (auto &[nx,ny] : compas) {
-            int x1 = p[0].first + nx, y1 = p[0].second + ny;
-            int x2, y2;
-
-            if (size == 1) {
-                x2 = p[0].first + nx * 2, y2 = p[0].second + ny * 2;
-            } else if (size == 2) {
-                x2 = p[1].first + nx, y2 = p[1].second + ny;
-            }
-
-            if (is_inside (level, x2, y2)   && !hist[y2][x2]    ) {
-                if (direct (p, nx, ny)) {
-                    q1.push (vertex {1, index + 1, {{x2,y2}}});
-                } else if (is_inside (level, x1, y1)   && !hist[y1][x1]    ) {
-                    q1.push (vertex {2, index + 1, {{x1,y1},{x2,y2}}});
-                }
-            }
-        }
-    }
-}
-
-int main  () {
-
-    vector<string> floor = {"1110000000","1B11110000","1111111110","0111111111","0000011X11","0000001110"};
-
-    const int width = floor[0].size(), height = floor.size();
+    const int width = level[0].size(), height = level.size();
 
     pair<int,int> exit,  start;
     vector<vector<int>> grid (height, vector<int> (width));
 
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            int tile = floor[y][x];
+            int tile = level[y][x];
 
             if (tile == 'X') exit = {x,y};
             if (tile == 'B') start = {x,y};
         }
     }
 
-    dijsktra (floor, grid, start, exit);
+    dijsktra (level, grid, start, exit);
+
+    return "";
+}
+int main  () {
+
+    vector<string> level1 = {"1110000000","1B11110000","1111111110","0111111111","0000011X11","0000001110"};
+    vector<string> level2 = {"000000111111100", "111100111001100", "111111111001111", "1B11000000011X1", "111100000001111", "000000000000111"};
+
+    blox_solver (level2);
 
     //display (floor, grid);
 }
-
 
 void arkive () {
 
@@ -184,4 +165,61 @@ void arkive () {
       }
   }
   */
+}
+string dijsktra2 (vector<string> level, vector<vector<int>> hist, point start, point exit) {
+
+    int cycle = 50;
+    vertex2 ver = {1, 1, {start}, hist};
+    priority_queue<vertex2,vector<vertex2>, comp> q1;
+    map<vector<vector<int>>,bool> visited;
+
+    q1.push (ver);
+
+    //while (!q1.empty()) {
+    while (cycle-->0) {
+
+        auto [dist, size, p, visit, route] = q1.top();
+        q1.pop();
+
+          for (auto &it : p) {
+              visit[it.second][it.first] = dist;
+          }
+        if (size == 1 && p[0] == exit) {
+
+            cout << route << "\n";
+            return route;
+        }
+        display (level, visit);
+
+        for (int i = 0; i < 4; i++) {
+            const int nx = compas[i].first, ny = compas[i].second;
+            const int x1 = p[0].first + nx, y1 = p[0].second + ny;
+            int alt = dist + 1;
+
+            if (size == 1) {
+                int x2 = p[0].first + nx * 2, y2 = p[0].second + ny * 2;
+
+                if (is_inside (level, x2, y2)  && !visit[y2][x2] ) {
+                    vertex2 nextv = {alt, 2, {{x1,y1},{x2,y2}}, visit, route + alpha[i]};
+                    q1.push (nextv);
+                }
+
+            } else if (size == 2) {
+                int x2 = p[1].first + nx, y2 = p[1].second + ny;
+
+                if (is_inside (level, x2, y2)   && !visit[y2][x2]  ) {
+
+                    if (direct (p, nx, ny)) {
+                        vertex2 nextv = {alt, 1, {{x2,y2}}, visit, route + alpha[i]};
+                        q1.push (nextv);
+                    } else if (is_inside (level, x1, y1)  && !visit[y1][x1] ) {
+                        vertex2 nextv = {alt, 2, {{x1,y1},{x2,y2}}, visit, route + alpha[i]};
+                        q1.push (nextv);
+                    }
+                }
+            }
+        }
+    }
+
+    return "";
 }
