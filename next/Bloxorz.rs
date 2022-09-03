@@ -6,8 +6,8 @@ mod blox {
 
     #[derive(Clone, Eq, PartialEq)] // #[derive(Clone, Eq, PartialEq)]
     struct Vertex {
-        state: usize,
         index: usize,
+        state: usize,
         posit: ((usize,usize),(usize,usize)),
         visit: Vec<Vec<usize>>,
         route: String,
@@ -15,7 +15,7 @@ mod blox {
 
     impl Ord for Vertex {
         fn cmp(&self, other: &Self) -> Ordering {
-            other.state.cmp(&self.index)
+            other.index.cmp(&self.index)
         }
     }
 
@@ -57,6 +57,7 @@ mod blox {
             }
             print! ("\n");
         }
+        print! ("\n");
     }
     pub fn blox_solver (puzzle: &[&str]) -> String {
 
@@ -77,6 +78,7 @@ mod blox {
         for y in 0..height {
             level.push (puzzle[y].chars().collect::<Vec<char>>());
             for x in 0..width {
+
                 match level[y][x] {
                     'X' => exit = (x,y),
                     'B' => heap.push (Vertex { state: 1, index: 1, posit: ((x,y),(x,y)), visit: hist.clone(), route: "".to_string() }),
@@ -85,12 +87,17 @@ mod blox {
             }
         }
 
-        while let Some (Vertex { state, index, posit, visit, route }) = heap.pop() {
+        let mut cycle = 0;
+
+        while let Some (Vertex { index, state, posit, visit, route }) = heap.pop() {
+
+            cycle += 1;
+            if cycle == 20 { break }
+            display (&level, &visit);
 
             visited.insert(visit.clone(), true);
-            print! ("{} ", index);
             if state == 1 && posit.0 == exit {
-                //display (&level, &visit);
+
                 return route;
             }
             for i in 0..4 {
@@ -112,15 +119,14 @@ mod blox {
 
                     if direct (posit, dir) {
                         if visited.get (&grid) == None {
-                             heap.push (Vertex { state: 1, index: alt, posit: ((x2,y2),(x2, y2)), visit: grid, route: route.clone() + alp }) ;
+                             heap.push (Vertex { index: alt, state: 1,  posit: ((x2,y2),(x2, y2)), visit: grid, route: route.clone() + alp }) ;
                         }
                     } else if isinside (&level, x1, y1) {
                         let x1 = x1 as usize; let y1 = y1 as usize;
                         grid[y1][x1] = alt;
 
                         if visited.get (&grid) == None {
-                            //display (&level, &grid);
-                             heap.push (Vertex { state: 2, index: alt, posit: ((x1, y1),(x2,y2)), visit: grid, route: route.clone() + alp }) ;
+                             heap.push (Vertex { index: alt, state: 2, posit: ((x1, y1),(x2,y2)), visit: grid, route: route.clone() + alp }) ;
                         }
                     }
                 }
@@ -153,7 +159,19 @@ fn main() {
         "111100000001111",
         "000000000000111"];
 
-    blox::blox_solver (&level1);
+    let level3 = vec![
+            "00011111110000",
+            "00011111110000",
+            "11110000011100",
+            "11100000001100",
+            "11100000001100",
+            "1B100111111111",
+            "11100111111111",
+            "000001X1001111",
+            "00000111001111"];
+
+
+    blox::blox_solver (&level3);
 
 
      print! ("\n");

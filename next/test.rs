@@ -6,8 +6,15 @@ fn main() {
     let height = 6;
     let grid = vec![vec![0;width]; height];
 
-    let mut visited:HashMap<Vec<Vec<usize>>,bool> = HashMap::new();
+    let mut visited:HashMap<usize,bool> = HashMap::new();
+    let tt = 9;
 
-    visited.insert(grid, true);
+    if visited.get (&tt) == None {
+        print!("test");
+    }
+
+    if visited.get (&tt) == None {
+        print!("test");
+    }
 
 }
