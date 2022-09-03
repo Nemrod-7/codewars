@@ -2,11 +2,11 @@
 mod blox {
     use std::cmp::Ordering;
     use std::collections::{BinaryHeap, HashMap};
-    //use std::collections::HashMap;
 
     #[derive(Clone, Eq, PartialEq)] // #[derive(Clone, Eq, PartialEq)]
     struct Vertex {
         index: usize,
+        moves: usize,
         state: usize,
         posit: ((usize,usize),(usize,usize)),
         visit: Vec<Vec<usize>>,
@@ -15,7 +15,8 @@ mod blox {
 
     impl Ord for Vertex {
         fn cmp(&self, other: &Self) -> Ordering {
-            other.index.cmp(&self.index)
+            other.moves.cmp(&self.moves)
+                .then_with(|| self.index.cmp(&other.index))
         }
     }
 
@@ -65,12 +66,12 @@ mod blox {
         let height = puzzle.len();
         let compas = [(0,-1),(1,0),(0,1),(-1,0)];
         let alphab = ["U","R","D","L"];
-        let hist = vec![vec![0; width]; height];
 
         let mut x1; let mut y1;
         let mut x2; let mut y2;
-
+        let mut start = (0,0);
         let mut exit = (0,0);
+        let mut hist = vec![vec![0; width]; height];
         let mut heap = BinaryHeap::new();
         let mut level:Vec<Vec<char>> = Vec::new();
         let mut visited:HashMap<Vec<Vec<usize>>,bool> = HashMap::new();
@@ -81,25 +82,29 @@ mod blox {
 
                 match level[y][x] {
                     'X' => exit = (x,y),
-                    'B' => heap.push (Vertex { state: 1, index: 1, posit: ((x,y),(x,y)), visit: hist.clone(), route: "".to_string() }),
+                    'B' => start = (x,y),
                     _ => (),
                 }
             }
         }
 
+        hist[start.1][start.0] = 1;
+        heap.push (Vertex { index:0, moves:0, state:1, posit:(start,start), visit:hist.clone(), route:"".to_string() });
+
         let mut cycle = 0;
 
-        while let Some (Vertex { index, state, posit, visit, route }) = heap.pop() {
+        while let Some (Vertex { index, moves, state, posit, visit, route }) = heap.pop() {
 
             cycle += 1;
-            if cycle == 20 { break }
-            display (&level, &visit);
-
+            //if cycle == 80 { break }
             visited.insert(visit.clone(), true);
-            if state == 1 && posit.0 == exit {
 
-                return route;
+            if posit.0 == exit && state == 1 {
+                display (&level, &visit);
+                print! ("{}\n", route);
+                return route
             }
+
             for i in 0..4 {
                 let dir = compas[i];
                 let alp = alphab[i];
@@ -115,18 +120,19 @@ mod blox {
                     let x2 = x2 as usize; let y2 = y2 as usize;
                     let alt = distance ((x2,y2), exit) + 1;
                     let mut grid = visit.clone();
-                    grid[y2][x2] = alt;
+                    grid[y2][x2] =  1;
 
                     if direct (posit, dir) {
                         if visited.get (&grid) == None {
-                             heap.push (Vertex { index: alt, state: 1,  posit: ((x2,y2),(x2, y2)), visit: grid, route: route.clone() + alp }) ;
+                             heap.push (Vertex { index:alt, moves:moves + 1, state:1,  posit:((x2,y2),(x2,y2)), visit:grid, route:route.clone() + alp }) ;
                         }
                     } else if isinside (&level, x1, y1) {
                         let x1 = x1 as usize; let y1 = y1 as usize;
-                        grid[y1][x1] = alt;
+                        grid[y2][x2] =  2;
+                        grid[y1][x1] =  2;
 
                         if visited.get (&grid) == None {
-                             heap.push (Vertex { index: alt, state: 2, posit: ((x1, y1),(x2,y2)), visit: grid, route: route.clone() + alp }) ;
+                             heap.push (Vertex { index:alt, moves:moves + 1, state:2, posit:((x1,y1),(x2,y2)), visit:grid, route:route.clone() + alp }) ;
                         }
                     }
                 }
@@ -172,13 +178,14 @@ fn main() {
 
 
     blox::blox_solver (&level3);
-
+    //example_tests();
 
      print! ("\n");
 }
 
 fn example_tests() {
         let fixed_tests = [
+
             vec![
                 "1110000000",
                 "1B11110000",
@@ -194,7 +201,8 @@ fn example_tests() {
                 "1B11000000011X1",
                 "111100000001111",
                 "000000000000111"],
-        /*
+
+
             vec![
                 "00011111110000",
                 "00011111110000",
@@ -205,7 +213,10 @@ fn example_tests() {
                 "11100111111111",
                 "000001X1001111",
                 "00000111001111"],
+
+
             vec![
+
                 "11111100000",
                 "1B111100000",
                 "11110111100",
@@ -217,6 +228,8 @@ fn example_tests() {
                 "01111111111",
                 "0110011X100",
                 "01100011100"],
+
+
             vec![
                 "000001111110000",
                 "000001001110000",
@@ -229,21 +242,23 @@ fn example_tests() {
                 "000000111110000",
                 "000000011100000"]
 
-            */
         ];
+
+
         let fixed_sols = [
             vec!["RRDRRRD","RDDRRDR","RDRRDDR"],
             vec!["ULDRURRRRUURRRDDDRU","RURRRULDRUURRRDDDRU"],
-            /*
             vec!["ULURRURRRRRRDRDDDDDRULLLLLLD"],
             vec!["DRURURDDRRDDDLD"],
             vec!["RRRDRDDRDDRULLLUULUUURRRDDLURRDRDDR","RRRDDRDDRDRULLLUULUUURRDRRULDDRRDDR","RRRDRDDRDDRULLLUULUUURRDRRULDDRRDDR"]
-
-            */
         ];
 
         for (grid,valids) in fixed_tests.iter().zip(fixed_sols.iter()) {
             let user = blox::blox_solver(grid);
-            assert!(valids.iter().any(|s| s == &user),"You returned an invalid path");
+
+            if valids.iter().any(|s| s != &user) {
+                print! ("got : {} expected : {:?}\n", user, valids);
+            }
+            //assert!(valids.iter().any(|s| s == &user),"You returned an invalid path");
         }
 }
