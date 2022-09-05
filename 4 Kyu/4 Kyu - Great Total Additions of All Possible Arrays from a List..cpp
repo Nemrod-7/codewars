@@ -1,160 +1,108 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
-#include <algorithm>
-#include <cmath>
 
 using namespace std;
 
-class combinations {
-    private :
-        inline static int size;
-        inline static std::vector<std::vector<int>> ts, combs;
+string mklst (size_t lim, const vector<int>& args) {
 
-        static void helper (std::vector<int> comb, int index) { // make unique combinations of subsets 1 / 1
+    string list;
+    vector<vector<int>> arg2;
+    bool hist[10] = {0}, running = true;
 
-            for (size_t i = 0; i < ts[index].size(); i++) {
+    for (auto num : args) {
+        vector<int> decomp;
 
-                int dig = ts[index][i];
-                if (std::find (&comb[0], &comb[index], dig) != &comb[index]) continue;
+        do {
+            decomp.push_back (num % 10);
+        } while (num /= 10);
 
-                comb[index] = dig;
+        arg2.push_back (decomp);
+    }
 
-                if (index == size - 1) {
-                    combs.push_back (comb);
-                } else {
-                    helper (comb, index + 1);
+    while (running) {
+        for (auto &vs : arg2) {
+            if (vs.size()) {
+                int dig = vs.back();
+
+                if (!hist[dig] && running) {
+                    list += dig;
                 }
+                if (list.size() == lim) running = false;
+                hist[dig] = true;
+                vs.pop_back();
             }
         }
-
-    public :
-        static std::vector<std::vector<int>> subset (const std::vector<std::vector<int>> &data) {       // make unique combinations of subsets
-
-            size = data.size(), ts = data;
-            helper (std::vector<int> (size), 0);
-
-            return combs;
-        }
-        static std::vector<std::vector<int>> distinct (int depth, const std::vector<int> &data) { // make unique combinations of n choose k
-
-            size = data.size();
-            std::vector<bool> mask (size);
-            std::fill (mask.end() - depth, mask.end(), true);
-
-            do {
-                std::vector<int> comb;
-
-                for (int i = 0; i < size; ++i) {
-                    if (mask[i]) { comb.push_back(data[i]); }
-                }
-
-                combs.push_back (comb);
-
-            } while (std::next_permutation(mask.begin(), mask.end()));
-
-            return combs;
-        }
-        static std::vector<std::vector<int>> integral (int depth, const std::string &dict) { // all possible combinations : n choose k
-
-            size = dict.size();
-            int index = 0;
-            std::vector<int> base (depth), comb (depth);
-
-            while (base[depth] == 0) {
-
-                for (int i = 0; i < depth; i++)
-                    comb[i] = dict[base[i]];
-
-                combs.push_back (comb);
-
-                base[0]++;
-
-                while (base[index] == size) {
-                    base[index++] = 0;
-                    base[index]++;
-                }
-                index = 0;
-            }
-            return combs;
-        }
-};
-
-vector<int> vc (int n) {
-    vector<int> ls;
-
-    do {
-        ls.push_back (n % 10);
-    } while (n /= 10);
-
-    return ls;
-}
-vector<int> mklst (int a, int b, int c) {
-
-    int flag = true;
-    vector<int> list;
-    vector<vector<int>> lss = {vc(a), vc(b), vc(c)};
-
-    while (flag) {
-      flag = false;
-      for (auto &vs : lss) {
-        if (vs.size()) {
-          int dig = vs.back();
-          flag = true;
-          vs.pop_back();
-          list.push_back (dig);
-        }
-      }
     }
 
     return list;
 }
-
-int gta (int lim, int a, int b, int c) {
+int searchcomb (size_t depth, string list) {
 
     int sum = 0;
-    vector<int> list = mklst (a,b,c);
+    vector<string> s1 ({""});
 
-    for (int i = 0; i < lim; i++) {
-        cout << list[i];
-        for (int j = i; j < i; j++) {
-          cout << list[j];
+    while (!s1.empty()) {
+        string comb = s1.back();
+        s1.pop_back();
 
+        if (comb.size() == depth) {
+            //sum += accumulate (comb.begin(), comb.end(), 0);
+            for (size_t i = 0; i < depth; i++) {
+                sum += comb[i];
+            }
+        } else {
+            for (auto &dig : list) {
+                if (comb.find (dig) == string::npos) {
+                    s1.push_back (comb + dig);
+                }
+            }
         }
-
-        cout << endl;
     }
 
     return sum;
 }
+int gta (int limit, const vector<int>& args) {
 
-void distinct (int depth, const std::vector<int> &data) { // make unique combinations of n choose k
+    int sum = 0;
+    string list = mklst (limit, args);
 
-  int size = data.size();
-  int index = 0;
-  std::vector<int> base (depth), comb (depth);
+    while (limit-->0)
+        sum += searchcomb (limit + 1, list);
 
-  while (base[depth] == 0) {
+    return sum;
+}
 
-      for (int i = 0; i < depth; i++) {
-          comb[i] = data[base[i]];
-      //    cout << data[base[i]];
-      }
-      //combs.push_back (comb);
-      base[0]++;
+void test () {
 
-      while (base[index] == size) {
-          base[index++] = 0;
-          base[index]++;
-      }
-      index = 0;
-  }
+    int limit = 6;
+    vector<int> numbers = {71311,42522,14489,18292};
+    vector<int> base = {7,4,1,2,8,3,5,9};
+    //Expected: equal to 40775
+
+
+    limit = 5;
+    numbers = {90487,63746,73762,9361,43107};
+    base = {9,6,7,4,0,3,1,8,2};
+    //Expected: equal to 6786
+
+
+    limit = 5;
+    numbers = {947538,677645,373496,821637,807905,670482};
+    base = {9,6,3,8,4,7,2,0,1,5};
+    //Expected: equal to 7830
+    cout << gta (limit, numbers) << "\n";
+
 }
 
 int main () {
 
-    distinct (2, {1, 5, 6, 2, 7, 3, 4});
+    vector<int> list = {1, 5, 6, 2, 7, 3, 4};
 
+    int limit = 6;
+    vector<int> numbers = {71311,42522,14489,18292};
+    //base list = {8,9,1,2,6,7}
+    test();
 
     return 0;
 }
