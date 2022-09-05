@@ -28,6 +28,7 @@ fn display (skyscr: &Vec<Vec<usize>>, floor:usize) {
     }
 
 }
+
 fn progress (mat: &Vec<Vec<usize>>, lift: &Vec<usize>) -> bool {
 
     if lift.len() > 0 { return true }
@@ -47,17 +48,19 @@ fn valid (user:usize, floor:usize, top: usize, direct:i32) ->bool {
     if user < floor && (direct == -1 || floor == top) { return true }
     false
 }
-fn the_lift (queue: &Vec<Vec<usize>>, capacity:usize) -> Vec<usize> {
+fn the_lift (queue: &[Vec<u32>], capacity:usize) -> Vec<u32> {
 
     let top = queue.len() - 1;
-    
+
     let mut floor = 0;
     let mut direct:i32 = 1;
 
     let mut lift = vec![0;0];
     let mut record = vec![0,1];
-    let mut tower = queue.clone();
+    let mut tower:Vec<Vec<u32>> = queue.clone().to_vec();
 
+
+/*
     while progress (&tower, &lift) {
 
         let mut visited = false;
@@ -90,7 +93,7 @@ fn the_lift (queue: &Vec<Vec<usize>>, capacity:usize) -> Vec<usize> {
             direct = -direct
         }
     }
-
+*/
     record
 }
 
@@ -105,8 +108,8 @@ fn main() {
     let board:bool;
 
     let queue = vec![vec![], vec![], vec![5,2,5], vec![], vec![], vec![], vec![]] ;
-
-    the_lift (&queue, 5);
+    the_lift (&[vec![],vec![0],vec![],vec![],vec![2],vec![3],vec![]], 5);
+    //the_lift (&queue, 5);
 
     print! ("\n");
 
