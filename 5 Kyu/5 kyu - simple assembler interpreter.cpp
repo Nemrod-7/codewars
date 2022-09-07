@@ -29,7 +29,7 @@ void display_map (unordered_map<string, int> input);
 int main () {
   auto start = chrono::high_resolution_clock::now();
 
-  //Test();
+  Test();
   assembler({"mov a -10", "mov b a", "inc a", "dec b", "jnz a -2"});
 
   auto end = chrono::high_resolution_clock::now();
@@ -61,7 +61,7 @@ std::unordered_map<std::string, int> assembler(const std::vector<std::string>& i
             it += end > offset ? offset : end;
         } else
             it++;
-        display_map (reg);
+        //display_map (reg);
         cout << endl;
     }
 
