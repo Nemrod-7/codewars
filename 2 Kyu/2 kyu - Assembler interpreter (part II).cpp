@@ -42,7 +42,6 @@ string mkmsg (map<string, int>& reg, vector<string> &line) {
 }
 int get_val (map<string, int>& reg, string op) { return isalpha (op.at(0)) ? reg[op] : stoi (op); }
 
-
 string assembler_interpreter (string input) {
 
     bool jump, running = true;
@@ -53,9 +52,12 @@ string assembler_interpreter (string input) {
     vector<string> code, prog = format3 (input);
     vector<string>::iterator line = prog.begin();
     stack<vector<string>::iterator> pos;
-
+    int cycle = 0;
     while (running) {
 
+          cycle++;
+
+          cout << cycle << " " << *line << endl;
           code = tokenize (*line);
           jump = false;
 
@@ -92,9 +94,9 @@ string assembler_interpreter (string input) {
           if (com == "msg") os += mkmsg (reg, code);
 
           if (jump == true) line = find (prog.begin(), prog.end(), code[1] + ':');
-          if (line == prog.end()) running = false;
 
           line++;
+          if (line == prog.end()) running = false;
     }
 
     return "-1";
@@ -306,21 +308,23 @@ ret)";
 int main () {
   auto start = chrono::high_resolution_clock::now();
 
-  //assembler({"mov a -10", "mov b a", "inc a", "dec b", "jnz a -2"});
-  string    program = R"(
-  ; My first program
-  mov  a, 5
-  inc  a
-  call function
-  msg  '(5+1)/2 = ', a    ; output message
+  string     program = R"(
+  call  func1
+  call  print
   end
 
-  function:
-      div  a, 2
-      ret)";
+  func1:
+  call  func2
+  ret
 
-  //cout << assembler_interpreter (program);
-  Test ();
+  func2:
+  ret
+
+  print:
+  msg 'This program should return -1')";
+
+  cout << assembler_interpreter (program);
+  //Test ();
 
   auto end = chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = end - start;
