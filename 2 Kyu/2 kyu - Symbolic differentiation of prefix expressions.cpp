@@ -73,7 +73,12 @@ string calc (string a, string op, string b) {
 
     return "(" + op + " " + a + " " + b + ")";
 }
-
+void display (vector<string> expr) {
+    for (auto it : expr) {
+        cout << "[" << it << "]";
+    }
+    cout << endl;
+}
 string diff (const string &src) {
 
     regex num ("^-?[0-9]*$");
@@ -83,6 +88,7 @@ string diff (const string &src) {
 
     vector expr = tokenize3 (src);
     string op = expr.front();
+
     /*
     for (auto it : expr) {
         cout << "[" << it << "]";
@@ -108,6 +114,7 @@ string diff (const string &src) {
             return calc (nom, "/", den);
         } else if (op == "^") {            // x² => 2 * x^(2-1) : * 2 (^ x (2 - 1))
             string ex = calc (arg2, "-", "1");
+
             arg1 = calc ("x", "^", ex);
 
             return calc (arg2, "*", arg1);
@@ -126,6 +133,7 @@ string diff (const string &src) {
         if (op == "sin") {
             string ex = diff (arg1);
             arg2 = "(cos " + arg1 + ')';
+            //display (expr);
             return calc (ex, "*", arg2);
         }
         if (op == "exp") {
@@ -177,6 +185,7 @@ int main () {
 
     */
     cout << diff ("(^ (sin x) 3)");
+    //cout << diff ("(^ (sin x) 3)");
 
     // Assert ("x^2 should return 2*x", "(* 2 x)", "(^ x 2)");
     // (^ x 3) => (* 3 (^ x 2))
