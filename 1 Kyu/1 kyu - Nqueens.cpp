@@ -65,9 +65,6 @@ vector<int> generate3 (int N, pair<int,int> pos) {
     return board;
 }
 
-bool attack2 (const int ax, const int ay, const int bx, const int by) {
-    return (ay == by) || (ax + ay == bx + by) || (ax - ay == bx - by);
-}
 int rnd_walk (const vector<int> &hist, int val) {
     vector<int> V;
 
@@ -78,62 +75,6 @@ int rnd_walk (const vector<int> &hist, int val) {
     uniform_int_distribution<> dist (0, V.size() - 1);
 
     return V[dist(gen)];
-}
-vector<int> min_conflict3 (const int N, pair<int,int> pos) {
-    // old N = 400 => 2.20 ms use of pair<int,int>
-    // new N = 500 => 0.30 ms without pair<int,int>
-
-    int x, y;
-    vector<int> hist (N);
-    int max_iter  = N * 50;
-    vector<int> board = generate3 (N, pos);
-
-    int *ptr = board.data();
-
-    while (max_iter-->0) {
-
-        int cnt, sum = 0, val = 0;
-
-        for (x = 0; x < N; x++) {
-
-            if (x == pos.first) continue;
-
-            cnt = 0;
-            for (int i = 0; i < N; i++) {
-                if (x != i && ptr[x] != ptr[i])
-                    if (attack2 (x, ptr[x], i, ptr[i]))
-                        cnt++;
-            }
-
-            hist[x] = cnt;
-
-            val = max (val, cnt);
-            sum += cnt;
-        }
-
-        if (sum == 0) return board;
-
-        x = rnd_walk (hist, val);
-        //cout << "->" << x <<  "\n";
-        val = N;
-        for (y = 0; y < N; y++) {
-            cnt = 0;
-
-            for (int i = 0; i < N; i++) {
-                if (attack2 (x, y, i, ptr[i])) cnt++;
-            }
-
-            val = min (val, cnt);
-            hist[y] = cnt;
-        }
-        //cout << costpt (board, a) << " " << cnt << endl;;
-        y = rnd_walk (hist, val);
-
-        board[x] = y;
-    }
-    //Display::board (track);
-
-    return {};
 }
 
 class Qdata {
@@ -162,9 +103,7 @@ class Qdata {
 };
 
 vector<int> min_conflict4 (const int N, pair<int,int> pos) {
-    // min2 N = 400 => 2.20 ms use of pair<int,int>
-    // min3 N = 500 => 0.30 ms without pair<int,int>
-    // min4 N = 500 => 0.02 ms without pair<int,int>
+
     int x, y;
     vector<int> board(N), hist (N);
     int max_iter  = N * 50;
@@ -173,8 +112,7 @@ vector<int> min_conflict4 (const int N, pair<int,int> pos) {
     board[pos.first] = pos.second;
 
     actual.reset (board);
-    //Display::board (board);
-    //int *ptr = board.data();
+
     while (max_iter-->0) {
 
         int cnt, sum = 0, val = 0;
@@ -293,8 +231,10 @@ int main () {
 
     int index = 100, cnt = 0;
     string res;
+    vector<int> board = {7,4,3,4,0,1,0,5};
 
-    res = solveNQueens (800, {2,1});
+    Display::board(board);
+    //res = solveNQueens (15, {2,1});
 
     //while (index-->0) {
         if (res == "")
@@ -328,7 +268,9 @@ void Test () {
 
 }
 //////////////////////////////// Arkive ///////////////////////////////////////
-
+bool attack2 (const int ax, const int ay, const int bx, const int by) {
+    return (ay == by) || (ax + ay == bx + by) || (ax - ay == bx - by);
+}
 vector<int> generate1 (int N, pair<int,int> pos) {
     vector<int> track (N);
     uniform_int_distribution<> dist (0, N - 1);
