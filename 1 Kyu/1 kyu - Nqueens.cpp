@@ -214,13 +214,13 @@ string solveNQueens (int N, pair<int,int> pos) {
     if (N == 1) return "Q";
     if (N <= 3) return "";
 
-    int index = 2;
+    int index = 20;
     vector<int> res;
-    //Display::board (track);
+
     while (index-->0) {
         res = min_conflict4 (N, pos);
         Display::board (res);
-        if (res.size() != 0) return format(res);
+        //if (res.size() != 0) return format(res);
     }
 
     return "";
@@ -236,11 +236,6 @@ int main () {
     vector<int> board = {7,4,3,4,0,1,0,5};
 
     res = solveNQueens (8, {1,1});
-
-    //while (index-->0) {
-        if (res == "")
-            cnt++;
-    //}
 
     cout << cnt;
 
