@@ -72,15 +72,16 @@ int rnd_walk (const vector<int> &hist, int val) {
         if (hist[i] == val)
             V.push_back (i);
 
-    uniform_int_distribution<> dist (0, V.size() - 1);
+    uniform_int_distribution<int> dist (0, V.size() - 1);
 
     return V[dist(gen)];
 }
 
 class Qdata {
-        vector<int> rows, d1, d2;
+    private :
         int N;
     public :
+        vector<int> rows, d1, d2;
         Qdata (int size) {
             N = size;
             rows.resize(N), d1.resize (2 * N - 1), d2.resize (2 * N - 1);
@@ -214,10 +215,11 @@ string solveNQueens (int N, pair<int,int> pos) {
     if (N <= 3) return "";
 
     int index = 2;
-    vector<int> track, res;
+    vector<int> res;
     //Display::board (track);
     while (index-->0) {
         res = min_conflict4 (N, pos);
+        Display::board (res);
         if (res.size() != 0) return format(res);
     }
 
@@ -233,8 +235,7 @@ int main () {
     string res;
     vector<int> board = {7,4,3,4,0,1,0,5};
 
-    Display::board(board);
-    //res = solveNQueens (15, {2,1});
+    res = solveNQueens (8, {1,1});
 
     //while (index-->0) {
         if (res == "")
