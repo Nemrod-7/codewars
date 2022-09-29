@@ -1,138 +1,23 @@
+extern crate regex;
+use regex::Regex;
 
-use std::collections::HashMap;
-
-#[derive(Clone)]
+#[derive(Clone,Debug)]
 enum Ast {
-    Null,
-    BinOp (String,Box<Ast>,Box<Ast>),
     UnOp (String, i32),
+    BinOp (String,Box<Ast>,Box<Ast>),
 }
 
 struct Compiler {
-    args: HashMap<String,usize>,
+    args: Vec<String>,
 }
 
 impl Compiler {
     fn new() -> Compiler {
         Compiler {
-            args: HashMap::new(),
+            args: Vec::new(),
         }
     }
 
-    fn tokenize<'a>(&self, program : &'a str) -> Vec<String> {
-        let mut tokens : Vec<String> = vec![];
-        let mut iter = program.chars().peekable();
-
-        loop {
-            match iter.peek() {
-                Some(&c) => match c {
-                    'a'..='z'|'A'..='Z' => {
-                        let mut tmp = String::new();
-                        while iter.peek().is_some() && iter.peek().unwrap().is_alphabetic() {
-                        tmp.push(iter.next().unwrap());
-                        }
-                        tokens.push(tmp);
-                    },
-                    '0'..='9' => {
-                        let mut tmp = String::new();
-                        while iter.peek().is_some() && iter.peek().unwrap().is_numeric() {
-                            tmp.push(iter.next().unwrap());
-                        }
-                        tokens.push(tmp);
-                    },
-                    ' ' => { iter.next(); },
-                    _ => { tokens.push(iter.next().unwrap().to_string()); },
-                },
-                None => break
-            }
-        }
-
-        tokens
-    }
-
-    fn order (&self, tok: &str) -> usize {
-        if tok == "+" || tok == "-" { return 1 }
-        if tok == "*" || tok == "-" { return 2 }
-        0
-    }
-    fn postorder (root: &Ast) -> Vec<Ast> {
-
-        let temp:Ast = root.clone();
-        let mut s1:Vec<Ast> = Vec::new();
-        let mut s2:Vec<Ast> = Vec::new();
-
-        s1.push (temp);
-
-        while let Some (mut node) = s1.pop() {
-
-            if let Ast::BinOp(id, a, b) = &node {
-                s1.push(*a.clone());
-                s1.push(*b.clone());
-            }
-        
-            s2.push(node);
-        }
-
-        s2
-    }
-    fn mktree (&self, code: &[String]) -> Ast {
-
-        let size = code.len();
-        let mut it = 0;
-        let mut tree:Vec<Ast> = Vec::new();
-        let mut oper:Vec<Ast> = Vec::new();
-
-        while it != size {
-
-        let tile = &code[it];
-
-        if let Some (&idx) = self.args.get(tile) {
-            let value = idx as i32 - 1;
-            tree.push (Ast::UnOp("arg".to_string(), value));
-        } else if tile == "(" {
-            let fst = it + 1;
-
-            while code[it] != ")" {
-                it += 1;
-            }
-            tree.push(self.mktree(&code[fst..it]))
-        } else if tile.chars().all(char::is_numeric) == true {
-            let value = tile.parse::<i32>().unwrap();
-            tree.push (Ast::UnOp("imm".to_string(), value));
-        } else {
-            let temp = Ast::BinOp(tile.to_string(), Box::new(Ast::Null), Box::new(Ast::Null));
-
-            while let Some(Ast::BinOp(id, _a, _b)) = oper.last() {
-                if self.order (id) >= self.order (tile) {
-                    let bb = tree.pop().unwrap();
-                    let ba = tree.pop().unwrap();
-                    tree.push (Ast::BinOp(id.to_string(), Box::new(ba), Box::new(bb)));
-                    oper.pop();
-
-                } else {
-                    break
-                }
-            }
-
-                oper.push (temp);
-            }
-
-            it += 1;
-        }
-
-        while let Some(Ast::BinOp(id, _a, _b)) = oper.pop() {
-
-            let bb = tree.pop().unwrap();
-            let ba = tree.pop().unwrap();
-
-            tree.push (Ast::BinOp(id, Box::new(ba), Box::new(bb)));
-        }
-
-        if let Some(node) = tree.pop() {
-            return node;
-        }
-        Ast::Null
-    }
     fn getid (&self, ast : &Ast) -> String {
 
         if let Ast::BinOp(id, _a, _b) = ast {
@@ -151,6 +36,83 @@ impl Compiler {
         0
     }
 
+    fn order (&self, tok: &str) -> usize {
+        if tok == "+" || tok == "-" { return 1 }
+        if tok == "*" || tok == "-" { return 2 }
+        0
+    }
+    fn postorder (&self, root: &Ast) -> Vec<Ast> {
+
+        let mut s1:Vec<Ast> = vec![root.clone()];
+        let mut s2:Vec<Ast> = vec![];
+
+        while let Some (node) = s1.pop() {
+
+            if let Ast::BinOp(_id, a, b) = &node {
+                s1.push(*a.clone());
+                s1.push(*b.clone());
+            }
+            s2.push(node);
+        }
+
+        s2
+    }
+    fn mktree (&self, code: &[String]) -> Ast {
+
+        let size = code.len();
+        let number = Regex::new("^-?[0-9]+$").unwrap();
+        let mut it = 0;
+        let mut tree:Vec<Ast> = Vec::new();
+        let mut oper:Vec<String> = Vec::new();
+
+        while it != size {
+            let tile = &code[it];
+
+            if let Some (index) = self.args.iter().position(|x| x == tile) {
+                tree.push (Ast::UnOp("arg".to_string(), index as i32));
+            } else if tile == "(" {
+                let fst = it + 1;
+
+                while code[it] != ")" {
+                    it += 1;
+                }
+                tree.push(self.mktree(&code[fst..it]))
+            } else if number.is_match(tile) { // tile.chars().all(char::is_numeric) == true
+                let value = tile.parse::<i32>().unwrap();
+                tree.push (Ast::UnOp("imm".to_string(), value));
+            } else {
+
+                while let Some(id) = oper.last() {
+                    if self.order (id) >= self.order (tile) {
+                        let b = tree.pop().unwrap();
+                        let a = tree.pop().unwrap();
+                        tree.push (Ast::BinOp(id.to_string(), Box::new(a), Box::new(b)));
+                        oper.pop();
+                    } else {
+                        break
+                    }
+                }
+
+                oper.push (tile.to_string());
+            }
+
+            it += 1;
+        }
+
+        while let Some(id) = oper.pop() {
+
+            let b = tree.pop().unwrap();
+            let a = tree.pop().unwrap();
+            tree.push (Ast::BinOp(id, Box::new(a), Box::new(b)));
+        }
+
+        if let Some(node) = tree.pop() { return node } else { Ast::UnOp ("null".to_string(),-1) }
+    }
+
+    fn tokenize<'a>(&self, program : &'a str) -> Vec<String> {
+        let token = Regex::new("[-+*/()\\[\\]]|[A-Za-z]+|\\d+").unwrap();
+        token.captures_iter(program).map(|x| x[0].to_string()).collect::<Vec<_>>()
+    }
     fn compile (&mut self, program : &str) -> Vec<String> {
 
         let ast = self.pass1(program);
@@ -163,7 +125,7 @@ impl Compiler {
         let mut it = 1;
 
         while code[it] != "]" {
-            self.args.insert (code[it].to_string(), it);
+            self.args.push (code[it].to_string());
             it += 1;
         }
 
@@ -172,62 +134,55 @@ impl Compiler {
     fn pass2 (&mut self, ast : &Ast) -> Ast {
 
         if let Ast::BinOp(id, a, b) = ast {
-            if self.getid(a) == "imm" && self.getid(b) == "imm" {
-                let mut value:i32 = 0;
+            let a:Ast = self.pass2(a);
+            let b:Ast = self.pass2(b);
+
+            if self.getid(&a) == "imm" && self.getid(&b) == "imm" {
+                let value:i32;
 
                 match id as &str {
-                    "+" => value = self.getval(a) + self.getval(b),
-                    "-" => value = self.getval(a) - self.getval(b),
-                    "*" => value = self.getval(a) * self.getval(b),
-                    "/" => value = self.getval(a) / self.getval(b),
-                    _  => (),
+                    "+" => value = self.getval(&a) + self.getval(&b),
+                    "-" => value = self.getval(&a) - self.getval(&b),
+                    "*" => value = self.getval(&a) * self.getval(&b),
+                    "/" => value = self.getval(&a) / self.getval(&b),
+                     _  => panic!("unknown operator"),
                 }
 
                 return Ast::UnOp("imm".to_string(), value);
             } else {
-                let a:Ast = self.pass2(a);
-                let b:Ast = self.pass2(b);
-
-                return self.pass2(&Ast::BinOp(id.clone(), Box::new(a), Box::new(b)));
+                return Ast::BinOp(id.clone(), Box::new(a), Box::new(b));
             }
-
-        } else if let Ast::UnOp(id, val) = ast {
-            return Ast::UnOp(id.to_string(), *val);
-        } else {
-            return Ast::Null;
         }
+
+        return ast.clone();
     }
     fn pass3 (&mut self, ast : &Ast) -> Vec<String> {
 
         let mut asm = Vec::new();
-
-        let mut tree:Vec<Ast> = Vec::new();//= postorder(ast);
+        let mut tree:Vec<Ast> = self.postorder(ast);
 
         while let Some (node) = tree.pop() {
 
-            if let Ast::BinOp(id, a, b) = &node {
+            if let Ast::BinOp(id, _a, _b) = &node {
+
+                asm.push("PO".to_string());
+                asm.push("SW".to_string());
+                asm.push("PO".to_string());
 
                 match id as &str {
                     "+" => asm.push("AD".to_string()),
                     "-" => asm.push("SU".to_string()),
                     "*" => asm.push("MU".to_string()),
                     "/" => asm.push("DI".to_string()),
-                    _  => (),
+                     _  => panic!("Invalid instruction"),
                 }
             } else if let Ast::UnOp(id, val) = &node {
 
-                asm.push("PO".to_string());
-                asm.push("SW".to_string());
-                asm.push("PO".to_string());
-
-                if id == "imm" {
-                    asm.push("IM ".to_string() + &val.to_string())
-                } else {
-                    asm.push("AR ".to_string() + &val.to_string())
+                match id as &str {
+                    "imm" => asm.push("IM ".to_string() + &val.to_string()),
+                    "arg" => asm.push("AR ".to_string() + &val.to_string()),
+                      _   => panic!("Invalid instruction"),
                 }
-
-            } else {
-
             }
 
             asm.push ("PU".to_string());
@@ -235,32 +190,11 @@ impl Compiler {
 
         asm
     }
-
 }
-
-
-fn getid (ast: &Ast) -> String {
-
-    if let Ast::BinOp(id, _a, _b) = ast {
-        return id.to_string();
-    } else if let Ast::UnOp(id, _val) = ast {
-        return id.to_string();
-    } else {
-        return "null".to_string()
-    }
-}
-fn getval (ast: &Ast) -> i32 {
-
-    if let Ast::UnOp(_id, val) = ast {
-        return *val;
-    }
-    0
-}
-
-
+///////////////////////////////////////////////////////////////////////////////////////////////////
 fn shownode (now: &Ast) {
 
-    if let Ast::BinOp(id, a, b) = now {
+    if let Ast::BinOp(id, _a, _b) = now {
         print!("Bin({}", id);
     } else if let Ast::UnOp(id, val) = now {
         print!("Arg({} {}", id, val);
@@ -272,7 +206,7 @@ fn shownode (now: &Ast) {
 fn showtree (now: &Ast) {
 
     shownode (now);
-    if let Ast::BinOp(id, a, b) = now {
+    if let Ast::BinOp(_id, a, b) = now {
         showtree (a);
         showtree (b);
     }
@@ -304,22 +238,61 @@ fn simulate (assembly : Vec<String>, argv : Vec<i32>) -> i32 {
     }
     r.0
 }
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
 fn main() {
 
     let program = "[ x y z ] ( 2*3*x + 5*y - 3*z ) / (1 + 3 + 2*2)";
 
-    let mut code = Compiler::new();
-    let mut tree = code.compile(program);
+    let mut asm = Compiler::new();
+    let tree = asm.pass1 (program);
+    let tree = asm.pass2 (&tree);
+    let code = asm.pass3 (&tree);
+
+    let res = simulate (code, vec![5, 4, 1]);
+
+    print! ("{} => {}",program, res);
 
     /*
-    Compiler compiler;
-    auto c = compiler.compile (prog);
-    Assert::That (simulate (c, {5, 4, 1}), Equals (5));
-    showtree (&tree);
-    //mktree (&code[it..code.len()]);
-
+    println!("AST1: {:?}", tree);
+    //showtree(&tree);
     */
 
     print!("\n");
 }
+
+
+/*
+
+fn tokenize2<'a>(&self, program : &'a str) -> Vec<String> {
+    let mut tokens : Vec<String> = vec![];
+    let mut iter = program.chars().peekable();
+
+    loop {
+        match iter.peek() {
+            Some(&c) => match c {
+                'a'..='z'|'A'..='Z' => {
+                    let mut tmp = String::new();
+                    while iter.peek().is_some() && iter.peek().unwrap().is_alphabetic() {
+                    tmp.push(iter.next().unwrap());
+                    }
+                    tokens.push(tmp);
+                },
+                '0'..='9' => {
+                    let mut tmp = String::new();
+                    while iter.peek().is_some() && iter.peek().unwrap().is_numeric() {
+                        tmp.push(iter.next().unwrap());
+                    }
+                    tokens.push(tmp);
+                },
+                ' ' => { iter.next(); },
+                 _ => { tokens.push(iter.next().unwrap().to_string()); },
+            },
+            None => break
+        }
+    }
+
+    tokens
+}
+
+*/
