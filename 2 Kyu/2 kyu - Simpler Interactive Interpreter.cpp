@@ -3,10 +3,52 @@
 #include <cmath>
 #include <map>
 #include <stack>
+#include <regex>
 #include <algorithm>
 #include <functional>
 
 using namespace std;
+
+/////////////////////////////////Assert/////////////////////////////////////////
+class Assert {
+  public :
+  static void That (const double& actual, const double& expression) {
+    cout << fixed;
+    if (actual != expression) {
+      cout << "actual : " << actual;
+      cout << "\nexpect : " << expression;
+
+      cout << endl;
+    }
+  }
+};
+const double& Equals (const double& entry) { return entry;}
+void Test();
+////////////////////////////////////////////////////////////////////////////////
+/*
+
+function        ::= fn-keyword fn-name { identifier } fn-operator expression
+fn-name         ::= identifier
+fn-operator     ::= '=>'
+fn-keyword      ::= 'fn'
+
+expression      ::= factor | expression operator expression
+factor          ::= number | identifier | assignment | '(' expression ')' | function-call
+assignment      ::= identifier '=' expression
+function-call   ::= fn-name { expression }
+
+operator        ::= '+' | '-' | '*' | '/' | '%'
+
+identifier      ::= letter | '_' { identifier-char }
+identifier-char ::= '_' | letter | digit
+
+number          ::= { digit } [ '.' digit { digit } ]
+
+letter          ::= 'a' | 'b' | ... | 'y' | 'z' | 'A' | 'B' | ... | 'Y' | 'Z'
+digit           ::= '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
+
+*/
+
 using func = function<double(double,double)>;
 
 template<class T = void> struct modul {
@@ -14,16 +56,190 @@ template<class T = void> struct modul {
         return fmod (lhs, rhs);
     }
 };
-map<string, double> value;
+
 map<char,int> order {{'+', 1},{'-',1},{'*',2},{'/',2},{'%',2}};
 map<char,func> operate {{'+', plus<double>()},{'-', minus<double>()},
-              {'*', multiplies<double>()}, {'/', divides<double>()}, {'%', modul<double>()} };
+{'*', multiplies<double>()}, {'/', divides<double>()}, {'%', modul<double>()} };
 
-template<class T> T getstack (stack<T> &S) {
-    if (S.empty()) return 0;
-    T val = S.top();
-    S.pop();
+map<string, double> vars;
+
+template<class T> T getstack (vector<T> &S) {
+    if (S.empty()) throw runtime_error("Invalid stack size");
+    T val = S.back();
+    S.pop_back();
     return val;
+}
+
+vector<string> tokenize (const string &expr) {
+    regex token ("=>|-?[0-9]+(.[0-9]+)?|[-+*/%()=\\[\\]]|_?([a-zA-Z]+|[0-9]+)_?");
+    sregex_token_iterator it (expr.begin(), expr.end(), token);
+    return vector<string> (it, sregex_token_iterator());
+}
+string getsub (vector<string>::iterator &it, vector<string>::iterator nd) {
+    int pile = 1;
+    string sub;
+
+    for (it = it + 1; pile != 0 && it != nd ; it++) {
+        pile += (*it == "(") - (*it == ")");
+        if (pile == 0) break;
+        sub += *it + " ";
+    }
+
+    return sub;
+}
+
+double interpret (std::string src) {
+
+    vector<string> expr = tokenize(src);
+    if (!expr.size()) throw runtime_error ("Empty expression");
+
+    vector<string>::iterator it = expr.begin();
+    regex number ("^-?[0-9]+(.[0-9]+)?$");
+    regex variab ("^_?([a-zA-Z]+|[0-9]+)_?$");
+
+    map<string,int> order {{"+",1},{"-",1},{"*",2},{"/",2},{"%",2}};
+    map<string,func> operate {{"+", plus<double>()},{"-", minus<double>()},
+    {"*", multiplies<double>()},{"/", divides<double>()}, {"%", modul<double>()}};
+
+    bool running = true;
+
+    vector<double> value;
+    vector<string> oper;
+
+    while (running) {
+
+        int sign = 1;
+
+        if (*it == "-" && order[*(it - 1)]) {
+            sign = -1;
+            it++;
+        }
+
+        string token = *it;
+
+        if (token == "fn") {
+            string name = *++it;
+
+            while (*it != "=>") {
+                it++;
+            }
+            cout << token << " " << name << " " << *it << "\n";
+
+        } else if (regex_match(token, number)) {
+            value.push_back(stod(token));
+        } else if (regex_match(token, variab)) {
+            string id = token, sub;
+
+            if (it + 1 < expr.end() && *(it + 1) == "=") {
+                it++;
+                vars[id] = interpret (getsub (it, expr.end())) * sign;
+                return vars[id];
+            } else {
+                if (vars.find (id) == vars.end())
+                    throw::logic_error ("Invalid identifier.");
+
+                value.push_back (vars[id] * sign);
+            }
+
+        } else if (token == "(") {
+            value.push_back(interpret (getsub (it, expr.end())) * sign);
+        } else if (token != ")") {
+
+            if (!oper.empty() && order[oper.back()] >= order[token]) {
+                double b = getstack (value), a = getstack (value);
+                value.push_back(operate[getstack (oper)] (a,b));
+            }
+            oper.push_back(token);
+        }
+
+        it++;
+        if (it >= expr.end()) running = false;
+    }
+
+    while (!oper.empty()) {
+        double b = getstack (value), a = getstack (value);
+        value.push_back(operate[getstack (oper)] (a,b));
+    }
+
+    return !value.empty() ? value.back() : 0;
+}
+int main () {
+
+    string src;
+
+    src = "fn avg => (x + y) / 2";
+    src = "afkd = -72.84 + 23.20 * 25.2 + _af * _25 / a_";
+
+
+    regex token ("=>|-?[0-9]+(.[0-9]+)?|[-+*/%()=\\[\\]]|_?([a-zA-Z]+|[0-9]+)_?");
+    sregex_token_iterator it (src.begin(), src.end(), token);
+    vector<string> expr (it, sregex_token_iterator());
+
+    Assert::That(interpret("x = 7"), Equals(7));
+    Assert::That(interpret("x + 6"), Equals(13));
+    Assert::That(interpret("x = 13 + (y = 3)"), Equals(16));
+    Assert::That(interpret("fn avg x y => (x + y) / 2"), Equals(0));
+
+    for (auto &[id, val] : vars) {
+        cout << id << " => " << val << "\n";
+    }
+
+    //Test();
+    cout << "end";
+}
+
+
+void Test () {
+
+    interpret ("afkd = -72 % (-80 / 64 * -69) - -96");
+    interpret ("urvv = -12 % (34 % -19 * -70) - -15");
+    interpret ("eef = 24 * (-5 * 14 - -25) - -53");
+    interpret ("mzcol = 46 / -(-22 / -51 - -17) * 32");
+    interpret ("iyinw = -9 - (38 + -95 + 68) - 100");
+
+    //vars = {{"afkd", 24},{"eef", -1027}, {"iyinw", -120}, {"mzcol", -84.4454},{"urvv", 3}};
+
+    Assert::That(interpret("x = 1"), Equals(1.0));
+    Assert::That(interpret("x"), Equals(1.0));
+
+    Assert::That(interpret("1 + 1"), Equals(2.0));
+    Assert::That(interpret("2 - 1"), Equals(1.0));
+    Assert::That(interpret("2 * 3"), Equals(6.0));
+    Assert::That(interpret("8 / 4"), Equals(2.0));
+    Assert::That(interpret("7 % 4"), Equals(3.0));
+
+    Assert::That(interpret("x + 3"), Equals(4.0));
+    Assert::That(interpret("(4 + 2) * 3"), Equals(18));
+
+    /*
+    try {
+        interpret("y");
+        Assert::That(0, Equals(1));
+    } catch (...) {
+        Assert::That(1, Equals(1));
+    }
+
+    */
+}
+
+/*
+
+double operation (double a, char op, double b) {
+
+    switch (op) {
+        case '+' : return a + b; break;
+        case '-' : return a - b; break;
+        case '*' : return a * b; break;
+        case '/' : return a / b; break;
+        case '%' : return fmod (a,b); break;
+    }
+
+    return 0.0;
+}
+int getop (char c) {
+    if (c == '-' || c == '+') return 1;
+    if (c == '*' || c == '/' || c == '%') return 2;
+    return 0;
 }
 
 double getnum (string::iterator &it) {
@@ -62,8 +278,8 @@ double interpret (std::string expr) {
 
     string::iterator it = expr.begin();
     bool running = true;
-    stack<double> val;
-    stack<char> ops;
+    vector<double> val;
+    vector<char> ops;
 
     int sign = 1;
 
@@ -77,39 +293,36 @@ double interpret (std::string expr) {
         if (*it == '(') {
             string sub = getsub (it);
             double num = interpret (sub) * sign;
-            val.push (num);
+            val.push_back (num);
             sign = 1;
         } else if (isalpha (*it)) {
             string id = getid (it);
 
             if (*it == '=') {
                 string sub = getsub (it);
-                value[id] = interpret (sub) * sign;
-                return value[id];
+                vars[id] = interpret (sub) * sign;
+                return vars[id];
             } else {
-                if (value.find (id) == value.end())
+                if (vars.find (id) == vars.end())
                     throw::logic_error ("invalid identifier");
 
-                val.push (value[id] * sign);
+                val.push_back (vars[id] * sign);
                 sign = 1;
             }
 
         } else if (isdigit (*it)) {
-            val.push (getnum (it) * sign);
+            val.push_back (getnum (it) * sign);
             sign = 1;
 
         } else {
 
             if (op) {
 
-                while (!ops.empty() && order[ops.top()] >= op) {
-                    char op = getstack (ops);
+                while (!ops.empty() && order[ops.back()] >= op) {
                     double b = getstack(val), a = getstack (val);
-
-                    operate[op] (a, b);
-                    val.push (operate[op] (a, b));
+                    val.push_back (operate[getstack (ops)] (a, b));
                 }
-                ops.push(*it);
+                ops.push_back(*it);
             }
 
             it++;
@@ -117,91 +330,13 @@ double interpret (std::string expr) {
 
         if (it >= expr.end()) running = false;
     }
-    
+
     while (!ops.empty()) {
-        char op = getstack (ops);
         double b = getstack (val), a = getstack (val);
-        val.push (operate[op] (a, b));
+        val.push_back (operate[getstack (ops)] (a, b));
     }
 
-    return !val.empty() ? val.top() : 0;
+    return !val.empty() ? val.back() : 0;
 }
 
-
-int main () {
-    void Test ();
-    string expr;// = "train6=5"; // 18
-
-    expr = "afkd = -72 % (-80 / 64 * -69) - -96";
-    /*
-    interpret2 ("afkd = -72 % (-80 / 64 * -69) - -96");
-    interpret ("urvv = -12 % (34 % -19 * -70) - -15");
-    interpret ("eef = 24 * (-5 * 14 - -25) - -53");
-    interpret ("mzcol = 46 / -(-22 / -51 - -17) * 32");
-    interpret ("iyinw = -9 - (38 + -95 + 68) - 100");
-    */
-    //value = {{"afkd", 24},{"eef", -1027}, {"iyinw", -120}, {"mzcol", -84.4454},{"urvv", 3}};
-
-    Test();
-    cout << "end";
-}
-
-/////////////////////////////////Assert/////////////////////////////////////////
-class Assert {
-  public :
-  static void That (const double& actual, const double& expression) {
-    cout << fixed;
-    if (actual != expression) {
-      cout << "actual : " << actual;
-      cout << "\nexpect : " << expression;
-
-      cout << endl;
-    }
-  }
-};
-const double& Equals (const double& entry) { return entry;}
-void Test();
-////////////////////////////////////////////////////////////////////////////////
-void Test () {
-    Assert::That(interpret("1 + 1"), Equals(2.0));
-    Assert::That(interpret("2 - 1"), Equals(1.0));
-    Assert::That(interpret("2 * 3"), Equals(6.0));
-    Assert::That(interpret("8 / 4"), Equals(2.0));
-    Assert::That(interpret("7 % 4"), Equals(3.0));
-
-    Assert::That(interpret("x = 1"), Equals(1.0));
-    Assert::That(interpret("x"), Equals(1.0));
-    Assert::That(interpret("x + 3"), Equals(4.0));
-    Assert::That(interpret("(4 + 2) * 3"), Equals(18));
-    /*
-
-    try {
-        interpret("y");
-        Assert::That(0, Equals(1));
-    } catch (...) {
-        Assert::That(1, Equals(1));
-    }
-
-    */
-}
-
-/*
-double operation (double a, double b, char op) {
-    double val;
-
-    switch (op) {
-        case '+' : val = a + b; break;
-        case '-' : val = a - b; break;
-        case '*' : val = a * b; break;
-        case '/' : val = a / b; break;
-        case '%' : val = fmod (a,b); break;
-    }
-
-    return val;
-}
-int getop (char c) {
-    if (c == '-' || c == '+') return 1;
-    if (c == '*' || c == '/' || c == '%') return 2;
-    return 0;
-  }
 */
