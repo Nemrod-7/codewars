@@ -7,7 +7,7 @@
 #include <functional>
 #include <chrono>
 
-//#include "../../templates/Assert.hpp"
+#include "../../templates/Assert.hpp"
 
 using namespace std;
 using func = function<double(double,double)>;
@@ -34,28 +34,28 @@ bool equals (const AST &lhs, const AST &rhs) {
 }
 bool equals (const AST *lhs, const AST *rhs) { return equals (*lhs, *rhs); }
 
-class Display {
-    public :
-        template<class T> static void vect (const vector<T> &now) {
-            for (auto &it : now) cout << it << " ";
-            cout << endl;
-        }
-        static void node (const AST *now) {
-            if (oper[now->op]) {
-                cout << "Bin(" << now->op << ", ";
-            } else {
-                cout << "Arg(" << now->op << "," << now->n;
-            }
-        }
-        static void tree (const AST *now) {
-            if (now != nullptr) {
-                node (now);
-                tree (now->a);
-                tree (now->b);
-                cout << ")";
-            }
-        }
-};
+template<class T> static void vect (const vector<T> &now) {
+    for (auto &it : now) cout << it << " ";
+    cout << endl;
+}
+
+void shownode (const AST *now) {
+    if (oper[now->op]) {
+        cout << "Bin(" << now->op << ", ";
+    } else {
+        cout << "Arg(" << now->op << "," << now->n;
+    }
+}
+void showtree (const AST *now) {
+    if (now != nullptr) {
+        shownode (now);
+        showtree (now->a);
+        showtree (now->b);
+        cout << ")";
+    }
+}
+/*
+*/
 ////////////////////////////////////////////////////////////////////////////////
 class Compiler {
     private :
@@ -230,10 +230,10 @@ int main () {
     Compiler compiler;
     AST *ast = compiler.pass1 (prog);
 
-    Display::tree (ast);
-    Assert::That (true, Equals (equals (*ast, *ast1)));
+    showtree (ast);
+    //Assert::That (true, Equals (equals (*ast, *ast1)));
 
-    Test ();
+    //Test ();
 
     clock.stop();
     clock.get_duration();
