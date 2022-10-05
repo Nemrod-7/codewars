@@ -71,32 +71,30 @@ template<class T> T getstack (vector<T> &S) {
 }
 
 vector<string> tokenize (const string &expr) {
-    regex token ("=>|(_|-)?[0-9]+(.[0-9]+|_)?|[-+*/%()=\\[\\]]|_?[a-zA-Z]+_?");
-    sregex_token_iterator it (expr.begin(), expr.end(), token);
+    regex re ("=>|(_|-)?[0-9]+(\\.[0-9]+|_)?|[-+*/%()=\\[\\]]|_?[a-zA-Z]+_?");
+    //regex re ("[-+*/()\\[\\]]|[A-Za-z]+|\\d+");
+    sregex_token_iterator it (expr.begin(), expr.end(), re);
     return vector<string> (it, sregex_token_iterator());
 }
-string mk_func (const vector<string> &expr) {
+vector<string> getargs (const vector<string> &expr) {
 
-    regex variab ("_?[a-zA-Z]+_?|_[0-9]+|[0-9]+_");
-    string name = expr[0], os;
-    vector<string> fn = tokenize (fbase[name]), vars;
-    auto fn_op = find (fn.begin(), fn.end(), "=>");
+  regex number ("^-?[0-9]+(.[0-9]+)?$");
+  regex variab ("_?[a-zA-Z]+_?|_[0-9]+|[0-9]+_");
 
-    for (int i = 1; i != expr.size(); i++) {
-        vars.push_back(expr[i]);
-    }
+  int index = 0;
+  string buff;
+  vector<string> args;
 
-    for (auto fn_ex = fn_op + 1; fn_ex != fn.end(); fn_ex++) {
-        string token = *fn_ex;
+    for (auto i = 1; i != expr.size(); i++) {
+        buff += expr[i] + " ";
 
-        if (regex_match (token, variab)) {
-            auto pos = find (fn.begin(), fn_op, token) - fn.begin();
-            token = vars[pos];
+        if (regex_match (expr[i], number) || vars.find (expr[i]) != vars.end()) {
+            args.push_back(buff);
+            buff.clear();
         }
-        os += token + " ";
     }
 
-    return os;
+    return args;
 }
 string getsub (vector<string>::iterator &it, vector<string>::iterator nd) {
     int pile = 1;
@@ -140,65 +138,54 @@ double interpret (std::string src) {
 
         string token = *it;
 
-        if (token == "fn") {
-            string name = *++it;
-            auto fn_op = find (it, end, "=>");
-
-            for (auto fn_ex = fn_op + 1; fn_ex != end; fn_ex++) {
-                if (regex_match (*fn_ex, variab)) {
-                    if (find (it, fn_op, *fn_ex) == fn_op)
-                        throw runtime_error ("Unknown identifier");
-                }
-            }
-            fbase[name] = getsub (it, end);
-
-        } else if (regex_match(token, number)) {
+        if (regex_match(token, number)) {
             value.push_back(stod(token));
         } else if (regex_match(token, variab)) {
             string id = token;
 
-            if (find (it, end, "=") != end) { //if (it + 1 < end && *(it + 1) == "=") {
+            if (id == "fn") {
+                string name = *++it;
+                auto mid = find (it, end, "=>");
+
+                for (auto fn_ex = mid + 1; fn_ex != end; fn_ex++) {
+                    if (regex_match (*fn_ex, variab)) {
+                        if (find (it, mid, *fn_ex) == mid)
+                            throw::logic_error ("Unknown identifier.");
+                    }
+                }
+
+                fbase[name] = getsub (it, end);
+            } else if (find (it, end, "=") != end) {
+                if (fbase.find (id) != fbase.end())
+                    throw::logic_error ("Invalid initializer.");
+
                 it++;
                 vars[id] = interpret (getsub (it, end)) * sign;
                 return vars[id];
-            } else {
-                if (vars.find (id) != vars.end()) {
-                    value.push_back (vars[id] * sign);
-                } else if (fbase.find (id) != fbase.end()) {
+            } else if (vars.find (id) != vars.end()) {
+                value.push_back (vars[id] * sign);
+            } else if (fbase.find (id) != fbase.end()) {
 
-                    vector<string> lambda = tokenize (fbase[id]);
-                    int nvar = find (lambda.begin(), lambda.end(), "=>") - lambda.begin();
+                string sub;
+                vector<string> args = getargs (expr), lambda = tokenize (fbase[id]);
+                int nvar = find (lambda.begin(), lambda.end(), "=>") - lambda.begin();
+                
+                if (args.size() != nvar)
+                    throw::logic_error ("Invalid number of argument.");
 
-                    int index = 0;
-                    vector<string> args (nvar);
-
-                    for (auto tok = it + 1; tok != expr.end(); tok++) {
-                        string curr = *tok;
-                        args[index] += curr + " ";
-
-                        if (regex_match (curr, number) || vars.find (curr) != vars.end()) {
-                            double val = interpret (args[index]);
-                            args[index++] = to_string (val);
-                        }
+                for (auto i = nvar + 1; i != lambda.size(); i++) {
+                    if (regex_match (lambda[i], variab)) {
+                        int pos = find (lambda.begin(), lambda.begin() + nvar, lambda[i]) - lambda.begin();
+                        lambda[i] = to_string (interpret (args[pos]));
                     }
-                    string sub;
-
-                    for (auto i = nvar + 1; i != lambda.size(); i++) {
-                        if (regex_match (lambda[i], variab)) {
-                            int pos = find (lambda.begin(), lambda.begin() + nvar, lambda[i]) - lambda.begin();
-                            lambda[i] = args[pos];
-                        }
-                        sub += lambda[i] + " ";
-                    }
-
-                    value.push_back(interpret (sub));
-
-                    it = end;
-                } else {
-                    throw::logic_error ("Invalid identifier.");
+                    sub += lambda[i] + " ";
                 }
-            }
+                value.push_back(interpret (sub));
 
+                it = end;
+            } else {
+                throw::logic_error ("Invalid identifier.");
+            }
         } else if (token == "(") {
             value.push_back(interpret (getsub (it, end)) * sign);
         } else if (token != ")") {
@@ -213,6 +200,7 @@ double interpret (std::string src) {
         it++;
         if (it >= end) running = false;
     }
+
     while (!oper.empty()) {
         double b = getstack (value), a = getstack (value);
         value.push_back(operate[getstack (oper)] (a,b));
@@ -223,6 +211,8 @@ double interpret (std::string src) {
 
 int main () {
 
+
+
     Assert::That(interpret("a = 2"), Equals(2));
     Assert::That(interpret("b = 3"), Equals(3));
     Assert::That(interpret("fn inc x => x + 1"), Equals(0));
@@ -230,19 +220,24 @@ int main () {
     Assert::That(interpret("fn add x y => x + y"), Equals(0));
     Assert::That(interpret("fn echo x => x"), Equals(0));
 
-    cout << interpret ("inc a");
-    //cout << interpret ("add echo 7 echo 3");
-
-
-    /*
     Assert::That(interpret("x = 7"), Equals(7));
     Assert::That(interpret("x + 6"), Equals(13));
     Assert::That(interpret("x = 13 + (y = 3)"), Equals(16));
 
+    Assert::That(interpret("a = 0"), Equals(0));
     Assert::That(interpret("a = inc a"), Equals(1));
-    Assert::That(interpret("add a b"), Equals(5));
     Assert::That(interpret("a = inc a"), Equals(2));
+    Assert::That(interpret("add a b"), Equals(5));
     Assert::That(interpret("avg a b"), Equals(2.5));
+
+
+
+    /*
+*/
+
+    /*
+
+    cout << interpret ("add echo 7 echo 3");
     */
     // add echo 4 echo 3
     //Test();

@@ -1,92 +1,149 @@
 extern crate regex;
 use regex::Regex;
 
-#[derive(Clone,Debug)]
-enum Ast {
-    UnOp (String, i32),
-    BinOp (String,Box<Ast>,Box<Ast>),
+use std::collections::HashMap;
+
+pub struct Interpreter {
+    pub vars: HashMap<String, f32>,
+    pub func: HashMap<String, String>,
 }
 
-struct Compiler {
-    args: Vec<String>,
-}
-
-impl Compiler {
-    fn new() -> Compiler {
-        Compiler {
-            args: Vec::new(),
-        }
+impl Interpreter {
+    fn new() -> Interpreter {
+        Interpreter { vars: HashMap::new(), func: HashMap::new() }
     }
 
-    fn getid (&self, ast : &Ast) -> String {
-
-        if let Ast::BinOp(id, _a, _b) = ast {
-            return id.to_string();
-        } else if let Ast::UnOp(id, _val) = ast {
-            return id.to_string();
-        } else {
-            return "null".to_string()
-        }
+    fn tokenize (&self, src: &str) -> Vec<String> {
+        let token = Regex::new("=>|(_|-)?[0-9]+(\\.[0-9]+|_)?|[-+*/%()=\\[\\]]|_?[a-zA-Z]+_?").unwrap();
+        token.captures_iter(src).map(|x| x[0].to_string()).collect::<Vec<_>>()
     }
-    fn getval (&self, ast : &Ast) -> i32 {
-
-        if let Ast::UnOp(_id, val) = ast {
-            return *val;
-        }
-        0
-    }
-
     fn order (&self, tok: &str) -> usize {
         if tok == "+" || tok == "-" { return 1 }
-        if tok == "*" || tok == "-" { return 2 }
+        if tok == "*" || tok == "-" || tok == "%" { return 2 }
         0
     }
-    fn postorder (&self, root: &Ast) -> Vec<Ast> {
+    fn calc (&self, a: f32, id: &str, b: f32) -> f32 {
+        match id as &str {
+            "+" => return a + b,
+            "-" => return a - b,
+            "*" => return a * b,
+            "/" => return a / b,
+            "%" => return a % b,
+            _  => panic!("unknown operator"),
+        }
+    }
 
-        let mut s1:Vec<Ast> = vec![root.clone()];
-        let mut s2:Vec<Ast> = vec![];
+    fn form (&mut self, func: String, args: Vec<String>) -> String {
 
-        while let Some (node) = s1.pop() {
+        let mut sub = String::new();
+        let func = self.tokenize(&func);
+        let nvar = func.iter().position(|x| x == "=>").unwrap();
 
-            if let Ast::BinOp(_id, a, b) = &node {
-                s1.push(*a.clone());
-                s1.push(*b.clone());
+        if args.len() != nvar { panic! ("Invalid func argument") }
+
+        for cell in func[nvar + 1 ..func.len()].iter() {
+            let pos = func.iter().position(|x| x == cell).unwrap();
+
+            if pos < nvar {
+                sub += &format! ("{} ", self.input(&args[pos]));
+            } else {
+                sub += &format! ("{} ",cell);
             }
-            s2.push(node);
         }
 
-        s2
+        sub
     }
-    fn mktree (&self, code: &[String]) -> Ast {
 
+    fn input (&mut self, src: &str) -> f32 {
+
+        let code = self.tokenize (src);
         let size = code.len();
-        let number = Regex::new("^-?[0-9]+$").unwrap();
+        if size == 0 { panic!("Empty expression.") }
+
+        let number = Regex::new("^-?[0-9]+(.[0-9]+)?$").unwrap();
+        let variab = Regex::new("_?[a-zA-Z]+_?|_[0-9]+|[0-9]+_").unwrap();
+
         let mut it = 0;
-        let mut tree:Vec<Ast> = Vec::new();
+        let mut tree:Vec<f32> = Vec::new();
         let mut oper:Vec<String> = Vec::new();
 
-        while it != size {
+        while it < size {
             let tile = &code[it];
 
-            if let Some (index) = self.args.iter().position(|x| x == tile) {
-                tree.push (Ast::UnOp("arg".to_string(), index as i32));
-            } else if tile == "(" {
-                let fst = it + 1;
+            if number.is_match(tile) {
+                tree.push (tile.parse::<f32>().unwrap());
+            } else if variab.is_match(tile) {
 
-                while code[it] != ")" {
+                let increment = code.iter().position(|x| x == "=");
+
+                if tile == "fn" { // declare func
+                    let name = code[1].to_string();
+
+                    if let Some (mid) = code.iter().position(|x| x == "=>") {
+                        let vars = &code[2..mid];
+                        let body = &code[mid+1..size];
+
+                        for var in vars {
+                            if body.iter().position(|x| x == var) == None {
+                                panic!("Invalid function")
+                            }
+                        }
+
+                        let sub = code[it+2..size].join(" ");
+                        self.func.insert(name, sub);
+                        it = size;
+
+                    } else {
+                        panic!("Invalid function")
+                    }
+                } else if let Some(_pos) = increment { // declare var
+                    if self.func.contains_key (tile) { panic! ("Invalid initializer.") }
+
+                    let sub = code[it+2..size].join(" ");
+                    let val = self.input(&sub);
+
+                    self.vars.insert(tile.to_string(), val);
+                    return val;
+                } else if let Some (val) = self.vars.get (tile) { // get var
+                    tree.push (*val);
+                } else if let Some (fnc) = self.func.get (tile) { // get func
                     it += 1;
+
+                    let mut buf = String::new();
+                    let mut args = Vec::new();
+
+                    while it < size {
+                        buf += &format!("{} ", code[it]);
+
+                        if !self.func.contains_key (&code[it]) {
+                            args.push(buf.to_string());
+                            buf.clear();
+                        }
+                        it += 1;
+                    }
+
+                    let sub = self.form(fnc.clone(), args);
+                    return self.input (&sub);
+                } else {
+                    panic! ("Unknown identifier.")
                 }
-                tree.push(self.mktree(&code[fst..it]))
-            } else if number.is_match(tile) { // tile.chars().all(char::is_numeric) == true
-                let value = tile.parse::<i32>().unwrap();
-                tree.push (Ast::UnOp("imm".to_string(), value));
-            } else {
+
+            } else if tile == "(" {
+                it += 1;
+
+                if let Some (len) = code[it..size].iter().position(|x| x == ")") {
+                    let sub = code[it..it+len].join(" ");
+                    tree.push(self.input(&sub));
+                    it += len;
+                }
+
+            } else if tile != ")" {
 
                 while let Some(id) = oper.last() {
                     if self.order (id) >= self.order (tile) {
                         let b = tree.pop().unwrap();
                         let a = tree.pop().unwrap();
-                        tree.push (Ast::BinOp(id.to_string(), Box::new(a), Box::new(b)));
+                        tree.push (self.calc (a,id,b));
                         oper.pop();
                     } else {
                         break
@@ -99,200 +156,72 @@ impl Compiler {
             it += 1;
         }
 
-        while let Some(id) = oper.pop() {
+        while let Some(id) = &oper.pop() {
 
             let b = tree.pop().unwrap();
             let a = tree.pop().unwrap();
-            tree.push (Ast::BinOp(id, Box::new(a), Box::new(b)));
+            tree.push (self.calc (a,id,b));
         }
 
-        if let Some(node) = tree.pop() { return node } else { Ast::UnOp ("null".to_string(),-1) }
-    }
-
-    fn tokenize<'a>(&self, program : &'a str) -> Vec<String> {
-        let token = Regex::new("[-+*/()\\[\\]]|[A-Za-z]+|\\d+").unwrap();
-        token.captures_iter(program).map(|x| x[0].to_string()).collect::<Vec<_>>()
-    }
-    fn compile (&mut self, program : &str) -> Vec<String> {
-
-        let ast = self.pass1(program);
-        let ast = self.pass2(&ast);
-        self.pass3(&ast)
-    }
-    fn pass1 (&mut self, program : &str) -> Ast {
-
-        let code = self.tokenize(program);
-        let mut it = 1;
-
-        while code[it] != "]" {
-            self.args.push (code[it].to_string());
-            it += 1;
-        }
-
-        self.mktree (&code[it+1..code.len()])
-    }
-    fn pass2 (&mut self, ast : &Ast) -> Ast {
-
-        if let Ast::BinOp(id, a, b) = ast {
-            let a:Ast = self.pass2(a);
-            let b:Ast = self.pass2(b);
-
-            if self.getid(&a) == "imm" && self.getid(&b) == "imm" {
-                let value:i32;
-
-                match id as &str {
-                    "+" => value = self.getval(&a) + self.getval(&b),
-                    "-" => value = self.getval(&a) - self.getval(&b),
-                    "*" => value = self.getval(&a) * self.getval(&b),
-                    "/" => value = self.getval(&a) / self.getval(&b),
-                     _  => panic!("unknown operator"),
-                }
-
-                return Ast::UnOp("imm".to_string(), value);
-            } else {
-                return Ast::BinOp(id.clone(), Box::new(a), Box::new(b));
-            }
-        }
-
-        return ast.clone();
-    }
-    fn pass3 (&mut self, ast : &Ast) -> Vec<String> {
-
-        let mut asm = Vec::new();
-        let mut tree:Vec<Ast> = self.postorder(ast);
-
-        while let Some (node) = tree.pop() {
-
-            if let Ast::BinOp(id, _a, _b) = &node {
-
-                asm.push("PO".to_string());
-                asm.push("SW".to_string());
-                asm.push("PO".to_string());
-
-                match id as &str {
-                    "+" => asm.push("AD".to_string()),
-                    "-" => asm.push("SU".to_string()),
-                    "*" => asm.push("MU".to_string()),
-                    "/" => asm.push("DI".to_string()),
-                     _  => panic!("Invalid instruction"),
-                }
-            } else if let Ast::UnOp(id, val) = &node {
-
-                match id as &str {
-                    "imm" => asm.push("IM ".to_string() + &val.to_string()),
-                    "arg" => asm.push("AR ".to_string() + &val.to_string()),
-                      _   => panic!("Invalid instruction"),
-                }
-            }
-
-            asm.push ("PU".to_string());
-        }
-
-        asm
+        if let Some(node) = tree.pop() { return node } else { 0.0 }
     }
 }
-///////////////////////////////////////////////////////////////////////////////////////////////////
-fn shownode (now: &Ast) {
-
-    if let Ast::BinOp(id, _a, _b) = now {
-        print!("Bin({}", id);
-    } else if let Ast::UnOp(id, val) = now {
-        print!("Arg({} {}", id, val);
-    } else {
-        print!("(null");
-    }
-
-}
-fn showtree (now: &Ast) {
-
-    shownode (now);
-    if let Ast::BinOp(_id, a, b) = now {
-        showtree (a);
-        showtree (b);
-    }
-    print!(")");
-}
-
-fn simulator() {
-    assert_eq!(simulate(vec!["IM 7".to_string()], vec![3]), 7);
-    assert_eq!(simulate(vec!["AR 1".to_string()], vec![1,2,3]), 2);
-}
-fn simulate (assembly : Vec<String>, argv : Vec<i32>) -> i32 {
-    let mut r = (0, 0);
-    let mut stack : Vec<i32> = vec![];
-
-    for ins in assembly {
-        let mut ws = ins.split_whitespace();
-        match ws.next() {
-            Some("IM") => r.0 = i32::from_str_radix(ws.next().unwrap(), 10).unwrap(),
-            Some("AR") => r.0 = argv[i32::from_str_radix(ws.next().unwrap(), 10).unwrap() as usize],
-            Some("SW") => r = (r.1,r.0),
-            Some("PU") => stack.push(r.0),
-            Some("PO") => r.0 = stack.pop().unwrap(),
-            Some("AD") => r.0 += r.1,
-            Some("SU") => r.0 -= r.1,
-            Some("MU") => r.0 *= r.1,
-            Some("DI") => r.0 /= r.1,
-            _ => panic!("Invalid instruction encountered"),
-        }
-    }
-    r.0
-}
-///////////////////////////////////////////////////////////////////////////////////////////////////
 
 fn main() {
 
-    let program = "[ x y z ] ( 2*3*x + 5*y - 3*z ) / (1 + 3 + 2*2)";
 
-    let mut asm = Compiler::new();
-    let tree = asm.pass1 (program);
-    let tree = asm.pass2 (&tree);
-    let code = asm.pass3 (&tree);
+    let mut i = Interpreter::new();
 
-    let res = simulate (code, vec![5, 4, 1]);
+    assert_eq!(i.input("1 + 1"), 2.0);
+    assert_eq!(i.input("2 - 1"), 1.0);
+    assert_eq!(i.input("2 * 3"), 6.0);
+    assert_eq!(i.input("8 / 4"), 2.0);
+    assert_eq!(i.input("7 % 4"), 3.0);
 
-    print! ("{} => {}",program, res);
+    assert_eq!(i.input("x = 1"), 1.0);
+    assert_eq!(i.input("x"), 1.0);
+    assert_eq!(i.input("x = x + 3"), 4.0);
 
+    assert_eq!(i.input("fn avg x y => (x + y) / 2"), 0.0);
+    assert_eq!(i.input("fn add x y => x + y"), 0.0);
+    assert_eq!(i.input("fn echo x => x"), 0.0);
+    assert_eq!(i.input("avg 2 4"), 3.0);
+    assert_eq!(i.input("add echo 5 echo 2"), 7.0);
+    //print!("[{}]\n", res);
+
+    let code = i.tokenize("fn prod x y=>(a+b)*(x+y)");
+    //print!("{:?}", code);
     /*
-    println!("AST1: {:?}", tree);
-    //showtree(&tree);
+
+    for (key,val) in i.vars {
+        print!("[{}] -> {}\n",key, val);
+    }
+
+    for (key,val) in i.func {
+        print!("[{}] -> {}\n",key, val);
+    }
+    */
+    /*
+    assert_eq!(i.input("fn avg x y => (x + y) / 2"), Ok(None));
+    assert_eq!(i.input("avg 4 2"), Ok(Some(3.0)));
+    assert!(i.input("avg 7").is_err());
+    assert!(i.input("avg 7 2 4").is_err());
     */
 
     print!("\n");
 }
 
-
 /*
 
-fn tokenize2<'a>(&self, program : &'a str) -> Vec<String> {
-    let mut tokens : Vec<String> = vec![];
-    let mut iter = program.chars().peekable();
+#[test]
+fn conflicts() {
+    let mut i = Interpreter::new();
+    assert_eq!(i.input("x = 1"), Ok(Some(1.0)));
+    assert_eq!(i.input("fn avg x y => (x + y) / 2"), Ok(None));
 
-    loop {
-        match iter.peek() {
-            Some(&c) => match c {
-                'a'..='z'|'A'..='Z' => {
-                    let mut tmp = String::new();
-                    while iter.peek().is_some() && iter.peek().unwrap().is_alphabetic() {
-                    tmp.push(iter.next().unwrap());
-                    }
-                    tokens.push(tmp);
-                },
-                '0'..='9' => {
-                    let mut tmp = String::new();
-                    while iter.peek().is_some() && iter.peek().unwrap().is_numeric() {
-                        tmp.push(iter.next().unwrap());
-                    }
-                    tokens.push(tmp);
-                },
-                ' ' => { iter.next(); },
-                 _ => { tokens.push(iter.next().unwrap().to_string()); },
-            },
-            None => break
-        }
-    }
-
-    tokens
+    assert!(i.input("fn x => 0").is_err());
+    assert!(i.input("avg = 5").is_err());
 }
+Footer
 
 */

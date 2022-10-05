@@ -142,7 +142,7 @@ class Compiler {
         }
         vector<string> tokenize (string program) {
 
-            static regex re ("[-+*/()[\\]]|[A-Za-z]+|\\d+");
+            static regex re ("[-+*/()\\[\\]]|[A-Za-z]+|\\d+");
             sregex_token_iterator it (program.begin (), program.end (), re);
             return vector<string> (it, sregex_token_iterator ());
         }
