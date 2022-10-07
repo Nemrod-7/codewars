@@ -13,30 +13,10 @@ impl Interpreter {
         Interpreter { vars: HashMap::new(), func: HashMap::new() }
     }
 
-    fn tokenize (&self, src: &str) -> Vec<String> {
-        let token = Regex::new("=>|(_|-)?[0-9]+(\\.[0-9]+|_)?|[-+*/%()=\\[\\]]|_?[a-zA-Z]+_?").unwrap();
-        token.captures_iter(src).map(|x| x[0].to_string()).collect::<Vec<_>>()
-    }
-    fn order (&self, tok: &str) -> usize {
-        if tok == "+" || tok == "-" { return 1 }
-        if tok == "*" || tok == "-" || tok == "%" { return 2 }
-        0
-    }
-    fn calc (&self, a: f32, id: &str, b: f32) -> f32 {
-        match id as &str {
-            "+" => return a + b,
-            "-" => return a - b,
-            "*" => return a * b,
-            "/" => return a / b,
-            "%" => return a % b,
-            _  => panic!("unknown operator"),
-        }
-    }
-
     fn form (&mut self, func: String, args: Vec<String>) -> String {
 
         let mut sub = String::new();
-        let func = self.tokenize(&func);
+        let func = tokenize(&func);
         let nvar = func.iter().position(|x| x == "=>").unwrap();
 
         if args.len() != nvar { panic! ("Invalid func argument") }
@@ -45,7 +25,7 @@ impl Interpreter {
             let pos = func.iter().position(|x| x == cell).unwrap();
 
             if pos < nvar {
-                sub += &format! ("{} ", self.input(&args[pos]));
+                sub += &format! ("{} ", self.interpret(&args[pos]).unwrap() );
             } else {
                 sub += &format! ("{} ",cell);
             }
@@ -57,11 +37,12 @@ impl Interpreter {
 
         let mut args = Vec::new();
         let mut i = 1;
+
         while i < expr.len() {
             let mut arg = expr[i].to_string();
 
             if let Some(func) = self.func.get (&arg) {
-                let func = self.tokenize(func);
+                let func = tokenize(func);
                 let nvar = func.iter().position(|x| x == "=>").unwrap() + 1;
 
                 for j in i + 1 ..nvar+i {
@@ -77,9 +58,10 @@ impl Interpreter {
 
         args
     }
-    fn input (&mut self, src: &str) -> f32 {
 
-        let code = self.tokenize (src);
+    fn interpret (&mut self, input: &str) -> Option<f32> {
+
+        let code = tokenize (input);
         let size = code.len();
         if size == 0 { panic!("Empty expression.") }
 
@@ -98,13 +80,14 @@ impl Interpreter {
             } else if variab.is_match(tile) {
 
                 let increment = code.iter().position(|x| x == "=");
+                print! ("[{}]\n", tile);
 
                 if tile == "fn" { // declare func
                     let name = code[1].to_string();
 
                     if let Some (mid) = code.iter().position(|x| x == "=>") {
                         let vars = &code[2..mid];
-                        let body = &code[mid+1..size];
+                        let body = &code[mid+1..];
 
                         for var in vars {
                             if body.iter().position(|x| x == var) == None {
@@ -119,21 +102,25 @@ impl Interpreter {
                     } else {
                         panic!("Invalid function")
                     }
+
                 } else if let Some(_pos) = increment { // declare var
+
                     if self.func.contains_key (tile) { panic! ("Invalid initializer.") }
 
-                    let sub = code[it+2..size].join(" ");
-                    let val = self.input(&sub);
+                    let sub = code[it+2..].join(" ");
+                    let val = self.interpret(&sub);
 
-                    self.vars.insert(tile.to_string(), val);
+                    self.vars.insert(tile.to_string(), val.unwrap());
                     return val;
                 } else if let Some (val) = self.vars.get (tile) { // get var
                     tree.push (*val);
                 } else if let Some (fnc) = self.func.get (tile) { // get func
+
                     let args = self.getarg(code);
                     let sub = self.form(fnc.clone(), args);
 
-                    return self.input (&sub);
+                    return self.interpret (&sub);
+
                 } else {
                     panic! ("Unknown identifier.")
                 }
@@ -143,17 +130,17 @@ impl Interpreter {
 
                 if let Some (len) = code[it..size].iter().position(|x| x == ")") {
                     let sub = code[it..it+len].join(" ");
-                    tree.push(self.input(&sub));
+                    tree.push(self.interpret (&sub).unwrap());
                     it += len;
                 }
 
             } else if tile != ")" {
 
                 while let Some(id) = oper.last() {
-                    if self.order (id) >= self.order (tile) {
+                    if order (id) >= order (tile) {
                         let b = tree.pop().unwrap();
                         let a = tree.pop().unwrap();
-                        tree.push (self.calc (a,id,b));
+                        tree.push (calc (a,id,b));
                         oper.pop();
                     } else {
                         break
@@ -170,36 +157,63 @@ impl Interpreter {
 
             let b = tree.pop().unwrap();
             let a = tree.pop().unwrap();
-            tree.push (self.calc (a,id,b));
+            tree.push (calc (a,id,b));
         }
 
-        if let Some(node) = tree.pop() { return node } else { 0.0 }
+        tree.pop()
+    }
+
+    fn input (&mut self, input: &str) -> Result<Option<f32>, String> {
+
+        Ok(self.interpret(input))
     }
 }
 
+fn tokenize (src: &str) -> Vec<String> {
+    let token = Regex::new("=>|(_|-)?[0-9]+(\\.[0-9]+|_)?|[-+*/%()=\\[\\]]|_?[a-zA-Z]+_?").unwrap();
+    token.captures_iter(src).map(|x| x[0].to_string()).collect::<Vec<_>>()
+}
+fn order (tok: &str) -> usize {
+    if tok == "+" || tok == "-" { return 1 }
+    if tok == "*" || tok == "-" || tok == "%" { return 2 }
+    0
+}
+fn calc (a: f32, id: &str, b: f32) -> f32 {
+    match id as &str {
+        "+" => return a + b,
+        "-" => return a - b,
+        "*" => return a * b,
+        "/" => return a / b,
+        "%" => return a % b,
+        _  => panic!("unknown operator"),
+    }
+}
 fn main() {
 
 
     let mut i = Interpreter::new();
 
-    assert_eq!(i.input("1 + 1"), 2.0);
-    assert_eq!(i.input("2 - 1"), 1.0);
-    assert_eq!(i.input("2 * 3"), 6.0);
-    assert_eq!(i.input("8 / 4"), 2.0);
-    assert_eq!(i.input("7 % 4"), 3.0);
+    assert_eq!(i.input("1 + 1"), Ok(Some (2.0)));
+    assert_eq!(i.input("2 - 1"), Ok(Some (1.0)));
+    assert_eq!(i.input("2 * 3"), Ok(Some (6.0)));
+    assert_eq!(i.input("8 / 4"), Ok(Some (2.0)));
+    assert_eq!(i.input("7 % 4"), Ok(Some (3.0)));
 
-    assert_eq!(i.input("x = 1"), 1.0);
-    assert_eq!(i.input("x"), 1.0);
-    assert_eq!(i.input("x = x + 3"), 4.0);
+    assert_eq!(i.input("x = 1"), Ok(Some (1.0)));
+    assert_eq!(i.input("x"), Ok(Some (1.0)));
+    assert_eq!(i.input("x = x + 3"), Ok(Some (4.0)));
 
-    assert_eq!(i.input("fn avg x y => (x + y) / 2"), 0.0);
-    assert_eq!(i.input("fn add x y => x + y"), 0.0);
-    assert_eq!(i.input("fn echo x => x"), 0.0);
-    assert_eq!(i.input("avg 2 4"), 3.0);
-    assert_eq!(i.input("add echo 5 echo 2"), 7.0);
+    assert_eq!(i.input("fn avg x y => (x + y) / 2"), Ok(None));
+    assert_eq!(i.input("fn add x y => x + y"), Ok(None));
+    assert_eq!(i.input("fn echo x => x"), Ok(None));
+
+    assert_eq!(i.input("avg 2 4"), Ok(Some (3.0)));
+
+    assert_eq!(i.input("add echo 5 echo 2"), Ok(Some (7.0)));
+    assert_eq!(i.input("avg 4 2"), Ok(Some(3.0)));
 
     /*
-
+    assert_eq!(i.input("fn avg x y => (x + y) / 2"), Ok(None));
     for (key,val) in i.vars {
         print!("[{}] -> {}\n",key, val);
     }
@@ -209,8 +223,6 @@ fn main() {
     }
     */
     /*
-    assert_eq!(i.input("fn avg x y => (x + y) / 2"), Ok(None));
-    assert_eq!(i.input("avg 4 2"), Ok(Some(3.0)));
     assert!(i.input("avg 7").is_err());
     assert!(i.input("avg 7 2 4").is_err());
     */
