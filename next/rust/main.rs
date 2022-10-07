@@ -53,7 +53,30 @@ impl Interpreter {
 
         sub
     }
+    fn getarg (&self, expr: Vec<String>) -> Vec<String> {
 
+        let mut args = Vec::new();
+        let mut i = 1;
+        while i < expr.len() {
+            let mut arg = expr[i].to_string();
+
+            if let Some(func) = self.func.get (&arg) {
+                let func = self.tokenize(func);
+                let nvar = func.iter().position(|x| x == "=>").unwrap() + 1;
+
+                for j in i + 1 ..nvar+i {
+                    arg += &format! (" {}", expr[j]);
+                }
+
+                i += nvar;
+            } else {
+                i += 1;
+            }
+            args.push(arg);
+        }
+
+        args
+    }
     fn input (&mut self, src: &str) -> f32 {
 
         let code = self.tokenize (src);
@@ -61,7 +84,7 @@ impl Interpreter {
         if size == 0 { panic!("Empty expression.") }
 
         let number = Regex::new("^-?[0-9]+(.[0-9]+)?$").unwrap();
-        let variab = Regex::new("_?[a-zA-Z]+_?|_[0-9]+|[0-9]+_").unwrap();
+        let variab = Regex::new("_?[a-zA-Z]+_?|_[0-9]+").unwrap();
 
         let mut it = 0;
         let mut tree:Vec<f32> = Vec::new();
@@ -107,22 +130,9 @@ impl Interpreter {
                 } else if let Some (val) = self.vars.get (tile) { // get var
                     tree.push (*val);
                 } else if let Some (fnc) = self.func.get (tile) { // get func
-                    it += 1;
-
-                    let mut buf = String::new();
-                    let mut args = Vec::new();
-
-                    while it < size {
-                        buf += &format!("{} ", code[it]);
-
-                        if !self.func.contains_key (&code[it]) {
-                            args.push(buf.to_string());
-                            buf.clear();
-                        }
-                        it += 1;
-                    }
-
+                    let args = self.getarg(code);
                     let sub = self.form(fnc.clone(), args);
+
                     return self.input (&sub);
                 } else {
                     panic! ("Unknown identifier.")
@@ -187,10 +197,7 @@ fn main() {
     assert_eq!(i.input("fn echo x => x"), 0.0);
     assert_eq!(i.input("avg 2 4"), 3.0);
     assert_eq!(i.input("add echo 5 echo 2"), 7.0);
-    //print!("[{}]\n", res);
 
-    let code = i.tokenize("fn prod x y=>(a+b)*(x+y)");
-    //print!("{:?}", code);
     /*
 
     for (key,val) in i.vars {
