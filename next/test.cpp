@@ -19,46 +19,50 @@ int nvar (const string &func) {
     return find (tok.begin(), tok.end(), "=>") - tok.begin();
 }
 
-vector<string> getargs (int &index, const vector<string> &expr) {
+vector<string> getargs (vector<string>::iterator &it, const vector<string> &expr) {
 
+    const string name = *it;
+    const int nargs = nvar(name);
     vector<string> args;
 
-    int ref = index;
-    int nva = nvar(expr[index]);
+    while (it < expr.end() && args.size() < nargs) {
+        it++;
+        string arg = *it;
 
-    for (; index < expr.size(); index++) {
-        string arg = expr[index];
+        if (fbase.find(arg) != fbase.end()) {
+            vector <string> nxt = getargs (it, expr);
 
-        if (fbase.find (expr[index]) != fbase.end()) {
-            int nva2 = nvar(expr[index]);
-
-            for (int j = index + 1; j < nva2 + index + 1; j++) {
-                arg += " " + expr[j];
-            }
-            index += nva2;
+            for (auto &it2 : nxt)
+                arg += " " + it2;
         }
 
         args.push_back(arg);
     }
+
     return args;
 }
 int main () {
 
     vector<string> expr = {"var","=","3","+","(","y","=","x",")"};
     // i.input("avg 7 2 4"
-    expr = tokenize ("avg 1 2 5");
-    //expr = tokenize ("add avg echo 2  echo 3 echo 5");
+    expr = tokenize ("add avg echo 2  echo 3 echo 5");
+    expr = tokenize ("add echo 1 echo 2");
+    expr = tokenize ("avg 4 2 + avg 10 30");
+
 
     regex re("-?\\d+(\\.\\d)+?");
-    int index = 1;
-    vector<string> args = getargs (index, expr);
+    vector<string>::iterator it = expr.begin();
+
+    string name = *it;
+    int nargs = nvar(name);
+
+    vector<string> args = getargs(it, expr);
 
 
     for (auto &it : args) {
-
         cout << "[" << it << "]";
     }
-
     /*
+
     */
 }

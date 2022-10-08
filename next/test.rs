@@ -9,6 +9,13 @@ impl Interpreter {
     fn new() -> Interpreter {
         Interpreter { vars: HashMap::new(), func: HashMap::new() }
     }
+    fn input (input: &str) -> Result<Option<f32>,String> {
+
+        let mut tree:Vec<f32> = Vec::new();
+
+
+        Ok (tree.pop())
+    }
 }
 
 fn main() {
