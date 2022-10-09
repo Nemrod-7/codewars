@@ -25,7 +25,7 @@ impl Interpreter {
             let exist = vars.iter().position(|x| x == &cell);
 
             if let Some (pos) = exist {
-                cell = self.interpret(&tokenize (&args[pos])).unwrap().to_string();
+            //    cell = self.interpret(&tokenize (&args[pos])).unwrap().to_string();
             }
             sub.push (cell)
         }
@@ -54,7 +54,7 @@ impl Interpreter {
         args
     }
 
-    fn interpret (&mut self, code: &[String]) -> Option<f32> {
+    fn interpret (&mut self, code: &[String]) -> Result<Option<f32>,String> {
 
         let number = Regex::new("^-?[0-9]+(.[0-9]+)?$").unwrap();
         let variab = Regex::new("_?[a-zA-Z]+_?|_[0-9]+").unwrap();
@@ -67,6 +67,7 @@ impl Interpreter {
         while it < size {
             let tile = &code[it];
 
+            /*
             if number.is_match(tile) {
                 tree.push (tile.parse::<f32>().unwrap());
             } else if variab.is_match(tile) {
@@ -83,7 +84,7 @@ impl Interpreter {
                     let fnc = fnc.clone();
 
                     let args = self.getargs(&mut it, &code.to_vec());
-                    let sub = self.form(fnc.clone(), args);
+                    let sub = self.format(fnc.clone(), args);
 
                     tree.push(self.interpret (&sub).unwrap());
 
@@ -115,9 +116,9 @@ impl Interpreter {
 
                 oper.push (tile.to_string());
             }
+            */
             it += 1;
         }
-
         while let Some(id) = &oper.pop() {
 
             let b = tree.pop().unwrap();
@@ -125,7 +126,7 @@ impl Interpreter {
             tree.push (calc (a,id,b));
         }
 
-        tree.pop()
+        Ok(tree.pop())
     }
 
     fn input (&mut self, input: &str) -> Result<Option<f32>, String> {
@@ -156,7 +157,7 @@ impl Interpreter {
             }
         }
 
-        Ok(self.interpret(&code))
+        self.interpret(&code)
     }
 }
 
