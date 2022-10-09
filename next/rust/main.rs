@@ -13,37 +13,38 @@ impl Interpreter {
         Interpreter { vars: HashMap::new(), func: HashMap::new() }
     }
 
-    fn format (&mut self, func: (String,String), args: Vec<String>) -> Vec<String> {
+    fn format (&mut self, func: (String,String), args: Vec<String>) -> Result<Vec<String>,String> {
 
         let vars = tokenize(&func.0);
         let body = tokenize(&func.1);
         let mut sub = Vec::new();
 
-        if args.len() != vars.len() { panic! ("Invalid func argument") }
-
+        if args.len() != vars.len() { return Err ("Invalid function.".to_string()) }
         for mut cell in body {
             let exist = vars.iter().position(|x| x == &cell);
 
             if let Some (pos) = exist {
-            //    cell = self.interpret(&tokenize (&args[pos])).unwrap().to_string();
+                match self.interpret(&tokenize (&args[pos])) {
+                    Ok(Some(value)) => cell = value.to_string(),
+                    _ => return Err ("Invalid function.".to_string()),
+                };
             }
             sub.push (cell)
         }
 
-        sub
+        Ok (sub)
     }
     fn getargs (&mut self, index: &mut usize, expr: &Vec<String>) -> Vec<String> {
 
         let args = &self.func.get (&expr[*index]).unwrap().0;
         let nvar = tokenize (args).len();
-
         let mut args = Vec::new();
 
         while args.len() < nvar {
             *index += 1;
             let mut arg = expr[*index].to_string();
 
-            if let Some (fnc) = self.func.get (&arg) {
+            if self.func.contains_key (&arg) == true {
                 let sub = self.getargs (index, expr).join(" ");
                 arg += &format! (" {}", sub);
             }
@@ -67,37 +68,55 @@ impl Interpreter {
         while it < size {
             let tile = &code[it];
 
-            /*
             if number.is_match(tile) {
                 tree.push (tile.parse::<f32>().unwrap());
             } else if variab.is_match(tile) {
 
-                if let Some(_pos) = code.iter().position(|x| x == "=") { // declare var
-                    if self.func.contains_key (tile) { panic! ("a variable of the same name already exist.") }
-                    let val = self.interpret(&code[it+2..]);
+                if let Some(_pos) = code.iter().position(|x| x == "=") { // declare variable
 
-                    self.vars.insert(tile.to_string(), val.unwrap());
-                    return val;
-                } else if let Some (val) = self.vars.get (tile) { // get var
+                    match self.func.contains_key (tile) {
+                        true  => return Err ("a variable of the same name already exist.".to_string()),
+                        false => {
+                            let res = self.interpret(&code[it+2..]);
+
+                            if let Ok(Some(val)) = res {
+                                self.vars.insert(tile.to_string(), val);
+                            }
+                            return res;
+                        },
+                    }
+
+                } else if let Some (val) = self.vars.get (tile) { // get variable
                     tree.push (*val);
-                } else if let Some (fnc) = self.func.get (tile) { // get func
+                } else if let Some (fnc) = self.func.get (tile) { // execute function
                     let fnc = fnc.clone();
 
                     let args = self.getargs(&mut it, &code.to_vec());
                     let sub = self.format(fnc.clone(), args);
 
-                    tree.push(self.interpret (&sub).unwrap());
-
+                    match &sub {
+                        Ok(sub) => {
+                            match self.interpret (&sub) {
+                                Ok(value) => tree.push(value.unwrap()),
+                                Err(error) => return Err(error),
+                            };
+                        },
+                        Err(error) => return Err (error.to_string()),
+                    };
                 } else {
-                    panic! ("Unknown identifier.")
+                    return Err ("Unknown identifier.".to_string());
                 }
 
             } else if tile == "(" {
                 it += 1;
 
                 if let Some (len) = code[it..size].iter().position(|x| x == ")") {
-                    let sub = &code[it..it+len];
-                    tree.push(self.interpret (&sub).unwrap());
+
+                    match self.interpret (&code[it..it+len]) {
+                        Ok(value) => tree.push(value.unwrap()),
+                        Err(error) => return Err(error),
+                    };
+
                     it += len;
                 }
 
@@ -105,9 +124,7 @@ impl Interpreter {
 
                 while let Some(id) = oper.last() {
                     if order (id) >= order (tile) {
-                        let b = tree.pop().unwrap();
-                        let a = tree.pop().unwrap();
-                        tree.push (calc (a,id,b));
+                        calc (&mut tree, id);
                         oper.pop();
                     } else {
                         break
@@ -116,14 +133,12 @@ impl Interpreter {
 
                 oper.push (tile.to_string());
             }
-            */
+
             it += 1;
         }
-        while let Some(id) = &oper.pop() {
 
-            let b = tree.pop().unwrap();
-            let a = tree.pop().unwrap();
-            tree.push (calc (a,id,b));
+        while let Some(id) = &oper.pop() {
+            calc (&mut tree, id);
         }
 
         Ok(tree.pop())
@@ -170,14 +185,20 @@ fn order (tok: &str) -> usize {
     if tok == "*" || tok == "-" || tok == "%" { return 2 }
     0
 }
-fn calc (a: f32, id: &str, b: f32) -> f32 {
-    match id as &str {
-        "+" => return a + b,
-        "-" => return a - b,
-        "*" => return a * b,
-        "/" => return a / b,
-        "%" => return a % b,
-        _  => panic!("unknown operator"),
+fn calc (tree: &mut Vec<f32>, op: &str) {
+
+    if tree.len() > 1 {
+        let b = tree.pop().unwrap();
+        let a = tree.pop().unwrap();
+
+        match op as &str {
+            "+" => tree.push (a + b),
+            "-" => tree.push (a - b),
+            "*" => tree.push (a * b),
+            "/" => tree.push (a / b),
+            "%" => tree.push (a % b),
+            _  => (),
+        }
     }
 }
 
@@ -203,6 +224,12 @@ fn main() {
     assert_eq!(i.input("avg 2 4"), Ok(Some (3.0)));
     assert_eq!(i.input("avg 4 2 + avg 10 30"), Ok(Some (23.0)));
 
+
+    /*
+    let res:Result<f32, String>;
+
+    //res = Err("tis is a test".to_string());
+*/
 
 
     /*
