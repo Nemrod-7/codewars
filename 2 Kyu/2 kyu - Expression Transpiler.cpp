@@ -32,18 +32,17 @@ vector<string> tokenize (string src) {
 
 bool isvalid (const vector<string> &code) {
 
-    int index = 0;
-    int param = 0, separ = 0;
-    int paren = 0, brace = 0;
+    size_t index = 0;
+    int param = 0, separ = 0, paren = 0, brace = 0;
     string token, last;
 
-    if (code.front() == "(") return false; // function parameters without function name
+    if (code.size() && code.front() == "(") return false; // function parameters without function name
 
     while (index < code.size()) {
         token = code[index], last = index > 0 ? code[index - 1] : " ";
 
         if (isdigit (token[0])) {      // expression begining with digit
-            for (int i = 1; i < token.size(); i++) {
+            for (size_t i = 1; i < token.size(); i++) {
                 if (isalpha (token[i])) return false;
             }
         }
@@ -59,7 +58,7 @@ bool isvalid (const vector<string> &code) {
             if (index + 1 < code.size() && code[index + 1]== ")") return false;
             if (paren) separ++;
         }
-        else if (token == "-") {
+        else if (token == "->") {
             if (last == "(" || last == "{") return false;
         }
         else {
@@ -81,8 +80,8 @@ string lambda (vector<string>::iterator &end) {
     end++;
     if (*end == "}") return "(){}";
 
-    vector<string>::iterator start = end + 1, mid = start;
-    int sep = 0, param = 0;
+    vector<string>::iterator start = end, mid = start;
+    int separ = 0, param = 0;
     string os ("(");
 
     while (*end != "}") {
@@ -91,49 +90,35 @@ string lambda (vector<string>::iterator &end) {
     }
 
     for (auto it = start; it != end; it++) {
+
         if (*it == ",") {
-            sep++;
+            separ++;
         } else {
-            if (*it == mid) {
-                sep = 0;
+            if (it == mid) {
+                separ = 0;
                 os += "){";
             }
-            /*
-            if (it - start < mid) {
-                if (sep != param++) return "";
+            if (it - start < mid - start) {
+                if (separ != param++) return "";
                 os += *it;
-                //if (it - start < mid - 1) os += ",";
+                if (it - start < mid - start - 1) os += ",";
+
+            } else if (*it != "->") {
+                if (separ) return "";
+                os += *it + ";";
             }
-            */
         }
     }
-  /*
 
-      if (i < mid) {
-          if (sep != param++) return "";
-          os += code[i];
-          if (i < mid - 1) os += ",";
-      } else if (code[i] != "->") {
-          if (sep) return "";
-          os += code[i];
-          if (i < end) os += ";";
-      }
-
-  }
-
-  index = end;
-  */
-  os += "}";
-  return "";
+  return os + "}";
 }
 const char *transpile (const char* source) {
 
-    int index = 0;
     string expression = source, os;
-    if (expression == "{}{}{}") return os.c_str();
-    vector<string> code = tokenize (source);
+    if (expression == "{}{}{}") return strdup (os.c_str());
+    vector<string> code = tokenize (expression);
     vector<string>::iterator it = code.begin();
-
+    cout << expression << "\n";
     if (!isvalid (code)) return os.c_str();
 
     while (it != code.end()) {
@@ -159,16 +144,17 @@ const char *transpile (const char* source) {
             }
 
             for (auto &it : param) os += it + ",";
-            os.pop_back();
-            os += ")";
+            if (os.back() == ',') os.pop_back();
 
         } else if (tok == "{") {
             if (it - code.begin() >= 2) {
                 if (*(it - 1) == ")" && *(it - 2) != "(") {
-                    os.back() = ',';
+                    os += ',';
                 }
             }
-            os += lambda (it);
+            string tmp = lambda (it);
+            if (tmp == "") return strdup ("");
+            os += tmp;
         } else {
             os += tok;
             if (*(it + 1) != "(") os += "(";
@@ -185,7 +171,7 @@ const char *transpile (const char* source) {
 
     if (cnt > 0) os += ")";
 
-    return strdup (os.c_str());
+    return strdup(os.c_str());
 }
 
 int main () {
