@@ -1,4 +1,5 @@
 #include<iostream>
+#include <vector>
 #include<string>
 
 using namespace std;
@@ -48,4 +49,32 @@ string longest_palindrome (const string &input) {
         if (it.size() == maxv) return it;
 
     return "";
+}
+
+int main () {
+
+    string str = "ababbab";
+    str = split (str);
+    const size_t size = str.size();
+    size_t maxv = 0, ax = 0;
+    vector<string> base;
+
+    while (maxv < size - ax) {
+
+        int beg = ax - 1, end = ax + 1;
+
+        while (beg >= 0 && end < size) {
+            if (str[beg] != str[end]) break;
+            beg--, end++;
+        }
+
+        string sub = join (str.substr (beg + 1, end - beg - 1));
+        cout << sub << "\n";
+        if (sub.size() > maxv) base.push_back(sub);
+        maxv = max (sub.size(), maxv);
+
+        ax++;
+    }
+
+
 }
