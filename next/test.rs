@@ -1,70 +1,99 @@
-use std::collections::BTreeSet;
 
-fn part (num:i64) -> String {
+fn simple_cases() {
+    assert_eq!(interpreter("*e*e*e*es*es*ws*ws*w*w*w*n*n*n*ssss*s*s*s*", 0, 6, 9), "000000\r\n000000\r\n000000\r\n000000\r\n000000\r\n000000\r\n000000\r\n000000\r\n000000", "Your interpreter should initialize all cells in the datagrid to 0");
+    assert_eq!(interpreter("*e*e*e*es*es*ws*ws*w*w*w*n*n*n*ssss*s*s*s*", 7, 6, 9), "111100\r\n000000\r\n000000\r\n000000\r\n000000\r\n000000\r\n000000\r\n000000\r\n000000", "Your interpreter should adhere to the number of iterations specified");
+    assert_eq!(interpreter("*e*e*e*es*es*ws*ws*w*w*w*n*n*n*ssss*s*s*s*", 19, 6, 9), "111100\r\n000010\r\n000001\r\n000010\r\n000100\r\n000000\r\n000000\r\n000000\r\n000000", "Your interpreter should traverse the 2D datagrid correctly");
+    assert_eq!(interpreter("*e*e*e*es*es*ws*ws*w*w*w*n*n*n*ssss*s*s*s*", 42, 6, 9), "111100\r\n100010\r\n100001\r\n100010\r\n111100\r\n100000\r\n100000\r\n100000\r\n100000", "Your interpreter should traverse the 2D datagrid correctly for all of the \"n\", \"e\", \"s\" and \"w\" commands");
+    assert_eq!(interpreter("*e*e*e*es*es*ws*ws*w*w*w*n*n*n*ssss*s*s*s*", 100, 6, 9), "111100\r\n100010\r\n100001\r\n100010\r\n111100\r\n100000\r\n100000\r\n100000\r\n100000", "Your interpreter should terminate normally and return a representation of the final state of the 2D datagrid when all commands have been considered from left to right even if the number of iterations specified have not been fully performed");
+}
 
-    let mut cluster:Vec<i64> = vec![0;num as usize];
-    let mut set:BTreeSet<i64> = BTreeSet::new();
+fn pretty_print(datagrid: &str) -> &str {
+    let rows = datagrid.split("\r\n");
+    let mut output = String::new();
+    output += "<pre>";
+    for row in rows {
+        for cell in row.chars() {
+            output += "<span style=\"color:";
+            output += if cell == '0' { "black" } else { "white" };
+            output += ";background-color:";
+            output += if cell == '0' { "black" } else { "white" };
+            output += "\">xx</span>";
+        }
+        output += "<br />";
+    }
+    output += "</pre>";
+    //println!("{}", output);
+    datagrid
+}
+fn display_actual(actual: &str) -> &str {
+    println!("You returned:");
+    pretty_print(actual)
+}
+fn display_expected(expected: &str) -> &str {
+    println!("Expected final state of data grid:");
+    pretty_print(expected)
+}
 
-    let mut index:usize = 0;
-    let mut stack:i64 = 0;
+fn find_next (code: &Vec<char>, pos:usize) -> usize {
 
-    cluster[index] = num + 1;
+    let size = code.len();
 
-    while cluster[0] > 1 {
+    let mut index = pos;
+    let mut pile = 0;
+    let mut fwrd:bool = true;
+    if code[index] == ']' { fwrd = false };
 
-        let mut digit = cluster[index] - 1;
-        let mut next = index;
-        let mut rem = stack;
+    while index < size {
+        if code[index] == '[' { pile += 1 }
+        if code[index] == ']' { pile -= 1 }
 
-        while rem < num {
-            if num - rem >= digit {
-                if digit > 1 {
-                    index = next;
-                    stack = rem;
-                }
+        if pile == 0 { return index }
+        if fwrd == true { index +=1 } else { index -= 1 }
+    }
+    return index;
+}
+fn interpreter (code: &str, mut iters: usize, width: usize, height: usize) -> String {
 
-                cluster[next] = digit;
-                rem += digit;
-                next += 1;
-            } else {
-                digit -= 1;
-            }
+    let code = code.chars().collect::<Vec<_>>();
+
+    let mut index = 0;
+    let mut p = (0, 0);
+    let mut os = String::new();
+    let mut grid = vec![vec![0;width];height];
+
+    while iters > 0 && index < code.len() {
+
+        match code[index] {
+            '*' => { grid[p.1][p.0] ^= 1 },
+            'e' => if p.0 < width - 1 { p.0 += 1 } else { p.0 = 0 },
+            'w' => if p.0 > 0 { p.0 -= 1 } else { p.0 = width - 1 },
+            'n' => if p.1 > 0 { p.1 -= 1 } else { p.1 = height - 1 },
+            's' => if p.1 < height - 1 { p.1 += 1 } else { p.1 = 0 },
+            '[' => if grid[p.1][p.0] == 0 { index = find_next (&code, index) },
+            ']' => if grid[p.1][p.0] != 0 { index = find_next (&code, index) },
+             _  => iters += 1,
         }
 
-        set.insert (cluster.iter().filter(|&&x| x != 0).product::<i64>());
-
-        if index > 0 && cluster[index] == 1 {
-            index -= 1;
-            stack -= cluster[index];
-        }
+        iters -= 1;
+        index += 1;
     }
 
-    let hist =  set.iter().map(|&x| x as f64).collect::<Vec<f64>>();
-    let size = hist.len();
+    for row in grid {
+        let row = row.iter().map(|x| x.to_string() ).collect::<String>();
+        os += &format!("{row}\r\n");
+    }
+    os.pop();
+    os.pop();
 
-    let mean:f64 = hist.iter().sum::<f64>() / size as f64;
-    let range = hist[size - 1] - hist[0];
-    let median:f64;
-
-    if size % 2 == 0 { median = (hist[size / 2] + hist[size / 2 - 1]) / 2.0 } else { median = hist[size / 2] }
-    //print! ("Range: {range} Average: {mean} Median: {median}");
-
-    format! ("Range: {range:.2} Average: {mean:.2} Median: {median:.2}")
+    os
 }
 
 fn main() {
 
-    part (5); // "Range: 5 Average: 3.50 Median: 3.50"
+    let res = interpreter("*[es*]",37,5,6);
+
+    print!("{res}");
+
     print!("\nend\n");
-}
 
-fn _mult (arr: &Vec<i64>, size: usize) -> i64 {
-
-    let mut prod = 1;
-
-    for i in 0..size {
-        prod *= arr[i];
-    }
-
-    prod
 }

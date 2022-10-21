@@ -3,7 +3,7 @@
 
 const int overflow = 255;
 
-unsigned loop (const std::string code, unsigned pos) {
+unsigned loop (const std::string &code, unsigned pos) {
     int balance = 0, index = pos;
     const bool fwrd = code[index] == '[' ? true : false;
 

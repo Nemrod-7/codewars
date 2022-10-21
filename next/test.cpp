@@ -60,10 +60,10 @@ int calc (vector<string> equ) {
 int solve (const string &equ) {
 
     int res = 0;
-    int equ = equ.find("="), ex = equ.find ("x");
+    int equal = equ.find("="), ex = equ.find ("x");
 
-    vector<string> first = tokenize (equ.substr (0, equ));
-    vector<string> secnd = tokenize (equ.substr (equ + 1));
+    vector<string> first = tokenize (equ.substr (0, equal));
+    vector<string> secnd = tokenize (equ.substr (equal + 1));
 
     if (first[0] == "-" && secnd[0] == "-") {
         first[0] = "+", secnd[0] = "+";
@@ -71,7 +71,7 @@ int solve (const string &equ) {
 
     int left = calc(first), right = calc (secnd);
 
-    if (ex < equ) {
+    if (ex < equal) {
         res = right - left;
     } else {
         res = left - right;
@@ -83,6 +83,18 @@ int solve (const string &equ) {
     return res;
 }
 
+enum dir {up,down,left,right};
+
+struct instr {
+    static void move (enum dir) {
+
+    }
+    void jump () {
+
+    }
+};
+
+
 int main () {
     /*
     solve ("x + 1 = 9 - 2"); // 6
@@ -90,10 +102,20 @@ int main () {
     solve ("x - 2 + 3 = 2"); // 1
     solve ("- x = - 1");     // 1
     */
-    int num = -0;
+
+/*
+
+'n' => Some(Instr::Move(Dir::Up)),
+'s' => Some(Instr::Move(Dir::Down)),
+'e' => Some(Instr::Move(Dir::Right)),
+'w' => Some(Instr::Move(Dir::Left)),
+'*' => Some(Instr::Flip),
+
+*/
+    instr::move (up);
 
 
-    cout << num;
+    cout << "\nend\n";
     //Display::vect (first);
 
 }
