@@ -27,12 +27,22 @@ struct Circle {
     Circle(double cx, double cy, double r) : ctr(cx,cy), r(r) {}
 };
 struct vertex {
-    double cost,heur;
+    double cost, dist, heur;
     Point p;
 };
 struct comp {
     bool operator()(const vertex &a, const vertex &b ) {
-        return  a.cost == b.cost ? a.heur > b.heur : a.cost > b.cost;
+
+        if (a.cost == b.cost) {
+            //cout << a.cost << "\n";
+            //if (a.heur == b.heur)
+            return  a.heur > b.heur ;
+        } else {
+            //cout << fixed << setprecision(12) << "[" << a.cost << " , " << b.cost << "]\n";
+
+            return a.cost > b.cost;
+        }
+        //return  a.cost == b.cost ? a.heur > b.heur : a.cost > b.cost;
         //return  a.heur == b.heur ? a.cost > b.cost : a.heur > b.heur;
     }
 };
@@ -196,68 +206,132 @@ bool isvalid (const Point &p, const vector<Circle> &space) {
     }
     return true;
 }
-void dijkstra (Point start, Point exit, vector<Circle> space) {
+double heuristic (const Point &a, const Point &b) {
+    return std::hypot (a.x - b.x, a.y - b.y);
+}
+void astar (Point start, Point exit, vector<Circle> space) {
 
     priority_queue<vertex,vector<vertex>,comp> q1;
     map<Point,bool> visit;
 
-    q1.push ({0, distance (start,exit), start});
+    q1.push ({0,0, distance (start,exit), start});
 
     int cycles = 0;
     vector<Point> vect;
 
     while (!q1.empty()) {
 
-        auto [cost, heur, curr] = q1.top();
+        auto [cost, dist, heur,  curr] = q1.top();
         q1.pop();
-        //visit[curr] = true;
+        visit[curr] = true;
 
-        cycles++;
         vect.push_back(curr);
-        cout << fixed << cost << ' ' << heur << "\n";
-        //cout << fixed << setprecision(2) << "[" << curr.x << " , " << curr.y << "]\n";
+        cycles++;
+        //cout << fixed << cost << ' ' << heur << "\n";
+        if (cycles > 500) {
 
-        if (cycles > 550) {
-            Display::dots(vect);
             break;
         }
 
-        const double radi = 0.2;
-        const double alt = cost + radi;
+        const double rad = 0.01;
+        double alt = (dist + rad) * 0.98;
 
+        vector<Point> direct {{rad,0},{0,rad},{-rad,0},{0,-rad} /* ,{rad,rad},{-rad,rad},{rad,-rad},{-rad,-rad} */ };
+
+        for (auto dir : direct) {
+          double nx = curr.x + dir.x, ny = curr.y + dir.y;
+          /*
         for (double theta = 0.0; theta < 6.30; theta += 0.2) { // theta += 0.1
-            Point nxp = {curr.x + radi * sin (theta), curr.y + radi * cos (theta)};
+            double nx = curr.x + rad * sin (theta), ny = curr.y + rad * cos (theta);
+        */
+            Point nxp = {nx, ny};
+            double heu = distance (nxp, exit);
+            double fnc = alt + heu;
 
-            double left = distance (nxp, exit);
+            //alt = fnc (start, exit) - distance (start, nxp);
 
-            if (isvalid (nxp, space) /*  && left < heur  */ ) {
-                vertex nxv {alt, left, nxp};
+            if (isvalid (nxp, space) && !visit[nxp]) {
+                //cout << fixed << setprecision(12) << "[" << nxp.x << " , " << nxp.y << "]\n";
+                vertex nxv {fnc, alt, heu, nxp};
                 q1.push(nxv);
             }
         }
     }
 
-    /*
-
+    //cout << visit.size();
+    Display::dots(vect);
     while (!q1.empty()) {
-        auto [dist, heur, curr] = q1.top();
+        //auto [dist, heur, curr] = q1.top();
         q1.pop();
-        cout << fixed << dist << ' ' << heur << "\n";
+        //cout << fixed << dist << ' ' << heur << "\n";
     }
 
+    /*
     */
 }
+void geom (Point start, Point exit, vector<Circle> space) {
 
+    priority_queue<vertex,vector<vertex>,comp> q1;
+    q1.push ({0,0, distance (start,exit), start});
+
+    int cycles = 0;
+    vector<Point> vect;
+
+    while (!q1.empty()) {
+
+        auto [cost, dist, heur,  p1] = q1.top();
+        q1.pop();
+
+        cycles++;
+        //cout << fixed << cost << ' ' << heur << "\n";
+        if (cycles > 1) {
+
+            break;
+        }
+        const double radius = 0.1;
+
+        for (double theta = 0.0; theta < 6.30; theta += 0.01) { // theta += 0.1
+            Point p2 = {p1.x + radius * sin (theta), p1.y + radius * cos (theta)};
+
+            double a = p2.y - p1.y;
+            double b = p1.x - p2.x;
+            double c = a * p1.x + b * p1.y;
+
+            auto [ctr,rad] = space[0];
+            double dist = ((a * ctr.x + b * ctr.y + c)) / sqrt(a * a + b * b);
+
+            if (rad >= abs(dist)) {
+              
+            } else {
+
+
+              p2 = {p1.x + 2 * sin (theta), p1.y + 2 * cos (theta)};
+              //cout << (a * ctr.x + b * ctr.y + c) / sqrt(a * a + b * b) << "\n";
+              //vertex nxv {fnc, alt, heu, nxp};
+              //q1.push(nxv);
+              vect.push_back(p2);
+            }
+            /*
+            */
+        }
+
+    }
+
+    //cout << visit.size();
+    Display::dots(vect);
+    /*
+    */
+}
 int main () {
 
     const double max_error = 1e-8;
 
     Point start = {-3, 1}, exit = {4.25, 0};
-    vector<Circle> space = { {0.0, 0.0, 2.5}, {1.5, 2.0, 0.5}, {3.5, 1.0, 1.0}, {3.5, -1.7, 1.2} };
+    vector<Circle> space = { {0.0, 0.0, 2.5},/* {1.5, 2.0, 0.5}, {3.5, 1.0, 1.0}, {3.5, -1.7, 1.2} */};
 
     Display::graph (start, exit, space);
 
-    dijkstra (start, exit, space);
+    geom (start, exit, space);
 
     Display::img();
 
