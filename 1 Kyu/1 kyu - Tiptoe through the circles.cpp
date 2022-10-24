@@ -209,6 +209,18 @@ bool isvalid (const Point &p, const vector<Circle> &space) {
 double heuristic (const Point &a, const Point &b) {
     return std::hypot (a.x - b.x, a.y - b.y);
 }
+
+double minrad (const Point &p1, const vector<Circle> &space) {
+
+    double rad = numeric_limits<double>::infinity();
+
+    for (auto &star : space) {
+        double dist = distance (p1, star.ctr) - star.r;
+        rad = min (rad,dist);
+    }
+
+    return  rad;
+}
 void astar (Point start, Point exit, vector<Circle> space) {
 
     priority_queue<vertex,vector<vertex>,comp> q1;
@@ -233,22 +245,17 @@ void astar (Point start, Point exit, vector<Circle> space) {
             break;
         }
 
-        const double rad = 0.01;
+        const double rad = minrad (curr, space);
         double alt = (dist + rad) * 0.98;
 
         vector<Point> direct {{rad,0},{0,rad},{-rad,0},{0,-rad} /* ,{rad,rad},{-rad,rad},{rad,-rad},{-rad,-rad} */ };
 
         for (auto dir : direct) {
-          double nx = curr.x + dir.x, ny = curr.y + dir.y;
-          /*
-        for (double theta = 0.0; theta < 6.30; theta += 0.2) { // theta += 0.1
-            double nx = curr.x + rad * sin (theta), ny = curr.y + rad * cos (theta);
-        */
+            double nx = curr.x + dir.x, ny = curr.y + dir.y;
+
             Point nxp = {nx, ny};
             double heu = distance (nxp, exit);
             double fnc = alt + heu;
-
-            //alt = fnc (start, exit) - distance (start, nxp);
 
             if (isvalid (nxp, space) && !visit[nxp]) {
                 //cout << fixed << setprecision(12) << "[" << nxp.x << " , " << nxp.y << "]\n";
@@ -260,83 +267,65 @@ void astar (Point start, Point exit, vector<Circle> space) {
 
     //cout << visit.size();
     Display::dots(vect);
-    while (!q1.empty()) {
-        //auto [dist, heur, curr] = q1.top();
-        q1.pop();
-        //cout << fixed << dist << ' ' << heur << "\n";
-    }
 
     /*
     */
 }
-void geom (Point start, Point exit, vector<Circle> space) {
 
-    priority_queue<vertex,vector<vertex>,comp> q1;
-    q1.push ({0,0, distance (start,exit), start});
+class Graph {
+    private :
+        double minx, maxx, miny, maxy;
+    public :
+        Graph (Point start, Point exit, vector<Circle> space) {
+            minx = numeric_limits<double>::max(), maxx = numeric_limits<double>::min();
+            miny = numeric_limits<double>::max(), maxy = numeric_limits<double>::min();
 
-    int cycles = 0;
-    vector<Point> vect;
+            for (auto ci : space) {
+                Point p = ci.ctr;
+                minx = min (p.x, minx), maxx = max (p.x, maxx);
+                miny = min (p.y, miny), maxy = max (p.y, maxy);
 
-    while (!q1.empty()) {
-
-        auto [cost, dist, heur,  p1] = q1.top();
-        q1.pop();
-
-        cycles++;
-        //cout << fixed << cost << ' ' << heur << "\n";
-        if (cycles > 1) {
-
-            break;
-        }
-        const double radius = 0.1;
-
-        for (double theta = 0.0; theta < 6.30; theta += 0.01) { // theta += 0.1
-            Point p2 = {p1.x + radius * sin (theta), p1.y + radius * cos (theta)};
-
-            double a = p2.y - p1.y;
-            double b = p1.x - p2.x;
-            double c = a * p1.x + b * p1.y;
-
-            auto [ctr,rad] = space[0];
-            double dist = ((a * ctr.x + b * ctr.y + c)) / sqrt(a * a + b * b);
-
-            if (rad >= abs(dist)) {
-              
-            } else {
-
-
-              p2 = {p1.x + 2 * sin (theta), p1.y + 2 * cos (theta)};
-              //cout << (a * ctr.x + b * ctr.y + c) / sqrt(a * a + b * b) << "\n";
-              //vertex nxv {fnc, alt, heu, nxp};
-              //q1.push(nxv);
-              vect.push_back(p2);
+                if (inside_circle(ci, start) || inside_circle(ci, exit)) {
+                //    return -1;
+                }
             }
-            /*
-            */
         }
 
-    }
+};
 
-    //cout << visit.size();
-    Display::dots(vect);
-    /*
-    */
-}
 int main () {
 
     const double max_error = 1e-8;
 
     Point start = {-3, 1}, exit = {4.25, 0};
-    vector<Circle> space = { {0.0, 0.0, 2.5},/* {1.5, 2.0, 0.5}, {3.5, 1.0, 1.0}, {3.5, -1.7, 1.2} */};
+    vector<Circle> space = { {0.0, 0.0, 2.5}, {1.5, 2.0, 0.5}, {3.5, 1.0, 1.0}, {3.5, -1.7, 1.2} };
 
     Display::graph (start, exit, space);
 
-    geom (start, exit, space);
+    Point p1 = start;
+    double rad = numeric_limits<double>::infinity();
+    vector<Point> vect;
 
-    Display::img();
-
+    for (auto &star : space) {
+        Point p2 = star.ctr;
+        double dist = distance (p1, p2) - star.r;
+        rad = min (rad,dist);
+    }
 
     /*
+    for (double theta = 0.0; theta < 6.30; theta += 0.01) {
+        Point p2 = {p1.x + rad * sin (theta), p1.y + rad * cos (theta)};
+        vect.push_back(p2);
+    }
+    */
+
+    Display::dots(vect);
+    Display::img();
+
+    /*
+
+    cout << dist << "\n";
+
     */
     //cout << fixed << setprecision(12) << max_error;
 }
