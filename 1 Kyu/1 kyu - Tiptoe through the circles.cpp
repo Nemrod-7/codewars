@@ -48,7 +48,7 @@ struct comp {
 };
 
 bool operator == (const Point &a, const Point &b) { return a.x == b.x && a.y == b.y; }
-bool operator != (const Point &a, const Point &b) { return !(a == b); }
+bool operator != (const Point &a, const Point &b) { return a.x != b.x || a.y != b.y; }
 bool operator  < (const Point &a, const Point &b) { return make_pair (a.x,a.y) < make_pair (b.x,b.y); }
 
 double distance (Point a, Point b) { return std::hypot (a.x - b.x, a.y - b.y); }
@@ -70,7 +70,7 @@ int nearest_point (const vector<Point> &curr, const Point &a) {
     return near;
 }
 
-class Display {
+class Draw {
     private :
 
         inline static Plot2D draw;
@@ -235,30 +235,31 @@ void astar (Point start, Point exit, vector<Circle> space) {
 
         auto [cost, dist, heur,  curr] = q1.top();
         q1.pop();
-        visit[curr] = true;
+        //visit[nxp] = true;
 
         vect.push_back(curr);
         cycles++;
-        //cout << fixed << cost << ' ' << heur << "\n";
-        if (cycles > 500) {
+
+        if (distance (curr, exit) < 0.2) {
 
             break;
         }
 
-        const double rad = minrad (curr, space);
-        double alt = (dist + rad) * 0.98;
+        double rad = 0.1;//= minrad (curr, space);
+        double alt = (dist + rad) * 1.0;
 
-        vector<Point> direct {{rad,0},{0,rad},{-rad,0},{0,-rad} /* ,{rad,rad},{-rad,rad},{rad,-rad},{-rad,-rad} */ };
+        vector<Point> direct {{rad,0},{0,rad},{-rad,0},{0,-rad} /*  ,{rad,rad},{-rad,rad},{rad,-rad},{-rad,-rad} */};
 
         for (auto dir : direct) {
             double nx = curr.x + dir.x, ny = curr.y + dir.y;
 
             Point nxp = {nx, ny};
+            //cout << fixed << setprecision(12) << "[" << nxp.x << " , " << nxp.y << "]\n";
             double heu = distance (nxp, exit);
             double fnc = alt + heu;
 
-            if (isvalid (nxp, space) && !visit[nxp]) {
-                //cout << fixed << setprecision(12) << "[" << nxp.x << " , " << nxp.y << "]\n";
+            if (isvalid (nxp, space) && visit[nxp] == false) {
+                visit[nxp] = true;
                 vertex nxv {fnc, alt, heu, nxp};
                 q1.push(nxv);
             }
@@ -266,7 +267,7 @@ void astar (Point start, Point exit, vector<Circle> space) {
     }
 
     //cout << visit.size();
-    Display::dots(vect);
+    Draw::dots(vect);
 
     /*
     */
@@ -290,37 +291,73 @@ class Graph {
                 }
             }
         }
+        bool isinside (Point p) { return p.x > minx && p.x < maxx && p.y > miny && p.y < maxy; }
 
 };
 
 int main () {
 
     const double max_error = 1e-8;
+  
 
     Point start = {-3, 1}, exit = {4.25, 0};
     vector<Circle> space = { {0.0, 0.0, 2.5}, {1.5, 2.0, 0.5}, {3.5, 1.0, 1.0}, {3.5, -1.7, 1.2} };
 
-    Display::graph (start, exit, space);
+   // Draw::graph (start, exit, space);
 
-    Point p1 = start;
-    double rad = numeric_limits<double>::infinity();
+   // Graph system (start, exit, space);
+    priority_queue<vertex,vector<vertex>,comp> q1;
+    map<Point,bool> visit;
+
+    q1.push ({0,0, distance (start,exit), start});
+    
+    int cycles = 0;
     vector<Point> vect;
 
-    for (auto &star : space) {
-        Point p2 = star.ctr;
-        double dist = distance (p1, p2) - star.r;
-        rad = min (rad,dist);
+    while (!q1.empty()) {
+
+        auto [cost, dist, left,  curr] = q1.top();
+        q1.pop();
+        visit[curr] = true;
+
+        vect.push_back(curr);
+        cycles++;
+
+        if (cycles > 200 || distance (curr,exit) < 0.3) {
+
+            break;
+        }
+
+        double rad = 0.1;//= minrad (curr, space);
+        double alt = (dist + rad) * 1.0;
+
+        vector<Point> direct {{rad,0},{0,rad},{-rad,0},{0,-rad}   ,{rad,rad},{-rad,rad},{rad,-rad},{-rad,-rad} };
+
+        for (auto dir : direct) {
+            double nx = curr.x + dir.x, ny = curr.y + dir.y;
+
+            Point nxp = {nx, ny};
+            //cout << fixed << setprecision(12) << "[" << nxp.x << " , " << nxp.y << "]\n";
+            double heu = distance (nxp, exit);
+            double fnc = alt + heu;
+
+            if ( isvalid (nxp, space) &&  visit[nxp] == false    ) {
+                vertex nxv {fnc, alt, heu, nxp};
+                q1.push(nxv);
+            }
+        }
     }
+    //cout << cycles << '\n';
+    //
+    //
+    cout << vect.size();
+    //Draw::dots(vect);
+    //Draw::img();
 
     /*
-    for (double theta = 0.0; theta < 6.30; theta += 0.01) {
-        Point p2 = {p1.x + rad * sin (theta), p1.y + rad * cos (theta)};
-        vect.push_back(p2);
-    }
-    */
-
-    Display::dots(vect);
-    Display::img();
+    astar(start,exit,space);
+ 
+    //Display::dots(vect);
 
     /*
 

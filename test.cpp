@@ -6,4 +6,6 @@ int main (int argc, char** argv) {
 
     std::vector<float> x,y;
 
+    if ()
+
 }
