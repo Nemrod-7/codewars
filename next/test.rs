@@ -1,99 +1,101 @@
+use std::collections::HashMap;
 
-fn simple_cases() {
-    assert_eq!(interpreter("*e*e*e*es*es*ws*ws*w*w*w*n*n*n*ssss*s*s*s*", 0, 6, 9), "000000\r\n000000\r\n000000\r\n000000\r\n000000\r\n000000\r\n000000\r\n000000\r\n000000", "Your interpreter should initialize all cells in the datagrid to 0");
-    assert_eq!(interpreter("*e*e*e*es*es*ws*ws*w*w*w*n*n*n*ssss*s*s*s*", 7, 6, 9), "111100\r\n000000\r\n000000\r\n000000\r\n000000\r\n000000\r\n000000\r\n000000\r\n000000", "Your interpreter should adhere to the number of iterations specified");
-    assert_eq!(interpreter("*e*e*e*es*es*ws*ws*w*w*w*n*n*n*ssss*s*s*s*", 19, 6, 9), "111100\r\n000010\r\n000001\r\n000010\r\n000100\r\n000000\r\n000000\r\n000000\r\n000000", "Your interpreter should traverse the 2D datagrid correctly");
-    assert_eq!(interpreter("*e*e*e*es*es*ws*ws*w*w*w*n*n*n*ssss*s*s*s*", 42, 6, 9), "111100\r\n100010\r\n100001\r\n100010\r\n111100\r\n100000\r\n100000\r\n100000\r\n100000", "Your interpreter should traverse the 2D datagrid correctly for all of the \"n\", \"e\", \"s\" and \"w\" commands");
-    assert_eq!(interpreter("*e*e*e*es*es*ws*ws*w*w*w*n*n*n*ssss*s*s*s*", 100, 6, 9), "111100\r\n100010\r\n100001\r\n100010\r\n111100\r\n100000\r\n100000\r\n100000\r\n100000", "Your interpreter should terminate normally and return a representation of the final state of the 2D datagrid when all commands have been considered from left to right even if the number of iterations specified have not been fully performed");
-}
+fn find_spec_prod_part (n: u64, mode: &str) -> u64 {
 
-fn pretty_print(datagrid: &str) -> &str {
-    let rows = datagrid.split("\r\n");
-    let mut output = String::new();
-    output += "<pre>";
-    for row in rows {
-        for cell in row.chars() {
-            output += "<span style=\"color:";
-            output += if cell == '0' { "black" } else { "white" };
-            output += ";background-color:";
-            output += if cell == '0' { "black" } else { "white" };
-            output += "\">xx</span>";
-        }
-        output += "<br />";
+    let maxv = std::u64::MIN;
+    let minv = std::u64::MAX;
+
+    match mode {
+        "max" => (),
+        "min" => (),
+          _   => (),
     }
-    output += "</pre>";
-    //println!("{}", output);
-    datagrid
+
+    0
 }
-fn display_actual(actual: &str) -> &str {
-    println!("You returned:");
-    pretty_print(actual)
-}
-fn display_expected(expected: &str) -> &str {
-    println!("Expected final state of data grid:");
-    pretty_print(expected)
-}
+fn eval (buff: &Vec<u64>) -> u64 {
 
-fn find_next (code: &Vec<char>, pos:usize) -> usize {
+    let mut hist:HashMap<u64,usize> = HashMap::new();
 
-    let size = code.len();
-
-    let mut index = pos;
-    let mut pile = 0;
-    let mut fwrd:bool = true;
-    if code[index] == ']' { fwrd = false };
-
-    while index < size {
-        if code[index] == '[' { pile += 1 }
-        if code[index] == ']' { pile -= 1 }
-
-        if pile == 0 { return index }
-        if fwrd == true { index +=1 } else { index -= 1 }
+    for num in buff {
+        hist.insert (*num, if let Some (cnt) = hist.get(&num) {cnt + 1} else { 1  } );
     }
-    return index;
+
+    let sum = hist.iter().map(|(num,&cnt)| num.pow(cnt as u32)).sum::<u64>() * buff.len() as u64;
+
+    sum
 }
-fn interpreter (code: &str, mut iters: usize, width: usize, height: usize) -> String {
+fn is_prime (num: i32) -> bool {
 
-    let code = code.chars().collect::<Vec<_>>();
+    if num <= 3 { return true }
+    if num % 2 == 0 || num % 3 == 0 { return false }
 
-    let mut index = 0;
-    let mut p = (0, 0);
+    let end = (num as f32).sqrt() as i32;
+    let mut i = 5;
+
+    while i <= end {
+        if num % i == 0 || num % (i + 2) == 0 { return false }
+        i += 6;
+    }
+    true
+}
+fn decomp (num: i32) -> String {
+
     let mut os = String::new();
-    let mut grid = vec![vec![0;width];height];
+    let mut comp:Vec<(i32,i32)> = Vec::new();
 
-    while iters > 0 && index < code.len() {
+    for factor in 2 ..= num {
+        if is_prime (factor) {
+            let mut sum = 0;
 
-        match code[index] {
-            '*' => { grid[p.1][p.0] ^= 1 },
-            'e' => if p.0 < width - 1 { p.0 += 1 } else { p.0 = 0 },
-            'w' => if p.0 > 0 { p.0 -= 1 } else { p.0 = width - 1 },
-            'n' => if p.1 > 0 { p.1 -= 1 } else { p.1 = height - 1 },
-            's' => if p.1 < height - 1 { p.1 += 1 } else { p.1 = 0 },
-            '[' => if grid[p.1][p.0] == 0 { index = find_next (&code, index) },
-            ']' => if grid[p.1][p.0] != 0 { index = find_next (&code, index) },
-             _  => iters += 1,
+            for k in 1 .. num {
+                let cnt = num / factor.pow(k as u32);
+                
+                if cnt == 0 {
+                    comp.push((factor,sum));
+                    break;
+                }
+                sum += cnt;
+            }
         }
-
-        iters -= 1;
-        index += 1;
     }
 
-    for row in grid {
-        let row = row.iter().map(|x| x.to_string() ).collect::<String>();
-        os += &format!("{row}\r\n");
+    for (fst,scd) in comp {
+       if scd != 1 { os += &format!("{fst}^{scd}") } else { os += &format!("{fst}") }
+       os += &format!(" * ");
     }
-    os.pop();
-    os.pop();
 
-    os
+    os[0..os.len() - 3].to_string()
+}
+fn factorize (n: u32) -> Vec<u32> {
+    let fact:Vec<u32> = Vec::new();
+    
+    for k in 2...n {
+        if n % k == 0 { fact.push(k) }
+    }
+
+    fact
+}
+fn decomp2 (num: i32) -> i32 {
+
+    let mut os = String::new();
+    let mut comp:Vec<(i32,i32)> = Vec::new();
+
+    for factor in 2 ..= num {
+        if is_prime (factor) {
+
+        let partition:Vec<i32> = Vec::new();
+
+        let mut subset= vec![factor];
+     
+    }
+    0
 }
 
-fn main() {
+fn main () {
+    
+    let res = decomp2 (12);
 
-    let res = interpreter("*[es*]",37,5,6);
-
-    print!("{res}");
-
-    print!("\nend\n");
+    print!("{res}\n");
 
 }
