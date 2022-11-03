@@ -1,31 +1,17 @@
+
 #include <iostream>
-#include <iomanip>
 #include <vector>
 #include <queue>
 #include <map>
 #include <tuple>
 #include <cmath>
 #include <limits>
-#include <random>
 
-#include <sciplot/sciplot.hpp>
+#include "graph.hpp"
+#include "plot.hpp"
+
 using namespace std;
-using namespace sciplot;
 
-struct Point {
-    double x,y;
-
-    Point() : x(0.0), y(0.0) {}
-    Point(double x, double y) : x(x), y(y) {}
-};
-struct Circle {
-    Point ctr;
-    double r;
-
-    Circle() : ctr(), r(1.0) {}
-    Circle(Point c, double r) : ctr(c), r(r) {}
-    Circle(double cx, double cy, double r) : ctr(cx,cy), r(r) {}
-};
 struct vertex {
     double cost, dist, heur;
     Point p;
@@ -35,131 +21,6 @@ struct comp {
         return  a.cost == b.cost ? a.heur > b.heur : a.cost > b.cost;
         //return  a.heur == b.heur ? a.cost > b.cost : a.heur > b.heur;
     }
-};
-
-bool operator == (const Point &a, const Point &b) { return a.x == b.x && a.y == b.y; }
-bool operator != (const Point &a, const Point &b) { return a.x != b.x || a.y != b.y; }
-bool operator  < (const Point &a, const Point &b) { return make_pair (a.x,a.y) < make_pair (b.x,b.y); }
-
-double distance (Point a, Point b) { return std::hypot (a.x - b.x, a.y - b.y); }
-bool inside_circle (const Circle &c, const Point &p) { return distance (c.ctr, p) < c.r; }
-int nearest_point (const vector<Point> &curr, const Point &a) {
-
-    double minv = numeric_limits<double>::infinity(), dist;
-    int near;
-
-    for (int i = 0; i < curr.size(); i++) {
-        dist = distance (a, curr[i]);
-
-        if (a != curr[i] && dist < minv) {
-            near = i;
-            minv = dist;
-        }
-    }
-
-    return near;
-}
-
-class Draw {
-    private :
-
-        inline static Plot2D draw;
-        static double maxp (const Point &p) { return max (abs (p.x), abs (p.y)); }
-
-    public :
-        static void point (const Point &p) {
-            cout << "<" << setw(2) << p.x << "," << setw(2) << p.y << "> ";
-
-        }
-
-        static void img () {
-
-            draw.legend().hide();
-
-            Figure fig = {{draw}};
-
-            Canvas canvas = {{fig}};
-            canvas.size(800, 800);
-            canvas.show();
-        }
-
-        static void dots (const vector<Point> &graph) {
-            vector<double> x, y;
-            for (auto &p : graph) {
-                x.push_back (p.x);
-                y.push_back (p.y);
-            }
-
-            draw.drawPoints(x, y).pointType(0);
-        }
-        static void line (const vector<Point> &graph) {
-            vector<double> x, y;
-            for (auto &p : graph) {
-                x.push_back (p.x);
-                y.push_back (p.y);
-            }
-            draw.drawBrokenCurveWithPoints(x, y);
-        }
-        static void graph (Point start, Point exit, vector<Circle> graph) {
-          double  maxv = max (maxp (start), maxp (exit));
-
-          for (auto &[ctr, rad] : graph) {
-              maxv = max (maxp(ctr) + rad, maxv);
-          }
-          draw.xrange(-maxv, maxv);
-          draw.yrange(-maxv, maxv);
-
-          vector<double> ptx {start.x, exit.x}, pty {start.y,exit.y};
-          draw.drawPoints(ptx,pty).pointType(4);
-
-          for (auto [c,rad] : graph) {
-              vector<double> x,y;
-
-              for (double theta = 0.0; theta < 6.26; theta += 0.1) {
-                  double ox = c.x + rad * sin (theta), oy = c.y + rad * cos (theta);
-                  x.push_back (ox), y.push_back (oy);
-              }
-
-              draw.drawCurveFilled(x, y).fillColor("yellow");
-          }
-
-        }
-        static void voronoi (const vector<Point> &graph) {
-
-            random_device rd;
-            mt19937 gen(rd());
-            uniform_real_distribution<> rnd (0, 10);
-
-            int size = 200000;
-            Point p (0,0);
-            vector<vector<Point>> region (graph.size());
-
-            while (size-->0) {
-                p = {rnd(gen), rnd(gen)};
-                int near = nearest_point (graph, p);
-                region[near].push_back (p);
-            }
-
-            dots (graph);
-
-            for (int i = 0; i < region.size(); i++) {
-                dots (region[i]);
-            }
-
-        }
-        static vector<Point> generate (int size) {
-
-            random_device rd;
-            mt19937 gen(rd());
-            uniform_real_distribution<> rnd (0, 10);
-
-            vector<Point> graph;
-
-            while (size-->0) {
-                graph.push_back ({rnd(gen), rnd(gen)});
-            }
-            return graph;
-        }
 };
 
 void intersect_line (Point p1, vector<Circle> space) {
@@ -187,18 +48,6 @@ void intersect_line (Point p1, vector<Circle> space) {
         }
     }
 }
-bool isvalid (const Point &p, const vector<Circle> &space) {
-
-    for (auto &cir : space) {
-        if (inside_circle (cir, p) == true) {
-            return false;
-        }
-    }
-    return true;
-}
-double heuristic (const Point &a, const Point &b) {
-    return std::hypot (a.x - b.x, a.y - b.y);
-}
 
 double minrad (const Point &p1, const vector<Circle> &space) {
 
@@ -208,59 +57,8 @@ double minrad (const Point &p1, const vector<Circle> &space) {
         double dist = distance (p1, star.ctr) - star.r;
         rad = min (rad,dist);
     }
-
-    return  rad;
-}
-void astar (Point start, Point exit, vector<Circle> space) {
-
-    priority_queue<vertex,vector<vertex>,comp> q1;
-    map<Point,bool> visit;
-
-    q1.push ({0,0, distance (start,exit), start});
-
-    int cycles = 0;
-    vector<Point> vect;
-
-    while (!q1.empty()) {
-
-        auto [cost, dist, heur,  curr] = q1.top();
-        q1.pop();
-        //visit[nxp] = true;
-
-        vect.push_back(curr);
-        cycles++;
-
-        if (distance (curr, exit) < 0.2) {
-
-            break;
-        }
-
-        double rad = 0.1;//= minrad (curr, space);
-        double alt = (dist + rad) * 1.0;
-
-        vector<Point> direct {{rad,0},{0,rad},{-rad,0},{0,-rad} /*  ,{rad,rad},{-rad,rad},{rad,-rad},{-rad,-rad} */};
-
-        for (auto dir : direct) {
-            double nx = curr.x + dir.x, ny = curr.y + dir.y;
-
-            Point nxp = {nx, ny};
-            //cout << fixed << setprecision(12) << "[" << nxp.x << " , " << nxp.y << "]\n";
-            double heu = distance (nxp, exit);
-            double fnc = alt + heu;
-
-            if (isvalid (nxp, space) && visit[nxp] == false) {
-                visit[nxp] = true;
-                vertex nxv {fnc, alt, heu, nxp};
-                q1.push(nxv);
-            }
-        }
-    }
-
-    //cout << visit.size();
-    Draw::dots(vect);
-
-    /*
-    */
+    
+    return  max(rad, 0.1);
 }
 
 class Graph {
@@ -289,30 +87,82 @@ class Graph {
                 */
             }
             maxx += pad, maxy += pad, minx -= pad, miny -= pad;
-            cout << minx << " " << maxx << " " << miny << " " << maxy;
+            //cout << minx << " " << maxx << " " << miny << " " << maxy;
         }
         bool isinside (const Point &p) { return p.x > minx && p.x < maxx && p.y > miny && p.y < maxy; }
 };
 
-bool explored (const vector<Point> &visit, const Point &p1) {
-    for (auto &p2 : visit) {
-        if (p1.x ==  p2.x && p1.y == p2.y) return true;
-    }
-    return false;
+void astar (Point start, Point exit, vector<Circle> star) {
+
+    priority_queue<vertex,vector<vertex>,comp> q1;
+    map<Point,bool> visit;
+    Graph space (start, exit, star);
+
+    //Draw::graph(start,exit,star);
+
+    q1.push ({0,0, distance (start,exit), start});
+
+    int cycles = 0;
+    vector<Point> vect;
+  
+     while (!q1.empty()) {
+
+          auto [cost, dist, left,  curr] = q1.top();
+          q1.pop();
+          //Display::point (curr);
+          cycles++;
+          vect.push_back(curr);
+
+          if (cycles > 1500 || distance (curr,exit) < 0.3) {
+
+              break;
+          }
+          
+          double rad = 0.1;
+          //rad = minrad (curr, star); // 0.1
+          double alt = (dist + rad) * 1.0;
+
+          vector<Point> direct { {rad,0},{0,rad},{-rad,0},{0,-rad},  {rad,rad},{-rad,rad},{rad,-rad},{-rad,-rad} };
+
+          for (auto &dir : direct) {
+              double nx = curr.x + dir.x, ny = curr.y + dir.y;
+              Point nxp = {nx, ny};
+
+              //if (space.isinside (nxp)) {
+                  double heu = distance (nxp, exit);
+                  double fnc = alt + heu;
+
+                  if (isvalid (nxp, star) && !visit[nxp]) {
+
+                      vertex nxv {fnc, alt, heu, nxp};
+                      visit[nxp] = true;
+                      q1.push(nxv);
+                  }
+              //}
+          }
+      }
+
+    //Draw::dots(vect);
+    //Draw::img();      
 }
-class Display {
-    public :
+pair<Point,Point> tangent (Point p1, Circle c) {
 
-        static void point (const Point &pt) {
-            cout << fixed << setprecision(12) << "[" << pt.x << " , " << pt.y << "]\n";
-        }
-        static void vect (const vector<Point> &vect) {
-            for (auto pt : vect) {
-                point (pt);
-            }
-        }
-};
+    auto &[p2,rad] = c;
 
+    double dist = distance (p1,p2);
+    double dir = atan2 (p1.y - p2.y, p1.x - p2.x); // # direction angle of point P from C
+    double theta = acos (rad / dist);  
+
+    double d1 = dir + theta; // # direction angle of point T1 from C
+    double d2 = dir - theta; // # direction angle of point T2 from C
+
+    double ax = p2.x + rad, ay = p2.y + rad;
+    
+    Point t1 {ax * cos(d1), ay * sin(d1)};
+    Point t2 {ax * cos(d2), ay * sin(d2)};
+    
+    return {t1,t2};
+}
 int main () {
 
     const double max_error = 1e-8;
@@ -320,160 +170,36 @@ int main () {
 
     Point start = {-3, 1}, exit = {4.25, 0};
     vector<Circle> star = { {0.0, 0.0, 2.5}, {1.5, 2.0, 0.5}, {3.5, 1.0, 1.0}, {3.5, -1.7, 1.2} };
-
-    Graph space (start, exit, star);
-
-
-    Draw::graph (start, exit, star);
-
-
-    priority_queue<vertex,vector<vertex>,comp> q1;
-    map<Point,bool> visit;
-
-    q1.push ({0,0, distance (start,exit), start});
-
-    int cycles = 0;
+    
+    //Draw::graph (start,exit,star);
+    
     vector<Point> vect;
+    Point p1 = start; 
+    auto &[p2,rad] = star[0];
 
-    while (!q1.empty()) {
+    double dist = distance (p1,p2);
+    double theta = acos (rad / dist);  
+    double dir = atan2 (p1.y - p2.y, p1.x - p2.x); // # direction angle of point P from C
 
-        auto [cost, dist, left,  curr] = q1.top();
-        q1.pop();
-        //Display::point (curr);
+    double d1 = dir + theta; // # direction angle of point T1 from C
+    double d2 = dir - theta; // # direction angle of point T2 from C
 
-        cycles++;
+    double ax = p2.x + rad, ay = p2.y + rad;
+    
+    Point t1 {ax * cos(d1), ay * sin(d1)};
+    Point t2 {ax * cos(d2), ay * sin(d2)};
 
-        if (cycles > 1500 || distance (curr,exit) < 0.3) {
+    vect.push_back(t1);
+    vect.push_back(t2);
+    
+    Display::point(t1);
+    Display::point(t2);
 
-            break;
-        }
-
-        double rad = 0.1;
-        double alt = (dist + rad) * 1.0;
-
-        vector<Point> direct { {rad,0},{0,rad},{-rad,0},{0,-rad},  {rad,rad},{-rad,rad},{rad,-rad},{-rad,-rad} };
-
-        for (auto &dir : direct) {
-            double nx = curr.x + dir.x, ny = curr.y + dir.y;
-            Point nxp = {nx, ny};
-
-
-            //if (space.isinside (nxp)) {
-                double heu = distance (nxp, exit);
-                double fnc = alt + heu;
-
-                if (isvalid (nxp, star) &&  !visit[nxp]) {
-                    vect.push_back(nxp);
-
-                    vertex nxv {fnc, alt, heu, nxp};
-                    visit[nxp] = true;
-                    q1.push(nxv);
-                }
-            //}
-        }
-    }
-    //cout << cycles << '\n';
-    //Display::vect(vect);
     Draw::dots(vect);
+    Draw::img();      
 
-    Draw::img();
 
     //astar(start,exit,star);
+ }
 
-    /*
-    //Display::dots(vect);
 
-    cout << dist << "\n";
-
-    */
-    //cout << fixed << setprecision(12) << max_error;
-}
-
-void Test () {
-    const double max_error = 1e-8;
-  Point a,b;
-  vector<Circle> c;
-  double actual, expected;
-
-  //It(Example_In_The_Picture)
-  {
-    a = {-3, 1};   b = {4.25, 0};
-    c = { {0.0, 0.0, 2.5}, {1.5, 2.0, 0.5}, {3.5, 1.0, 1.0}, {3.5, -1.7, 1.2} };
-    // actual = shortest_path_length(a,b,c);
-    // Assert::That(actual, EqualsWithDelta(9.11821650244, max_error));
-  }
-
-  ///It(Long_Way_Round)
-  {
-    a = {0, 1};  b = {0, -1};
-    c = { {0.0, 0.0, 0.8}, {3.8, 0.0, 3.2}, {-3.5, 0.0, 3.0}, {-7.0, 0.0, 1.0} };
-    // actual = shortest_path_length(a,b,c);
-    // Assert::That(actual, EqualsWithDelta(19.0575347577, max_error));
-  }
-
-  // It(Straight_Line)
-  {
-    a = {3, 0};   b = {0, 4};
-    c = { {0, 0, 1} };
-    // actual = shortest_path_length(a,b,c);
-    // Assert::That(actual, EqualsWithDelta(5.0, max_error));
-  }
-
-  /// It(No_Way_Through)
-  {
-    a = {0, 0};  b = {20, 20};
-    c = { {4, 0, 3}, {-4, 0, 3}, {0, 4, 3}, {0, -4, 3} };
-    // actual = shortest_path_length(a,b,c);
-    // Assert::That(actual, Equals(-1.0));
-  }
-
-  //  It(Other_Simple_Tests)
-  {
-    a = {0, 1};  b = {0, -1};
-    c = { {0.0, 0.0, 0.8}, {-3.8, 0.0, 3.2}, {3.5, 0.0, 3.0}, {7.0, 0.0, 1.0} };
-    // actual = shortest_path_length(a,b,c);
-    // Assert::That(actual, EqualsWithDelta(19.0575347577, max_error));
-
-    a = {0, -7};  b = {8, 8};
-    c = { };
-    // actual = shortest_path_length(a,b,c);
-    // Assert::That(actual, EqualsWithDelta(17.0, max_error));
-
-    a = {-3.5, 0.1};  b = {3.5, 0.0};
-    double r = 2.01;
-    c = { {0,0,1}, {r, 0.0, 1.0}, {r*0.5, r*sqrt(3)/2, 1.0}, {-r*0.5, r*sqrt(3)/2, 1.0},
-                  {-r, 0.0, 1.0}, {r*0.5, -r*sqrt(3)/2, 1.0}, {-r*0.5, -r*sqrt(3)/2, 1.0} };
-    // actual = shortest_path_length(a,b,c);
-    // Assert::That(actual, EqualsWithDelta(7.80758072818, max_error));
-
-    // start in forbidden zone:
-    a = {0.5, 0.5};  b = {2, 2};
-    c = { {0, 0, 1} };
-    // actual = shortest_path_length(a,b,c);
-    // Assert::That(actual, Equals(-1.0));
-
-    // end in forbidden zone:
-    a = {2, 2};  b = {0.5, 0.5};
-    c = { {0, 0, 1} };
-    // actual = shortest_path_length(a,b,c);
-    // Assert::That(actual, Equals(-1.0));
-  }
-}
-
-/*
-Point nearest_point (const vector<Point> &grph, Point &p) {
-
-    Point near, a = p;
-    double min = numeric_limits<float>::infinity(), dist;
-
-    for (auto &b : grph) {
-        dist = distance ( a, b);
-
-        if (a != b && dist < min) {
-            min = dist;
-            near = b;
-        }
-    }
-    return near;
-}
-*/
