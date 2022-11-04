@@ -57,7 +57,7 @@ double minrad (const Point &p1, const vector<Circle> &space) {
         double dist = distance (p1, star.ctr) - star.r;
         rad = min (rad,dist);
     }
-    
+
     return  max(rad, 0.1);
 }
 
@@ -104,7 +104,7 @@ void astar (Point start, Point exit, vector<Circle> star) {
 
     int cycles = 0;
     vector<Point> vect;
-  
+
      while (!q1.empty()) {
 
           auto [cost, dist, left,  curr] = q1.top();
@@ -117,7 +117,7 @@ void astar (Point start, Point exit, vector<Circle> star) {
 
               break;
           }
-          
+
           double rad = 0.1;
           //rad = minrad (curr, star); // 0.1
           double alt = (dist + rad) * 1.0;
@@ -143,7 +143,7 @@ void astar (Point start, Point exit, vector<Circle> star) {
       }
 
     //Draw::dots(vect);
-    //Draw::img();      
+    //Draw::img();
 }
 pair<Point,Point> tangent (Point p1, Circle c) {
 
@@ -151,16 +151,16 @@ pair<Point,Point> tangent (Point p1, Circle c) {
 
     double dist = distance (p1,p2);
     double dir = atan2 (p1.y - p2.y, p1.x - p2.x); // # direction angle of point P from C
-    double theta = acos (rad / dist);  
+    double theta = acos (rad / dist);
 
     double d1 = dir + theta; // # direction angle of point T1 from C
     double d2 = dir - theta; // # direction angle of point T2 from C
 
     double ax = p2.x + rad, ay = p2.y + rad;
-    
+
     Point t1 {ax * cos(d1), ay * sin(d1)};
     Point t2 {ax * cos(d2), ay * sin(d2)};
-    
+
     return {t1,t2};
 }
 int main () {
@@ -168,38 +168,39 @@ int main () {
     const double max_error = 1e-8;
 
 
-    Point start = {-3, 1}, exit = {4.25, 0};
+    Point exit = {-3, 1}, start = {4.25, 0};
     vector<Circle> star = { {0.0, 0.0, 2.5}, {1.5, 2.0, 0.5}, {3.5, 1.0, 1.0}, {3.5, -1.7, 1.2} };
-    
-    //Draw::graph (start,exit,star);
-    
+
+    Draw::graph (start,exit,star);
+
     vector<Point> vect;
-    Point p1 = start; 
-    auto &[p2,rad] = star[0];
+    Point p1 = start;
+    vector<double> sign {1,-1};
+    for (auto &[p2,rad] : star) {
 
-    double dist = distance (p1,p2);
-    double theta = acos (rad / dist);  
-    double dir = atan2 (p1.y - p2.y, p1.x - p2.x); // # direction angle of point P from C
+        double theta = acos (rad / distance (p1,p2));
+        double direc = atan2 (p1.y - p2.y, p1.x - p2.x); // direction angle of point P from C
+        /*
+        double d1 = direc + theta; // direction angle of point T1 from C
+        double d2 = direc - theta; // direction angle of point T2 from C
 
-    double d1 = dir + theta; // # direction angle of point T1 from C
-    double d2 = dir - theta; // # direction angle of point T2 from C
+        Point t1 {p2.x + rad * cos(d1), p2.y + rad * sin(d1)};
+        Point t2 {p2.x + rad * cos(d2), p2.y + rad * sin(d2)};
+        */
+        Point tg;
+        for (int i = 0; i < 2; i++) {
+            tg.x = p2.x + rad * cos(direc + (theta * sign[i]));
+            tg.y = p2.y + rad * sin(direc + (theta * sign[i]));
+            vect.push_back(tg);
+        }
+    }
 
-    double ax = p2.x + rad, ay = p2.y + rad;
-    
-    Point t1 {ax * cos(d1), ay * sin(d1)};
-    Point t2 {ax * cos(d2), ay * sin(d2)};
 
-    vect.push_back(t1);
-    vect.push_back(t2);
-    
-    Display::point(t1);
-    Display::point(t2);
 
     Draw::dots(vect);
-    Draw::img();      
-
+    Draw::img();
+    /*
+    */
 
     //astar(start,exit,star);
  }
-
-

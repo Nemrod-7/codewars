@@ -32,7 +32,7 @@ class Draw {
                 y.push_back (p.y);
             }
 
-            draw.drawPoints(x, y).pointType(0);
+            draw.drawPoints(x, y).pointType(5);
         }
         static void line (const vector<Point> &graph) {
             vector<double> x, y;
@@ -103,6 +103,3 @@ class Draw {
             return graph;
         }
 };
-
-
-
