@@ -118,115 +118,83 @@ void astar (Point start, Point exit, vector<Circle> space) {
     Draw::dots(vect);
     //Draw::img();
 }
+vector<Point> tangent (Point p1, Circle c) {
+    auto [c1,rad] = c;
+    double theta = acos (rad / distance (p1,c1));
+    double direc = atan2 (p1.y - c1.y, p1.x - c1.x); // direction angle of point P from C
 
-pair<Point,Point> tangent (Point p1, Circle c) {
-
-    auto &[p2,rad] = c;
-
-    double dist = distance (p1,p2);
-    double dir = atan2 (p1.y - p2.y, p1.x - p2.x); // # direction angle of point P from C
-    double theta = acos (rad / dist);
-
-    double d1 = dir + theta; // # direction angle of point T1 from C
-    double d2 = dir - theta; // # direction angle of point T2 from C
-
-    double ax = p2.x + rad, ay = p2.y + rad;
-
-    Point t1 {ax * cos(d1), ay * sin(d1)};
-    Point t2 {ax * cos(d2), ay * sin(d2)};
-
+    const double d1 = direc + theta, d2 = direc - theta;
+    const Point t1 = {c1.x + rad * cos(d1), c1.y + rad * sin(d1)}; // tangent to circle c1 => line : p1 ~ p2
+    const Point t2 = {c1.x + rad * cos(d2), c1.y + rad * sin(d2)}; // tangent to circle c1 => line : p1 ~ p2
     return {t1,t2};
 }
-pair<Point,Point> interception (Point p1, Point p2, Circle c) {
+vector<Point> interception (Point p1, Point p2, Circle c) {
+    auto [c2,r2] = c;
+    const Point p3 = {p1.x - c2.x, p1.y - c2.y}, p4 = {p2.x - c2.x, p2.y - c2.y}; //shifted line points
 
-      Point p3 = {p1.x - c.ctr.x, p1.y - c.ctr.y}; // shifted line point a
-      Point p4 = {p2.x - c.ctr.x, p2.y - c.ctr.y}; // shifted line point b
+    const double m = (p4.y - p3.y) / (p4.x - p3.x); // slope of the line
+    const double b = p3.y - m * p3.x;               // y intercept of line
+    const double np = sq(r2) * sq(m) + sq (r2) - sq(b); // quad equation
 
-      double m = (p4.y - p3.y) / (p4.x - p3.x); // slope of the line
-      double b = p3.y - m * p3.x;               // y-intercept of line
-      double dist = sq(c.r) * sq(m) + sq (c.r) - sq(b);
+    if (np > 0) {
+        const double t1 = (-m * b + sqrt(np)) / (sq(m) + 1);
+        const double t2 = (-m * b - sqrt(np)) / (sq(m) + 1);
 
-      if (dist < 0) { // line completely missed
-          //vect.push_back(p2);
-      } else if (dist > 0) {
-          double t1 = (-m * b + sqrt(dist)) / (sq(m) + 1);
-          double t2 = (-m * b - sqrt(dist)) / (sq(m) + 1);
+        const Point i1 = {t1 + c2.x, m * t1 + b + c2.y};
+        const Point i2 = {t2 + c2.x, m * t2 + b + c2.y};
+        return {i1,i2};
+    }
 
-          Point i1 = {t1 + c.ctr.x, m * t1 + b + c.ctr.y};
-          Point i2 = {t2 + c.ctr.x, m * t2 + b + c.ctr.y};
-
-          return {i1,i2};
-      }
-      return {};
+    return {};
 }
 
 int main () {
 
-    const double max_error = 1e-8;
-    const vector<double> sign { 1 , -1 };
-
     Point start = {-3, 1}, exit = {4.25, 0};
     vector<Circle> space = {  {0.0, 0.0, 2.5}, {1.5, 2.0, 0.5}, {3.5, 1.0, 1.0}, {3.5, -1.7, 1.2} };
 
-    //Draw::graph (start,exit,space);
+    Draw::graph (start,exit,space);
+    
+    const double epsilon = 1e-8;
+    const vector<double> sign {1 , -1 };
+    const int size = space.size();
+
     vector<Point> vect;
 
     Point p1 = exit;
 
-    for (int i = 3; i < space.size(); i++) {
-        auto [c1,rad] = space[i];
-
-        double theta = acos (rad / distance (p1,c1));
-        double direc = atan2 (p1.y - c1.y, p1.x - c1.x); // direction angle of point P from C
-
-        for (auto &sig : sign) {
-            const double nd = direc + theta * sig;
-            const Point p2 = {c1.x + rad * cos(nd), c1.y + rad * sin(nd)}; // tangent to circle c1 => line : p1 ~ p2
-
+    for (Circle &c1 : space) {
+        for (Point &p2 : tangent (p1, c1)) {
             const double dist = distance (p1, p2);
 
-            double minv = 999;
+            bool valid = true;
+            for (Circle &c2 : space) {
 
-            //cout << direc << " " << theta << endl;
-            for (int j = 2; j < 3; j++) {
-                auto [c2, r2] = space[j];
-
-                const Point p3 = {p1.x - c2.x, p1.y - c2.y}, p4 = {p2.x - c2.x, p2.y - c2.y}; //shifted line points
-                const double m = (p4.y - p3.y) / (p4.x - p3.x); // slope of the line
-                const double b = p3.y - m * p3.x;               // y intercept of line
-                const double np = sq(r2) * sq(m) + sq (r2) - sq(b); // quad equation
-                //cout << "[" << c2.x << " , " << c2.y << "] " << r2 << "\n";
-                if (np > 0) {
-
-                    for (auto &sig : sign) {
-                        double t1 = (-m * b + sqrt(np) * sig) / (sq(m) + 1);
-                        Point i1 = {t1 + c2.x, m * t1 + b + c2.y};
-                        minv = min (minv, distance (p1, i1));
-                        vect.push_back(i1);
-                        cout << p2.x - p1.x << " " << i1.x - p1.x << "\n";
+                if (c2.ctr != c1.ctr) {
+                    vector<Point> interc = interception (p1, p2, c2);
+                    for (auto &i1 : interc) {
+                        if (distance (p1, i1) + distance (i1, p2) - dist <= epsilon) {
+                            valid = false;
+                        }
                     }
-                } else if (np < 0) { //line completely missed
-
-                } else {
-
                 }
             }
 
-            if (dist <= minv) {
-
+            if (valid == true) {
+                vect.push_back(p2);
             }
-            cout << endl;
         }
     }
 
     //astar(start, exit, space);
-    /*
     Draw::dots(vect);
     Draw::img();
+    /*
     */
-
 }
 ////////////////////////////Arkive////////////////////////////////
+
+
 double minrad (const Point &p1, const vector<Circle> &space) {
 
     double rad = numeric_limits<double>::infinity();

@@ -19,7 +19,7 @@ int product (const vector<int> &clust) {
 
     for (auto &num : clust)
         prod *= num;
-    
+
     return prod;
 }
 
@@ -57,47 +57,53 @@ vector<int> factorize2 (int n) {
     return factors;
 }
 
+bool is_prime (int num) {
+
+    if (num <= 3) return true;
+    if (num % 2 == 0 || num % 3 == 0) return false;
+
+    for (int i = 5; i <= sqrt(num); i += 6)
+        if (num % i == 0 || num % (i + 2) == 0)
+            return false;
+
+    return true;
+}
+
+vector<int> path; // it will store all current factors
+
+void recurse(int max, int val) {
+
+    if (val == 1) {
+        for (int i = 0; i < path.size(); i++)
+            cout << path[i] << " ";
+
+        cout << endl;
+        return;
+    }
+
+
+    for (int i = max; i > 1; i--) {
+        if (val % i == 0) {
+            path.push_back(i);
+            recurse(i, val / i);
+            path.pop_back();
+        }
+    }
+}
+
+void Output(int value) {
+    cout << "Result for " << value << ": " << endl;
+    recurse(value, value);
+}
 int main (int argc, char** argv) {
     //  g(n,[2]);
 
     int n = 1416;
-    vector<int> factors = factorize2 (n);
+    vector<int> factors = factorize (n);
     vector<vector<int>> partition;
 
-    //for (auto fact : factors) {
-       // cout << fact << " => ";
-        vector<int> cluster {354};
-        
-        for (int i = 1; i < factors.size(); i++) {
-          cluster.push_back(factors[i]);
+    vector<int> comb;
 
-          for (auto num : cluster) {
-              cout << num << " ";
-          }
-          cout << "\n";
+    Output (1416);
 
-          int pro = product(cluster);
-          //cout << factors[i] << "|";
-
-          if (pro == n) {
-              partition.push_back(cluster);
-              cluster.pop_back();
-          } else if (pro > n) {
-              cluster.pop_back();
-          }
-
-        }
-   
-   // }
-          
-          
-        for (auto comb : partition) {
-          for (auto num : comb) {
-              cout << num << " ";
-          }
-          cout << "\n";
-        }
-        /*
-
-        */
 }

@@ -44,6 +44,7 @@ fn main () {
         assert_eq!(Some(414), next_smaller_number(441));
 
       
+        imax" => 1,
         assert_eq!(Some(790), next_smaller_number(907));
         print!("\n");               
 }

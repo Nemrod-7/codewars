@@ -90,7 +90,6 @@ fn main () {
              vec![8,8,8,8,6,6,6,0]];
 
     grid = large_test ();
-
     volume (&grid);
     /*
     let height = grid.len();
