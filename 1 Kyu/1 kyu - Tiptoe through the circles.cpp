@@ -64,11 +64,13 @@ double quadratic (double a, double b, double c) {
     return x2;
   }
 
-void astar (Point start, Point exit, vector<Circle> star) {
+void astar (Point start, Point exit, vector<Circle> space) {
+
+    const double rad = 0.1;
 
     priority_queue<vertex,vector<vertex>,comp> q1;
     map<Point,bool> visit;
-    Graph space (start, exit, star);
+    Graph system (start, exit, space);
 
     //Draw::graph(start,exit,star);
 
@@ -90,7 +92,6 @@ void astar (Point start, Point exit, vector<Circle> star) {
               break;
           }
 
-          double rad = 0.1;
           //rad = minrad (curr, star); // 0.1
           double alt = (dist + rad) * 1.0;
 
@@ -104,7 +105,7 @@ void astar (Point start, Point exit, vector<Circle> star) {
                   double heu = distance (nxp, exit);
                   double fnc = alt + heu;
 
-                  if (isvalid (nxp, star) && !visit[nxp]) {
+                  if (isvalid (nxp, space) && !visit[nxp]) {
 
                       vertex nxv {fnc, alt, heu, nxp};
                       visit[nxp] = true;
@@ -114,7 +115,7 @@ void astar (Point start, Point exit, vector<Circle> star) {
           }
       }
 
-    //Draw::dots(vect);
+    Draw::dots(vect);
     //Draw::img();
 }
 
@@ -162,61 +163,68 @@ pair<Point,Point> interception (Point p1, Point p2, Circle c) {
 int main () {
 
     const double max_error = 1e-8;
-    const vector<double> sign {1, -1};
+    const vector<double> sign { 1 , -1 };
 
-    Point exit = {-3, 1}, start = {4.25, 0};
+    Point start = {-3, 1}, exit = {4.25, 0};
     vector<Circle> space = {  {0.0, 0.0, 2.5}, {1.5, 2.0, 0.5}, {3.5, 1.0, 1.0}, {3.5, -1.7, 1.2} };
 
-    Draw::graph (start,exit,space);
+    //Draw::graph (start,exit,space);
     vector<Point> vect;
 
     Point p1 = exit;
 
-    for (auto [c1,rad] : space) {
+    for (int i = 3; i < space.size(); i++) {
+        auto [c1,rad] = space[i];
 
         double theta = acos (rad / distance (p1,c1));
         double direc = atan2 (p1.y - c1.y, p1.x - c1.x); // direction angle of point P from C
 
-        for (auto sig : sign) {
-            double nd = direc + theta * sig;
-            Point p2 = {c1.x + rad * cos(nd), c1.y + rad * sin(nd)}; // tangent to circle c1 => line : p1 ~ p2
+        for (auto &sig : sign) {
+            const double nd = direc + theta * sig;
+            const Point p2 = {c1.x + rad * cos(nd), c1.y + rad * sin(nd)}; // tangent to circle c1 => line : p1 ~ p2
+
+            const double dist = distance (p1, p2);
 
             double minv = 999;
 
-            for (auto [c2, r2] : space) {
-                Point p3 = {p1.x - c2.x, p1.y - c2.y}, p4 = {p2.x - c2.x, p2.y - c2.y}; //shifted line points
+            //cout << direc << " " << theta << endl;
+            for (int j = 2; j < 3; j++) {
+                auto [c2, r2] = space[j];
 
-                double m = (p4.y - p3.y) / (p4.x - p3.x); // slope of the line
-                double b = p3.y - m * p3.x;               // y-intercept of line
-                double dist = sq(r2) * sq(m) + sq (r2) - sq(b);
+                const Point p3 = {p1.x - c2.x, p1.y - c2.y}, p4 = {p2.x - c2.x, p2.y - c2.y}; //shifted line points
+                const double m = (p4.y - p3.y) / (p4.x - p3.x); // slope of the line
+                const double b = p3.y - m * p3.x;               // y intercept of line
+                const double np = sq(r2) * sq(m) + sq (r2) - sq(b); // quad equation
+                //cout << "[" << c2.x << " , " << c2.y << "] " << r2 << "\n";
+                if (np > 0) {
 
-                if (dist > 0) {
-                    for (auto sig : sign) {
-                        double t1 = (-m * b + sqrt(dist) * sig) / (sq(m) + 1);
+                    for (auto &sig : sign) {
+                        double t1 = (-m * b + sqrt(np) * sig) / (sq(m) + 1);
                         Point i1 = {t1 + c2.x, m * t1 + b + c2.y};
                         minv = min (minv, distance (p1, i1));
                         vect.push_back(i1);
-                        //Display::point(i1);
+                        cout << p2.x - p1.x << " " << i1.x - p1.x << "\n";
                     }
-                } else if (dist < 0) {
-                    //line completely missed
-                    //cout << "[" << c2.x << " , " << c2.y << "] " << r2 << "\n";
-                    //vect.push_back(p2);
+                } else if (np < 0) { //line completely missed
+
                 } else {
 
                 }
             }
 
-            cout << minv << "\n";
+            if (dist <= minv) {
+
+            }
+            cout << endl;
         }
     }
 
+    //astar(start, exit, space);
+    /*
     Draw::dots(vect);
     Draw::img();
-    /*
     */
 
-    //astar(start,exit,star);
 }
 ////////////////////////////Arkive////////////////////////////////
 double minrad (const Point &p1, const vector<Circle> &space) {
