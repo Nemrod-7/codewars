@@ -1,222 +1,114 @@
-fn is_border (grid: &Vec<Vec<char>>, x: usize, y: usize) -> bool {
+use std::sync::Mutex;
+static MEM:Mutex<Vec<u64>> = Mutex::new(Vec::new());
 
-    let direc = vec![(0,1),(1,0),(0,-1),(-1,0)];
-    let x = x as i32;
-    let y = y as i32; 
+fn is_prime (num: u64) -> bool {
 
-    for (dx,dy) in &direc {
-        let cell = grid[(y + dy) as usize][(x + dx) as usize]; 
-        if cell == ' ' || cell == '-' { return true }
-    }
-
-    false
-}
-fn replace (grid: &mut Vec<Vec<char>>, x: usize, y: usize) {
-
-    let direc = vec![(0,1),(1,0),(0,-1),(-1,0)];
-
-    let height = grid.len() as i32 - 1;
-    let width = grid[0].len() as i32 - 1;
-
-    if grid[y][x] == '-' {
-        for (dx,dy) in &direc {
-            let nx = x as i32 + dx;
-            let ny = y as i32 + dy;
-
-            if nx >= 0 && nx <= width && ny >= 0 && ny <= height {
-                if grid[ny as usize][nx as usize] == ' ' {
-                    grid[ny as usize][nx as usize] = '-'; 
-                }
+    match num {
+        1 => return false,
+        2 => return true,
+        3 => return true,
+        _ => {
+            if num % 2 == 0 || num % 3 == 0 { return false }
+            let mut i = 5;
+            while i * i <= num {
+                if num % i == 0 || num % (i + 2) == 0 { return false }
+                i += 6;
             }
-        }
+        },
     }
+     true
 }
-
-fn flood (grid: &mut Vec<Vec<char>>) {
-
-    let height = grid.len() - 1;
-    let width = grid[0].len() - 1;
+fn rev (mut num: u64) -> u64 {
     
-    for _ in 0..2 {
-        for y in 0..=height {
-            for x in 0..=width {
-                replace (grid, x, y);
-                replace (grid,  x, height - y);
-                replace (grid, width - x, height - y);
-                replace (grid, width - x, y);
-            }
+    let mut ret:u64 = 0;
+    
+    while num != 0 {
+        let prod = ret * 10;
+        ret = prod + num % 10;
+        num /= 10;
+    }
+    
+    ret
+}
+fn sq_cub_rev_prime (n: u32) -> u32 {
+    
+    let n = n as usize;
+    let mut num;
+    let mut seq = MEM.lock().unwrap();
+
+    if seq.len() >= n { return seq[n - 1] as u32 }
+
+    match seq.last() {
+        Some (val) => num = *val,
+        None => num = 88,
+    }
+  
+    while seq.len() != n {
+        num += 1;
+        let sqr = num * num;
+        let cub = sqr * num;
+
+        if is_prime (rev(sqr)) == true && is_prime (rev(cub)) == true {
+            seq.push(num);
         }
     }
+
+    num as u32
 }
-fn dry_ground (isle: &[&str]) -> [u32;4] {
-    
-    if isle.len() == 0 || isle[0].len() == 0 { return [0;4] }
+fn show (n:u32) {
 
-    let height = isle.len() - 1;
-    let width = isle[0].len() - 1;
-    let mut dr2 = [0;4];
-    let mut grid = isle.iter().map(|x| x.chars().collect::<Vec<_>>() ).collect::<Vec<Vec<_>>>();
-    
-    for i in 0..4 {
-
-        let cnt = grid.iter().map(|y| y.iter().filter(|&&x| x != '-').count()).sum::<usize>();
-        dr2[i] = cnt as u32;
-        flood (&mut grid);
-
-        for y in 0..=height {
-            for x in 0..=width {
-
-                if grid[y][x] == '^' {
-                    if x == 0 || y == 0 || x == width || y == height || is_border (&grid, x, y) { 
-                        grid[y][x] = 'x' 
-                    }
-                }
-            }
-        }
-        
-        for y in 0..=height {
-            for x in 0..=width {
-                if grid[y][x] == 'x' { grid[y][x] = ' ' }
-            }
-        }
-    }
-    //print!("{:?}\n", &dr2);
-    dr2
+    let res = sq_cub_rev_prime (n);
+    print!("[{n}] => {res}\n");
 }
-
-
 fn main () {
-
-let mountain = [
-"^^^^^^        ",
-" ^^^^^^^^     ",
-"  ^^^^^^^     ",
-"  ^^^^^       ",
-"  ^^^^^^^^^^^ ",
-"  ^^^^^^      ",
-"  ^^^^        "
-];
-
-let mountain = 
- ["^^^^^^^",
-  "^^^^^^^",
-  "^^^^^^^",
-  "^^^ ^^^",
-  "^^^^^^^",
-  "^^^^^^^",
-  "^^^^^^^"];
-
-
-    let mountain = [
-    "^^^^        ^^^^^   ",
-    "^^^^        ^^^^^   ",
-    "--------------------",
-    "    ^^^^^^^^^^^^^   ",
-    "    ^^^^^^^^^^^^^^  ",
-    " ^^^^^^^^^^^^^^^^^^ ",
-    " ^^^^ ^^^^^  ^^^^^  ",
-    "^^^^^^^^^^^ ^^^^^^^ ",
-    "^     ^^^^^^^^^^    ",
-    "^^    ^^^^^^^^^^^   ",
-    "         ^^^^^^^^   "];
-
-    let mountain = [
-"  ^^^^^^             ",       
-"^^^^^^^^       ^^^   ",
-"^^^^^^^  ^^^         ",
-"^^^^^^^  ^^^         ",
-"^^^^^^^  ^^^         ",
-"---------------------",
-"^^^^^                ",
-"   ^^^^^^^^  ^^^^^^^ ",
-"^^^^^^^^     ^     ^ ",
-"^^^^^        ^^^^^^^ "];
-
-    dry_ground (&mountain);
-    let mountain = [
-        "",
-        "",
-        ""
-    ];
-
-
-    let mountain = [
-
-"^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-"^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-"^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-"^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-"^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-"^^^^^^^^^^^^^-----^^^^^^^^^^",
-"^^^^^^^^^^^^^-----^^^^^^^^^^",
-"------------------^^^^^^^^^^",
-"^^^^^^^^^^^^^-----^^^^^^^^^^",
-"^^^^^^^^^^^^^-----^^^^^^^^^^",
-"^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-"^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-"^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-"^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-"^^^^^^^^^^^^^^^^^^^^^^^^^^^^"];
-// [382, 382, 260, 150]
-
-
-        print!("\n");
-}
-
-fn display (grid: &Vec<Vec<char>>) {
-    for y in grid {
-        for x in y {
-            print!("{x}");
-        }
-        print!("\n");
-    }
-        print!("\n");
-}
-fn peak_height (isle: &[&str]) -> u32 {
-
     
-    let height = isle.len() - 1;
-    let width = isle[0].len() - 1;
-    let mut peak = 0;
-    let mut running = true;
-    let mut days:Vec<u32> = Vec::new();
-    let mut grid:Vec<Vec<char>> = isle.iter().map(|x| x.chars().collect::<Vec<_>>() ).collect::<Vec<Vec<_>>>();
+    let ve:Vec<u64> = Vec::with_capacity(250);
 
-    while running == true {
+    show(50); // 10499
+    show(1); 
+    show(50); // 10499
 
-        running = false;
 
-        for y in 0..=height {
-            for x in 0..=width {
+    for k in 1..16 {
+    //    sq_cub_rev_prime (k);
+    }
 
-                if grid[y][x] == '^' {
-                    running = true;
 
-                    if x == 0 || y == 0 || x == width || y == height || is_border (&grid, x, y) { 
-                        grid[y][x] = 'x' 
-                    }
-                }
-            }
-        }
-        
-        if running {
-            let mut dry = 0; 
-
-            for y in 0..=height {
-                for x in 0..=width {
-                    if grid[y][x] == 'x' { grid[y][x] = ' ' }
-                    if grid[y][x] != ' ' || grid[y][x] != '-' { dry += 1 }
-                }
-            }
-
-            flood (&mut grid);
-
-            days.push(dry);
-            peak += 1;
-        }
-        //display (&grid);
-   }
-    //print!("{:?}\n", days);
-    peak
+    print!("\n");
 }
+
+/*
+
+struct An {
+    n: i64,
+    elements: Vec<i64>,
+    generated: bool,
+}
+impl An {
+    fn new() -> An {
+        An {
+            n: 1,
+            elements: vec![7],
+            generated: false,
+        }
+    }
+}
+impl Iterator for An {
+    type Item = i64;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.generated {
+            let previous_last = *(self.elements.last().unwrap_or(&7i64));
+
+            self.elements
+                .push(previous_last + gcd(self.n, previous_last));
+        }
+        self.n += 1;
+        self.generated = true;
+        Some(*(self.elements.last().unwrap()))
+    }
+}
+
+*/
+
 

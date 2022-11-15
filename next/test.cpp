@@ -1,133 +1,117 @@
 #include <iostream>
+#include <iomanip>
+#include <sstream>
+#include <map>
 #include <vector>
+#include <cmath>
+#include <algorithm>
+#include <numeric>
+
+#include <chrono>
 
 using namespace std;
 
-template<class T> T getval (vector<T> &vec) {
-    if (vec.empty()) return 0;
-    T val = vec.back();
-    vec.pop_back();
-    return val;
-}
-vector<string> tokenize (string src) {
-
-    vector<string> vect;
-
-    for (int i = 0; i < src.size(); i++) {
-        while (src[i] == ' ') i++;
-        string buff;
-
-        while (i < src.size() && src[i] != ' ') buff += src[i++];
-
-        vect.push_back(buff);
-    }
-
-    return vect;
-}
-int calc (vector<string> equ) {
-
-    int it = 0;
-    vector<int> vals;
-    vector<string> op;
-
-    while (it < equ.size()) {
-
-        if (equ[it] == "x") {
-            vals.push_back(0);
-        } else if (equ[it] == "+" || equ[it] == "-") {
-            if (vals.size() > 1 && op.size() > 0) {
-                string oper = getval(op);
-                int b = getval (vals), a = getval (vals);
-                vals.push_back ((oper == "-" ? a - b : a + b));
-            }
-            op.push_back(equ[it]);
-        } else {
-            vals.push_back(stoi(equ[it]));
-        }
-
-        it++;
-    }
-
-    while (op.size()) {
-        string oper = getval(op);
-        int b = getval (vals), a = getval (vals);
-
-        vals.push_back ((oper == "-" ? a - b : a + b));
-    }
-
-    return vals.back();
-}
-int solve (const string &equ) {
-
-    int res = 0;
-    int equal = equ.find("="), ex = equ.find ("x");
-
-    vector<string> first = tokenize (equ.substr (0, equal));
-    vector<string> secnd = tokenize (equ.substr (equal + 1));
-
-    if (first[0] == "-" && secnd[0] == "-") {
-        first[0] = "+", secnd[0] = "+";
-    }
-
-    int left = calc(first), right = calc (secnd);
-
-    if (ex < equal) {
-        res = right - left;
-    } else {
-        res = left - right;
-    }
-
-    /*
-    cout << left << "=" << right << " => " << res << "\n";
-    */
-    return res;
-}
-
-enum dir {up,down,left,right};
-
+enum dir {north,south,west,east};
 struct instr {
-    static void move (enum dir) {
 
-    }
-    void jump () {
+		static pair<int,int> move (int dir) {
 
-    }
+				switch (dir) {
+						case north : return {0,-1};	break;
+						case east  : return {1, 0}; break;
+						case west  : return {0,-1}; break;
+						case south : return {0, 1}; break;
+						default 	 : return {0, 0}; break;
+				}
+		}
+
+		void jump () {
+
+		}
 };
+int solve (string equ) {
 
+		int res = 0, sign = 1, lhs = 1, xsign = 1, num = 0;
+		int index = 0;
 
-int main () {
-    /*
-    solve ("x + 1 = 9 - 2"); // 6
-    solve ("- 10 = x");      // -10
-    solve ("x - 2 + 3 = 2"); // 1
-    solve ("- x = - 1");     // 1
-    */
+		while (index < equ.size()) {
+				char ch = equ[index];
 
-/*
+				switch (ch) {
+						case '=': sign = lhs = -1; break;
+						case '+': sign = lhs; break;
+						case '-': sign = -lhs; break;
+						case 'x': xsign = -sign; break;
+						case ' ': res += num * sign; num = 0; break;
+						default: num = num * 10 + ch - '0'; break;
+				}
+				cout << ch << " " << res << '\n';
+				index++;
+		}
 
-'n' => Some(Instr::Move(Dir::Up)),
-'s' => Some(Instr::Move(Dir::Down)),
-'e' => Some(Instr::Move(Dir::Right)),
-'w' => Some(Instr::Move(Dir::Left)),
-'*' => Some(Instr::Flip),
-
-*/
-    instr::move (up);
-
-
-    cout << "\nend\n";
-    //Display::vect (first);
-
+		return (res + num * sign) * xsign;
 }
 
+vector<int> getline (vector<int> line) {
+		vector<int> dots;
+		int acc = 0;
 
+		for (int i = 0; i < 5; i++) {
+				acc += line[i];
+				if ((line[i] == 0 || i == 4) && acc > 0) {
+						dots.push_back (acc);
+						acc = 0;
+				}
+		}
 
-class Display {
-  public :
-  static void vect (vector<string> V) {
-    for (auto &it : V) {
-      cout << "["<<it<<"]";
-    }
-    cout << endl;
-  }
-};
+		return dots;
+}
+
+bool recurse (vector<int> line, vector<int> clue, int x) {
+
+		if (x == 5) {
+				if (getline (line) == clue) {
+
+				}
+				for (auto cell : line) {
+						cout << cell << ' ';
+				}
+				cout << endl;
+				return true;
+		} else {
+				for (int i = 0; i < 32; i++) {
+						for (int j = 0; j < 5; j++) {
+								bool bit = i&1 << j;
+								line[j] = bit;
+						}
+
+				}
+		}
+
+		return false;
+}
+int main () {
+
+		auto start = chrono::high_resolution_clock::now();
+		instr::move (south);
+
+		uint64_t lim = 1e17;
+
+		vector<int> line;
+		vector<int> primes = {2,1};
+		int acc = accumulate (primes.begin(), primes.end(), 0);
+		int pad = 5 - acc;
+		int x = 0;
+		line = {1,1,0,0,0};
+
+		for (int i = 0; i < 5; i++) {
+				x |= line[i] << i;
+		}
+
+		cout << x;
+
+		auto end = chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+    cout << "\nProcess took " << elapsed.count()  << " ms" << endl;
+
+}
