@@ -57,8 +57,9 @@ class Draw {
           for (auto [c,rad] : graph) {
               vector<double> x,y;
 
-              for (double theta = 0.0; theta < 6.26; theta += 0.1) {
-                  double ox = c.x + rad * sin (theta), oy = c.y + rad * cos (theta);
+              for (double deg = 0.0; deg < 360; deg ++) {
+                  double theta = deg * M_PI / 180;
+                  double ox = c.x + rad * cos (theta), oy = c.y + rad * sin (theta);
                   x.push_back (ox), y.push_back (oy);
               }
 

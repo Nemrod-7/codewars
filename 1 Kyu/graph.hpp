@@ -19,6 +19,7 @@ struct Circle {
     Circle(Point c, double r) : ctr(c), r(r) {}
     Circle(double cx, double cy, double r) : ctr(cx,cy), r(r) {}
 };
+
 bool operator == (const Point &a, const Point &b) { return a.x == b.x && a.y == b.y; }
 bool operator != (const Point &a, const Point &b) { return a.x != b.x || a.y != b.y; }
 bool operator  < (const Point &a, const Point &b) { return make_pair (a.x,a.y) < make_pair (b.x,b.y); }
@@ -53,6 +54,7 @@ bool isvalid (const Point &p, const vector<Circle> &space) {
     }
     return true;
 }
+
 class Display {
     public :
 
@@ -136,5 +138,3 @@ void Test () {
     // Assert::That(actual, Equals(-1.0));
   }
 }
-
-

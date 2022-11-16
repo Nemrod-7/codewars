@@ -37,7 +37,7 @@ class Graph {
 
             for (auto ci : space) {
                 Point p = ci.ctr;
-								
+
                 minx = min (p.x - ci.r, minx);
                 maxx = max (p.x + ci.r, maxx);
                 miny = min (p.y - ci.r, miny);
@@ -56,6 +56,7 @@ class Graph {
 };
 
 double sq (double x) { return x * x; }
+double radian (double deg) { return deg * M_PI / 180.0; }
 double quadratic (double a, double b, double c) {
 
     double delta = b * b - 4 * a * c;
@@ -64,6 +65,7 @@ double quadratic (double a, double b, double c) {
 
     return x2;
 }
+
 vector<Point> tangent (Point p1, Circle c) {
     auto [c1,rad] = c;
     double theta = acos (rad / distance (p1,c1));
@@ -179,13 +181,13 @@ void astar (Point start, Point exit, vector<Circle> space) {
 		Draw::dots(vect);
 		Draw::img();
 }
-bool isdirect (Point p, Point dest, vector<Circle> &space) {
+bool collis (Point p, Point dest, vector<Circle> &space) {
 
 		bool direct = true;
 
 		for (Circle &star : space) {
 				if (interception (p, dest, star).size() != 0) {
-						return false;	
+						return false;
 				}
 		}
 		return true;
@@ -195,8 +197,8 @@ int main () {
     Point start = {-3, 1}, exit = {4.25, 0};
     vector<Circle> space = {  {0.0, 0.0, 2.5}, {1.5, 2.0, 0.5}, {3.5, 1.0, 1.0}, {3.5, -1.7, 1.2} };
 
-    //Draw::graph (start,exit,space);
-    
+    Draw::graph (start,exit,space);
+
     const double epsilon = 1e-8;
     const vector<double> sign {1 , -1 };
     const int size = space.size();
@@ -204,13 +206,19 @@ int main () {
 		Graph univ (start,exit,space);
 		vector<Point> vect;
 
+    Point p1 = start;
+    const double rad = 0.5;
+    for (double deg = 0; deg < 90; deg++) {
+
+        Point p2 = {p1.x + rad * cos (radian(deg)), p1.y + rad * sin (radian(deg))};
+        vect.push_back(p2);
+    }
 		//vect = interception (start,exit,space);
-		astar(start, exit, space);
- 
-		/*
+		//astar(start, exit, space);
+
     Draw::dots(vect);
     Draw::img();
+    /*
     */
 }
 ////////////////////////////Arkive////////////////////////////////
-
