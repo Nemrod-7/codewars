@@ -97,18 +97,33 @@ int main () {
 
 		uint64_t lim = 1e17;
 
-		vector<int> line;
-		vector<int> primes = {2,1};
-		int acc = accumulate (primes.begin(), primes.end(), 0);
-		int pad = 5 - acc;
-		int x = 0;
-		line = {1,1,0,0,0};
+		uint64_t size = 45;
+		uint64_t nd = 1UL << size;
 
-		for (int i = 0; i < 5; i++) {
-				x |= line[i] << i;
+		for (uint64_t num = 0; num < nd; num++) {
+				uint64_t acc = 0;
+				vector<uint64_t> clue;
+
+				//cout << setw(2) << num << " => ";
+
+				for (uint64_t i = 0; i < size; i++) {
+						bool bit = (num >> i &1);
+						//cout << bit;
+						acc += bit;
+						if ((bit == 0 || i == size - 1) && acc != 0) {
+								//clue.push_back(acc);
+								acc = 0;
+						}
+				}
+				/*
+				cout << " :: ";
+				for (auto it : clue) {
+						cout << it << ' ';
+				}
+				cout << endl;
+				
+				*/
 		}
-
-		cout << x;
 
 		auto end = chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;

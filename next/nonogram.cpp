@@ -13,28 +13,25 @@ class Nonogram {
     private :
         size_t width, height;
 
-        vector<vector<bool>> grid;
+        vector<vector<int>> grid;
         vector<vector<int>> cspx, cspy;
 				vector<vector<int>> top1, left1;
 
         vector<vector<int>> mkcomb (vector<vector<int>> top, int nd) {
 
-            int size = top.size(), end = 1;
+            int size = top.size(), end = 1UL << nd;
             vector<vector<int>> csp (top.size());
-
-            for (int i = 0; i < nd; i++)
-                end <<= 1;
 						//cout << end << endl;
             for (int num = 0; num < end; num++) {
                 int acc = 0;
-                vector<int> line;
+                vector<int> clues;
 								//cout << num << " => ";
                 for (int i = 0; i < nd; i++) {
-                    bool bit = static_cast<bool> (num >> i &1);
+                    bool bit = (num >> i &1);
 										//cout << bit;
                     acc += bit;
                     if ((bit == 0 || i == nd - 1) && acc != 0) {
-                        line.push_back(acc);
+                        clues.push_back(acc);
                         acc = 0;
                     }
                 }
@@ -47,7 +44,7 @@ class Nonogram {
 								*/
 
                 for (int i = 0; i < size; i++) {
-                    if (top[i] == line) csp[i].push_back(num);
+                    if (top[i] == clues) csp[i].push_back(num);
                 }
             }
 
@@ -145,18 +142,58 @@ class Nonogram {
         Nonogram (vector<vector<int>> top, vector<vector<int>> left) {
 
             width = top.size(), height = left.size();
-            grid.resize(height, vector<bool> (width));
+            grid.resize(height, vector<int> (width));
 
 						top1 = top, left1 = left;
 
             cspx = mkcomb(top, height);
 						cspy = mkcomb(left, width);
 
-						filter ();
-            //show (top, left);
+						for (int y = 0; y < height; y++) {
+						
+								if (left[y].size() == 0) continue;
+
+								int maxv = *max_element (left[y].begin(), left[y].end());
+						
+								vector<int> line (width);
+
+								for (int i = 0; i < maxv; i++) {
+										line[i]++,line[width - i - 1]++;
+								}
+
+								for (int x = 0; x < width; x++) { // if overlapping
+										if (line[x] == 2) grid[y][x] = 1;
+								}	
+					  }
+						
+					  for (int x = 0; x < width; x++) {
+
+								if (top[x].size() == 0) continue;
+
+								int maxv = *max_element (top[x].begin(), top[x].end());
+								vector<int> line (height);
+
+								for (int i = 0; i < maxv; i++) { 
+										line[i]++, line[height - i - 1]++;
+								}
+								for (int y = 0; y < height; y++) { // if overlapping
+										if (line[y] == 2) grid[y][x] = 1;
+								}	
+						}
+						/*
+						for (int y = 0; y < height; y++) {
+								for (int x = 0; x < width; x++) { // if overlapping
+										cout << grid[y][x];
+								}	
+								cout << endl;
+					  }
+						*/
+
+					 //filter ();
+            show (top, left);
         }
 
-				bool backtrack (vector<vector<bool>> &grid, const vector<vector<int>> &cspy, const vector<vector<int>> &cspx, int index) {
+				bool backtrack (vector<vector<int>> &grid, const vector<vector<int>> &cspy, const vector<vector<int>> &cspx, int index) {
 
 						if (index == height) {
 
@@ -188,7 +225,7 @@ class Nonogram {
 						return false;
 				}
 
-				vector<vector<bool>> solve () {
+				vector<vector<int>> solve () {
 						
 						backtrack (grid, cspy, cspx, 0);
 						//show (top1,left1);
@@ -271,15 +308,15 @@ int main () {
     {1, 1, 1, 0, 0, 1, 1, 1, 0, 1},
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};
 
-		/*
-		*/
-    //auto [top1,left1] = encoder (grid);
+    auto [top1,left1] = Nonogram::encoder (grid);
     top = {{3}, {4}, {2, 2, 2}, {2, 4, 2}, {6}, {3}};
     left = {{4}, {6}, {2, 2}, {2, 2}, {2}, {2}, {2}, {2}, {}, {2}, {2}};
-
-    Nonogram board (top,left);
+		/*
+		*/
+		int dimension = 5;
+    //Nonogram board (top,left);
 		//board.solve();
-
+		//cout << pow(2,40);
 
 		auto end = chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
