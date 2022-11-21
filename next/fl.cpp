@@ -11,6 +11,8 @@
 
 using namespace std;
 
+// -std=c++17 -O2 -o solver && ./solver
+
 using point = pair<int,int>;
 //using vertex = tuple<int, int, vector<point>>;
 enum state {none, vertical, horizontal};
@@ -77,15 +79,7 @@ string dijsktra (vector<string> level, vector<vector<int>> hist, point start, po
     priority_queue<vertex,vector<vertex>, comp> q1;
     map<vector<vector<int>>,bool> visited;
 
-    /*
-    struct search {fnc, g, h};
-
-    int alt = g + 1;
-    int heu = distance (nxp, exit);
-    int fnc = alt + heu;
-
-    */
-    q1.push (ver);
+		q1.push (ver);
 
 		int cycle = 0;
 
@@ -94,12 +88,12 @@ string dijsktra (vector<string> level, vector<vector<int>> hist, point start, po
         auto [dist, state, p, grid, route] = q1.top();
         vertex u = q1.top();
         q1.pop();
-
-				visited[grid] = true;
+				
+				//visited[grid] = true;
 				cycle++;
 
 				if (cycle == 3500) {
-            Display::board (level, grid);
+            //Display::board (level, grid);
 						break;
 				}
 
@@ -107,12 +101,6 @@ string dijsktra (vector<string> level, vector<vector<int>> hist, point start, po
 
             Display::board (level, grid);
             cout << route << " => " << cycle << " cycles\n";
-            /*
-            while (!q1.empty()) {
-                cout << q1.top().route << "\n";
-                q1.pop();
-            }
-            */
             return route;
         }
 
@@ -149,6 +137,7 @@ string dijsktra (vector<string> level, vector<vector<int>> hist, point start, po
                 }
 
                 if (!visited[path]) {
+										visited[path] = true;
                     q1.push (nextv);
                 }
 
@@ -181,7 +170,7 @@ string a_star (vector<string> level, vector<vector<int>> hist, point start, poin
     };
 
     heuristic begin = {0, distance (start, exit)};
-    vertex2 ver = {0, vertical, {start}, hist};
+    vertex2 ver = {0, vertical, {start}, hist, "", begin};
     priority_queue<vertex2,vector<vertex2>, comp2> q1;
     map<vector<vector<int>>,bool> visited;
 
@@ -271,7 +260,7 @@ string blox_solver (vector<string> level) {
         }
     }
 
-    a_star (level, grid, start, exit);
+    dijsktra (level, grid, start, exit);
 
     return "";
 }

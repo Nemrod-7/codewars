@@ -96,18 +96,21 @@ mod blox {
         while let Some (Vertex { index, moves, state, posit, visit, route }) = heap.pop() {
 
             cycle += 1;
-            //if cycle == 80 { break }
+            if cycle == 1600 { break }
             visited.insert(visit.clone(), true);
 
             if posit.0 == exit && state == 1 {
                 display (&level, &visit);
-                print! ("{}\n", route);
+                print! ("{route} => {cycle} cycles\n");
                 return route
             }
 
             for i in 0..4 {
                 let dir = compas[i];
                 let alp = alphab[i];
+                let dx = posit.1.0 as i32 - posit.0.0 as i32;
+                let dy = posit.1.1 as i32 - posit.0.1 as i32;
+
                 x1 = dir.0 + posit.0.0 as i32; y1 = dir.1 + posit.0.1 as i32;
 
                 if state == 1 {
@@ -116,24 +119,30 @@ mod blox {
                     x2 = dir.0 + posit.1.0 as i32; y2 = dir.1 + posit.1.1 as i32;
                 }
 
-                if isinside (&level, x2, y2) {
+                if isinside (&level, x2, y2) && isinside (&level, x1, y1) {
                     let x2 = x2 as usize; let y2 = y2 as usize;
-                    let alt = distance ((x2,y2), exit) + 1;
+                    let x1 = x1 as usize; let y1 = y1 as usize;
+                    let alt = index + 1 ;//distance ((x2,y2), exit) + 1;
+
                     let mut grid = visit.clone();
-                    grid[y2][x2] =  1;
+                    let nxtv:Vertex;
 
-                    if direct (posit, dir) {
-                        if visited.get (&grid) == None {
-                             heap.push (Vertex { index:alt, moves:moves + 1, state:1,  posit:((x2,y2),(x2,y2)), visit:grid, route:route.clone() + alp }) ;
+                    if state == 1 || (dx != dir.0 && dy != dir.1) {
+                        grid[y2][x2] = 2;
+                        grid[y1][x1] = 2;
+                        nxtv = Vertex { index:alt, moves:moves + 1, state:2, posit:((x1,y1),(x2,y2)), visit:grid.clone(), route:route.clone() + alp };
+                    } else {
+                        if dx == dir.0 && dy == dir.1 {
+                            grid[y2][x2] = 1;
+                            nxtv = Vertex { index:alt, moves:moves + 1, state:1,  posit:((x2,y2),(x2,y2)), visit:grid.clone(), route:route.clone() + alp };
+                        } else {
+                            grid[y1][x1] = 1;
+                            nxtv = Vertex { index:alt, moves:moves + 1, state:1,  posit:((x1,y1),(x1,y1)), visit:grid.clone(), route:route.clone() + alp };
                         }
-                    } else if isinside (&level, x1, y1) {
-                        let x1 = x1 as usize; let y1 = y1 as usize;
-                        grid[y2][x2] =  2;
-                        grid[y1][x1] =  2;
-
-                        if visited.get (&grid) == None {
-                             heap.push (Vertex { index:alt, moves:moves + 1, state:2, posit:((x1,y1),(x2,y2)), visit:grid, route:route.clone() + alp }) ;
-                        }
+                    }
+ 
+                    if visited.get (&grid) == None {
+                        heap.push (nxtv);
                     }
                 }
             }
@@ -166,16 +175,24 @@ fn main() {
         "000000000000111"];
 
     let level3 = vec![
-            "00011111110000",
-            "00011111110000",
-            "11110000011100",
-            "11100000001100",
-            "11100000001100",
-            "1B100111111111",
-            "11100111111111",
-            "000001X1001111",
-            "00000111001111"];
+        "00011111110000",
+        "00011111110000",
+        "11110000011100",
+        "11100000001100",
+        "11100000001100",
+        "1B100111111111",
+        "11100111111111",
+        "000001X1001111",
+        "00000111001111"];
 
+    let level0 = vec![
+        "011111111111110",
+        "011111111111110",
+        "0111111B1111110",
+        "011111111111110",
+        "011111111111110",
+        "011111111111X10"
+    ];
 
     blox::blox_solver (&level3);
     //example_tests();
@@ -184,81 +201,71 @@ fn main() {
 }
 
 fn example_tests() {
-        let fixed_tests = [
-
-            vec![
-                "1110000000",
-                "1B11110000",
-                "1111111110",
-                "0111111111",
-                "0000011X11",
-                "0000001110"],
-
-            vec![
-                "000000111111100",
-                "111100111001100",
-                "111111111001111",
-                "1B11000000011X1",
-                "111100000001111",
-                "000000000000111"],
-
-
-            vec![
-                "00011111110000",
-                "00011111110000",
-                "11110000011100",
-                "11100000001100",
-                "11100000001100",
-                "1B100111111111",
-                "11100111111111",
-                "000001X1001111",
-                "00000111001111"],
-
-
-            vec![
-
-                "11111100000",
-                "1B111100000",
-                "11110111100",
-                "11100111110",
-                "10000001111",
-                "11110000111",
-                "11110000111",
-                "00110111111",
-                "01111111111",
-                "0110011X100",
-                "01100011100"],
-
-
-            vec![
-                "000001111110000",
-                "000001001110000",
-                "000001001111100",
-                "B11111000001111",
-                "0000111000011X1",
-                "000011100000111",
-                "000000100110000",
-                "000000111110000",
-                "000000111110000",
-                "000000011100000"]
-
-        ];
+    let fixed_tests = [
+        vec![
+            "1110000000",
+            "1B11110000",
+            "1111111110",
+            "0111111111",
+            "0000011X11",
+            "0000001110"],
+        vec![
+            "000000111111100",
+            "111100111001100",
+            "111111111001111",
+            "1B11000000011X1",
+            "111100000001111",
+            "000000000000111"],
+        vec![
+            "00011111110000",
+            "00011111110000",
+            "11110000011100",
+            "11100000001100",
+            "11100000001100",
+            "1B100111111111",
+            "11100111111111",
+            "000001X1001111",
+            "00000111001111"],
+        vec![
+            "11111100000",
+            "1B111100000",
+            "11110111100",
+            "11100111110",
+            "10000001111",
+            "11110000111",
+            "11110000111",
+            "00110111111",
+            "01111111111",
+            "0110011X100",
+            "01100011100"],
+        vec![
+            "000001111110000",
+            "000001001110000",
+            "000001001111100",
+            "B11111000001111",
+            "0000111000011X1",
+            "000011100000111",
+            "000000100110000",
+            "000000111110000",
+            "000000111110000",
+            "000000011100000"]
+    ];
 
 
-        let fixed_sols = [
-            vec!["RRDRRRD","RDDRRDR","RDRRDDR"],
-            vec!["ULDRURRRRUURRRDDDRU","RURRRULDRUURRRDDDRU"],
-            vec!["ULURRURRRRRRDRDDDDDRULLLLLLD"],
-            vec!["DRURURDDRRDDDLD"],
-            vec!["RRRDRDDRDDRULLLUULUUURRRDDLURRDRDDR","RRRDDRDDRDRULLLUULUUURRDRRULDDRRDDR","RRRDRDDRDDRULLLUULUUURRDRRULDDRRDDR"]
-        ];
+    let fixed_sols = [
+        vec!["RRDRRRD","RDDRRDR","RDRRDDR"],
+        vec!["ULDRURRRRUURRRDDDRU","RURRRULDRUURRRDDDRU"],
+        vec!["ULURRURRRRRRDRDDDDDRULLLLLLD"],
+        vec!["DRURURDDRRDDDLD"],
+        vec!["RRRDRDDRDDRULLLUULUUURRRDDLURRDRDDR","RRRDDRDDRDRULLLUULUUURRDRRULDDRRDDR","RRRDRDDRDDRULLLUULUUURRDRRULDDRRDDR"]
+    ];
 
-        for (grid,valids) in fixed_tests.iter().zip(fixed_sols.iter()) {
-            let user = blox::blox_solver(grid);
+    for (grid,valids) in fixed_tests.iter().zip(fixed_sols.iter()) {
+        let user = blox::blox_solver(grid);
 
-            if valids.iter().any(|s| s != &user) {
-                print! ("got : {} expected : {:?}\n", user, valids);
-            }
-            //assert!(valids.iter().any(|s| s == &user),"You returned an invalid path");
+        if valids.iter().any(|s| s != &user) {
+            print! ("got : {} expected : {:?}\n", user, valids);
         }
+        //assert!(valids.iter().any(|s| s == &user),"You returned an invalid path");
+    }
 }
