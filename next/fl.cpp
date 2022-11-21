@@ -16,12 +16,14 @@ using point = pair<int,int>;
 enum state {none, vertical, horizontal};
 
 const vector<char> alpha {'U','R','D','L'};
-const vector<pair<int,int>> compas {{0,-1},{1,0},{0,1},{-1,0}};
+const vector<pair<int,int>> dir {{0,-1},{1,0},{0,1},{-1,0}};
+
 
 struct vertex {
-    int dist, state;
+    int dist;
+    int state;
     vector<point> p;
-    vector<vector<int>> visit;
+    vector<vector<int>> hist;
     string route;
 };
 
@@ -71,10 +73,18 @@ bool is_inside (const vector<string> &grid, int x, int y) {
 
 string dijsktra (vector<string> level, vector<vector<int>> hist, point start, point exit) {
 
-    vertex ver = {distance (start, exit), vertical, {start}, hist};
+    vertex ver = {0, vertical, {start}, hist};
     priority_queue<vertex,vector<vertex>, comp> q1;
     map<vector<vector<int>>,bool> visited;
 
+    /*
+    struct search {fnc, g, h};
+
+    int alt = g + 1;
+    int heu = distance (nxp, exit);
+    int fnc = alt + heu;
+
+    */
     q1.push (ver);
 
 		int cycle = 0;
@@ -82,24 +92,32 @@ string dijsktra (vector<string> level, vector<vector<int>> hist, point start, po
     while (!q1.empty()) {
 
         auto [dist, state, p, grid, route] = q1.top();
+        vertex u = q1.top();
         q1.pop();
 
 				visited[grid] = true;
 				cycle++;
 
-				if (cycle == 100) {
+				if (cycle == 3500) {
             Display::board (level, grid);
 						break;
 				}
 
         if (state == vertical && p[0] == exit) {
+
             Display::board (level, grid);
-            cout << route << " => " << cycle << " moves\n";
+            cout << route << " => " << cycle << " cycles\n";
+            /*
+            while (!q1.empty()) {
+                cout << q1.top().route << "\n";
+                q1.pop();
+            }
+            */
             return route;
         }
 
         for (int i = 0; i < 4; i++) {
-            const int nx = compas[i].first, ny = compas[i].second;
+            const int nx = dir[i].first, ny = dir[i].second;
             const int x1 = p[0].first + nx, y1 = p[0].second + ny;
             const int dx = (p[1].first - p[0].first), dy = (p[1].second - p[0].second);
             int x2, y2;
@@ -109,7 +127,8 @@ string dijsktra (vector<string> level, vector<vector<int>> hist, point start, po
             } else {
                 x2 = p[1].first + nx, y2 = p[1].second + ny;
             }
-            int alt = dist + 1;//int alt = distance ({x2, y2}, exit) + 1;
+
+            int alt = dist + 1; // distance ({x2, y2}, exit);
 
             if (is_inside (level, x2, y2) && is_inside (level, x1, y1)) {
                 vertex nextv;
@@ -141,7 +160,101 @@ string dijsktra (vector<string> level, vector<vector<int>> hist, point start, po
 
     return "";
 }
+string a_star (vector<string> level, vector<vector<int>> hist, point start, point exit) {
 
+    struct heuristic {
+        int g,h;
+    };
+    struct vertex2 {
+        int dist;
+        int state;
+        vector<point> p;
+        vector<vector<int>> hist;
+        string route;
+        heuristic search;
+    };
+
+    struct comp2 {
+        bool operator()(const vertex2 &a, const vertex2 &b ) {
+            return a.dist > b.dist;
+        }
+    };
+
+    heuristic begin = {0, distance (start, exit)};
+    vertex2 ver = {0, vertical, {start}, hist};
+    priority_queue<vertex2,vector<vertex2>, comp2> q1;
+    map<vector<vector<int>>,bool> visited;
+
+    q1.push (ver);
+
+		int cycle = 0;
+
+    while (!q1.empty()) {
+
+        auto [dist, state, p, grid, route, search] = q1.top();
+
+        q1.pop();
+
+				visited[grid] = true;
+				cycle++;
+
+				if (cycle == 3500) {
+            Display::board (level, grid);
+						break;
+				}
+
+        if (state == vertical && p[0] == exit) {
+
+            Display::board (level, grid);
+            cout << route << " => " << cycle << " cycles\n";
+
+            return route;
+        }
+
+        for (int i = 0; i < 4; i++) {
+            const int nx = dir[i].first, ny = dir[i].second;
+            const int dx = p[1].first - p[0].first, dy = p[1].second - p[0].second;
+            const int x1 = p[0].first + nx, y1 = p[0].second + ny;
+            int x2, y2;
+
+            if (state == vertical) {
+                x2 = p[0].first + nx * 2, y2 = p[0].second + ny * 2;
+            } else {
+                x2 = p[1].first + nx, y2 = p[1].second + ny;
+            }
+
+            heuristic vn = {search.g + 1, distance ({x2,y2}, exit)};
+            int alt = vn.g + vn.h;
+
+            if (is_inside (level, x2, y2) && is_inside (level, x1, y1)) {
+                vertex2 nextv;
+                auto path = grid;
+
+                if (state == vertical || (dx != nx && dy != ny)) {
+                    path[y2][x2] = horizontal;
+                    path[y1][x1] = horizontal;
+                    nextv = {alt, horizontal, {{x1,y1},{x2,y2}}, path, route + alpha[i], vn};
+                } else {
+                    if (dx == nx && dy == ny) {
+                        path[y2][x2] = vertical;
+                        nextv = {alt, vertical, {{x2,y2},{x2,y2}}, path, route + alpha[i], vn};
+                    } else {
+                        path[y1][x1] = vertical;
+                        nextv = {alt, vertical, {{x1,y1},{x1,y1}}, path, route + alpha[i], vn};
+                    }
+                }
+
+                if (!visited[path]) {
+                    q1.push (nextv);
+                }
+            }
+				}
+		}
+
+  //display (level, path);
+
+    return "";
+}
 string blox_solver (vector<string> level) {
 
     const int width = level[0].size(), height = level.size();
@@ -158,7 +271,7 @@ string blox_solver (vector<string> level) {
         }
     }
 
-    dijsktra (level, grid, start, exit);
+    a_star (level, grid, start, exit);
 
     return "";
 }
@@ -185,7 +298,7 @@ int main  () {
 		"000000000000000000000000"
   };
 
-    blox_solver (level1);
+    blox_solver (level2);
     //     {"ULDRURRRRUURRRDDDRU","RURRRULDRUURRRDDDRU"},
     //display (floor, grid);
 
@@ -193,6 +306,7 @@ int main  () {
     chrono::duration<double> elapsed = end - start;
     cout << "\nProcess took " << elapsed.count()  << " ms\n" << endl;
 }
+
 void Test () {
 
   vector<vector<string>> level {
