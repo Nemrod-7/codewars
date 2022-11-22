@@ -1,13 +1,3 @@
-
-fn readcomb (num:u8) {
-
-    for i in 0..5 {
-        let bit =  num >> i &1;
-        print!("{bit}");
-    }
-    print!("\n");
-}
-
 fn mkcomb (num: u8) -> Vec<u8> {
 
     let mut comb:Vec<u8> = Vec::new();
@@ -25,45 +15,13 @@ fn mkcomb (num: u8) -> Vec<u8> {
 
     comb
 }
-fn reduce (grid:&mut [[u8;5];5], (vertical, lateral): (&Vec<Vec<u8>>, &Vec<Vec<u8>>)) {
-
-    for y in 0..5 {
-        if vertical[y].len() == 1 {
-            let num = vertical[y][0];
-
-            for x in 0..5 {
-                grid[x][y] = num >> x &1; // if (num&1 << x) != 0 { 1 } else { 0 };
-            }
-        }
-        if lateral[y].len() == 1 {
-            let num = lateral[y][0];
-
-            for x in 0..5 {
-                grid[y][x] = num >> x &1;
-            }
-        }
-    }
- }
-fn filter (grid:&mut [[u8;5];5], (vertical, lateral): (&Vec<Vec<u8>>, &Vec<Vec<u8>>)) {
-/*
-    for y in 0..5 {
-        for x in 0..5 {
-            if grid[y][x] == 1 {
-                lateral[y] = lateral[y].iter().filter(|&&cmb| (cmb&1 << x) != 0).cloned().collect::<Vec<_>>();
-                vertical[x] = vertical[x].iter().filter(|&&cmb| (cmb&1 << y) != 0).cloned().collect::<Vec<_>>();
-            }
-        }
-    }
-    */
-}
-
-fn backtrack2 (grid: &mut [[u8;5];5], (top, left): (&Vec<Vec<u8>>, &Vec<Vec<u8>>), y:usize) -> bool { 
+fn backtrack (grid: &mut [[u8;5];5], (top, left): (&Vec<Vec<u8>>, &Vec<Vec<u8>>), y:usize) -> bool { 
 
     if y == 5 {
 
         for x in 0..5 {
             let mut num = 0;
-
+            
             for i in 0..5 {
                 num |= grid[i][x] << i;
             }
@@ -79,14 +37,13 @@ fn backtrack2 (grid: &mut [[u8;5];5], (top, left): (&Vec<Vec<u8>>, &Vec<Vec<u8>>
             grid[y][x] = mask >> x &1; 
         }
 
-        if backtrack2 (grid, (top,left), y + 1) == true {
+        if backtrack (grid, (top,left), y + 1) == true {
             return true;
         }
     }
  
     return false;
 }
-
 fn solve_nonogram ((top, left): ([&[u8]; 5], [&[u8]; 5])) -> [[u8; 5]; 5] {
 
 
@@ -97,17 +54,14 @@ fn solve_nonogram ((top, left): ([&[u8]; 5], [&[u8]; 5])) -> [[u8; 5]; 5] {
 
     for num in 0..32 {
         let comb = mkcomb (num);
-        
+
         for i in 0..5 {
             if comb == left[i] { lateral[i].push(num); }
             if comb == top[i] { vertical[i].push(num); }
         }
     }
 
-    //reduce (&mut grid, (&vertical,&lateral));
-    backtrack2 (&mut grid, (&vertical,&lateral), 0);
-   // backtrack (&mut grid, (top,left), 0, 0);
-    print!("\n");
+    backtrack (&mut grid, (&vertical,&lateral), 0);
 
     for i in 0..5 {
         for j in 0..5 {
@@ -119,6 +73,7 @@ fn solve_nonogram ((top, left): ([&[u8]; 5], [&[u8]; 5])) -> [[u8; 5]; 5] {
 
     grid
 }
+
 
 fn main () {
 
@@ -186,48 +141,36 @@ fn isvalid (grid:&[[u8;5];5], (top, left): ([&[u8]; 5], [&[u8]; 5])) -> bool {
 
     true
 }
+fn reduce (grid:&mut [[u8;5];5], (vertical, lateral): (&Vec<Vec<u8>>, &Vec<Vec<u8>>)) {
 
-fn backtrack (grid:&mut [[u8;5];5], (top, left): ([&[u8]; 5], [&[u8]; 5]), mut x:usize, mut y:usize) -> bool {
+    for y in 0..5 {
+        if vertical[y].len() == 1 {
+            let num = vertical[y][0];
 
-    if x == 5 {
-        if getline(grid, y) != left[y] { return false }
-        y += 1;
-        x = 0;
+            for x in 0..5 {
+                grid[x][y] = num >> x &1; // if (num&1 << x) != 0 { 1 } else { 0 };
+            }
+        }
+        if lateral[y].len() == 1 {
+            let num = lateral[y][0];
+
+            for x in 0..5 {
+                grid[y][x] = num >> x &1;
+            }
+        }
     }
-
-    if y == 5 {
-        return true
+ }
+fn filter (grid:&mut [[u8;5];5], (vertical, lateral): (&Vec<Vec<u8>>, &Vec<Vec<u8>>)) {
+/*
+    for y in 0..5 {
+        for x in 0..5 {
+            if grid[y][x] == 1 {
+                lateral[y] = lateral[y].iter().filter(|&&cmb| (cmb&1 << x) != 0).cloned().collect::<Vec<_>>();
+                vertical[x] = vertical[x].iter().filter(|&&cmb| (cmb&1 << y) != 0).cloned().collect::<Vec<_>>();
+            }
+        }
     }
-
-    grid[y][x] = 1;
-
-    if backtrack(grid, (top,left), x + 1, y) == true {
-        return true
-    }
-
-    grid[y][x] = 0;
-
-    return false;
-}
-fn to_bin (mask:u32) -> Vec<u8> {
-
-    let mut bset:Vec<u8> = vec![];
-
-    for i in 0..5 {
-        bset[i] = (mask >> i &1) as u8;
-    }
-
-    bset
-}
-fn to_int (bset:[u8;5]) -> u32 {
-
-    let mut mask = 0;
-
-    for i in 0..5 {
-        mask |= (bset[i] << i) as u32;
-    }
-
-    mask
+    */
 }
 
 
