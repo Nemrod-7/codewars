@@ -1,3 +1,4 @@
+#![allow(warnings, unused)]
 
 mod blox {
     use std::cmp::Ordering;
@@ -6,17 +7,14 @@ mod blox {
     #[derive(Clone, Eq, PartialEq)] // #[derive(Clone, Eq, PartialEq)]
     struct Vertex {
         index: usize,
-        moves: usize,
-        state: usize,
-        posit: ((usize,usize),(usize,usize)),
+        posit: ((i32,i32),(i32,i32)),
         visit: Vec<Vec<usize>>,
         route: String,
     }
 
     impl Ord for Vertex {
         fn cmp(&self, other: &Self) -> Ordering {
-            other.moves.cmp(&self.moves)
-                .then_with(|| self.index.cmp(&other.index))
+            other.index.cmp(&self.index)
         }
     }
 
@@ -32,16 +30,9 @@ mod blox {
         }
         false
     }
-    fn direct (pos: ((usize,usize),(usize,usize)), dir:(i32,i32)) -> bool {
-        let x1 = pos.1.0 as i32;
-        let y1 = pos.1.1 as i32;
-        let x2 = pos.0.0 as i32;
-        let y2 = pos.0.1 as i32;
-        return x1 - x2 == dir.0 && y1 - y2 == dir.1;
-    }
-    fn distance (a:(usize,usize), b:(usize,usize)) -> usize {
-        let xx = (a.0 as i32 - b.0 as i32).abs() as usize;
-        let yy = (a.1 as i32 - b.1 as i32).abs() as usize;
+    fn distance (a:(i32,i32), b:(i32,i32)) -> usize {
+        let xx = (a.0 - b.0).abs() as usize;
+        let yy = (a.1 - b.1).abs() as usize;
         xx + yy
     }
     fn display (level: &Vec<Vec<char>>, visit: &Vec<Vec<usize>>) {
@@ -65,10 +56,8 @@ mod blox {
         let width = puzzle[0].len();
         let height = puzzle.len();
         let compas = [(0,-1),(1,0),(0,1),(-1,0)];
-        let alphab = ["U","R","D","L"];
+        let letter = ["U","R","D","L"];
 
-        let mut x1; let mut y1;
-        let mut x2; let mut y2;
         let mut start = (0,0);
         let mut exit = (0,0);
         let mut hist = vec![vec![0; width]; height];
@@ -81,23 +70,23 @@ mod blox {
             for x in 0..width {
 
                 match level[y][x] {
-                    'X' => exit = (x,y),
-                    'B' => start = (x,y),
+                    'X' => exit = (x as i32,y as i32),
+                    'B' => start = (x as i32,y as i32),
                     _ => (),
                 }
             }
         }
 
-        hist[start.1][start.0] = 1;
-        heap.push (Vertex { index:0, moves:0, state:1, posit:(start,start), visit:hist.clone(), route:"".to_string() });
+        hist[start.1 as usize][start.0 as usize] = 1;
+        heap.push (Vertex { index:0,  posit:(start,start), visit:hist.clone(), route:"".to_string() });
 
         let mut cycle = 0;
 
-        while let Some (Vertex { index, moves, state, posit, visit, route }) = heap.pop() {
+        while let Some (Vertex { index, posit, visit, route }) = heap.pop() {
 
             cycle += 1;
-            if cycle == 1600 { break }
-            visited.insert(visit.clone(), true);
+            if cycle == 1900 { break }
+            let state = if posit.0 == posit.1 { 1 } else { 2 };
 
             if posit.0 == exit && state == 1 {
                 display (&level, &visit);
@@ -107,41 +96,38 @@ mod blox {
 
             for i in 0..4 {
                 let dir = compas[i];
-                let alp = alphab[i];
-                let dx = posit.1.0 as i32 - posit.0.0 as i32;
-                let dy = posit.1.1 as i32 - posit.0.1 as i32;
+                let dx = posit.1.0 - posit.0.0;
+                let dy = posit.1.1 - posit.0.1;
 
-                x1 = dir.0 + posit.0.0 as i32; y1 = dir.1 + posit.0.1 as i32;
-
-                if state == 1 {
-                    x2 = dir.0 * 2 + posit.0.0 as i32; y2 = dir.1 * 2 + posit.0.1 as i32;
-                } else {
-                    x2 = dir.0 + posit.1.0 as i32; y2 = dir.1 + posit.1.1 as i32;
-                }
+                let x1 = dir.0 + posit.0.0;
+                let y1 = dir.1 + posit.0.1;
+                let x2 = if state == 1 { dir.0 * 2 + posit.0.0 } else { dir.0 + posit.1.0 };
+                let y2 = if state == 1 { dir.1 * 2 + posit.0.1 } else { dir.1 + posit.1.1 };
 
                 if isinside (&level, x2, y2) && isinside (&level, x1, y1) {
-                    let x2 = x2 as usize; let y2 = y2 as usize;
-                    let x1 = x1 as usize; let y1 = y1 as usize;
-                    let alt = index + 1 ;//distance ((x2,y2), exit) + 1;
 
-                    let mut grid = visit.clone();
                     let nxtv:Vertex;
+                    let path = route.clone() + letter[i];
+                    let alt = route.len() + distance ((x2,y2), exit);
+                    let mut grid = visit.clone();
 
                     if state == 1 || (dx != dir.0 && dy != dir.1) {
-                        grid[y2][x2] = 2;
-                        grid[y1][x1] = 2;
-                        nxtv = Vertex { index:alt, moves:moves + 1, state:2, posit:((x1,y1),(x2,y2)), visit:grid.clone(), route:route.clone() + alp };
+                        let id = if (x2 - x1).abs() == 0 { 2 } else { 3 };
+                        grid[y2 as usize][x2 as usize] = id;
+                        grid[y1 as usize][x1 as usize] = id;
+                        nxtv = Vertex { index:alt, posit:((x1,y1),(x2,y2)), visit:grid.clone(), route:path };
                     } else {
                         if dx == dir.0 && dy == dir.1 {
-                            grid[y2][x2] = 1;
-                            nxtv = Vertex { index:alt, moves:moves + 1, state:1,  posit:((x2,y2),(x2,y2)), visit:grid.clone(), route:route.clone() + alp };
+                            grid[y2 as usize][x2 as usize] = 1;
+                            nxtv = Vertex { index:alt, posit:((x2,y2),(x2,y2)), visit:grid.clone(), route:path };
                         } else {
-                            grid[y1][x1] = 1;
-                            nxtv = Vertex { index:alt, moves:moves + 1, state:1,  posit:((x1,y1),(x1,y1)), visit:grid.clone(), route:route.clone() + alp };
+                            grid[y1 as usize][x1 as usize] = 1;
+                            nxtv = Vertex { index:alt, posit:((x1,y1),(x1,y1)), visit:grid.clone(), route:path };
                         }
                     }
  
                     if visited.get (&grid) == None {
+                        visited.insert(grid, true);
                         heap.push (nxtv);
                     }
                 }
@@ -162,10 +148,6 @@ fn main() {
             "0000011X11",
             "0000001110"
         ];
-        //let n2:Vertex = Vertex {state:0, posit:vec![(0,1)]};
-        //let str:Vec<Vec<char>> =
-    //    example_tests();
-
     let level2 = vec![
         "000000111111100",
         "111100111001100",
@@ -185,15 +167,6 @@ fn main() {
         "000001X1001111",
         "00000111001111"];
 
-    let level0 = vec![
-        "011111111111110",
-        "011111111111110",
-        "0111111B1111110",
-        "011111111111110",
-        "011111111111110",
-        "011111111111X10"
-    ];
-
     blox::blox_solver (&level3);
     //example_tests();
 
@@ -201,6 +174,7 @@ fn main() {
 }
 
 fn example_tests() {
+
     let fixed_tests = [
         vec![
             "1110000000",
