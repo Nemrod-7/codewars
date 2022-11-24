@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BinaryHeap, HashMap};
 
 fn rate (part: &Vec<u32>) -> u32 {
 
@@ -52,14 +52,27 @@ fn find_spec_prod_part (n: u32, mode: &str) -> Option<(Vec<u32>, u32)> {
         _ => Some (res),
     }
 }
+
 fn main() {
 
     let n = 1416;
+    struct Vtx {
+        index: usize,
+        path: String,
+    };
+    let mut heap:BinaryHeap<Vtx> = BinaryHeap::new();
 
-    let res = find_spec_prod_part (10007, "max");
+/*
+    heap.push(25);
+    heap.push(10);
+    heap.push(34);
+*/
 
-    print!("{:?}\n", res);
-
-
+    if let Some(peek) = heap.peek() {
+        //print!("{} ");
+    }
+    for it in &heap {
+    //    print!("{it} ");
+    }
 
 }

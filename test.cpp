@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
+#include <set>
 #include <algorithm>
 
 using namespace std;
@@ -143,44 +144,73 @@ void Output(int value) {
     recurse(value, value);
 }
 
+set<int> sieve (int num) {
+    const int end = sqrt (num);
+    bool *primes = new bool[num + 1];
+    set<int> sieve;
+    int p, i;
+
+    fill_n (primes, num + 1, 0);
+
+    for (p = 2; p <= end ; p++)
+       if (primes[p] == false)
+           for (i = p * p; i <= num; i += p)
+                primes[i] = true;
+
+    for (i = 2; i <= num; i++)
+       if (primes[i] == false)
+           sieve.insert(i);
+
+    return sieve;
+}
+vector<int> find_emirp (int lim) {
+
+    vector<int> res;
+    int cnt = 0, maxv = 0, sum = 0;
+    set<int> primes = sieve (lim * 2);
+
+    for (auto p : primes) {
+        int num = p, rev = 0;
+
+        if (p > lim) break;
+
+        do {
+            rev = rev * 10 + num % 10;
+        } while (num /= 10);
+
+        if (rev != p && primes.find(rev) != primes.end()) {
+            cnt++;
+            maxv = max (maxv, p);
+            sum += p;
+        }
+    }
+
+    return {cnt, maxv, sum};
+}
 int main () {
 
-    //  g(n,[2]);
-    int n = 1416;
-    vector<int> factors = factorize (n);
-    vector<vector<int>> partition;
+    int lim = 100;
+    int cnt = 0, maxv = 0, sum = 0;
+    set<int> primes = sieve (lim * 2);
 
-    //Output (1416);
-    vector<int> line (5);
+    for (auto p : primes) {
+        int num = p, rev = 0;
 
-    vector<int> comb = {1,2};
+        if (p > lim) break;
 
-    int total = 0, pad = 5;
-    int x = 0;
+        do {
+            rev = rev * 10 + num % 10;
+        } while (num /= 10);
 
-    for (auto n : comb)
-        total += n;
-
-    pad -= total;
-
-    for (auto n : comb) {
-
-        while (n-->0)
-            line[x++] = 1;
-
-        x++;
+        if (rev != p) {
+            if (primes.find(rev) != primes.end()) {
+              cnt++;
+              maxv = max (maxv, p);
+              sum += p;
+            }
+        }
     }
 
-    for (auto cell : line) {
-        cout << cell << " ";
-    }
+    cout << cnt << " " << maxv << " " << sum << endl;
 
-    /*
-    for (int k = 2; k < 11; k++) {
-        cout << "[" << k << "] => ";
-        p_factors(k);
-
-        cout << "\n";
-    }
-    */
 }
