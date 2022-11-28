@@ -3,11 +3,11 @@
 #include <cmath>
 #include <algorithm>
 #include <chrono>
+#include <cassert>
 
 using namespace std;
 
 /////////////////////////////////Assert/////////////////////////////////////////
-
 typedef int test_t;
 class Assert {
     public :
@@ -26,74 +26,86 @@ class KPrimes {
         static int puzzle(int s);
 };
 
-long long *SieveOfEratosthenes (long long num) {
-    bool *primes = new bool[num + 1];
-    long long *sieve = new long long[num +1]; //vector<long long> sieve(num);
-    const unsigned end = sqrt (num);
-    unsigned p, i, size = 1;
+vector<uint64_t> sieve1 (uint64_t num) {
 
-    fill_n (primes, num, 0);
+    const uint64_t end = sqrt (num);
+    bool *sieve = new bool[num + 1];
+    vector<uint64_t> prime;
 
-    for (p = 2; p <= end ; p++)
-        if (primes[p] == false)
-            for (i = p * p; i <= num; i += p)
-                 primes[i] = true;
+    fill_n (sieve, num, true);
 
-    for (i = 2; i <= num; i++)
-         if (primes[i] == false)
-            sieve[size++] = i;
+    for (uint64_t p = 2; p <= end ; p++)
+        if (sieve[p] == true)
+            for (uint64_t i = p * p; i <= num; i += p)
+                 sieve[i] = false;
 
-    sieve[0] = size;
-    //delete primes;
-    return sieve;
+    for (uint64_t i = 2; i <= num; i++)
+         if (sieve[i] == true)
+            prime.push_back (i);
+
+    return prime;
 }
-bool is_prime(int num) {
+vector<uint64_t> sieve2 (uint64_t num) {
 
-    const unsigned end = sqrt (num);
-    unsigned i;
-    if (num <= 3) return num > 1;
-    else if (num % 2 == 0 || num % 3 == 0) return false;
+    const uint64_t end = sqrt (num);
+    bool *sieve = new bool[num + 1];
+    vector<uint64_t> prime {2};
 
-    else {
-        for (i = 5; i <= end; i += 6)
-            if (num % i == 0 || num % (i + 2) == 0)
-                return false;
-    }
+    fill_n (sieve, num + 1, true);
 
-    return true;
-}
-long long count_k(long long num, const long long *sieve) {
-    int i = 0, count = 0;
-    int div;
-    long long size = sieve[0];
-
-    while (num > 1) {
-        for (i = 1; i < size; ++i)
-            if (num % sieve[i] == 0) {
-                num /= sieve[i];
-                break;
+    for (uint64_t p = 3; p <= end ; p += 2) {
+        if (sieve[p] == true) {
+            for (uint64_t i = p * p; i <= num; i += p) {
+                 sieve[i] = false;
             }
-
-        count++;
+        }
     }
 
-    return count;
+    for (uint64_t i = 3; i <= num; i += 2) {
+         if (sieve[i] == true) {
+            prime.push_back (i);
+         }
+    }
+
+    return prime;
+}
+vector<uint64_t> sieve3 (uint64_t num) { //x2 / half space
+
+    const uint64_t end = sqrt (num);
+    bool *sieve = new bool[num / 2 + 1];
+    vector<uint64_t> prime {2};
+
+    fill_n (sieve, num / 2 + 1, true);
+
+    for (uint64_t p = 3; p <= end ; p += 2)
+        if (sieve[p / 2] == true)
+            for (uint64_t i = p * p; i <= num; i += 2 * p)
+                 sieve[i / 2] = false;
+
+    for (uint64_t i = 3; i <= num; i += 2)
+        if (sieve[i / 2] == true)
+            prime.push_back (i);
+
+    return prime;
 }
 
 vector<long long> KPrimes::countKprimes(int k, long long start, long long end) {
-    long long num , curr, count;
+
     vector<long long> k_primes;
 
-    for (num = start; num <= end; ++num) {
-        count = 0;
-  			curr = num;
+    for (long long num = start; num <= end; ++num) {
+        long long count = 0;
+  			long long curr = num;
 
-  			for (int i = 2; i <= curr / i; i++)
+        while (curr > 0 && curr % 2 == 0) {
+             count++, curr /= 2;
+        }
+
+  			for (long long i = 3; i * i <= curr; i += 2) {
   				  while (curr % i == 0) {
-  					     count++;
-  					     curr /= i;
+  					     count++, curr /= i;
   				  }
-
+        }
   			if (curr > 1)
   				  count++;
 
@@ -110,24 +122,40 @@ int KPrimes::puzzle(int s) {
    vector<long long> threek = KPrimes::countKprimes(3, 0, s);
    vector<long long> sevenk = KPrimes::countKprimes(7, 0, s);
 
-     for (auto &one : onek)
-         for (auto &three : threek)
-             for (auto &seven : sevenk)
-                 if (seven + three + one == s)
-                     cnt++;
-    return cnt;
+   for (auto &one : onek) {
+       for (auto &three : threek) {
+           for (auto &seven : sevenk) {
+               if (seven + three + one == s) {
+                   cnt++;
+               }
+           }
+       }
+   }
+
+   return cnt;
 }
 
 int main() {
+
   auto start = std::chrono::high_resolution_clock::now();
+  /*
+  auto primes = sieve3 (200);
 
-  // countKprimes(5, 500, 600) --> [500, 520, 552, 567, 588, 592, 594]
+  for (auto p: primes) {
+      cout << p << " ";
+  }
+  cout << endl;
 
+  // countKprimes(5, 500, 600) --> [500, 520, 552, 567, 588, 592, 594];
+  */
   KPrimes::countKprimes(8,10000000,10000200);
 
-  Test();
-  //for (auto it : sieve)
-  //    cout << it << " ";
+  auto prim = sieve1 (100000);
+
+  for (int i = 30000; i < 30025; i++)
+
+  //Test();
+
   auto end = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = end - start;
   std::cout << "Process took " << elapsed.count()  << " ms" << std::endl;
@@ -135,6 +163,7 @@ int main() {
 
   return 0;
 }
+
 void testequal(std::vector<long long> ans, std::vector<long long> sol) {
     //Assert::That(ans, Equals(sol));
 }
@@ -197,4 +226,38 @@ KPrimes::countKprimes(5,2328347,2330286);
 /*
 
 */
+}
+
+//////////////////////////////////////////////////////////////////
+bool is_prime (int num) {
+
+    const unsigned end = sqrt (num);
+    unsigned i;
+    if (num <= 3) return num > 1;
+    else if (num % 2 == 0 || num % 3 == 0) return false;
+    else {
+        for (i = 5; i <= end; i += 6)
+            if (num % i == 0 || num % (i + 2) == 0)
+                return false;
+    }
+
+    return true;
+}
+
+long long count_k (long long num, const long long *sieve) {
+
+    long long count = 0;
+    long long size = sieve[0];
+
+    while (num > 1) {
+        for (long long i = 1; i < size; ++i) {
+            if (num % sieve[i] == 0) {
+                num /= sieve[i];
+                break;
+            }
+        }
+        count++;
+    }
+
+    return count;
 }

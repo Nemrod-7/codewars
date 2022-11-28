@@ -118,6 +118,17 @@ int binomial (int n, int k) {
     return res;
   }
 
+vector<vector<int>> mk_triangle (int size) {
+    vector<vector<int>> tri;
+
+    for(int n = 0; n <= size; ++n) {
+        tri.push_back(vector<int>());
+        for(int k = 0; k <= n; ++k)
+            tri[n].push_back (round (binomial (n, k)));
+    }
+
+    return tri;
+}
 void display_tri (vector<vector<int>> &tria) {
 
     for (auto &n : tria) {
@@ -137,7 +148,7 @@ string mk_string (int size) {
     while (size-->0) row += colors[distr(rng)];
 
     return row;
-  }
+}
 char triangle3 (string &row, pair<int,int> coord) {
 
     //auto mod3 = [](int k) {return ((k %= 3) < 0) ? k + 3 : k;};
@@ -161,7 +172,20 @@ int main () {
 
   pair<int,int> p;
   uint64_t N = 20;
-  //vector<vector<int>> base = mk_triangle (9);
+
+  for (int n = 0; n <= N; ++n) {
+      cout << string ((N - n) * 2, ' ');
+      for (int k = 0; k <= n; ++k) {
+          int cell = lucas3 (n, k);
+          if (cell == 0) {
+              cout << "    ";
+          } else {
+              cout << setw (3) << '#' << " ";
+          }
+      }
+      cout << endl;
+  }
+
   int index = 0;
   /*
  while (clock.running(2))
@@ -177,9 +201,10 @@ int main () {
       }
 
       cout << " idx2 " << index << endl;
-      /*
+
   }
   */
+  /*
   p.first = row.size();
   while (p.first-->0) {
       for (p.second = 0; p.second < p.first; ++p.second) {
@@ -188,7 +213,7 @@ int main () {
       cout << endl;
   }
   Test ();
-  /*
+
   for (int i = -5; i < 10; ++i) {
       cout << setw (2) <<  i << ' ' << mod3 (i) << endl;
   }
@@ -233,18 +258,8 @@ int lucasth (int n, int k, int p) {
     } while (n || k);
 
     return prod % p;
-  }
-vector<vector<int>> mk_triangle (int size) {
-    vector<vector<int>> tri;
-
-    for(int n = 0; n <= size; ++n) {
-        tri.push_back(vector<int>());
-        for(int k = 0; k <= n; ++k)
-            tri[n].push_back (round (binomial (n, k)));
-    }
-
-    return tri;
 }
+
 class check {
   public :
       static void overflow (uint64_t a, double b) {

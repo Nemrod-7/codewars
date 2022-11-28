@@ -1,3 +1,4 @@
+#include <iostream>
 #include <cmath>
 #include <sstream>
 
@@ -11,22 +12,26 @@ class PrimeDecomp {
             return os.str() + ')';
         }
     public :
-        static std::string factors(int lst) {
+        static std::string factors(int num) {
 
             std::ostringstream os;
 
-            for (int p = 2; p < sqrt (lst); p++)
-                if (lst % p == 0)
-                    for (int k = 1; k <= sqrt (lst); k++) {
+            for (int p = 2; p * p <= num; p++)
+                if (num % p == 0)
+                    for (int k = 1; k * k <= num; k++) {
 
-                        if (lst % p != 0) {
+                        if (num % p != 0) {
                             os << format (p, k - 1); break;
                         }
-                        lst /= p;
+                        num /= p;
                     }
 
-            if (lst > 2) os << '(' << lst << ')';
+            if (num > 2) os << '(' << num << ')';
 
             return os.str();
         }
 };
+
+int main () {
+
+}
