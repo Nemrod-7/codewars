@@ -2,9 +2,41 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
-
+#include <cassert>
+#include <array>
+#include <set>
+#include <chrono>
 using namespace std;
+/////////////////////////////////Assert/////////////////////////////////////////
+class Assert {
+    public :
+        template<class T> static void That (const T& a, const T& b) {
+            if (a != b) {
+                cout << "actual : ";
+                for (auto &it : a) cout << it << " ";
 
+                cout << " expected : ";
+                for (auto &it : b) cout << it << " ";
+
+                cout << endl;
+            }
+        }
+        template<class T> static void That (const vector<T> &a, const vector<T> &b) {
+            if (a != b) {
+                cout << "actual : ";
+                for (auto &it : a) cout << it << " ";
+
+                cout << " expected : ";
+                for (auto &it : b) cout << it << " ";
+
+                cout << endl;
+            }
+        }
+};
+template<class T> T Equals (const T& entry) { return entry;}
+template<class T> T EqualsContainer (const T& entry) { return entry;}
+void Test ();
+////////////////////////////////////////////////////////////////////////////////
 /*
  Product Partition           Score(sc)
 [708, 2]                    1420  <---- maximum value
@@ -29,28 +61,27 @@ using namespace std;
 [59, 24]                     166  <---- minimum value
  */
 
-vector<int> SieveOfEratosthenes (int num) {
-    const int end = sqrt (num);
+vector<int> sieve (int num) {
+
     bool *primes = new bool[num + 1];
-    vector<int> sieve;
-    int p, i;
+    vector<int> sieve {2};
 
-    fill_n (primes, num + 1, 0);
+    fill_n (primes, num + 1, true);
 
-    for (p = 2; p <= end ; p++)
-       if (primes[p] == false)
-           for (i = p * p; i <= num; i += p)
-                primes[i] = true;
+    for (int p = 3; p * p <= num ; p += 2)
+       if (primes[p] == true)
+           for (int i = p * p; i <= num; i += 2 * p)
+                primes[i] = false;
 
-    for (i = 2; i <= num; i++)
-       if (primes[i] == false)
+    for (int i = 3; i <= num; i += 2)
+       if (primes[i] == true)
            sieve.push_back(i);
 
     return sieve;
 }
 string p_factors (int num) {
 
-  vector<int> primes = SieveOfEratosthenes (num);
+  vector<int> primes = sieve (num);
 
   for (auto &p : primes) {
       int ex = 0;
@@ -71,7 +102,7 @@ string p_factors (int num) {
 }
 int radical (int maxn, int n) {
 
-    vector<int> primes = SieveOfEratosthenes (maxn);
+    vector<int> primes = sieve (maxn);
     vector<pair<int,int>> hist;
     for (int k = 2; k <= maxn; k++) {
         int rad = 1;
@@ -143,44 +174,155 @@ void Output(int value) {
     recurse(value, value);
 }
 
+std::set<int> sieve2 (const int num) {
+
+    const int end = sqrt (num);
+    bool primes[num / 2 + 1];
+    std::set<int> sieve;
+
+    std::fill_n (primes, num / 2 + 1, true);
+    sieve.insert(2);
+
+    for (int p = 3; p <= end ; p += 2)
+       if (primes[p / 2] == true)
+           for (int i = p * p; i <= num ; i += 2 * p)
+                primes[i / 2] = false;
+
+    for (int i = 3; i <= num; i += 2)
+       if (primes[i / 2] == true)
+           sieve.insert(i);
+
+    return sieve;
+}
+std::array<int, 3> findEmirp (const int lim) {
+
+    int cnt = 0, maxv = 0, sum = 0;
+    std::set<int> primes = sieve2 (lim * 2);
+
+    for (auto p : primes) {
+        int num = p, rev = 0;
+
+        if (p > lim) break;
+
+        do {
+            rev = rev * 10 + num % 10;
+        } while (num /= 10);
+
+        if (rev != p && primes.find(rev) != primes.end()) {
+            cnt++;
+            maxv = max (maxv, p);
+            sum += p;
+            cout << rev << " " << p << endl;
+        }
+    }
+
+    return {cnt, maxv, sum};
+}
+std::string sierpinski (int n) {
+
+		const int dim = pow (3, n);
+		std::string asc;
+
+		for (int y = 0; y < dim; y++) {
+				for (int x = 0; x < dim; x++) {
+						bool flag = true;
+
+						for (int i = dim / 3; i ; i /= 3) {
+								if ((y % (i * 3)) / i == 1 && (x % (i * 3)) / i == 1) {
+										flag = false;
+								}
+						}
+						asc += (flag == true ? "██" : "  ");
+				}
+				if (y < dim - 1) asc += "\n";
+		}
+
+    return asc;
+}
+
 int main () {
 
-    //  g(n,[2]);
-    int n = 1416;
-    vector<int> factors = factorize (n);
-    vector<vector<int>> partition;
+    auto start = std::chrono::high_resolution_clock::now();
 
-    //Output (1416);
-    vector<int> line (5);
+		int k = 1;
+		int lim =  1000;
 
-    vector<int> comb = {1,2};
+		// [13, 17, 37, 79, 107, 127, 139, 181, 191, 239, 241, 251, 277, 281, 283, 313, 347,
+    //  349, 367, 457, 461, 463, 467, 479, 563, 569, 577, 587, 619, 683, 709, 769, 787, 797]
 
-    int total = 0, pad = 5;
-    int x = 0;
+		bool prime[lim + 1];
+		std::fill_n (prime, lim + 1, true);
 
-    for (auto n : comb)
-        total += n;
+		prime[0] = prime[1] = false;
+		for (int i = 4; i <= lim; i += 2)
+				prime[i] = false;
 
-    pad -= total;
+		for (int p = 3; p * p <= lim; p += 2) {
+				if (prime[p] == true)
+						for (int i = p * p; i <= lim; i += p)
+								prime[i] = false;
+		}
+    int cnt = 0, minv = lim, maxv = 0;
 
-    for (auto n : comb) {
+		for (int num = 13; num <= lim; num++) {
+				if (prime[num] == true) {
+						int nperm = 0;
+						string ve = to_string(num);
+						sort (ve.begin(), ve.end());
+						//cout << ve << " :: ";
 
-        while (n-->0)
-            line[x++] = 1;
+						do {
+								int per = stoul (ve);
 
-        x++;
-    }
+								if (ve.front() != '0' && per != num) {
+										assert (per < lim);
+										if (prime[per]) {
+												nperm++;
+                        //cout << ve << " ";
+												prime[per] = false;
+												//cout << per << " ";
+										}
+								}
+						} while (next_permutation (ve.begin(), ve.end()));
 
-    for (auto cell : line) {
-        cout << cell << " ";
-    }
+						//cout << " => " << nperm << endl;
+						if (nperm == k) {
+                cnt++;
+                minv = min (minv, num);
+                maxv = max (maxv, num);
+              //cout << num << " ";
+            }
+				}
+		}
 
-    /*
-    for (int k = 2; k < 11; k++) {
-        cout << "[" << k << "] => ";
-        p_factors(k);
 
-        cout << "\n";
-    }
-    */
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+    std::cout << "\nProcess took " << elapsed.count()  << " ms" << std::endl;
+}
+
+void Test () {
+
+  int n = 10;
+  std::array<int, 3> arr = {0, 0, 0};
+
+  Assert::That(findEmirp(n), Equals(arr));
+  n = 50;
+  arr = {4, 37, 98};
+  Assert::That(findEmirp(n), Equals(arr));
+  n = 100;
+  arr = {8, 97, 418};
+  Assert::That(findEmirp(n), Equals(arr));
+  n = 200;
+  arr = {15, 199, 1489};
+  Assert::That(findEmirp(n), Equals(arr));
+  n = 500;
+  arr = {20, 389, 3232};
+  Assert::That(findEmirp(n), Equals(arr));
+  n = 750;
+  arr = {25, 743, 6857};
+  Assert::That(findEmirp(n), Equals(arr));
+  n = 1000;
+  arr = {36, 991, 16788};
+  Assert::That(findEmirp(n), Equals(arr));
 }

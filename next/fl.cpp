@@ -16,15 +16,13 @@ using namespace std;
 using point = pair<int,int>;
 //using vertex = tuple<int, int, vector<point>>;
 enum state {none, vertical, horizontal};
-
-const vector<char> alpha {'U','R','D','L'};
+const vector<char> letter {'U','R','D','L'};
 const vector<pair<int,int>> dir {{0,-1},{1,0},{0,1},{-1,0}};
-
 
 struct vertex {
     int dist;
     vector<point> p;
-    vector<vector<int>> hist;
+    vector<string> hist;
     string route;
 };
 
@@ -33,6 +31,8 @@ struct comp {
         return a.dist > b.dist;
     }
 };
+
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class Display {
 
@@ -41,46 +41,26 @@ class Display {
         static void point (point p) {
             cout << "[" << p.first << "," << p.second << "]\n";
         }
-        static void board2 (vector<string> &floor, vector<vector<int>> &grid) {
+  		  static void board (vector<string> &floor) {
 
-					const int width = floor[0].size(), height = floor.size();
+  					const int width = floor[0].size(), height = floor.size();
 
-					for (int y = 0; y < height; y++) {
-							for (int x = 0; x < width; x++) {
-									if (floor[y][x] == '0') {
-											cout << ' ';
-									} else if (floor[y][x]  == 'B') {
-											cout << 'B';
-									} else if (grid[y][x]) {
-											cout << grid[y][x];
-									} else {
-											cout << ".";
-									}
-							}
-							cout << "\n";
-					}
-					cout << "\n";
-      }
-		  static void board (vector<string> &floor) {
-
-					const int width = floor[0].size(), height = floor.size();
-
-					for (int y = 0; y < height; y++) {
-							for (int x = 0; x < width; x++) {
-									if (floor[y][x] == '0') {
-											cout << ' ';
-									} else if (floor[y][x]  == 'B') {
-											cout << 'B';
-									} else if (floor[y][x] == '1') {
-											cout << '.';
-									} else {
-											cout << (int) floor[y][x];
-									}
-							}
-							cout << "\n";
-					}
-					cout << "\n";
-      }
+  					for (int y = 0; y < height; y++) {
+  							for (int x = 0; x < width; x++) {
+  									if (floor[y][x] == '0') {
+  											cout << ' ';
+  									} else if (floor[y][x]  == 'B') {
+  											cout << 'B';
+  									} else if (floor[y][x] == '1') {
+  											cout << '.';
+  									} else {
+  											cout << (int) floor[y][x];
+  									}
+  							}
+  							cout << "\n";
+  					}
+  					cout << "\n";
+        }
 
 };
 class Assert {
@@ -100,25 +80,13 @@ bool is_inside (const vector<string> &grid, int x, int y) {
     }
     return false;
 }
-string dijsktra2 (vector<string> level, vector<vector<int>> hist, point start, point exit) {
 
-		struct vertex2 {
-				int dist;
-				vector<point> p;
-				vector<string> hist;
-				string route;
-		};
+string dijsktra (vector<string> level, point start, point exit) {
 
-		struct comp {
-				bool operator()(const vertex2 &a, const vertex2 &b ) {
-						return a.dist > b.dist;
-				}
-		};
-
-    vertex2 source = {0, {start,start}, level};
-    priority_queue<vertex2,vector<vertex2>, comp> q1;
+    vertex source = {0, {start,start}, level};
+    priority_queue<vertex,vector<vertex>, comp> q1;
 		map<vector<string>,bool> visited;
-															
+
 		q1.push (source);
 
 		int cycle = 0;
@@ -131,14 +99,14 @@ string dijsktra2 (vector<string> level, vector<vector<int>> hist, point start, p
 				cycle++;
 
 				if (cycle == 1800) {
-						//Display::board (level, past);
 						//cout << route << " => " << cycle << " cycles\n";
 						break;
 				}
         if (state == vertical && p[0] == exit) {
-		        //Display::board (level, past);
-						Display::board (past);
+            /*
+            Display::board (past);
 						cout << route << " => " << cycle << " cycles\n";
+            */
             return route;
         }
 
@@ -150,33 +118,32 @@ string dijsktra2 (vector<string> level, vector<vector<int>> hist, point start, p
 						const int x2 = (state == vertical) ? p[0].first + nx * 2 : p[1].first + nx;
 						const int y2 = (state == vertical) ? p[0].second + ny * 2 : p[1].second + ny;
 
-            int alt = route.size() + distance ({x2,y2}, exit);
-						string path = route + alpha[i];
+            const int alt = route.size() + distance ({x2,y2}, exit);
+						const string path = route + letter[i];
 
             if (is_inside (level, x2, y2) && is_inside (level, x1, y1)) {
-                vertex2 nextv;
+                vector<point> block;
                 auto grid = past;
+                int id;
 
                 if (state == vertical || (dx != nx && dy != ny)) {
-										int id = abs (x2 - x1) != 0 ? 2 : 3;
-										//id = horizontal;
-                    grid[y2][x2] = id; // horizontal;
-                    grid[y1][x1] = id; // horizontal;
-                    nextv = {alt, {{x1,y1},{x2,y2}}, grid, path};
+										id = abs (x2 - x1) != 0 ? 2 : 3;
+                    block = {{x1,y1},{x2,y2}};
                 } else {
+                    id = vertical;
                     if (dx == nx && dy == ny) {
-                        grid[y2][x2] = vertical;
-                        nextv = {alt, {{x2,y2},{x2,y2}}, grid, path};
+                        block = {{x2,y2},{x2,y2}};
                     } else {
-                        grid[y1][x1] = vertical;
-                        nextv = {alt, {{x1,y1},{x1,y1}}, grid, path};
+                        block = {{x1,y1},{x1,y1}};
                     }
                 }
 
+                for (auto [x,y] : block)
+                    grid[y][x] = id;
+
 								if (!visited[grid]) {
-										//Display::board (level, grid);
 										visited[grid] = true;
-										q1.push (nextv);
+										q1.push ({alt, block, grid, path});
 								}
             }
 				}
@@ -189,17 +156,17 @@ string blox_solver (vector<string> level) {
     const int width = level[0].size(), height = level.size();
 
     pair<int,int> exit,  start;
-    vector<vector<int>> grid (height, vector<int> (width));
 
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             char tile = level[y][x];
-						
+
             if (tile == 'X') exit = {x,y};
             if (tile == 'B') start = {x,y};
         }
     }
-    return dijsktra2 (level, grid, start, exit);
+
+    return dijsktra (level, start, exit);
 }
 
 int main  () {
@@ -212,14 +179,8 @@ int main  () {
 		vector<string> level2 = {"000000111111100", "111100111001100", "111111111001111", "1B11000000011X1", "111100000001111", "000000000000111"};
 		vector<string> level3 = { "00011111110000", "00011111110000", "11110000011100", "11100000001100", "11100000001100", "1B100111111111", "11100111111111", "000001X1001111", "00000111001111"};
 
-
-		blox_solver (level2);
-    // {"ULURRURRRRRRDRDDDDDRULLLLLLD"};
-		// {"ULURRURRRRRRDRDDDLLLDLDRULURD"};
-	
-		//Test();
+		Test();
     //display (floor, grid);
-
     auto end = chrono::high_resolution_clock::now();
     chrono::duration<double> elapsed = end - start;
     cout << "\nProcess took " << elapsed.count()  << " ms\n" << endl;
@@ -263,32 +224,34 @@ vector<vector<string>> result =
 		}
 
 }
-string dijsktra (vector<string> level, vector<vector<int>> hist, point start, point exit) {
 
-    vertex source = {0,{start,start}, hist};
+string dijsktra2 (vector<string> level, point start, point exit) {
+
+    vertex source = {0, {start,start}, level};
     priority_queue<vertex,vector<vertex>, comp> q1;
-		map<vector<vector<int>>,bool> visited;
-															
+		map<vector<string>,bool> visited;
+
 		q1.push (source);
 
 		int cycle = 0;
 
-    while (!q1.empty()) {
-
+		while (!q1.empty()) {
         auto [dist, p, past, route] = q1.top();
 				int state = p[0] == p[1] ? vertical : horizontal;
         q1.pop();
 
 				cycle++;
 
-				if (cycle == 2550) {
-						Display::board (level, past);
+				if (cycle == 1800) {
+						//Display::board (level, past);
 						//cout << route << " => " << cycle << " cycles\n";
 						break;
 				}
         if (state == vertical && p[0] == exit) {
-		        Display::board (level, past);
+						Display::board (past);
+            /*
 						cout << route << " => " << cycle << " cycles\n";
+            */
             return route;
         }
 
@@ -301,34 +264,43 @@ string dijsktra (vector<string> level, vector<vector<int>> hist, point start, po
 						const int y2 = (state == vertical) ? p[0].second + ny * 2 : p[1].second + ny;
 
             int alt = route.size() + distance ({x2,y2}, exit);
-						string path = route + alpha[i];
+						string path = route + letter[i];
 
             if (is_inside (level, x2, y2) && is_inside (level, x1, y1)) {
                 vertex nextv;
+                vector<point> block;
                 auto grid = past;
+                int id;
 
                 if (state == vertical || (dx != nx && dy != ny)) {
-										int id = abs (x2 - x1) != 0 ? 2 : 3;
-										//id = horizontal;
-                    grid[y2][x2] = id;//  horizontal;
-                    grid[y1][x1] = id;// horizontal;
+										id = abs (x2 - x1) != 0 ? 2 : 3;
+                    block = {{x1,y1},{x2,y2}};
+
+                    grid[y2][x2] = id; // horizontal;
+                    grid[y1][x1] = id; // horizontal;
                     nextv = {alt, {{x1,y1},{x2,y2}}, grid, path};
                 } else {
                     if (dx == nx && dy == ny) {
+                        id = vertical;
                         grid[y2][x2] = vertical;
+                        block = {{x2,y2},{x2,y2}};
                         nextv = {alt, {{x2,y2},{x2,y2}}, grid, path};
                     } else {
+                        id = vertical;
                         grid[y1][x1] = vertical;
+                        block = {{x1,y1},{x1,y1}};
                         nextv = {alt, {{x1,y1},{x1,y1}}, grid, path};
                     }
                 }
 
 								if (!visited[grid]) {
 										//Display::board (level, grid);
+                    for (auto it : block) {
+                        grid[it.second][it.first] = id;
+                    }
 										visited[grid] = true;
 										q1.push (nextv);
 								}
-
             }
 				}
 		}

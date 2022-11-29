@@ -76,12 +76,90 @@ pair <long long, long long> GapInPrimes::gap(int step, long long start, long lon
 
     return {};
 }
+vector<uint64_t> sieve1 (uint64_t num) {
+
+    const uint64_t end = sqrt (num);
+    bool *sieve = new bool[num + 1];
+    vector<uint64_t> prime;
+
+    fill_n (sieve, num, true);
+
+    for (uint64_t p = 2; p <= end ; p++)
+        if (sieve[p] == true)
+            for (uint64_t i = p * p; i <= num; i += p)
+                 sieve[i] = false;
+
+    for (uint64_t i = 2; i <= num; i++)
+         if (sieve[i] == true)
+            prime.push_back (i);
+
+    return prime;
+}
+vector<uint64_t> sieve2 (uint64_t num) {
+
+    const uint64_t end = sqrt (num);
+    bool *sieve = new bool[num + 1];
+    vector<uint64_t> prime {2};
+
+    fill_n (sieve, num + 1, true);
+
+    for (uint64_t p = 3; p <= end ; p += 2) {
+        if (sieve[p] == true) {
+            for (uint64_t i = p * p; i <= num; i += p) {
+                 sieve[i] = false;
+            }
+        }
+    }
+
+    for (uint64_t i = 3; i <= num; i += 2) {
+         if (sieve[i] == true) {
+            prime.push_back (i);
+         }
+    }
+
+    return prime;
+}
+vector<uint64_t> sieve3 (uint64_t num) { //x2 / half space
+
+    const uint64_t end = sqrt (num);
+    bool *sieve = new bool[num / 2 + 1];
+    vector<uint64_t> prime {2};
+
+    fill_n (sieve, num / 2 + 1, true);
+
+    for (uint64_t p = 3; p <= end ; p += 2)
+        if (sieve[p / 2] == true)
+            for (uint64_t i = p * p; i <= num; i += 2 * p)
+                 sieve[i / 2] = false;
+
+    for (uint64_t i = 3; i <= num; i += 2)
+        if (sieve[i / 2] == true)
+            prime.push_back (i);
+
+    return prime;
+}
 int main () {
 
     auto start = std::chrono::steady_clock::now();
 
+    auto p = GapInPrimes::gap(11,30000,100000);
 
-    Test();
+    int num = 100000;
+
+    bool *sieve = new bool[num + 1];
+    fill_n (sieve, num + 1, true);
+
+    for (uint64_t p = 2; p * p <= num ; p++)
+        if (sieve[p] == true)
+            for (uint64_t i = p * p; i <= num; i += p)
+                 sieve[i] = false;
+
+    for (uint64_t p = 30000; p <= 30025 ; p++) {
+        if (sieve[p] == true) {
+
+            cout << p << " ";
+        }
+    }
 
 
     auto end = std::chrono::steady_clock::now();

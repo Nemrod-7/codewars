@@ -25,26 +25,27 @@ class Assert {
 };
 test_t Equals (test_t src) { return src;}
 
-long long *SieveOfEratosthenes (long long num) {
-    bool *primes = new bool[num]; //vector<bool> primes(num);
-    long long *sieve = new long long[num]; //vector<long long> sieve(num);
-    const unsigned end = sqrt (num);
-    unsigned p, i, size = 1;
+long long *sieve3 (long long num) {
 
-    fill_n (primes, num, 0);
+    bool *sieve = new bool[num / 2 + 1];
+    long long *prime = new long long[num / 2];
+    unsigned size = 2;
 
-    for (p = 2; p <= end ; p++)
-        if (primes[p] == false)
-            for (i = p * p; i <= num; i += p)
-                 primes[i] = true;
+    fill_n (sieve, num / 2 + 1, true);
+    prime[1] = 2;
 
-    for (i = 2; i <= num; i++)
-         if (primes[i] == false)
-            sieve[size++] = i;
+    for (long long p = 3; p * p <= num ; p += 2)
+        if (sieve[p / 2] == true)
+            for (long long i = p * p; i <= num; i += 2 * p)
+                 sieve[i / 2] = false;
 
-    sieve[0] = size;
-    //sieve.resize(size);
-    return sieve;
+    for (long long i = 3; i <= num; i += 2)
+         if (sieve[i / 2] == true)
+            prime[size++] = i;
+
+    prime[0] = size;
+
+    return prime;
 }
 long long count_k(long long num, const long long *sieve) {
     int i = 0, count = 0;
@@ -64,7 +65,7 @@ long long count_k(long long num, const long long *sieve) {
 vector<long long> kPrimes(int k, long long start, long long end) {
     long long num;
     vector<long long> stack;
-    const long long *primes = SieveOfEratosthenes (end);
+    const long long *primes = sieve3 (end);
 
     for (num = start; num <= end; ++num)
         if (count_k (num, primes) == k)
@@ -72,6 +73,7 @@ vector<long long> kPrimes(int k, long long start, long long end) {
 
     return stack;
 }
+
 namespace KStep {
     vector<pair<long,long>> kprimesStep(int k, int step, long long start, long long end) {
       long long size = 0;
@@ -89,19 +91,8 @@ namespace KStep {
       return result;
     }
 }
-int main (){
-    auto start = std::chrono::high_resolution_clock::now();
 
-    // kprimes_step(2, 2, 0, 50) will return [[4, 6], [33, 35]]
-    //KStep::kprimesStep(2, 2, 0, 50);
-    KStep::kprimesStep(6, 8, 2627371, 2627581);
-    //for (auto it : sieve)
-    //    cout << it << " ";
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> elapsed = end - start;
-    std::cout << "Process took " << elapsed.count()  << " ms" << std::endl;
 
-}
 void dotest(int k, int step, long long m, long long n, std::vector<std::pair <long, long>> sol) {
     Assert::That(KStep::kprimesStep(k, step, m, n), Equals(sol));
 }
@@ -111,4 +102,19 @@ void Test () {
 
     sol = {{2627408, 2627416}, {2627440, 2627448}, {2627496, 2627504}};
     dotest(6, 8, 2627371, 2627581, sol);
+}
+
+int main (){
+    auto start = std::chrono::high_resolution_clock::now();
+
+    // kprimes_step(2, 2, 0, 50) will return [[4, 6], [33, 35]]
+    //KStep::kprimesStep(2, 2, 0, 50);
+    KStep::kprimesStep(6, 8, 2627371, 2627581);
+
+    Test();
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+    std::cout << "Process took " << elapsed.count()  << " ms" << std::endl;
+
 }

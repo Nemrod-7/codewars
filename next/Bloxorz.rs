@@ -51,6 +51,7 @@ mod blox {
         }
         print! ("\n");
     }
+
     pub fn blox_solver (puzzle: &[&str]) -> String {
 
         let width = puzzle[0].len();
@@ -86,11 +87,12 @@ mod blox {
 
             cycle += 1;
             if cycle == 1900 { break }
+
             let state = if posit.0 == posit.1 { 1 } else { 2 };
 
             if posit.0 == exit && state == 1 {
-                display (&level, &visit);
-                print! ("{route} => {cycle} cycles\n");
+                //display (&level, &visit);
+                //print! ("{route} => {cycle} cycles\n");
                 return route
             }
 
@@ -106,29 +108,26 @@ mod blox {
 
                 if isinside (&level, x2, y2) && isinside (&level, x1, y1) {
 
-                    let nxtv:Vertex;
+                    let id;
+                    let blok;
                     let path = route.clone() + letter[i];
                     let alt = route.len() + distance ((x2,y2), exit);
                     let mut grid = visit.clone();
 
                     if state == 1 || (dx != dir.0 && dy != dir.1) {
-                        let id = if (x2 - x1).abs() == 0 { 2 } else { 3 };
-                        grid[y2 as usize][x2 as usize] = id;
-                        grid[y1 as usize][x1 as usize] = id;
-                        nxtv = Vertex { index:alt, posit:((x1,y1),(x2,y2)), visit:grid.clone(), route:path };
+                        id = if (x2 - x1).abs() == 0 { 2 } else { 3 };
+                        blok = ((x1,y1),(x2,y2));
                     } else {
-                        if dx == dir.0 && dy == dir.1 {
-                            grid[y2 as usize][x2 as usize] = 1;
-                            nxtv = Vertex { index:alt, posit:((x2,y2),(x2,y2)), visit:grid.clone(), route:path };
-                        } else {
-                            grid[y1 as usize][x1 as usize] = 1;
-                            nxtv = Vertex { index:alt, posit:((x1,y1),(x1,y1)), visit:grid.clone(), route:path };
-                        }
+                        id = 1;
+                        blok = if dx == dir.0 && dy == dir.1 { ((x2,y2),(x2,y2)) } else { ((x1,y1),(x1,y1)) }
                     }
- 
+
+                    grid[blok.0.1 as usize][blok.0.0 as usize] = id;
+                    grid[blok.1.1 as usize][blok.1.0 as usize] = id;
+
                     if visited.get (&grid) == None {
+                        heap.push (Vertex { index:alt, posit:blok, visit:grid.clone(), route:path });
                         visited.insert(grid, true);
-                        heap.push (nxtv);
                     }
                 }
             }
@@ -167,8 +166,8 @@ fn main() {
         "000001X1001111",
         "00000111001111"];
 
-    blox::blox_solver (&level3);
-    //example_tests();
+    //blox::blox_solver (&level3);
+    example_tests();
 
      print! ("\n");
 }
@@ -236,10 +235,6 @@ fn example_tests() {
 
     for (grid,valids) in fixed_tests.iter().zip(fixed_sols.iter()) {
         let user = blox::blox_solver(grid);
-
-        if valids.iter().any(|s| s != &user) {
-            print! ("got : {} expected : {:?}\n", user, valids);
-        }
-        //assert!(valids.iter().any(|s| s == &user),"You returned an invalid path");
+        assert!(valids.iter().any(|s| s == &user),"You returned an invalid path");
     }
 }

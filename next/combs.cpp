@@ -19,7 +19,7 @@ class combinations2 {
         vector<vector<int>> subs;
 
         void recurse (vector<int> curr, int i) { //
-          
+
             int *arr = curr.data();
 
             for (int j = 0; j < subs[i].size(); j++) {
