@@ -4,27 +4,19 @@
 using namespace std;
 
 using point = pair<int,int>;
-struct rectangle {
-		int x0,y0;
-		int x1,y1;
-};
+struct rectangle { int x1,y1, x2,y2; };
 
-int area (rectangle rec) {
-		auto [x0,y0, x1,y1] = rec;
-		return abs (x1 - x0) * abs (y1 - y0);
-}
-bool is_in_rect (int px, int py, rectangle r) {
-		return (px >= r.x0 && px <= r.x1 && py >= r.y0 && py <= r.y1);
-}
-bool overlap (rectangle r1, rectangle r2) {
-		if (r1.x0 == r1.x1 || r1.y0 == r1.y1) return false; // rectamgle 1 has area zero
-		if (r2.x0 == r2.x1 || r2.y0 == r2.y1) return false; // rectamgle 2 has area zero
+int area (rectangle rec) { return abs (rec.x2 - rec.x1) * abs (rec.y2 - rec.y1); }
+bool is_in_rect (int px, int py, rectangle r) { return (px >= r.x1 && px <= r.x2 && py >= r.y1 && py <= r.y2); }
+bool overlap (rectangle r1, rectangle r2) { return r1.x1 <= r2.x2 && r2.x1 <= r1.x2 && r1.y1 <= r2.y2 && r2.y1 <= r1.y2; }
 
-		if (r1.x0 > r2.x1 || r2.x0 > r1.x1) return false; // if one rectangle is on the left of the other
-		if (r1.y1 > r2.y0 || r2.y1 > r1.y0) return false; // if one rectangle is obove other
-		
-		return true;
+int overarea(rectangle r1, rectangle r2) {
+		int x_dist = min(r1.x2, r2.x2)- max(r1.x1, r2.x1);
+		int y_dist = min(r1.y2, r2.y2) - max(r1.y1, r2.y1);
+		if (x_dist >= 0 && y_dist >= 0) return x_dist * y_dist;
+		return 0;
 }
+
 int main () {
 
 // There are three rectangles: R1 = [3,3,8,5], R2 = [6,3,8,9], R3 = [11,6,14,12]
@@ -45,21 +37,25 @@ int main () {
 				total += area;
 		}
 
+		
 		for (int i = 0; i < graph.size(); i++) {
-				auto [x0,y0, x1,y1] = graph[i];
+				for (int j = i + 1; j < graph.size(); j++) {
 
-				for (int j = 0; j < graph.size(); j++) {
-						auto [x2,y2,x3,y3] = graph[j];
-						if (i != j) {
 
-								if (is_in_rect(x2,y2, graph[i])) {
+						if (overlap (graph[i], graph[j]) == true) {
+								int over = overarea (graph[i], graph[j]);
+								total -= over;
+								/*
+								cout << i << ' ' << j << " => ";
+								cout << over << " " ;
 
-										cout << i << ' ' << j << endl;
-								}
+								cout << endl;
+								*/
 						}
+
 				}
 		}
 
-	//	cout << total << ' ';
+		cout << total << ' ';
 
 }

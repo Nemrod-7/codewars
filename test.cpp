@@ -244,58 +244,12 @@ int main () {
 
     auto start = std::chrono::high_resolution_clock::now();
 
-		int k = 1;
-		int lim =  1000;
-
-		// [13, 17, 37, 79, 107, 127, 139, 181, 191, 239, 241, 251, 277, 281, 283, 313, 347,
-    //  349, 367, 457, 461, 463, 467, 479, 563, 569, 577, 587, 619, 683, 709, 769, 787, 797]
-
-		bool prime[lim + 1];
-		std::fill_n (prime, lim + 1, true);
-
-		prime[0] = prime[1] = false;
-		for (int i = 4; i <= lim; i += 2)
-				prime[i] = false;
-
-		for (int p = 3; p * p <= lim; p += 2) {
-				if (prime[p] == true)
-						for (int i = p * p; i <= lim; i += p)
-								prime[i] = false;
-		}
-    int cnt = 0, minv = lim, maxv = 0;
-
-		for (int num = 13; num <= lim; num++) {
-				if (prime[num] == true) {
-						int nperm = 0;
-						string ve = to_string(num);
-						sort (ve.begin(), ve.end());
-						//cout << ve << " :: ";
-
-						do {
-								int per = stoul (ve);
-
-								if (ve.front() != '0' && per != num) {
-										assert (per < lim);
-										if (prime[per]) {
-												nperm++;
-                        //cout << ve << " ";
-												prime[per] = false;
-												//cout << per << " ";
-										}
-								}
-						} while (next_permutation (ve.begin(), ve.end()));
-
-						//cout << " => " << nperm << endl;
-						if (nperm == k) {
-                cnt++;
-                minv = min (minv, num);
-                maxv = max (maxv, num);
-              //cout << num << " ";
-            }
-				}
-		}
+		double nu = 8.66666667;
 
 
+		double ex = int(nu * 1000) / 1000.0;
+
+		cout << ex;
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
     std::cout << "\nProcess took " << elapsed.count()  << " ms" << std::endl;
