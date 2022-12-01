@@ -149,7 +149,7 @@ string dijsktra (vector<string> level, point start, point exit) {
     return "";
 }
 
-string a_star (vector<string> level, point start, point exit) {
+string a_star2 (vector<string> level, point start, point exit) {
 
     vertex source = {0, {start,start}, level};
     priority_queue<vertex,vector<vertex>, comp> q1;
@@ -225,6 +225,93 @@ string a_star (vector<string> level, point start, point exit) {
 
     return "";
 }
+string a_star (vector<string> level, point start, point exit) {
+
+    priority_queue<vertex,vector<vertex>, comp> q1;
+		//map<vector<string>, bool> visited;
+		level[start.second][start.first] = 1;
+		vertex source = {0, {start,start}, level};
+
+		vector<vector<string>> visited;
+		for (int i = 0; i < 4; i++) {
+				visited.push_back(level);
+		}
+
+		q1.push (source);
+
+		int cycle = 0;
+
+		while (!q1.empty()) {
+        auto [dist, p, past, route] = q1.top();
+				int state = p[0] == p[1] ? raised : 2;
+        q1.pop();
+
+				cycle++;
+
+				Display::board (past);
+				if (cycle == 15) {
+						cout << route << " => " << cycle << " cycles\n";
+						//break;
+				}
+        if (state == raised && p[0] == exit) {
+					  Display::board (past);
+					  cout << route << " => " << cycle << " cycles\n";
+            return route;
+        }
+
+        for (int i = 0; i < 4; i++) {
+            const int nx = dir[i].first, ny = dir[i].second;
+            const int dx = p[1].first - p[0].first, dy = p[1].second - p[0].second;
+
+						const int x1 = p[0].first + nx, y1 = p[0].second + ny;
+						const int x2 = (state == raised) ? p[0].first + nx * 2 : p[1].first + nx;
+						const int y2 = (state == raised) ? p[0].second + ny * 2 : p[1].second + ny;
+
+            const double alt = route.size() + distance ({x2,y2}, exit);
+						const string path = route + letter[i];
+
+            if (is_inside (level, x2, y2) && is_inside (level, x1, y1)) {
+                vector<point> block;
+                auto grid = past;
+                int id;
+
+                if (state == raised || (dx != nx && dy != ny)) {
+										id = abs (x2 - x1) != 0 ? 2 : 3;
+                    block = {{x1,y1},{x2,y2}};
+                } else {
+                    id = raised;
+                    if (dx == nx && dy == ny) {
+                        block = {{x2,y2},{x2,y2}};
+                    } else {
+                        block = {{x1,y1},{x1,y1}};
+                    }
+                }
+
+								int valid = 0;
+								for (auto [x,y] : block) {
+										if (visited[id][y][x] == id) {
+												valid++;
+										}
+								}
+
+								if (cycle == 15) {
+										//Display::board(visited[id]);
+										//cout << valid << ' ';
+								}
+								if (valid != 2) {
+										for (auto [x,y] : block) {
+												visited[id][y][x] = id;
+												grid[y][x] = id;
+										}
+										q1.push ({alt, block, grid, path});
+								}
+            }
+				}
+		}
+		
+		
+    return "";
+}
 string blox_solver (vector<string> level) {
 
     const int width = level[0].size(), height = level.size();
@@ -240,23 +327,7 @@ string blox_solver (vector<string> level) {
         }
     }
 
-		vector<vector<int>> visited (height,vector<int> (width)); 
-
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            int nn = visited[y][x];
-						cout << nn ;
-        }
-				cout << endl;
-    }
-
-		vector<string> fst; // raised
-		vector<string> scd; // vertical
-		vector<string> dsc; // horizontal
-											
-		//Display::wrfile(level, "level6");
-
-    return dijsktra (level, start, exit);
+    return a_star (level, start, exit);
 }
 
 int main  () {
@@ -273,8 +344,11 @@ int main  () {
 		vector<string> level6 = {"00000000011110000", "00000011111111100", "00000011111001110", "11101111100001111", "1B1111100000011X1", "11101111000000111", "00000011100110110", "00000011111111110", "00000001111111100"}; // => "RRRDRDRDRURRRURU"
 
 		// Display::wrfile(level6, "level6");
-		blox_solver(level5);
+		blox_solver(level3);
 
+
+
+		//Display::board(visited[raised]);
 		//Test();
     //display (floor, grid);
     auto end = chrono::high_resolution_clock::now();
@@ -285,13 +359,13 @@ int main  () {
 void Test () {
 
   vector<vector<string>> level {
-{"1110000000", "1B11110000", "1111111110", "0111111111", "0000011X11", "0000001110"},
-{"000000111111100", "111100111001100", "111111111001111", "1B11000000011X1", "111100000001111", "000000000000111"},
-{"00011111110000", "00011111110000", "11110000011100", "11100000001100", "11100000001100", "1B100111111111", "11100111111111", "000001X1001111", "00000111001111"},
-{"11111100000", "1B111100000", "11110111100", "11100111110", "10000001111", "11110000111", "11110000111", "00110111111", "01111111111", "0110011X100", "01100011100"},
-{"000001111110000", "000001001110000", "000001001111100", "B11111000001111", "0000111000011X1", "000011100000111", "000000100110000", "000000111110000", "000000111110000", "000000011100000"},
-{"01100000000000000000", "11110000011001111111", "11111111111001111111", "1B111111111001110011", "11110000011111110011", "11110000011111110011", "00000000000000000011", "11111111101110011011", "11X11011101111111111", "11110011111110011000"},
-{"00000000011110000", "00000011111111100", "00000011111001110", "11101111100001111", "1B1111100000011X1", "11101111000000111", "00000011100110110", "00000011111111110", "00000001111111100"}
+		{"1110000000", "1B11110000", "1111111110", "0111111111", "0000011X11", "0000001110"},
+		{"000000111111100", "111100111001100", "111111111001111", "1B11000000011X1", "111100000001111", "000000000000111"},
+		{"00011111110000", "00011111110000", "11110000011100", "11100000001100", "11100000001100", "1B100111111111", "11100111111111", "000001X1001111", "00000111001111"},
+		{"11111100000", "1B111100000", "11110111100", "11100111110", "10000001111", "11110000111", "11110000111", "00110111111", "01111111111", "0110011X100", "01100011100"},
+		{"000001111110000", "000001001110000", "000001001111100", "B11111000001111", "0000111000011X1", "000011100000111", "000000100110000", "000000111110000", "000000111110000", "000000011100000"},
+		{"01100000000000000000", "11110000011001111111", "11111111111001111111", "1B111111111001110011", "11110000011111110011", "11110000011111110011", "00000000000000000011", "11111111101110011011", "11X11011101111111111", "11110011111110011000"},
+		{"00000000011110000", "00000011111111100", "00000011111001110", "11101111100001111", "1B1111100000011X1", "11101111000000111", "00000011100110110", "00000011111111110", "00000001111111100"}
 }; 
 
 vector<vector<string>> result =
@@ -304,8 +378,8 @@ vector<vector<string>> result =
 		{"RRRDRDRDRURRRURU"}
 		};
 
-		for (int i = 0; i < level.size(); i++) {
 
+		for (int i = 0; i < level.size(); i++) {
 				cout << "level " << i + 1 << endl;
 				string route = blox_solver(level[i]);
 
