@@ -64,7 +64,8 @@ mod blox {
         let mut hist = vec![vec![0; width]; height];
         let mut heap = BinaryHeap::new();
         let mut level:Vec<Vec<char>> = Vec::new();
-        let mut visited:HashMap<Vec<Vec<usize>>,bool> = HashMap::new();
+        //let mut visited:HashMap<Vec<Vec<usize>>,bool> = HashMap::new();
+        let mut visited:HashMap<((i32,i32),(i32,i32)), bool> = HashMap::new();
 
         for y in 0..height {
             level.push (puzzle[y].chars().collect::<Vec<char>>());
@@ -91,7 +92,7 @@ mod blox {
             let state = if posit.0 == posit.1 { 1 } else { 2 };
 
             if posit.0 == exit && state == 1 {
-                //display (&level, &visit);
+                display (&level, &visit);
                 //print! ("{route} => {cycle} cycles\n");
                 return route
             }
@@ -111,7 +112,7 @@ mod blox {
                     let id;
                     let blok;
                     let path = route.clone() + letter[i];
-                    let alt = route.len() + distance ((x2,y2), exit);
+                    let alt = route.len();// + distance ((x2,y2), exit);
                     let mut grid = visit.clone();
 
                     if state == 1 || (dx != dir.0 && dy != dir.1) {
@@ -125,9 +126,9 @@ mod blox {
                     grid[blok.0.1 as usize][blok.0.0 as usize] = id;
                     grid[blok.1.1 as usize][blok.1.0 as usize] = id;
 
-                    if visited.get (&grid) == None {
+                    if visited.get (&blok) == None {
                         heap.push (Vertex { index:alt, posit:blok, visit:grid.clone(), route:path });
-                        visited.insert(grid, true);
+                        visited.insert(blok, true);
                     }
                 }
             }
@@ -139,38 +140,13 @@ mod blox {
 
 fn main() {
 
-    let level1: Vec<&str> = vec![
-            "1110000000",
-            "1B11110000",
-            "1111111110",
-            "0111111111",
-            "0000011X11",
-            "0000001110"
-        ];
-    let level2 = vec![
-        "000000111111100",
-        "111100111001100",
-        "111111111001111",
-        "1B11000000011X1",
-        "111100000001111",
-        "000000000000111"];
-
-    let level3 = vec![
-        "00011111110000",
-        "00011111110000",
-        "11110000011100",
-        "11100000001100",
-        "11100000001100",
-        "1B100111111111",
-        "11100111111111",
-        "000001X1001111",
-        "00000111001111"];
-
+    let level1: Vec<&str> = vec![ "1110000000", "1B11110000", "1111111110", "0111111111", "0000011X11", "0000001110" ];
+    let level2 = vec![ "000000111111100", "111100111001100", "111111111001111", "1B11000000011X1", "111100000001111", "000000000000111"];
+    let level3 = vec![ "00011111110000", "00011111110000", "11110000011100", "11100000001100", "11100000001100", "1B100111111111", "11100111111111", "000001X1001111", "00000111001111"];
     let level5 = vec!["01100000000000000000", "11110000011001111111", "11111111111001111111", "1B111111111001110011", "11110000011111110011", "11110000011111110011", "00000000000000000011", "11111111101110011011", "11X11011101111111111", "11110011111110011000"]; // => "RRRRRRDRRRURURRRDDDDLLLLLDLURDLLLUULLDL" 
-
 let level6 = vec!["00000000011110000", "00000011111111100", "00000011111001110", "11101111100001111", "1B1111100000011X1", "11101111000000111", "00000011100110110", "00000011111111110", "00000001111111100"]; // => "RRRDRDRDRURRRURU"
     //blox::blox_solver (&level3);
-    //example_tests();
+    example_tests();
 
      print! ("\n");
 }
@@ -178,53 +154,14 @@ let level6 = vec!["00000000011110000", "00000011111111100", "00000011111001110",
 fn example_tests() {
 
     let fixed_tests = [
-        vec![
-            "1110000000",
-            "1B11110000",
-            "1111111110",
-            "0111111111",
-            "0000011X11",
-            "0000001110"],
-        vec![
-            "000000111111100",
-            "111100111001100",
-            "111111111001111",
-            "1B11000000011X1",
-            "111100000001111",
-            "000000000000111"],
-        vec![
-            "00011111110000",
-            "00011111110000",
-            "11110000011100",
-            "11100000001100",
-            "11100000001100",
-            "1B100111111111",
-            "11100111111111",
-            "000001X1001111",
-            "00000111001111"],
-        vec![
-            "11111100000",
-            "1B111100000",
-            "11110111100",
-            "11100111110",
-            "10000001111",
-            "11110000111",
-            "11110000111",
-            "00110111111",
-            "01111111111",
-            "0110011X100",
-            "01100011100"],
-        vec![
-            "000001111110000",
-            "000001001110000",
-            "000001001111100",
-            "B11111000001111",
-            "0000111000011X1",
-            "000011100000111",
-            "000000100110000",
-            "000000111110000",
-            "000000111110000",
-            "000000011100000"]
+        vec![ "1110000000", "1B11110000", "1111111110", "0111111111", "0000011X11", "0000001110"],
+        vec![ "000000111111100", "111100111001100", "111111111001111", "1B11000000011X1", "111100000001111", "000000000000111"],
+        vec![ "00011111110000", "00011111110000", "11110000011100", "11100000001100", "11100000001100", "1B100111111111", "11100111111111", "000001X1001111", "00000111001111"],
+        vec![ "11111100000", "1B111100000", "11110111100", "11100111110", "10000001111", "11110000111", "11110000111", "00110111111", "01111111111", "0110011X100", "01100011100"],
+        vec![ "000001111110000", "000001001110000", "000001001111100", "B11111000001111", "0000111000011X1", "000011100000111", "000000100110000", "000000111110000", "000000111110000", "000000011100000"],
+        vec!["01100000000000000000", "11110000011001111111", "11111111111001111111", "1B111111111001110011", "11110000011111110011", "11110000011111110011", "00000000000000000011", "11111111101110011011", "11X11011101111111111", "11110011111110011000"],
+        vec!["00000000011110000", "00000011111111100", "00000011111001110", "11101111100001111", "1B1111100000011X1", "11101111000000111", "00000011100110110", "00000011111111110", "00000001111111100"]
+
     ];
 
 
@@ -233,11 +170,22 @@ fn example_tests() {
         vec!["ULDRURRRRUURRRDDDRU","RURRRULDRUURRRDDDRU"],
         vec!["ULURRURRRRRRDRDDDDDRULLLLLLD"],
         vec!["DRURURDDRRDDDLD"],
-        vec!["RRRDRDDRDDRULLLUULUUURRRDDLURRDRDDR","RRRDDRDDRDRULLLUULUUURRDRRULDDRRDDR","RRRDRDDRDDRULLLUULUUURRDRRULDDRRDDR"]
+        vec!["RRRDRDDRDDRULLLUULUUURRRDDLURRDRDDR","RRRDDRDDRDRULLLUULUUURRDRRULDDRRDDR","RRRDRDDRDDRULLLUULUUURRDRRULDDRRDDR"],
+        vec!["RRRRRRDRRRURURRRDDDDLLLLLDLURDLLLUULLDL","RRRRRRDRRRURURRRDDDDLLLLLDLLLURDLUULLDL"],
+        vec!["RRRDRDRDRURRRURU"]
     ];
 
     for (grid,valids) in fixed_tests.iter().zip(fixed_sols.iter()) {
         let user = blox::blox_solver(grid);
-        assert!(valids.iter().any(|s| s == &user),"You returned an invalid path");
+
+        if valids.iter().any(|x| x == &user) == false {
+            print!("got : {user}\nexp : ");
+
+            for it in valids {
+                print!("{it} ");
+            }
+            print!("\n");
+        }
+        //assert!(valids.iter().any(|s| s == &user),"You returned an invalid path");
     }
 }

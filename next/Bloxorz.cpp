@@ -62,6 +62,16 @@ class Display {
   					}
   					cout << "\n";
         }
+				static void depth (vector<vector<int>> depth) {
+						 for (int y = 0; y < depth.size(); y++) {
+								 for (int x = 0; x < depth[y].size(); x++) {
+
+										 cout << setw(3) << depth[y][x] << ' ';
+								 }
+								 cout << endl;
+						 }
+
+				}
 				static void wrfile (vector<string> level, string name) {
 
 						ofstream ofs (name + ".csv");
@@ -88,8 +98,8 @@ void Test ();
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 double distance (const point &a, const point &b) {
+		return abs (a.first - b.first) + abs (a.second - b.second);
 		return hypot (a.first - b.first, a.second - b.second);
-    //return abs (a.first - b.first) + abs (a.second - b.second);
 }
 bool is_inside (const vector<string> &grid, int x, int y) {
     if (x >= 0 && y >= 0 && x < grid[0].size() && y < grid.size()) {
@@ -149,33 +159,31 @@ string dijsktra (vector<string> level, point start, point exit) {
 
     return "";
 }
-
-string a_star (vector<string> level, point start, point exit) {
+vertex a_star3 (vector<string> level, point start, point exit) {
 
     vertex source = {0, {start,start}, level};
     priority_queue<vertex,vector<vertex>, comp> q1;
 		map<vector<string>,bool> visited;
+		vector<vector<int>> depth (level.size(), vector<int> (level[0].size()));
 
 		q1.push (source);
 
 		int cycle = 0;
 
 		while (!q1.empty()) {
-        auto [dist, p, past, route] = q1.top();
+				vertex curr = q1.top();
+        auto [dist, p, past, route] = curr;
 				int state = p[0] == p[1] ? raised : 2;
         q1.pop();
 
 				cycle++;
 
-				//Display::board (past);
 				if (cycle == 2500) {
-						cout << route << " => " << cycle << " cycles\n";
+						//source = curr;
 						break;
 				}
         if (state == raised && p[0] == exit) {
-             Display::board (past);
-						 cout << route << " => " << cycle << " cycles\n";
-            return route;
+            return curr;
         }
 
         for (int i = 0; i < 4; i++) {
@@ -186,14 +194,15 @@ string a_star (vector<string> level, point start, point exit) {
 						const int x2 = (state == raised) ? p[0].first + nx * 2 : p[1].first + nx;
 						const int y2 = (state == raised) ? p[0].second + ny * 2 : p[1].second + ny;
 
-            const double alt = route.size() + distance ({x2,y2}, exit);
-						const string path = route + letter[i];
 
             if (is_inside (level, x2, y2) && is_inside (level, x1, y1)) {
-                vector<point> block;
-                auto grid = past;
-                int id;
 
+								int id;
+								auto grid = past;
+								vector<point> block;
+								const string path = route + letter[i];
+								const double alt = route.size() /* +  distance ({x2,y2}, exit) */  ;
+																																					 
                 if (state == raised || (dx != nx && dy != ny)) {
 										id = abs (x2 - x1) != 0 ? 2 : 3;
                     block = {{x1,y1},{x2,y2}};
@@ -209,26 +218,25 @@ string a_star (vector<string> level, point start, point exit) {
                 for (auto [x,y] : block)
                     grid[y][x] = id;
 
-								if (!visited[grid]) {
+								int dep = depth[y2][x2];
+								if (!visited[grid]  ) {
 
-										if (route == "RRRDRDRDR") { // RRRDRDRDRURRRURU
-												//Display::board (grid);
-												//Display::point ({x2,y2});
-												//cout << distance ({x2,y2}, exit) << '\n';
-										}
-
+										depth[y1][x1]++;
+										depth[y2][x2]++;
 										visited[grid] = true;
 										q1.push ({alt, block, grid, path});
 								}
             }
 				}
 		}
+						cout << cycle << "unsolved => \n";
+						Display::depth (depth);
 
-    return "";
+    return source;
 }
 string a_star2 (vector<string> level, point start, point exit) {
 
-    priority_queue<vertex,vector<vertex>, comp> q1;
+		priority_queue<vertex,vector<vertex>, comp> q1;
 		//map<vector<string>, bool> visited;
 		level[start.second][start.first] = 1;
 		vertex source = {0, {start,start}, level};
@@ -243,9 +251,9 @@ string a_star2 (vector<string> level, point start, point exit) {
 		int cycle = 0;
 
 		while (!q1.empty()) {
-        auto [dist, p, past, route] = q1.top();
+				auto [dist, p, past, route] = q1.top();
 				int state = p[0] == p[1] ? raised : 2;
-        q1.pop();
+				q1.pop();
 
 				cycle++;
 
@@ -254,39 +262,39 @@ string a_star2 (vector<string> level, point start, point exit) {
 						cout << route << " => " << cycle << " cycles\n";
 						//break;
 				}
-        if (state == raised && p[0] == exit) {
-					  Display::board (past);
-					  cout << route << " => " << cycle << " cycles\n";
-            return route;
-        }
+				if (state == raised && p[0] == exit) {
+						Display::board (past);
+						cout << route << " => " << cycle << " cycles\n";
+						return route;
+				}
 
-        for (int i = 0; i < 4; i++) {
-            const int nx = dir[i].first, ny = dir[i].second;
-            const int dx = p[1].first - p[0].first, dy = p[1].second - p[0].second;
+				for (int i = 0; i < 4; i++) {
+						const int nx = dir[i].first, ny = dir[i].second;
+						const int dx = p[1].first - p[0].first, dy = p[1].second - p[0].second;
 
 						const int x1 = p[0].first + nx, y1 = p[0].second + ny;
 						const int x2 = (state == raised) ? p[0].first + nx * 2 : p[1].first + nx;
 						const int y2 = (state == raised) ? p[0].second + ny * 2 : p[1].second + ny;
 
-            const double alt = route.size() + distance ({x2,y2}, exit);
+						const double alt = route.size() + distance ({x2,y2}, exit);
 						const string path = route + letter[i];
 
-            if (is_inside (level, x2, y2) && is_inside (level, x1, y1)) {
-                vector<point> block;
-                auto grid = past;
-                int id;
+						if (is_inside (level, x2, y2) && is_inside (level, x1, y1)) {
+								vector<point> block;
+								auto grid = past;
+								int id;
 
-                if (state == raised || (dx != nx && dy != ny)) {
+								if (state == raised || (dx != nx && dy != ny)) {
 										id = abs (x2 - x1) != 0 ? 2 : 3;
-                    block = {{x1,y1},{x2,y2}};
-                } else {
-                    id = raised;
-                    if (dx == nx && dy == ny) {
-                        block = {{x2,y2},{x2,y2}};
-                    } else {
-                        block = {{x1,y1},{x1,y1}};
-                    }
-                }
+										block = {{x1,y1},{x2,y2}};
+								} else {
+										id = raised;
+										if (dx == nx && dy == ny) {
+												block = {{x2,y2},{x2,y2}};
+										} else {
+												block = {{x1,y1},{x1,y1}};
+										}
+								}
 
 								int valid = 0;
 								for (auto [x,y] : block) {
@@ -306,12 +314,89 @@ string a_star2 (vector<string> level, point start, point exit) {
 										}
 										q1.push ({alt, block, grid, path});
 								}
-            }
+						}
 				}
 		}
 
 
-    return "";
+		return "";
+}
+
+vertex a_star (vector<string> level, point start, point exit) {
+
+    vertex source = {0, {start,start}, level};
+    priority_queue<vertex,vector<vertex>, comp> q1;
+		map<vector<point>,bool> visited;
+
+		vector<vector<int>> depth (level.size(), vector<int> (level[0].size()));
+
+		q1.push (source);
+
+		int cycle = 0;
+
+		while (!q1.empty()) {
+				vertex curr = q1.top();
+        auto [dist, p, past, route] = curr;
+				int state = p[0] == p[1] ? raised : 2;
+        q1.pop();
+
+				cycle++;
+
+				if (cycle == 2500) {
+						//source = curr;
+						break;
+				}
+        if (state == raised && p[0] == exit) {
+            return curr;
+        }
+
+        for (int i = 0; i < 4; i++) {
+            const int nx = dir[i].first, ny = dir[i].second;
+            const int dx = p[1].first - p[0].first, dy = p[1].second - p[0].second;
+
+						const int x1 = p[0].first + nx, y1 = p[0].second + ny;
+						const int x2 = (state == raised) ? p[0].first + nx * 2 : p[1].first + nx;
+						const int y2 = (state == raised) ? p[0].second + ny * 2 : p[1].second + ny;
+
+
+            if (is_inside (level, x2, y2) && is_inside (level, x1, y1)) {
+
+								int id;
+								auto grid = past;
+								vector<point> block;
+								const string path = route + letter[i];
+								const double alt = route.size() /* +  distance ({x2,y2}, exit) */  ;
+																																					 
+                if (state == raised || (dx != nx && dy != ny)) {
+										id = abs (x2 - x1) != 0 ? 2 : 3;
+                    block = {{x1,y1},{x2,y2}};
+                } else {
+                    id = raised;
+                    if (dx == nx && dy == ny) {
+                        block = {{x2,y2},{x2,y2}};
+                    } else {
+                        block = {{x1,y1},{x1,y1}};
+                    }
+                }
+
+                for (auto [x,y] : block)
+                    grid[y][x] = id;
+
+								int dep = depth[y2][x2];
+								if (!visited[block]  ) {
+
+										depth[y1][x1]++;
+										depth[y2][x2]++;
+										visited[block] = true;
+										q1.push ({alt, block, grid, path});
+								}
+            }
+				}
+		}
+						cout << cycle << "unsolved => \n";
+						Display::depth (depth);
+
+    return source;
 }
 
 string blox_solver (vector<string> level) {
@@ -326,49 +411,59 @@ string blox_solver (vector<string> level) {
 
             if (tile == 'X') exit = {x,y};
             if (tile == 'B') start = {x,y};
-        }
-    }
-    //                  pos, depth
-    using node = tuple<point,int>;
-    vector<vector<int>> dist (height, vector<int> (width));
 
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            int tile = dist[y][x];
-            cout << setw(2) << tile;
         }
-        cout << endl;
     }
 
     //return dijsktra(level, start, exit);
-    //return a_star (level, start, exit);
-    return "";
+    return a_star (level, start, exit).route;
+}
+vertex blox_solverdeb (vector<string> level) {
+
+    const int width = level[0].size(), height = level.size();
+
+    pair<int,int> exit,  start;
+
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            char tile = level[y][x];
+
+            if (tile == 'X') exit = {x,y};
+            if (tile == 'B') start = {x,y};
+
+        }
+    }
+
+    //return dijsktra(level, start, exit);
+    return a_star (level, start, exit);
 }
 
 int main  () {
 
     auto start = chrono::high_resolution_clock::now();
 
-		vector<string> dojo = { "001111111111111111111100", "001111111111111111111100", "001111111111111111111100", "001111111111111111111100", "001X1111111B111111111100", "001111111111111111111100", "001111111111111111111100", "001111111111111111111100", "001111111111111111111100" };
-
-		vector<string> level1 = {"1110000000", "1B11110000", "1111111110", "0111111111", "0000011X11", "0000001110"};
 		vector<string> level2 = {"000000111111100", "111100111001100", "111111111001111", "1B11000000011X1", "111100000001111", "000000000000111"};
-		vector<string> level3 = { "00011111110000", "00011111110000", "11110000011100", "11100000001100", "11100000001100", "1B100111111111", "11100111111111", "000001X1001111", "00000111001111"};
-    vector<string> level5 = {"01100000000000000000", "11110000011001111111", "11111111111001111111", "1B111111111001110011", "11110000011111110011", "11110000011111110011", "00000000000000000011", "11111111101110011011", "11X11011101111111111", "11110011111110011000"}; // => "RRRRRRDRRRURURRRDDDDLLLLLDLURDLLLUULLDL"
 
-		vector<string> level6 = {"00000000011110000", "00000011111111100", "00000011111001110", "11101111100001111", "1B1111100000011X1", "11101111000000111", "00000011100110110", "00000011111111110", "00000001111111100"}; // => "RRRDRDRDRURRRURU"
+		vector<string> level3 = {"00011111110000", "00011111110000", "11110000011100", "11100000001100", "11100000001100", "1B100111111111", "11100111111111", "000001X1001111", "00000111001111"};
+		vector<string> level5 = {"01100000000000000000", "11110000011001111111", "11111111111001111111", "1B111111111001110011", "11110000011111110011", "11110000011111110011", "00000000000000000011", "11111111101110011011", "11X11011101111111111", "11110011111110011000"};
 
-		// Display::wrfile(level6, "level6");
-		blox_solver(level3);
+	//	blox_solver (level5);
+		Test();
 
-
-
-		//Display::board(visited[raised]);
-		//Test();
-    //display (floor, grid);
     auto end = chrono::high_resolution_clock::now();
     chrono::duration<double> elapsed = end - start;
     cout << "\nProcess took " << elapsed.count()  << " ms\n" << endl;
+}
+
+bool dotest (string route, vector<string> result) {
+
+		for (auto res : result) {
+				if (route == res) {
+						return true;
+				}
+		}
+
+		return false;
 }
 
 void Test () {
@@ -389,25 +484,18 @@ vector<vector<string>> result =
     {"ULURRURRRRRRDRDDDDDRULLLLLLD"},
     {"DRURURDDRRDDDLD"},
     {"RRRDRDDRDDRULLLUULUUURRRDDLURRDRDDR","RRRDDRDDRDRULLLUULUUURRDRRULDDRRDDR","RRRDRDDRDDRULLLUULUUURRDRRULDDRRDDR"},
-		{"RRRRRRDRRRURURRRDDDDLLLLLDLURDLLLUULLDL"},
-		{"RRRDRDRDRURRRURU"}
+		{"RRRRRRDRRRURURRRDDDDLLLLLDLURDLLLUULLDL","RRRRRRDRRRURURRRDDDDLLLLLDLLLURDLUULLDL"},
+		{"RRRDRDRDRURRRURU","RRRDRDRDRRRURURU"}
 		};
 
 
 		for (int i = 0; i < level.size(); i++) {
-				cout << "level " << i + 1 << endl;
-				string route = blox_solver(level[i]);
+				vertex node = blox_solverdeb(level[i]);
 
-				bool flag = false;
-				for (auto res : result[i]) {
-						if (route == res) {
-								flag = true;
-								break;
-						}
-				}
-
-				if (flag == false) {
-						cout << "result : " << route << endl;
+				if (dotest (node.route, result[i]) == false) {
+						cout << "level " << i + 1 << endl;
+						Display::board(node.hist);
+						cout << "result : " << node.route << endl;
 						cout << "expect : ";
 						for (auto res : result[i]) cout << res << " ";
 						cout << endl;
