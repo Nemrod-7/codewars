@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <chrono>
 
@@ -69,7 +70,7 @@ class Display {
 								for (int x = 0; x < level[y].size(); x++) {
 										if (level[y][x])
 												ofs << level[y][x] << ";";
-										else 
+										else
 												ofs << " " << ";";
 								}
 								ofs << "\n";
@@ -149,7 +150,7 @@ string dijsktra (vector<string> level, point start, point exit) {
     return "";
 }
 
-string a_star2 (vector<string> level, point start, point exit) {
+string a_star (vector<string> level, point start, point exit) {
 
     vertex source = {0, {start,start}, level};
     priority_queue<vertex,vector<vertex>, comp> q1;
@@ -167,7 +168,7 @@ string a_star2 (vector<string> level, point start, point exit) {
 				cycle++;
 
 				//Display::board (past);
-				if (cycle == 180) {
+				if (cycle == 2500) {
 						cout << route << " => " << cycle << " cycles\n";
 						break;
 				}
@@ -225,7 +226,7 @@ string a_star2 (vector<string> level, point start, point exit) {
 
     return "";
 }
-string a_star (vector<string> level, point start, point exit) {
+string a_star2 (vector<string> level, point start, point exit) {
 
     priority_queue<vertex,vector<vertex>, comp> q1;
 		//map<vector<string>, bool> visited;
@@ -308,10 +309,11 @@ string a_star (vector<string> level, point start, point exit) {
             }
 				}
 		}
-		
-		
+
+
     return "";
 }
+
 string blox_solver (vector<string> level) {
 
     const int width = level[0].size(), height = level.size();
@@ -326,8 +328,21 @@ string blox_solver (vector<string> level) {
             if (tile == 'B') start = {x,y};
         }
     }
+    //                  pos, depth
+    using node = tuple<point,int>;
+    vector<vector<int>> dist (height, vector<int> (width));
 
-    return a_star (level, start, exit);
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            int tile = dist[y][x];
+            cout << setw(2) << tile;
+        }
+        cout << endl;
+    }
+
+    //return dijsktra(level, start, exit);
+    //return a_star (level, start, exit);
+    return "";
 }
 
 int main  () {
@@ -339,7 +354,7 @@ int main  () {
 		vector<string> level1 = {"1110000000", "1B11110000", "1111111110", "0111111111", "0000011X11", "0000001110"};
 		vector<string> level2 = {"000000111111100", "111100111001100", "111111111001111", "1B11000000011X1", "111100000001111", "000000000000111"};
 		vector<string> level3 = { "00011111110000", "00011111110000", "11110000011100", "11100000001100", "11100000001100", "1B100111111111", "11100111111111", "000001X1001111", "00000111001111"};
-    vector<string> level5 = {"01100000000000000000", "11110000011001111111", "11111111111001111111", "1B111111111001110011", "11110000011111110011", "11110000011111110011", "00000000000000000011", "11111111101110011011", "11X11011101111111111", "11110011111110011000"}; // => "RRRRRRDRRRURURRRDDDDLLLLLDLURDLLLUULLDL" 
+    vector<string> level5 = {"01100000000000000000", "11110000011001111111", "11111111111001111111", "1B111111111001110011", "11110000011111110011", "11110000011111110011", "00000000000000000011", "11111111101110011011", "11X11011101111111111", "11110011111110011000"}; // => "RRRRRRDRRRURURRRDDDDLLLLLDLURDLLLUULLDL"
 
 		vector<string> level6 = {"00000000011110000", "00000011111111100", "00000011111001110", "11101111100001111", "1B1111100000011X1", "11101111000000111", "00000011100110110", "00000011111111110", "00000001111111100"}; // => "RRRDRDRDRURRRURU"
 
@@ -366,7 +381,7 @@ void Test () {
 		{"000001111110000", "000001001110000", "000001001111100", "B11111000001111", "0000111000011X1", "000011100000111", "000000100110000", "000000111110000", "000000111110000", "000000011100000"},
 		{"01100000000000000000", "11110000011001111111", "11111111111001111111", "1B111111111001110011", "11110000011111110011", "11110000011111110011", "00000000000000000011", "11111111101110011011", "11X11011101111111111", "11110011111110011000"},
 		{"00000000011110000", "00000011111111100", "00000011111001110", "11101111100001111", "1B1111100000011X1", "11101111000000111", "00000011100110110", "00000011111111110", "00000001111111100"}
-}; 
+};
 
 vector<vector<string>> result =
     {{"RRDRRRD","RDDRRDR","RDRRDDR"},
@@ -401,4 +416,6 @@ vector<vector<string>> result =
 
 }
 /*
+
+
 */
