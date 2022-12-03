@@ -2,7 +2,7 @@ fn mkcomb (num: u8) -> Vec<u8> {
 
     let mut comb:Vec<u8> = Vec::new();
     let mut acc = 0;
-
+    
     for i in 0..5 {
         let bit =  num >> i &1;
         acc += bit;
@@ -21,7 +21,7 @@ fn backtrack (grid: &mut [[u8;5];5], (top, left): (&Vec<Vec<u8>>, &Vec<Vec<u8>>)
 
         for x in 0..5 {
             let mut num = 0;
-            
+
             for i in 0..5 {
                 num |= grid[i][x] << i;
             }
@@ -48,7 +48,6 @@ fn solve_nonogram ((top, left): ([&[u8]; 5], [&[u8]; 5])) -> [[u8; 5]; 5] {
 
 
     let mut grid = [[0;5];5];
-
     let mut lateral = vec![vec![];5];
     let mut vertical = vec![vec![];5];
 
@@ -63,16 +62,9 @@ fn solve_nonogram ((top, left): ([&[u8]; 5], [&[u8]; 5])) -> [[u8; 5]; 5] {
 
     backtrack (&mut grid, (&vertical,&lateral), 0);
 
-    for i in 0..5 {
-        for j in 0..5 {
-            let cell = grid[i][j];
-            print!("{cell} ");
-        }
-        print!("\n");
-    }
-
     grid
 }
+
 
 
 fn main () {

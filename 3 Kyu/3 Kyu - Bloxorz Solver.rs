@@ -8,7 +8,7 @@ mod blox {
     struct Vertex {
         index: usize,
         posit: ((i32,i32),(i32,i32)),
-        visit: Vec<Vec<usize>>,
+        visit: Vec<Vec<usize>>,         // for debugging
         route: String,
     }
 
@@ -17,7 +17,6 @@ mod blox {
             other.index.cmp(&self.index)
         }
     }
-
     impl PartialOrd for Vertex {
         fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
             Some(self.cmp(other))
@@ -35,22 +34,6 @@ mod blox {
         let yy = (a.1 - b.1).abs() as usize;
         xx + yy
     }
-    fn display (level: &Vec<Vec<char>>, visit: &Vec<Vec<usize>>) {
-        let width = level[0].len();
-        let height = level.len();
-
-        for y in 0..height {
-            for x in 0..width {
-                if level[y][x] == '0' {
-                    print! (" ")
-                } else {
-                    print! ("{}", visit[y][x])
-                }
-            }
-            print! ("\n");
-        }
-        print! ("\n");
-    }
 
     pub fn blox_solver (puzzle: &[&str]) -> String {
 
@@ -61,10 +44,9 @@ mod blox {
 
         let mut start = (0,0);
         let mut exit = (0,0);
-        let mut hist = vec![vec![0; width]; height];
+        let mut hist = vec![vec![0; width]; height];    // for debugging
         let mut heap = BinaryHeap::new();
         let mut level:Vec<Vec<char>> = Vec::new();
-        //let mut visited:HashMap<Vec<Vec<usize>>,bool> = HashMap::new();
         let mut visited:HashMap<((i32,i32),(i32,i32)), bool> = HashMap::new();
 
         for y in 0..height {
@@ -92,8 +74,6 @@ mod blox {
             let state = if posit.0 == posit.1 { 1 } else { 2 };
 
             if posit.0 == exit && state == 1 {
-                display (&level, &visit);
-                //print! ("{route} => {cycle} cycles\n");
                 return route
             }
 
@@ -112,7 +92,7 @@ mod blox {
                     let id;
                     let blok;
                     let path = route.clone() + letter[i];
-                    let alt = route.len();// + distance ((x2,y2), exit);
+                    let alt = route.len();
                     let mut grid = visit.clone();
 
                     if state == 1 || (dx != dir.0 && dy != dir.1) {
@@ -136,6 +116,23 @@ mod blox {
 
         "".to_string()
     }
+}
+
+fn display (level: &Vec<Vec<char>>, visit: &Vec<Vec<usize>>) {
+    let width = level[0].len();
+    let height = level.len();
+
+    for y in 0..height {
+        for x in 0..width {
+            if level[y][x] == '0' {
+                print! (" ")
+            } else {
+                print! ("{}", visit[y][x])
+            }
+        }
+        print! ("\n");
+    }
+    print! ("\n");
 }
 
 fn main() {
