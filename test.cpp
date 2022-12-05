@@ -38,28 +38,28 @@ template<class T> T EqualsContainer (const T& entry) { return entry;}
 void Test ();
 ////////////////////////////////////////////////////////////////////////////////
 /*
- Product Partition           Score(sc)
-[708, 2]                    1420  <---- maximum value
-[472, 3]                     950
-[354, 2, 2]                 1074
-[354, 4]                     716
-[236, 3, 2]                  723
-[236, 6]                     484
-[177, 2, 2, 2]               740    # equals to: (177^1 + 2^3) * 4
-[177, 4, 2]                  549
-[177, 8]                     370
-[118, 3, 2, 2]               500
-[118, 4, 3]                  375
-[118, 6, 2]                  378
-[118, 12]                    260
-[59, 3, 2, 2, 2]             350    # equals to: (59^1 + 3^1 + 2^3) * 5
-[59, 6, 2, 2]                276
-[59, 4, 3, 2]                272
-[59, 12, 2]                  219
-[59, 8, 3]                   210
-[59, 6, 4]                   207
-[59, 24]                     166  <---- minimum value
- */
+   Product Partition           Score(sc)
+   [708, 2]                    1420  <---- maximum value
+   [472, 3]                     950
+   [354, 2, 2]                 1074
+   [354, 4]                     716
+   [236, 3, 2]                  723
+   [236, 6]                     484
+   [177, 2, 2, 2]               740    # equals to: (177^1 + 2^3) * 4
+   [177, 4, 2]                  549
+   [177, 8]                     370
+   [118, 3, 2, 2]               500
+   [118, 4, 3]                  375
+   [118, 6, 2]                  378
+   [118, 12]                    260
+   [59, 3, 2, 2, 2]             350    # equals to: (59^1 + 3^1 + 2^3) * 5
+   [59, 6, 2, 2]                276
+   [59, 4, 3, 2]                272
+   [59, 12, 2]                  219
+   [59, 8, 3]                   210
+   [59, 6, 4]                   207
+   [59, 24]                     166  <---- minimum value
+   */
 
 vector<int> sieve (int num) {
 
@@ -69,36 +69,36 @@ vector<int> sieve (int num) {
     fill_n (primes, num + 1, true);
 
     for (int p = 3; p * p <= num ; p += 2)
-       if (primes[p] == true)
-           for (int i = p * p; i <= num; i += 2 * p)
+        if (primes[p] == true)
+            for (int i = p * p; i <= num; i += 2 * p)
                 primes[i] = false;
 
     for (int i = 3; i <= num; i += 2)
-       if (primes[i] == true)
-           sieve.push_back(i);
+        if (primes[i] == true)
+            sieve.push_back(i);
 
     return sieve;
 }
 string p_factors (int num) {
 
-  vector<int> primes = sieve (num);
+    vector<int> primes = sieve (num);
 
-  for (auto &p : primes) {
-      int ex = 0;
+    for (auto &p : primes) {
+        int ex = 0;
 
-      while (num % p == 0) {
-          num /= p;
-          ex++;
-      }
+        while (num % p == 0) {
+            num /= p;
+            ex++;
+        }
 
-      if (ex > 0) {
-          cout << p;
-          if (ex > 1) cout << "^" << ex;
-          if (num > 1) cout << " * ";
-      }
-  }
+        if (ex > 0) {
+            cout << p;
+            if (ex > 1) cout << "^" << ex;
+            if (num > 1) cout << " * ";
+        }
+    }
 
-  return "";
+    return "";
 }
 int radical (int maxn, int n) {
 
@@ -117,7 +117,7 @@ int radical (int maxn, int n) {
     }
     sort(hist.begin(), hist.end());
     return hist[n - 1].second;
-  }
+}
 
 bool is_prime (int num) {
 
@@ -184,13 +184,13 @@ std::set<int> sieve2 (const int num) {
     sieve.insert(2);
 
     for (int p = 3; p <= end ; p += 2)
-       if (primes[p / 2] == true)
-           for (int i = p * p; i <= num ; i += 2 * p)
+        if (primes[p / 2] == true)
+            for (int i = p * p; i <= num ; i += 2 * p)
                 primes[i / 2] = false;
 
     for (int i = 3; i <= num; i += 2)
-       if (primes[i / 2] == true)
-           sieve.insert(i);
+        if (primes[i / 2] == true)
+            sieve.insert(i);
 
     return sieve;
 }
@@ -220,22 +220,22 @@ std::array<int, 3> findEmirp (const int lim) {
 }
 std::string sierpinski (int n) {
 
-		const int dim = pow (3, n);
-		std::string asc;
+    const int dim = pow (3, n);
+    std::string asc;
 
-		for (int y = 0; y < dim; y++) {
-				for (int x = 0; x < dim; x++) {
-						bool flag = true;
+    for (int y = 0; y < dim; y++) {
+        for (int x = 0; x < dim; x++) {
+            bool flag = true;
 
-						for (int i = dim / 3; i ; i /= 3) {
-								if ((y % (i * 3)) / i == 1 && (x % (i * 3)) / i == 1) {
-										flag = false;
-								}
-						}
-						asc += (flag == true ? "██" : "  ");
-				}
-				if (y < dim - 1) asc += "\n";
-		}
+            for (int i = dim / 3; i ; i /= 3) {
+                if ((y % (i * 3)) / i == 1 && (x % (i * 3)) / i == 1) {
+                    flag = false;
+                }
+            }
+            asc += (flag == true ? "██" : "  ");
+        }
+        if (y < dim - 1) asc += "\n";
+    }
 
     return asc;
 }
@@ -244,12 +244,12 @@ int main () {
 
     auto start = std::chrono::high_resolution_clock::now();
 
-		double nu = 8.66666667;
+    double nu = 8.66666667;
 
 
-		double ex = int(nu * 1000) / 1000.0;
+    double ex = int(nu * 1000) / 1000.0;
 
-		cout << ex;
+    cout << ex;
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
     std::cout << "\nProcess took " << elapsed.count()  << " ms" << std::endl;
@@ -257,26 +257,26 @@ int main () {
 
 void Test () {
 
-  int n = 10;
-  std::array<int, 3> arr = {0, 0, 0};
+    int n = 10;
+    std::array<int, 3> arr = {0, 0, 0};
 
-  Assert::That(findEmirp(n), Equals(arr));
-  n = 50;
-  arr = {4, 37, 98};
-  Assert::That(findEmirp(n), Equals(arr));
-  n = 100;
-  arr = {8, 97, 418};
-  Assert::That(findEmirp(n), Equals(arr));
-  n = 200;
-  arr = {15, 199, 1489};
-  Assert::That(findEmirp(n), Equals(arr));
-  n = 500;
-  arr = {20, 389, 3232};
-  Assert::That(findEmirp(n), Equals(arr));
-  n = 750;
-  arr = {25, 743, 6857};
-  Assert::That(findEmirp(n), Equals(arr));
-  n = 1000;
-  arr = {36, 991, 16788};
-  Assert::That(findEmirp(n), Equals(arr));
+    Assert::That(findEmirp(n), Equals(arr));
+    n = 50;
+    arr = {4, 37, 98};
+    Assert::That(findEmirp(n), Equals(arr));
+    n = 100;
+    arr = {8, 97, 418};
+    Assert::That(findEmirp(n), Equals(arr));
+    n = 200;
+    arr = {15, 199, 1489};
+    Assert::That(findEmirp(n), Equals(arr));
+    n = 500;
+    arr = {20, 389, 3232};
+    Assert::That(findEmirp(n), Equals(arr));
+    n = 750;
+    arr = {25, 743, 6857};
+    Assert::That(findEmirp(n), Equals(arr));
+    n = 1000;
+    arr = {36, 991, 16788};
+    Assert::That(findEmirp(n), Equals(arr));
 }
