@@ -32,7 +32,7 @@ class check {
 
 using point = pair<int,int>;
 using rectangle = vector<int>;
-using node = pair<point,int>;
+using node = pair<int,point>;
 
 int area (rectangle rec) { return abs (rec[2] - rec[0]) * abs (rec[3] - rec[1]); }
 bool is_in_rect (int px, int py, rectangle r) { return (px >= r[0] && px <= r[3] && py >= r[1] && py <= r[4]); }
@@ -71,36 +71,78 @@ int calculate (vector<vector<int>> graph) {
     return total;
 }
 
-int main () {
+int sweepline (vector<vector<int>> graph) {
 
-
-    vector<vector<int>> graph = {{3,3,8,5},{6,3,8,9},{11,6,14,12}};
-
-    int area = 0;
-    map<int,vector<int>> line;
-    vector<pair<int,vector<int>>> sweep;
+    map<int,vector<int>> sweep;
 
     for(int i = 0; i < graph.size(); i++) {
         rectangle r = graph[i];
         int x1 = r[0], x2 = r[2];
-        line[x1].push_back(i);
-        line[x2].push_back(i);
+        sweep[x1].push_back(i);
+        sweep[x2].push_back(i);
 
-        //sweep.push_back({x1,i});
-        //sweep.push_back({x2,i});
     }
 
-    sweep = {line};
-    /*
-    for (auto [x, rec] : line) {
+    vector<pair<int, vector<int>>> line = {sweep.begin(), sweep.end()};
+    pair<int, pair<int,int>> segment;
+
+    for (int i = 0; i < line.size(); i++) {
+        auto [x, rec] = line[i];
+        int m = rec.size();
 
         cout << x << " => ";
-        for (auto index : rec) {
-            cout << index << ' ';
+        //auto [x1, y1, y2] = segment;
+
+        int miny = 999, maxy = 0;
+
+        for (int j = 0; j < m; j++) {
+            rectangle rr = graph[rec[j]];
+
+            cout << "[" << rr[1] << "," << rr[3] << "] ";
         }
 
+        int x2 = x;
+
+        //int area = abs (x2 - x1) * abs (y2 - y1);
+
+       // cout << area << " ";
+        //cout << "abs("<< x2 << "-" << x1 << ") * abs(" << y2 <<  "-" << y1 << ")";
+        //segment = {x, miny, maxy};
         cout << endl;
     }
+
+    return 0;
+
+}
+
+void display (vector<vector<int>> grid) {
+
+    for (int y = 0; y < grid.size(); y++) {
+        for (int x = 0; x < grid[0].size(); x++) {
+            cout << grid[y][x] << grid[y][x];
+        }
+        cout << endl;
+    }
+
+    cout << endl;
+}
+
+int main () {
+
+
+    vector<vector<int>> graph = {{3,3,8,5},{6,3,8,9},{11,6,14,12}};
+    
+    vector<vector<int>> grid (14, vector<int> (14));
+    
+    sweepline (graph);
+
+    
+    //display (grid);
+
+
+
+    //horizontal lines active events
+    /*
     */
 
     // pseudocode
@@ -123,36 +165,6 @@ int main () {
     // }
 
 
-    int n = sweep.size();
-    for (int i = 0; i < n; i++) {
-        auto [x, r] = sweep[i];
-
-        int m = sweep.size();
-        for (int j = 0; j < m; j++) {
-
-        }
-
-    }
-
-
-
-
-
-
-     /*                                                                 +-------+
-     *                                                                  |       |
-     *                                                                  |       |
-     *                                                  +-------+       |       |
-     *                                                  |       |       |       |
-     *                                                  |       |       +-------+
-     *                                                  |       |
-     *                                                  |       |
-     *                                                  |       |
-     *                  +-------------------------------+-------+
-     *                  |                               |       |
-     *                  |                               |       |
-     *                  +-------------------------------+-------+       
-     */
 }
 
 void Test () {
