@@ -90,10 +90,10 @@ int overarea(rectangle r1, rectangle r2) {
 }
 int calculate (vector<vector<int>> graph) {
 
-    display (graph);
+    //display (graph);
     int area = 0;
+    set<int> line;
     map<int,vector<int>> hist;
-    set<int> event;
 
     for(int i = 0; i < graph.size(); i++) {
         rectangle r = graph[i];
@@ -102,35 +102,49 @@ int calculate (vector<vector<int>> graph) {
         hist[x2].push_back(i);
     }
 
-    vector<pair<int, vector<int>>> line = {hist.begin(), hist.end()};
+    vector<pair<int, vector<int>>> sweep = {hist.begin(), hist.end()};
 
-    for (int i = 0; i < line.size(); i++) {
-        auto [x, rec] = line[i];
-        //cout << x << " => ";
-        if (event.size()) {
+    for (int i = 0; i < sweep.size(); i++) {
+        auto [pos, rec] = sweep[i];
+        cout << pos << " => ";
 
-            int x2 = x, x1 = line[i - 1].first;
-            int y1 = 999, y2 = 0;
-            for (auto it : event) {
-                rectangle r2 = graph[it];
-                y1 = min (y1, r2[1]);
-                y2 = max (y2, r2[3]);
+        if (!line.empty()) {
+            int x2 = pos, x1 = sweep[i - 1].first;
+            vector<pair<int,int>> bnd;
+
+            for (auto index : line) {
+                rectangle r2 = graph[index];
+                bool found = false;
+
+                cout << "[" << r2[1] << "," << r2[3] <<"]";
+                for (auto &[y1,y2] : bnd) {
+                    if (r2[1] >= y1 && r2[1] <= y2 || r2[3] >= y1 && r2[3] <= y2) {
+                        y1 = min (r2[1], y1);
+                        y2 = max (r2[3], y2);
+                        found = true;
+                    }
+                }
+                if (found == false) bnd.push_back({r2[1], r2[3]});
             }
-            //cout << "abs("<< x << "-" << line[i - 1].first << ") * abs(" << y2 << "-" << y1 << ") " ;
-            int res = abs(x2-x1) * abs(y2-y1);
-            area += res;
+
+            for (auto [y1,y2] : bnd) {
+                area += abs(x2-x1) * abs(y2-y1);
+                /*
+                cout << "[" << y1 << "," << y2 <<"]";
+                cout << "abs("<< x2 << "-" << x1 << ") * abs(" << y2 << "-" << y1 << ") " ;
+                */
+
+            }
         }
-        /*
-        */
+
         for (int j = 0; j < rec.size(); j++) {
-            rectangle r1 = graph[rec[j]];
-
-            if (x == r1[0]) event.insert(rec[j]); 
-            if (x == r1[2]) event.erase(rec[j]);
+            int index = rec[j];
+            rectangle r1 = graph[index];
+            if (r1[0] == pos) line.insert(rec[j]); 
+            if (r1[2] == pos) line.erase(rec[j]);
         }
-        //cout << endl;
+        cout << endl;
     }
-
 
     return area;
 }
@@ -148,48 +162,6 @@ vector<pair<int,vector<int>>> mksweep (const vector<vector<int>> &graph) {
 
     return {hist.begin(), hist.end()};
 }
-int sweep (vector<vector<int>> graph) {
-
-    int area = 0;
-    set<int> event;
-    vector<pair<int, vector<int>>> line = mksweep(graph);
-
-    for (int i = 0; i < line.size(); i++) {
-        auto [x, rec] = line[i];
-        cout << x << " => ";
-
-        if (event.size()) {
-
-            int x2 = x, x1 = line[i - 1].first;
-
-            set<int> vert;
-
-            for (auto it : event) {
-                rectangle r2 = graph[it];
-                vert.insert(r2[1]);
-                vert.insert(r2[3]);
-                //cout << "[" << r2[1] << "," << r2[3]<<"]";
-            }
-
-            int y1 = *vert.begin(), y2 = *prev(vert.end());
-            cout << "abs("<< x2 << "-" << x1 << ") * abs(" << y2 << "-" << y1 << ") " ;
-            int res = abs(x2-x1) * abs(y2-y1);
-            area += res;
-        }
-
-        for (int j = 0; j < rec.size(); j++) {
-            rectangle r1 = graph[rec[j]];
-            if (x == r1[0]) event.insert(rec[j]); 
-            if (x == r1[2]) event.erase(rec[j]);
-        }
-        cout << endl;
-    }
-
-
-    return area;
-}
-
-
 
 int main () {
 
@@ -198,53 +170,10 @@ int main () {
 
     vector<vector<int>> graph = {{10,2,13,5}, {10,7,13,11},{11,9,14,13}};
 
-    //graph = {{3,3,8,5}, {6,3,8,9}, {11,6,14,12}};
+    graph = {{3,3,8,5}, {6,3,8,9}, {11,6,14,12}};
 
-    set<int> line;
-    vector<pair<int, vector<int>>> sweep = mksweep(graph);
 
-    for (int i = 0; i < sweep.size(); i++) {
-        auto [x, rec] = sweep[i];
-        cout << x << " => ";
-
-        if (!line.empty()) {
-            int x2 = x, x1 = sweep[i - 1].first;
-            vector<pair<int,int>> bnd;
-
-            for (auto it : line) {
-                rectangle r2 = graph[it];
-                bool found = false;
-
-                for (auto &[aa,bb] : bnd) {
-                    if (r2[1] >= aa && r2[1] <= bb || r2[3] >= aa && r2[3] <= bb) {
-                        aa = min (r2[1], aa);
-                        bb = max (r2[3], bb);
-                        found = true;
-                    }
-                }
-                if (found == false) bnd.push_back({r2[1], r2[3]});
-            }
-            for (auto [y1,y2] : bnd) {
-
-                cout << "[" << y1 << "," << y2 <<"]";
-                /*
-                   int y1 = *vert.begin(), y2 = *prev(vert.end());
-                //cout << "abs("<< x2 << "-" << x1 << ") * abs(" << y2 << "-" << y1 << ") " ;
-                int res = abs(x2-x1) * abs(y2-y1);
-                */
-
-            }
-        }
-
-        for (int j = 0; j < rec.size(); j++) {
-            int index = rec[j];
-            rectangle r1 = graph[index];
-            if (x == r1[0]) line.insert(rec[j]); 
-            if (x == r1[2]) line.erase(rec[j]);
-        }
-        cout << endl;
-    }
-
+    calculate (graph);
 
     /*
      *
