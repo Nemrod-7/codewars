@@ -1,11 +1,11 @@
 use std::collections::{BTreeMap, HashSet};
 
 fn calculate(graph: &[[i32; 4]]) -> i64 {
-    
+
     let mut area = 0;
     let mut line:HashSet<usize> = HashSet::new();
     let mut sweep:BTreeMap<i32,Vec<usize>> = BTreeMap::new();
-    let mut x0 = 0;
+    let mut prev = 0;
 
     for i in 0..graph.len() {
         let x1 = graph[i][0];
@@ -22,11 +22,9 @@ fn calculate(graph: &[[i32; 4]]) -> i64 {
     }
 
     for (pos, rec) in sweep {
-        print!("{pos} => ");
 
-        
         if !line.is_empty() {
-            let x1 = pos;
+            let x = (pos, prev);
             let mut inter:Vec<(i32,i32)> = Vec::new();
             let mut merge:Vec<(i32,i32)> = Vec::new();
 
@@ -53,8 +51,7 @@ fn calculate(graph: &[[i32; 4]]) -> i64 {
             }
 
             for y in merge {
-                print!("[{},{}]",y.0, y.1);
-                area += ((x1 - x0).abs() * (y.1 - y.0).abs()) as i64;
+                area += ((x.1 - x.0).abs() * (y.1 - y.0).abs()) as i64;
             }
         }
 
@@ -62,9 +59,7 @@ fn calculate(graph: &[[i32; 4]]) -> i64 {
             if graph[index][0] == pos { line.insert(index); }
             if graph[index][2] == pos { line.remove(&index); }
         }
-
-        print!("\n");
-        x0 = pos;
+        prev = pos;
     }
 
     area
@@ -72,7 +67,8 @@ fn calculate(graph: &[[i32; 4]]) -> i64 {
 
 fn main() {
     let area = calculate(&[[3,3,8,5], [6,3,8,9], [11,6,14,12]]);
-    print!(" => {area}");
+    //print!(" => {area}");
+    test();
 }
 
 fn test () {
@@ -98,7 +94,7 @@ fn test () {
     assert_eq!(calculate(&[[1,1,2,2],[1,1,2,2],[1,1,2,2],[1,1,2,2],[1,1,2,2],[1,1,2,2]]), 1, "one");
     assert_eq!(calculate(&[[3,3,6,5],[4,4,6,6],[4,3,7,5],[4,2,8,5],[4,3,8,6],[9,0,11,4],[9,1,10,6],[9,0,12,2],[10,1,13,5],[12,4,15,6],[14,1,16,5],[12,1,17,2]]), 52, "very hard!");
     assert_eq!(calculate(&[[2, 2, 17, 2], [2, 2, 17, 4], [2, 2, 17, 6], [2, 2, 17, 8], [2, 2, 17, 10], [2, 2, 17, 12], [2, 2, 17, 14], [2, 2, 17, 16], [2, 2, 17, 18], [2, 2, 17, 20], [2, 2, 17, 22], [2, 2, 17, 24], [2, 2, 17, 26], [2, 2, 17, 28]]), 390, "waterfall");
-	
+
     /*
     */
 }

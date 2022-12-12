@@ -244,12 +244,13 @@ int main () {
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    double nu = 8.66666667;
+
+    for (int i = 26; i < 255; i++) {
+        cout << "[" << (char)i << "]";
+    }
 
 
-    double ex = int(nu * 1000) / 1000.0;
 
-    cout << ex;
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
     std::cout << "\nProcess took " << elapsed.count()  << " ms" << std::endl;
