@@ -1,8 +1,9 @@
 #include <iostream>
 #include <iomanip>
+#include <fstream>
 #include <string>
 #include <vector>
-
+// samsic fY65C2X3RQGkQ2b
 using namespace std;
 using cell = pair<int,int>;
 enum { grass, plant, multi, zombe };
@@ -29,307 +30,175 @@ void display (vector<vector<cell>> grid) {
     }
     cout << endl;
 }
+void showforces (vector<vector<cell>> &grid, vector<vector<int>> zmb) {
 
-vector<vector<cell>> mkgraph (vector<string> lawn, vector<vector<int>> zombies) {
+    const int height = grid.size(), width = grid[0].size();
 
-  int height = lawn.size(), width = lawn[0].size();
-  vector<vector<cell>> grid (height, vector<cell> (width));
-
-  for (int y = 0; y < height; y++) {
-      for (int x = 0; x < width; x++) {
-          if (isdigit(lawn[y][x])) grid[y][x] = {plant, lawn[y][x] - '0' };
-          if (lawn[y][x] == 'S') grid[y][x] = {multi, 1 };
-      }
-  }
-
-  for (auto inv : zombies) {
-      int move = inv[0], y = inv[1], hp = inv[2];
-      if (move == 0)
-          grid[y][width - 1] = { zombe, hp };
-  }
-
-  return grid;
-}
-
-void disperse (vector<vector<cell>> &grid, int x, int y) {
-
-    int height = grid.size(), width = grid[0].size();
-    for (int i = 1; i < width - x ; i++) {
-        int dx = i + x;
-
-        for (int j = -1; j < 2; j++) {
-            int dy = y + i * j;
-
-            if (dy >= 0 && dy < height && grid[dy][dx].first == zombe) {
-                grid[dy][dx].second -= 1;
-            }
-        }
-    }
-}
-void display2 (vector<vector<pair<char,int>>> &plants, vector<vector<int>> &zombies, int ng) {
-
-    const int height = plants.size(), width = plants[0].size();
+    ofstream oss ("plant.csv");
 
     for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            string tup = " ";
-
-            for (auto [id,pos] : plants[y]) {
-                if (pos == x)
-                    tup = id;
-            }
-
-            for (auto &inv : zombies) {
-                int move = inv[0], row = inv[1], hp = inv[2];
-                int col = (width - 1) - (ng - move);
-
-                if (row == y && col == x)
-                    tup = to_string (hp);
-            }
-            cout << "[" << setw(2) << tup << "]";
-        }
-        cout << endl;
-    }
-}
-int plantzombie2 (vector<string> lawn, vector<vector<int>> zombies) {
-
-    int ng = 0;
-    const int height = lawn.size(), width = lawn[0].size();
-    vector<vector<pair<char,int>>> plants (height);
-
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            if (isdigit(lawn[y][x]) || lawn[y][x] == 'S') {
-                plants[y].push_back ({lawn[y][x], x});
-            }
-        }
-    }
-
-    for (int ng = 0; ng < 2; ng++) {
-        vector<int> dfce(height);
-        cout << "cycle " << ng << " => ";
-
-        for (int y = 0; y < height; y++) {
-            for (auto &[id, pos] : plants[y]) {
-                if (id == 'S') {
-                    for (int i = 1; i < width - pos ; i++) {
-                        int dx = i + pos;
-
-                        for (int j = -1; j < 2; j++) {
-                            int dy = y + i * j;
-                            if (dy >= 0 && dy < height) {
-                            /*
-                             && grid[dy][dx].first == zombe) {
-                                grid[dy][dx].second -= 1;
-
-                            */
-                            }
-
-                        }
-                    }
-                    dfce[y] += 1;
-                } else {
-                    dfce[y] += (id - '0');
-                }
-            }
-        }
-
-        for (auto &stat : zombies) { // move - row - hp
-            int move = stat[0], row = stat[1], hp = stat[2];
-            int col = (width - 1) - (ng - move);
-
-            if (col < width) {
-                //cout << "[" << dfce[row]<< "] => " << hp;
-                if ((stat[2] - dfce[row]) < 0) {
-                    dfce[row] -= hp;
-                    stat[2] = 0;
-                } else {
-                    stat[2] -= dfce[row];
-                    dfce[row] = 0;
-                }
-                cout << "[" << hp << "]\n";
-            }
-        }
-        //cout << "\n";
-    }
-
-
-
-    return ng;
-}
-int plantzombie3 (vector<string> lawn, vector<vector<int>> zombies) {
-
-    int ng = 0;
-    const int height = lawn.size(), width = lawn[0].size();
-    vector<vector<pair<char,int>>> plants (height);
-
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            if (isdigit(lawn[y][x]) || lawn[y][x] == 'S') {
-                plants[y].push_back ({lawn[y][x], x});
-            }
-        }
-    }
-
-    for (auto &inv : zombies) {
-        int move = inv[0], row = inv[1], hp = inv[2];
-        int col = (width - 1) - (ng - move);
-
-        if (col < width) {
-            int cnt = 0;
-            for (int x = 0; x < col; x++) {
-                if (isdigit (lawn[row][col])) cnt += lawn[row][col];
-                if (lawn[row][col] == 'S') cnt += 1;
-            }
-            cout << hp << ' ';
-        }
-    }
-
-    for (int ng = 0; ng < 2; ng++) {
-
-    }
-
-
-
-    return ng;
-}
-
-int plantzombie1 (vector<string> lawn, vector<vector<int>> zombies) {
-
-  int ng = 0;
-  const int height = lawn.size(), width = lawn[0].size();
-  vector<vector<cell>> grid (height, vector<cell> (width));
-
-  vector<vector<pair<int,int>>> plants (height);
-
-  for (int y = 0; y < height; y++) {
-      for (int x = 0; x < width; x++) {
-          int index = y * width + x;
-          if (isdigit(lawn[y][x])) {
-              grid[y][x] = { plant, lawn[y][x] - '0' };
-          }
-          if (lawn[y][x] == 'S') {
-              grid[y][x] = { multi, 1 };
-          }
-      }
-  }
-
-  for (int ng = 0; ng < 4; ng++) {
-      cout << "cycle " << ng  << " :: \n";
-      for (auto inv : zombies) {
-          int move = inv[0], y = inv[1], hp = inv[2];
-          if (move == ng)
-              grid[y][width - 1] = { zombe, hp };
-      }
-      display (grid);
-      for (int y = 0; y < height; y++) {
-          for (int x = 0, cnt = 0; x < width; x++) {
-              auto &[id, pt] = grid[y][x];
-
-              switch (id) {
-                  case plant: cnt += pt; break;
-                  case multi: disperse (grid,x,y); break;
-                  case zombe:
-                      if ((pt - cnt) < 0) {
-                          cnt -= pt;
-                          id = grass, pt = 0;
-                      } else {
-                          pt -= cnt;
-                          cnt = 0;
-                      }
-                      break;
-                  default: break;
-              }
-          }
-      }
-
-      for (int y = 0; y < height; y++) {
-          for (int x = 0; x < width; x++) {
-              auto &[id, pt] = grid[y][x];
-
-              if (id == zombe) {
-                  if (x > 0) {
-                      grid[y][x-1] = grid[y][x];
-                      grid[y][x] = { grass, 0 };
-                  }
-              }
-          }
-      }
-    }
-
-    return ng;
-}
-
-int main () {
-
-  vector<string> lawn = { "2       ", "  S     ", "21  S   ", "13      ", "2 3     " };
-  vector<vector<int>> zombies = { {0,4,28}, {1,1,6}, {2,0,10}, {2,4,15}, {3,2,16}, {3,3,13} };
-
-  plantzombie1 (lawn, zombies);
-
-    cout << "end\n";
-}
-
-bool attack (vector<vector<cell>> &grid) {
-
-    int height = grid.size(), width = grid[0].size();
-    bool defense = false;
-
-    for (int y = 0; y < height; y++) {
-        int cnt = 0;
         for (int x = 0; x < width; x++) {
             auto &[id, pt] = grid[y][x];
 
             switch (id) {
-                case grass: break;
-                case plant:
-                  cnt += pt;
-                  defense = true;
-                  break;
-                case multi:
-                    defense = true;
-                    for (int i = 1; i < width - x ; i++) {
-                        int dx = i + x;
-                        for (int j = -1; j < 2; j++) {
-                            int dy = y + i * j;
-
-                            if (dy >= 0 && dy < height && grid[dy][dx].first == zombe) {
-                                grid[dy][dx].second -= 1;
-                            }
-                        }
-                    }
-                    //cnt += 1;
-                    break;
-                case zombe: pt -= cnt; break;
-                default: break;
+                case grass: oss << ";"; break;
+                case plant: oss << pt << ";"; break;
+                case multi: oss << "s" << ";"; break;
+                default: oss << " " << ";"; break;
             }
+        }
+        oss << "  ::  ;";
+        for (auto vec : zmb) {
+            int mov = vec[0], row = vec[1], hp = vec[2];
+            if (row == y) oss << hp << ';';
+        }
+        oss << endl;
+    }
+    oss << endl;
+    oss.close();
+}
+
+vector<vector<cell>> mkgraph (vector<string> lawn) {
+
+    int height = lawn.size(), width = lawn[0].size();
+    vector<vector<cell>> grid (height, vector<cell> (width));
+
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            if (isdigit(lawn[y][x])) grid[y][x] = {plant, lawn[y][x] - '0' };
+            if (lawn[y][x] == 'S') grid[y][x] = {multi, 1 };
         }
     }
 
-    return defense;
-  }
-void update (vector<vector<cell>> &grid, vector<vector<int>> &zombies, int ng) {
+    return grid;
+}
+void disperse (vector<vector<cell>> &grid, int x, int y) {
 
-    int height = grid.size(), width = grid[0].size();
+    const int height = grid.size(), width = grid[0].size();
+    bool hit[3] = {0};
+
+    for (int i = 1; i < width - x ; i++) {
+        int dx = i + x;
+
+        for (int j = 0; j < 3; j++) {
+            int dy = y + i * (j - 1);
+
+            if (dy >= 0 && dy < height && hit[j] == false && grid[dy][dx].first == zombe) {
+                if (grid[dy][dx].second > 1)
+                    grid[dy][dx].second -= 1;
+                else
+                    grid[dy][dx] = {grass, 0};
+
+                hit[j] = true;
+            }
+        }
+    }
+}
+
+string tofile (vector<vector<cell>> grid) {
+
+    const int height = grid.size(), width = grid[0].size();
+    stringstream ofs;
 
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             auto &[id, pt] = grid[y][x];
 
-            if (id == zombe) {
-                if (pt > 0) {
-                    int nx = x - 1;
-                    if (nx >= 0) {
-                        grid[y][nx] = grid[y][x];
-                        grid[y][x] = {grass, 0};
-                    }
-                } else {
-                    id = grass, pt = 0;
+            switch (id) {
+                case grass: ofs << " "; break;
+                case plant: ofs << pt; break;
+                case multi: ofs << "s"; break;
+                case zombe: ofs << pt; break;
+                default: break;
+            }
+            ofs << ";";
+        }
+        ofs << endl;
+    }
+    ofs << endl;
+
+    return ofs.str();
+}
+int plantzombie1 (vector<string> lawn, vector<vector<int>> zombies) {
+
+    int cycles = zombies.front()[0];
+    const int height = lawn.size(), width = lawn[0].size();
+    vector<vector<cell>> grid = mkgraph(lawn);
+
+    ofstream ofs ("plant.csv");
+   // showforces (grid, zombies);
+    while (true) {
+        int nzomb = 0;
+        ofs << "cycle " << cycles  << " :: \n";
+        for (auto inv : zombies) {
+            int move = inv[0], y = inv[1], hp = inv[2];
+            if (move == cycles)
+                grid[y][width - 1] = { zombe, hp };
+        }
+        ofs << tofile(grid);
+        //display (grid);
+        for (int y = 0; y < height; y++) {
+            for (int x = 0, cnt = 0; x < width; x++) {
+                auto &[id, pt] = grid[y][x];
+
+                switch (id) {
+                    case plant: cnt += pt; break;
+                    case multi: disperse (grid,x,y); break;
+                    case zombe:
+                        if (x == 0) return cycles;
+
+                        if (cnt >= pt) {
+                            cnt -= pt;
+                            grid[y][x] = {grass, 0};
+                        } else {
+                            pt -= cnt;
+                            cnt = 0;
+                            nzomb++;
+                        }
+
+                        break;
+                    default: break;
                 }
             }
         }
-        if (ng < zombies[y].size()) {
-            grid[y][width - 1] = { zombe, zombies[y][ng] };
+
+        if (nzomb == 0) break;
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 1; x < width; x++) {
+                auto &[id, pt] = grid[y][x];
+
+                if (id == zombe) {
+                    grid[y][x-1] = { grass, 0 };
+                    swap (grid[y][x-1], grid[y][x]);
+                }
+            }
         }
+        
+        cycles++;
     }
+
+    ofs.close();
+    return 0;
 }
+
+int main () {
+
+    vector<string> lawn = { "2       ", "  S     ", "21  S   ", "13      ", "2 3     " };
+    vector<vector<int>> zombies = { {0,4,28}, {1,1,6}, {2,0,10}, {2,4,15}, {3,2,16}, {3,3,13} };
+ 
+lawn = {"3S1 S         ","61            ","22 SS         ","2111          ","S 3 31        ","1 32          ","2             ","4             "};
+
+zombies = {{0,0,52},{0,1,60},{0,2,52},{0,4,69},{0,5,52},{0,6,17},{0,7,34},{1,3,46},{3,0,27},{3,1,32},{3,4,36},{3,5,27},{3,6,9},{4,3,24},{4,7,21},{6,2,34},{11,0,29},{11,1,34},{11,4,39},{13,5,32},{13,6,11},{14,3,27},{14,7,22},{16,2,39},{17,0,29},{17,1,34},{17,4,39},{17,5,27},{17,6,9},{18,3,23},{19,2,26},{19,7,21},{21,0,26},{21,1,31},{21,4,35},{22,5,29},{22,6,9},{23,3,24},{25,7,23},{26,1,33},{26,4,38},{26,5,26},{26,6,9},{27,0,32},{29,2,44},{29,3,25},{31,7,21},{32,0,27},{32,1,34},{32,2,27},{33,3,22},{33,4,44},{33,5,32},{33,6,11},{37,1,31},{37,7,21}};
+
+   int res = plantzombie1 (lawn, zombies);
+
+    cout << res;
+//assertion failed: `(left == right)` left: `31`, right: `25`
+//assert_eq!(pnz::plants_and_zombies(&lawn, &zombies), 25);
+
+
+
+    cout << "\nend\n";
+}
+
