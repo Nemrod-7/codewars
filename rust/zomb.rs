@@ -1,13 +1,9 @@
+#![allow(dead_code, unused)]
 
 mod pnz {
 
 #[derive(Clone, Eq, PartialEq)]
-    enum Type {
-        Grass,
-        Plant,
-        Multi,
-        Zombe,
-    }
+    enum Type { Grass, Plant, Multi, Zombe, }
 
     fn display (graph: &Vec<Vec<(Type,u32)>> ) {
 
@@ -90,12 +86,12 @@ mod pnz {
                 print!("{dig},");
             }
             print!("],");
-        } 
+        }
         print!("];\n");
     }
 
     fn showforces(graph: &Vec<Vec<(Type,u32)>>, zombies: &Vec<Vec<usize>>) {
-        
+
         print!("width {} \n", graph[0].len());
         for y in 0..graph.len() {
             for x in 0..graph[y].len() {
@@ -124,16 +120,20 @@ mod pnz {
         //print!("{maxx}\n");
         //showtest (lawn, zombies);
         //showforces (&graph, zombies);
-            display(&graph);
+        for it in zombies {
+            print! ("{} {} {}\n", it[0], it[1], it[2] );
+        }
+        //display(&graph);
         loop {
-            //print! ("{cycle} => \n");
+            print! ("{cycle} => \n");
             let mut nzomb = 0;
             for zomb in zombies {
                 if zomb[0] == cycle {
                     graph[zomb[1]][width - 1] = (Type::Zombe, zomb[2] as u32);
                 }
             }
-            //display(&graph);
+            display(&graph);
+
             for y in 0..height {
                 let mut dfc = 0;
                 for x in 0..width {
@@ -158,7 +158,7 @@ mod pnz {
                 }
             }
 
-            if nzomb == 0 { break }
+            if nzomb == 0 { return 312; break }
 
             for y in 0..height {
                 for x in 1..width {
@@ -172,7 +172,7 @@ mod pnz {
             cycle += 1;
         }
 
-        0
+        313
     }
 
 }
@@ -181,19 +181,26 @@ fn main () {
     let lawn = vec![ "2       ", "  S     ", "21  S   ", "13      ", "2 3     " ];
     let zombies = vec![ vec![0,4,28], vec![1,1,6], vec![2,0,10], vec![2,4,15], vec![3,2,16], vec![3,3,13] ];
 
-    //let res = plants_and_zombies (&lawn, &zombies);
     let lawn = vec![ "1         ", "SS        ", "SSS       ", "SSS       ", "SS        ", "1         "];
     let zombies  = vec![ vec![0,2,16], vec![1,3,19], vec![2,0,18], vec![4,2,21], vec![6,3,20], vec![7,5,17], vec![8,1,21], vec![8,2,11], vec![9,0,10], vec![11,4,23], vec![12,1,15], vec![13,3,22]];
     //assert_eq!(pnz::plants_and_zombies(&lawn, &zombies), 0);// OK
 
 
-
-
 let lawn = vec!["3S1 S         ","61            ","22 SS         ","2111          ","S 3 31        ","1 32          ","2             ","4             "];
 let zombies = vec![vec![0,0,52],vec![0,1,60],vec![0,2,52],vec![0,4,69],vec![0,5,52],vec![0,6,17],vec![0,7,34],vec![1,3,46],vec![3,0,27],vec![3,1,32],vec![3,4,36],vec![3,5,27],vec![3,6,9],vec![4,3,24],vec![4,7,21],vec![6,2,34],vec![11,0,29],vec![11,1,34],vec![11,4,39],vec![13,5,32],vec![13,6,11],vec![14,3,27],vec![14,7,22],vec![16,2,39],vec![17,0,29],vec![17,1,34],vec![17,4,39],vec![17,5,27],vec![17,6,9],vec![18,3,23],vec![19,2,26],vec![19,7,21],vec![21,0,26],vec![21,1,31],vec![21,4,35],vec![22,5,29],vec![22,6,9],vec![23,3,24],vec![25,7,23],vec![26,1,33],vec![26,4,38],vec![26,5,26],vec![26,6,9],vec![27,0,32],vec![29,2,44],vec![29,3,25],vec![31,7,21],vec![32,0,27],vec![32,1,34],vec![32,2,27],vec![33,3,22],vec![33,4,44],vec![33,5,32],vec![33,6,11],vec![37,1,31],vec![37,7,21]];
 //assertion failed: `(left == right)` left: `31`, right: `25`
-assert_eq!(pnz::plants_and_zombies(&lawn, &zombies), 25);
+//assert_eq!(pnz::plants_and_zombies(&lawn, &zombies), 25);
 
+let lawn = vec!["42  1      "," 11S1      ","11         "," 16 1      ","111S       ","6          ","2S  1      ","S41S       "];
+let zombies = vec![vec![0,0,34],vec![0,1,19],vec![0,2,9],vec![0,3,39],vec![0,4,19],vec![1,0,22],vec![1,6,21],vec![1,7,37],vec![2,1,14],vec![2,2,7],vec![2,3,29],vec![2,4,14],vec![2,5,35],vec![2,6,13],vec![3,0,18],vec![3,2,5],vec![3,5,22],vec![3,7,27],vec![4,3,23],vec![4,7,18],vec![5,1,13],vec![5,4,13],vec![5,5,17],vec![6,0,20],vec![6,2,5],vec![7,1,11],vec![7,3,23],vec![7,4,11],vec![7,5,15],vec![7,7,19],vec![10,0,17],vec![10,2,5],vec![10,6,18],vec![11,1,10],vec![11,3,20],vec![11,4,10],vec![11,6,12],vec![11,7,17],vec![15,5,16]];
+//assert_eq!(pnz::plants_and_zombies(&lawn, &zombies), 22);
+// assertion failed: `(left == right)` left: `0`, right: `22`
+
+let lawn = vec!["31S 1      ","3  1       ","21 21      "," 21 1      ","41  1      "," 131       "];
+let zombies = vec![vec![0,0,29],vec![0,2,29],vec![1,2,19],vec![1,3,21],vec![2,0,22],vec![2,1,23],vec![2,3,13],vec![2,5,29],vec![3,1,14],vec![3,4,37],vec![3,5,18],vec![8,0,17],vec![8,1,10],vec![8,2,18],vec![8,3,11],vec![8,4,23],vec![8,5,12],vec![11,0,15],vec![11,2,16],vec![11,3,10],vec![11,4,18],vec![14,1,13],vec![14,4,16],vec![14,5,16],vec![15,0,16],vec![15,2,17],vec![15,3,11],vec![16,1,10],vec![16,5,13]];
+    let res = pnz::plants_and_zombies (&lawn, &zombies);
+
+    print! ("res {res}");
 
     //example_tests();
     print!("\n");
@@ -240,5 +247,3 @@ assert_eq!(pnz::plants_and_zombies(&lawn, &zombies), 33);
 
 
 }
-
-
