@@ -51,13 +51,13 @@ string display (vector<vector<cell>> grid) {
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             auto &[id, pt] = grid[y][x];
+
             iss << "[";
-            iss << setw(2);
             switch (id) {
-                case grass: iss << " "; break;
-                case plant: iss << "p" ; break;
-                case multi: iss << "s"; break;
-                case zombe: iss << pt; break;
+                case grass: iss << setw(2) << " "; break;
+                case multi: iss << setw(2) <<"s"; break;
+                case zombe: iss << setw(2) << pt; break;
+                case plant: iss << "p" << pt; break;
                 default: break;
             }
             iss << "]";
@@ -133,54 +133,94 @@ void disperse (vector<vector<cell>> &grid, int x, int y) {
     }
 }
 
-string tofile (vector<vector<cell>> grid) {
+string mkcsv (vector<vector<cell>> grid) {
 
     const int height = grid.size(), width = grid[0].size();
-    stringstream ofs;
+    stringstream iss;
 
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             auto &[id, pt] = grid[y][x];
 
             switch (id) {
-                case grass: ofs << " "; break;
-                case plant: ofs << pt; break;
-                case multi: ofs << "s"; break;
-                case zombe: ofs << pt; break;
+                case grass: iss << setw(2) << " "; break;
+                case multi: iss << setw(2) <<"s"; break;
+                case zombe: iss << setw(2) << pt; break;
+                case plant: iss << "p" << pt; break;
                 default: break;
             }
-            ofs << ";";
+            iss << ";";
         }
-        ofs << endl;
+        iss << endl;
     }
-    ofs << endl;
+    iss << endl;
 
-    return ofs.str();
+    return iss.str();
 }
+string displayfile (vector<vector<cell>> grid) {
 
+    const int height = grid.size(), width = grid[0].size();
+    stringstream iss;
+
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            auto &[id, pt] = grid[y][x];
+            iss << setw(2);
+            switch (id) {
+                case grass: iss << " "; break;
+                case plant: iss << "p" ; break;
+                case multi: iss << "s"; break;
+                case zombe: iss << pt; break;
+                default: break;
+            }
+            iss << ";";
+        }
+        iss << endl;
+    }
+    iss << endl;
+
+    return iss.str();
+}
 int plantzombie1 (vector<string> lawn, vector<vector<int>> zombies) {
 
     int cycles = zombies.front()[0], minc = zombies.back()[0];
     const int height = lawn.size(), width = lawn[0].size();
     vector<vector<cell>> grid = mkgraph(lawn);
     stringstream iss;
-    //ofstream ofs ("plant.csv");
     //cout << showforces (grid, zombies);
-
+    //ofstream ofs ("plant.csv");
+    /*
+    for (auto line : lawn) {
+        cout << line << endl;
+    }
+    */
     for (auto inv : zombies) {
         int move = inv[0], row = inv[1], hp = inv[2];
-        cout << move << " " << row << " " << hp << endl;
+    //    cout << move << " " << row << " " << hp << endl;
     }
-    cout << display (grid);
     while (true) {
         int nzomb = 0;
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 1; x < width; x++) {
+                auto &[id, pt] = grid[y][x];
+
+                if (id == zombe) {
+                    int nid = grid[y][x-1].first;
+                    grid[y][x-1] = { grass, 0 };
+                    swap (grid[y][x-1], grid[y][x]);
+                }
+            }
+        }
+
         for (auto inv : zombies) {
             int move = inv[0], y = inv[1], hp = inv[2];
             if (move == cycles)
                 grid[y][width - 1] = { zombe, hp };
         }
-        cout << "cycle " << cycles  << "\n";
-        //cout << display (grid);
+        //cout << "cycle " << cycles  << "\n";
+        cout << display (grid);
+        //ofs << mkcsv (grid);
         //ofs << tofile(grid);
         for (int y = 0; y < height; y++) {
             for (int x = 0, cnt = 0; x < width; x++) {
@@ -209,24 +249,7 @@ int plantzombie1 (vector<string> lawn, vector<vector<int>> zombies) {
             }
         }
 
-        if (cycles >= minc && nzomb == 0) break;
-
-        for (int y = 0; y < height; y++) {
-            for (int x = 1; x < width; x++) {
-                auto &[id, pt] = grid[y][x];
-
-                if (id == zombe) {
-                    int nid = grid[y][x-1].first;
-
-                    if (nid == plant || nid == multi) {
-                        grid[y][x].second = 1;
-                    }
-
-                    grid[y][x-1] = { grass, 0 };
-                    swap (grid[y][x-1], grid[y][x]);
-                }
-            }
-        }
+        if (cycles > minc && nzomb == 0) break;
 
         cycles++;
     }
@@ -237,27 +260,16 @@ int plantzombie1 (vector<string> lawn, vector<vector<int>> zombies) {
 
 int main () {
 
-    int res;
-    vector<string> lawn = { "2       ", "  S     ", "21  S   ", "13      ", "2 3     " };
-    vector<vector<int>> zombies = { {0,4,28}, {1,1,6}, {2,0,10}, {2,4,15}, {3,2,16}, {3,3,13} };
+    vector<string> lawn;
+    vector<vector<int>> zombies;
 
-lawn = {"3S1 S         ","61            ","22 SS         ","2111          ","S 3 31        ","1 32          ","2             ","4             "};
+    lawn = {"3  S1     "," S S3     "," 32S1     ","6         ","S42       ","S1 15     ","  4       "};
+    zombies = {{0,0,22},{0,2,31},{0,3,27},{0,5,36},{0,6,18},{1,1,24},{1,3,17},{1,5,23},{1,6,11},{4,4,37},{7,2,27},{7,3,15},{7,5,20},{8,1,20},{8,2,18},{8,4,27},{8,6,12},{11,3,13},{11,5,18},{15,0,26},{15,1,16},{15,4,21},{15,6,10}};
 
-zombies = {{0,0,52},{0,1,60},{0,2,52},{0,4,69},{0,5,52},{0,6,17},{0,7,34},{1,3,46},{3,0,27},{3,1,32},{3,4,36},{3,5,27},{3,6,9},{4,3,24},{4,7,21},{6,2,34},{11,0,29},{11,1,34},{11,4,39},{13,5,32},{13,6,11},{14,3,27},{14,7,22},{16,2,39},{17,0,29},{17,1,34},{17,4,39},{17,5,27},{17,6,9},{18,3,23},{19,2,26},{19,7,21},{21,0,26},{21,1,31},{21,4,35},{22,5,29},{22,6,9},{23,3,24},{25,7,23},{26,1,33},{26,4,38},{26,5,26},{26,6,9},{27,0,32},{29,2,44},{29,3,25},{31,7,21},{32,0,27},{32,1,34},{32,2,27},{33,3,22},{33,4,44},{33,5,32},{33,6,11},{37,1,31},{37,7,21}};
-//assertion failed: `(left == right)` left: `31`, right: `25`
-//assert_eq!(pnz::plants_and_zombies(&lawn, &zombies), 25);
+    lawn = {"43S1     "," 412     ","  11     ","41 2     ","61       ","S22      "};
+    zombies = {{0,0,36},{0,1,28},{0,2,8},{0,4,28},{0,5,20},{1,0,24},{1,2,5},{1,3,31},{1,5,13},{2,3,20},{2,4,22},{3,1,25},{3,2,4},{3,5,12},{4,3,18},{4,4,18},{5,0,29},{5,1,20},{5,2,4},{6,0,20},{6,1,14},{6,3,16},{6,4,16},{6,5,13},{9,0,19},{9,2,5},{9,5,12},{10,1,17},{10,2,4},{10,3,18},{10,4,18},{13,0,19},{13,5,11}};
+    Assert::That (plantzombie1 (lawn, zombies), 15);
 
-   lawn = {"31S 1      ","3  1       ","21 21      "," 21 1      ","41  1      "," 131       "};
-   zombies = {{0,0,29},{0,2,29},{1,2,19},{1,3,21},{2,0,22},{2,1,23},{2,3,13},{2,5,29},{3,1,14},{3,4,37},{3,5,18},{8,0,17},{8,1,10},{8,2,18},{8,3,11},{8,4,23},{8,5,12},{11,0,15},{11,2,16},{11,3,10},{11,4,18},{14,1,13},{14,4,16},{14,5,16},{15,0,16},{15,2,17},{15,3,11},{16,1,10},{16,5,13}};
-   //res = plantzombie1 (lawn, zombies);
-   //cout << res;
-
-   lawn = {"S211     ","1132     ","1 22     ","3 S      ","2        ","1121     ","4        ","41 2     "};
-   zombies = {{0,0,20},{0,1,28},{0,2,20},{0,3,16},{0,4,8},{0,5,20},{0,6,16},{2,2,13},{2,3,10},{2,5,13},{2,6,10},{2,7,31},{3,1,22},{3,4,6},{3,7,20},{4,0,18},{4,2,12},{4,3,9},{4,5,12},{4,6,9},{4,7,14},{6,1,18},{6,4,5},{7,0,14},{7,3,9},{7,5,11},{7,6,9},{7,7,14},{9,1,16},{9,4,4},{10,0,12},{10,2,15},{10,3,9},{10,5,10},{10,6,9},{11,2,11},{11,7,18},{12,0,11},{12,5,10}};
-   res = plantzombie1 (lawn, zombies);
-   // assertion failed: `(left == right)` left: `13`, right: `0`
-
-   // assertion failed: `(left == right)` left: `14`, right: `19`
     //Test();
     cout << "\nend\n";
 }
@@ -374,3 +386,155 @@ int plantzombie2 (vector<string> lawn, vector<vector<int>> zombies) {
     //ofs.close();
     return 0;
 }
+
+/*
+
+// something
+function plantsAndZombies(lawn,zombies){
+    const zombiesRows = [];
+    for (let i = 0; i < lawn.length; i++) {
+        zombiesRows.push([]);
+    }
+    for (let i = 0; i < lawn.length; i++) {
+        zombiesRows[i] = zombiesRows[i].sort((a, b) => b[0] - a[0]);
+    }
+    lawn = lawn.map(row => row.split(''));
+    let moves = 0;
+    let noZombies;
+    while (true) {
+
+// add zombies
+ zombies.forEach((zombie, k) => {
+  if (zombie[0] === 0) {
+    zombiesRows[zombie[1]].push([zombie[0],zombie[2]])
+  }
+})
+zombies = zombies.filter(zombie => zombie[0] > 0);
+
+// first only numbered plants
+lawn.forEach((row, i) => {
+  row.forEach((spot, j) => {
+
+    // switch fire numbered,, later make for S from right and top
+    if (spot !== ' ' && spot !== 'S') {
+      let damage = Number(spot);
+      zombiesRows[i].some((zombie, k) => {
+
+        // first zombie we can hit
+        const plantSpot = row.length - j-1;;
+        if (zombie[0] < plantSpot) {
+          zombie[1] -= damage;
+          damage = 0
+
+          // check if this killed him and remove him if so
+          if (zombie[1] <= 0) {
+            // save damage for next one
+            damage += zombie[1] * -1;
+          }
+          if (damage == 0) return true
+        }
+        return false
+      })
+      zombiesRows[i] = zombiesRows[i].filter(zombie => zombie[1] > 0);
+    }
+  })
+})
+let i = 0;
+let j = lawn[0].length - 1;
+while (j !== -1) {
+  const spot = lawn[i][j];
+  if (spot === 'S') {
+
+    // get zombies from all 3 lanes
+    // horizontal lane
+      zombiesRows[i].some((zombie, k) => {
+        // first zombie we can hit
+        const plantSpot = lawn[0].length-1-j;
+        const damage = 1;
+        if (zombie[0] < plantSpot) {
+          zombie[1] -= damage;
+          if (zombie[1] <= 0) {
+            zombiesRows[i].splice(k, 1);
+          }
+          return true;
+        }
+        return false;
+      })
+
+      // diagonal lanes
+      // diagonal up
+      let iDia = i
+      let jDia = j
+      while (true) {
+        iDia--;
+        jDia++;
+        if (iDia < 0 || jDia > lawn[0].length-1) break
+        // check if any zombies on this place
+        let zombieShot = false;
+        zombiesRows[iDia].some((zombie, k) => {
+          if (zombie[0] == lawn[0].length-1 - jDia) {
+            zombie[1] -= 1;
+            // check if this killed him and remove him if so
+            if (zombie[1] <= 0) {
+              zombiesRows[iDia].splice(k, 1);
+            }
+            zombieShot = true;
+            return true;
+          }
+          return false;
+        })
+        if (zombieShot) break;
+      }
+
+      // diagonal down
+      iDia = i
+      jDia = j
+      while (true) {
+        iDia++;
+        jDia++;
+        if (iDia > lawn.length-1 || jDia > lawn[0].length-1) break
+
+        // check if any zombies on this place
+        let zombieShot = false;
+        zombiesRows[iDia].some((zombie, k) => {
+          if (zombie[0] == lawn[0].length-1 - jDia) {
+            zombie[1] -= 1;
+            // check if this killed him and remove him if so
+            if (zombie[1] <= 0) {
+              zombiesRows[iDia].splice(k, 1);
+            }
+            zombieShot = true;
+            return true;
+          }
+          return false;
+        });
+        if (zombieShot) break
+      }
+    }
+  if (i === lawn.length-1) {
+    i = -1;
+    j--;
+  }
+  i++;
+}
+
+// update all zombie moves by one
+zombiesRows.forEach((zRow, i) => zRow.forEach(zombie => {
+  zombie[0]++;
+  let j = lawn[0].length-1-zombie[0];
+  // check if zombie got onto some plant
+  if (lawn[i][j] !== ' ') lawn[i][j] = ' ';
+}))
+// update all zombies that are waiting to get on board
+zombies.forEach(zombie => {
+  zombie[0]--;
+})
+moves++;
+
+// if zombieRows all empty or any zombie has move to 0
+noZombies = zombiesRows.every(zRow => zRow.length === 0) && zombies.length === 0;
+const zombieMoveIsZero = zombiesRows.some(zRow => zRow.some(zombie => zombie[0] == lawn[0].length));
+if (noZombies || zombieMoveIsZero) break
+}
+return noZombies ? null : moves;
+}*/
