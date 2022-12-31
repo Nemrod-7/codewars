@@ -59,7 +59,7 @@ class Nonogram {
 										if (cspy[y].size() == 1) {
 												int row = cspy[y].front();
 												int bit = row >> x &1;
-												//grid[y][x] = bit; 
+												//grid[y][x] = bit;
 
 												/*
 												for (auto it = cspx[x].begin(); it != cspx[x].end();) {
@@ -150,11 +150,11 @@ class Nonogram {
 						cspy = mkcomb(left, width);
 
 						for (int y = 0; y < height; y++) {
-						
+
 								if (left[y].size() == 0) continue;
 
 								int maxv = *max_element (left[y].begin(), left[y].end());
-						
+
 								vector<int> line (width);
 
 								for (int i = 0; i < maxv; i++) {
@@ -163,28 +163,29 @@ class Nonogram {
 
 								for (int x = 0; x < width; x++) { // if overlapping
 										if (line[x] == 2) grid[y][x] = 1;
-								}	
+								}
 					  }
-						
+
 					  for (int x = 0; x < width; x++) {
 
 								if (top[x].size() == 0) continue;
 
 								int maxv = *max_element (top[x].begin(), top[x].end());
+
 								vector<int> line (height);
 
-								for (int i = 0; i < maxv; i++) { 
+								for (int i = 0; i < maxv; i++) {
 										line[i]++, line[height - i - 1]++;
 								}
 								for (int y = 0; y < height; y++) { // if overlapping
 										if (line[y] == 2) grid[y][x] = 1;
-								}	
+								}
 						}
 						/*
 						for (int y = 0; y < height; y++) {
 								for (int x = 0; x < width; x++) { // if overlapping
 										cout << grid[y][x];
-								}	
+								}
 								cout << endl;
 					  }
 						*/
@@ -226,16 +227,17 @@ class Nonogram {
 				}
 
 				vector<vector<int>> solve () {
-						
+
 						backtrack (grid, cspy, cspx, 0);
 						//show (top1,left1);
 
 						for (int y = 0; y < height; y++) {
 								for (int x = 0; x < width; x++) {
-										cout << (grid[y][x] ? "#" : " ");
+										cout << (grid[y][x] ? "##" : "  ");
 								}
 								cout << endl;
 						}
+
 						return grid;
 				}
 
@@ -309,14 +311,23 @@ int main () {
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};
 
     auto [top1,left1] = Nonogram::encoder (grid);
+
     top = {{3}, {4}, {2, 2, 2}, {2, 4, 2}, {6}, {3}};
     left = {{4}, {6}, {2, 2}, {2, 2}, {2}, {2}, {2}, {2}, {}, {2}, {2}};
-		/*
-		*/
-		int dimension = 5;
-    //Nonogram board (top,left);
+
+    int width = 6, height = 11;
+
+    Nonogram board (top,left);
 		//board.solve();
-		//cout << pow(2,40);
+    uint64_t num = 1;
+
+    for (int i = 0; i < 45; i++) {
+        num <<= 1;
+    }
+    for (int i = 0; i < num; i++) {
+
+    }
+    cout << num;
 
 		auto end = chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
@@ -352,4 +363,3 @@ pair<vector<vector<int>>,vector<vector<int>>> encoder (vector<vector<int>> grid)
 
     return {top,left};
 }
-

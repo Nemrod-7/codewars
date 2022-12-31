@@ -39,10 +39,10 @@ class Assert {
 template<class T> T Equals (const T& entry) { return entry;}
 template<class T> T EqualsContainer (const T& entry) { return entry;}
 void Test ();
-/////////////////////////////////Timer/////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 using cell = pair<int,int>;
 enum { grass, plant, multi, zombe };
-
+///////////////////////////////////////////////////////////////////////////////
 string display (vector<vector<cell>> grid) {
 
     const int height = grid.size(), width = grid[0].size();
@@ -95,7 +95,55 @@ string showforces (vector<vector<cell>> &grid, vector<vector<int>> zmb) {
 
     return os.str();
 }
+string mkcsv (vector<vector<cell>> grid) {
 
+    const int height = grid.size(), width = grid[0].size();
+    stringstream iss;
+
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            auto &[id, pt] = grid[y][x];
+
+            switch (id) {
+                case grass: iss << setw(2) << " "; break;
+                case multi: iss << setw(2) <<"s"; break;
+                case zombe: iss << setw(2) << pt; break;
+                case plant: iss << "p" << pt; break;
+                default: break;
+            }
+            iss << ";";
+        }
+        iss << endl;
+    }
+    iss << endl;
+
+    return iss.str();
+  }
+  string displayfile (vector<vector<cell>> grid) {
+
+      const int height = grid.size(), width = grid[0].size();
+      stringstream iss;
+
+      for (int y = 0; y < height; y++) {
+          for (int x = 0; x < width; x++) {
+              auto &[id, pt] = grid[y][x];
+              iss << setw(2);
+              switch (id) {
+                  case grass: iss << " "; break;
+                  case plant: iss << "p" ; break;
+                  case multi: iss << "s"; break;
+                  case zombe: iss << pt; break;
+                  default: break;
+              }
+              iss << ";";
+          }
+          iss << endl;
+      }
+      iss << endl;
+
+      return iss.str();
+  }
+///////////////////////////////////////////////////////////////////////////////
 vector<vector<cell>> mkgraph (vector<string> lawn) {
 
     int height = lawn.size(), width = lawn[0].size();
@@ -133,53 +181,86 @@ void disperse (vector<vector<cell>> &grid, int x, int y) {
     }
 }
 
-string mkcsv (vector<vector<cell>> grid) {
+int plantzombie2 (vector<string> lawn, vector<vector<int>> zombies) {
 
-    const int height = grid.size(), width = grid[0].size();
+    int cycles = zombies.front()[0], minc = zombies.back()[0];
+    const int height = lawn.size(), width = lawn[0].size();
+    vector<vector<cell>> grid = mkgraph(lawn);
     stringstream iss;
+    //ofstream ofs ("plant.csv");
+    //cout << showforces (grid, zombies);
 
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            auto &[id, pt] = grid[y][x];
-
-            switch (id) {
-                case grass: iss << setw(2) << " "; break;
-                case multi: iss << setw(2) <<"s"; break;
-                case zombe: iss << setw(2) << pt; break;
-                case plant: iss << "p" << pt; break;
-                default: break;
-            }
-            iss << ";";
+    while (true) {
+        int nzomb = 0;
+        for (auto inv : zombies) {
+            int move = inv[0], y = inv[1], hp = inv[2];
+            if (move == cycles)
+                grid[y][width - 1] = { zombe, hp };
         }
-        iss << endl;
-    }
-    iss << endl;
 
-    return iss.str();
-}
-string displayfile (vector<vector<cell>> grid) {
+        /*
+        cout << "cycle " << cycles  << " :: \n";
+        cout << display (grid);
+        */
 
-    const int height = grid.size(), width = grid[0].size();
-    stringstream iss;
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                auto [id, pt] = grid[y][x];
 
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            auto &[id, pt] = grid[y][x];
-            iss << setw(2);
-            switch (id) {
-                case grass: iss << " "; break;
-                case plant: iss << "p" ; break;
-                case multi: iss << "s"; break;
-                case zombe: iss << pt; break;
-                default: break;
+                if (id == plant) {
+                    for (int i = 0; i < pt; i++) {
+                        for (int j = 1, hit = false; j < width - x; j++) {
+                            int dx = j + x;
+
+                            if (grid[y][dx].first == zombe && hit == false) {
+                                hit = true;
+
+                                if (grid[y][dx].second > 1) {
+                                    grid[y][dx].second -= 1;
+                                } else {
+                                    grid[y][dx] = {grass, 0};
+                                }
+                            }
+                        }
+                    }
+                }
             }
-            iss << ";";
         }
-        iss << endl;
-    }
-    iss << endl;
 
-    return iss.str();
+        for (int y = 0; y < height; y++) {
+            for (int x = width - 1; x >= 0; x--) {
+                auto [id, pt] = grid[y][x];
+
+                if (grid[y][x].first == multi) {
+                    disperse (grid,x,y);
+                }
+                if (id == zombe) {
+                    if (x == 0) return cycles + 1;
+                    nzomb++;
+                }
+            }
+
+        }
+
+
+        if (cycles >= minc && nzomb == 0) break;
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 1; x < width; x++) {
+                auto &[id, pt] = grid[y][x];
+
+                if (id == zombe) {
+                    grid[y][x-1] = { grass, 0 };
+                    swap (grid[y][x-1], grid[y][x]);
+                }
+            }
+        }
+
+        cycles++;
+    }
+
+//ofs.close();
+    return 0;
 }
 int plantzombie1 (vector<string> lawn, vector<vector<int>> zombies) {
 
@@ -219,7 +300,7 @@ int plantzombie1 (vector<string> lawn, vector<vector<int>> zombies) {
                 grid[y][width - 1] = { zombe, hp };
         }
         //cout << "cycle " << cycles  << "\n";
-        cout << display (grid);
+        //cout << display (grid);
         //ofs << mkcsv (grid);
         //ofs << tofile(grid);
         for (int y = 0; y < height; y++) {
@@ -257,142 +338,61 @@ int plantzombie1 (vector<string> lawn, vector<vector<int>> zombies) {
     //ofs.close();
     return 0;
 }
-int plantzombie2 (vector<string> lawn, vector<vector<int>> zombies) {
-
-    int cycles = zombies.front()[0], minc = zombies.back()[0];
-    const int height = lawn.size(), width = lawn[0].size();
-    vector<vector<cell>> grid = mkgraph(lawn);
-    stringstream iss;
-    //ofstream ofs ("plant.csv");
-    //cout << showforces (grid, zombies);
-
-    while (true) {
-        int nzomb = 0;
-        for (auto inv : zombies) {
-            int move = inv[0], y = inv[1], hp = inv[2];
-            if (move == cycles)
-                grid[y][width - 1] = { zombe, hp };
-        }
-        cout << "cycle " << cycles  << " :: \n";
-        cout << display (grid);
-
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                auto [id, pt] = grid[y][x];
-
-                if (id == plant) {
-                    for (int i = 0; i < pt; i++) {
-                        for (int j = 1, hit = false; j < width - x; j++) {
-                            int dx = j + x;
-
-                            if (grid[y][dx].first == zombe && hit == false) {
-                                hit = true;
-                                grid[y][dx].second -= 1;
-                                if (grid[y][dx].second > 1) {
-                                    grid[y][dx].second -= 1;
-                                } else {
-                                    grid[y][dx] = {grass, 0};
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-    for (int y = 0; y < height; y++) {
-        for (int x = width - 1; x >= 0; x--) {
-            auto [id, pt] = grid[y][x];
-
-            if (grid[y][x].first == multi) {
-                disperse (grid,x,y);
-            }
-        }
-                if (id == zombe) {
-                    if (x == 0) return cycles + 1;
-                    nzomb++;
-                }
-
-    }
-
-
-    if (cycles >= minc && nzomb == 0) break;
-
-    for (int y = 0; y < height; y++) {
-        for (int x = 1; x < width; x++) {
-            auto &[id, pt] = grid[y][x];
-
-            if (id == zombe) {
-                int nid = grid[y][x-1].first;
-
-                if (nid == plant || nid == multi) {
-                    grid[y][x].second = 1;
-                }
-
-                grid[y][x-1] = { grass, 0 };
-                swap (grid[y][x-1], grid[y][x]);
-            }
-        }
-    }
-
-    cycles++;
-}
-
-//ofs.close();
-return 0;
-}
-
 
 int main () {
 
+    int res;
     vector<string> lawn;
     vector<vector<int>> zombies;
 
     lawn = {"3  S1     "," S S3     "," 32S1     ","6         ","S42       ","S1 15     ","  4       "};
     zombies = {{0,0,22},{0,2,31},{0,3,27},{0,5,36},{0,6,18},{1,1,24},{1,3,17},{1,5,23},{1,6,11},{4,4,37},{7,2,27},{7,3,15},{7,5,20},{8,1,20},{8,2,18},{8,4,27},{8,6,12},{11,3,13},{11,5,18},{15,0,26},{15,1,16},{15,4,21},{15,6,10}};
 
-    lawn = {"43S1     "," 412     ","  11     ","41 2     ","61       ","S22      "};
-    zombies = {{0,0,36},{0,1,28},{0,2,8},{0,4,28},{0,5,20},{1,0,24},{1,2,5},{1,3,31},{1,5,13},{2,3,20},{2,4,22},{3,1,25},{3,2,4},{3,5,12},{4,3,18},{4,4,18},{5,0,29},{5,1,20},{5,2,4},{6,0,20},{6,1,14},{6,3,16},{6,4,16},{6,5,13},{9,0,19},{9,2,5},{9,5,12},{10,1,17},{10,2,4},{10,3,18},{10,4,18},{13,0,19},{13,5,11}};
-    //Assert::That (plantzombie1 (lawn, zombies), 15);
-    lawn = {"31  2      ", "3S         ", " 3211      ", "3SS        ", " 3122      ", "13S        ", "S 3S       ", "1   4      "};
-    zombies = {{1, 1, 19}, {1, 2, 34}, {1, 4, 39}, {1, 5, 24}, {1, 6, 24}, {2, 0, 32}, {2, 2, 22}, {2, 4, 25}, {2, 5, 16}, {2, 6, 16}, {2, 7, 27}, {4, 3, 29}, {4, 7, 17}, {5, 0, 23}, {5, 2, 18}, {5, 3, 18}, {5, 4, 21}, {5, 5, 13}, {6, 0, 15}, {6, 1, 18}, {6, 3, 12}, {6, 6, 15}, {6, 7, 13}, {7, 1, 12}, {9, 2, 20}, {9, 4, 22}, {9, 5, 14}, {9, 6, 13}, {9, 7, 12}, {10, 0, 17}, {10, 1, 10}, {11, 2, 17}, {14, 3, 18}, {14, 4, 23}, {14, 5, 14}, {14, 6, 14}, {14, 7, 13}};
-    Assert::That (plantzombie2 (lawn, zombies), 0);
-    //Test();
+    Test();
+
     cout << "\nend\n";
 }
 
 void Test() {
 
-    vector<string> lawn = lawn = { "2       ", "  S     ", "21  S   ", "13      ", "2 3     "};
+    vector<string> lawn = { "2       ", "  S     ", "21  S   ", "13      ", "2 3     "};
     vector<vector<int>> zombies =  { {0,4,28}, {1,1,6}, {2,0,10}, {2,4,15}, {3,2,16}, {3,3,13}};
     int res =  10;
+    Assert::That (plantzombie2 (lawn, zombies), res);
 
     lawn = { "11      ", " 2S     ", "11S     ", "3       ", "13      "};
     zombies = { {0,3,16}, {2,2,15}, {2,1,16}, {4,4,30}, {4,2,12}, {5,0,14}, {7,3,16}, {7,0,13}};
     res = 12;
-    Assert::That (plantzombie1 (lawn, zombies), res);
+
+    Assert::That (plantzombie2 (lawn, zombies), res);
 
     lawn = { "12        ", "3S        ", "2S        ", "1S        ", "2         ", "3         "};
     zombies = { {0,0,18}, {2,3,12}, {2,5,25}, {4,2,21}, {6,1,35}, {6,4,9}, {8,0,22}, {8,1,8}, {8,2,17}, {10,3,18}, {11,0,15}, {12,4,21}};
     res = 20;
-    Assert::That (plantzombie1 (lawn, zombies), res);
+    Assert::That (plantzombie2 (lawn, zombies), res);
 
     lawn = {"12      ", "2S      ", "1S      ", "2S      ", "3       "};
     zombies ={ {0,0,15}, {1,1,18}, {2,2,14}, {3,3,15}, {4,4,13}, {5,0,12}, {6,1,19}, {7,2,11}, {8,3,17}, {9,4,18}, {10,0,15}, {11,4,14}};
     res = 19;
-    Assert::That (plantzombie1 (lawn, zombies), res);
+    Assert::That (plantzombie2 (lawn, zombies), res);
 
     lawn = { "1         ", "SS        ", "SSS       ", "SSS       ", "SS        ", "1         "};
     zombies = { {0,2,16}, {1,3,19}, {2,0,18}, {4,2,21}, {6,3,20}, {7,5,17}, {8,1,21}, {8,2,11}, {9,0,10}, {11,4,23}, {12,1,15}, {13,3,22}};
     res = 0;
-    Assert::That (plantzombie1 (lawn, zombies), res);
+    Assert::That (plantzombie2 (lawn, zombies), res);
 
     lawn = {"31S 1      ","3  1       ","21 21      "," 21 1      ","41  1      "," 131       "};
     zombies = {{0,0,29},{0,2,29},{1,2,19},{1,3,21},{2,0,22},{2,1,23},{2,3,13},{2,5,29},{3,1,14},{3,4,37},{3,5,18},{8,0,17},{8,1,10},{8,2,18},{8,3,11},{8,4,23},{8,5,12},{11,0,15},{11,2,16},{11,3,10},{11,4,18},{14,1,13},{14,4,16},{14,5,16},{15,0,16},{15,2,17},{15,3,11},{16,1,10},{16,5,13}};
     res = 19;
-    Assert::That (plantzombie1 (lawn, zombies), res);
-    /*
-    */
+    Assert::That (plantzombie2 (lawn, zombies), res);
+
+    lawn = {"43S1     "," 412     ","  11     ","41 2     ","61       ","S22      "};
+    zombies = {{0,0,36},{0,1,28},{0,2,8},{0,4,28},{0,5,20},{1,0,24},{1,2,5},{1,3,31},{1,5,13},{2,3,20},{2,4,22},{3,1,25},{3,2,4},{3,5,12},{4,3,18},{4,4,18},{5,0,29},{5,1,20},{5,2,4},{6,0,20},{6,1,14},{6,3,16},{6,4,16},{6,5,13},{9,0,19},{9,2,5},{9,5,12},{10,1,17},{10,2,4},{10,3,18},{10,4,18},{13,0,19},{13,5,11}};
+    Assert::That (plantzombie2 (lawn, zombies), 15);
+
+    lawn = {"31  2      ", "3S         ", " 3211      ", "3SS        ", " 3122      ", "13S        ", "S 3S       ", "1   4      "};
+    zombies = {{1, 1, 19}, {1, 2, 34}, {1, 4, 39}, {1, 5, 24}, {1, 6, 24}, {2, 0, 32}, {2, 2, 22}, {2, 4, 25}, {2, 5, 16}, {2, 6, 16}, {2, 7, 27}, {4, 3, 29}, {4, 7, 17}, {5, 0, 23}, {5, 2, 18}, {5, 3, 18}, {5, 4, 21}, {5, 5, 13}, {6, 0, 15}, {6, 1, 18}, {6, 3, 12}, {6, 6, 15}, {6, 7, 13}, {7, 1, 12}, {9, 2, 20}, {9, 4, 22}, {9, 5, 14}, {9, 6, 13}, {9, 7, 12}, {10, 0, 17}, {10, 1, 10}, {11, 2, 17}, {14, 3, 18}, {14, 4, 23}, {14, 5, 14}, {14, 6, 14}, {14, 7, 13}};
+    Assert::That (plantzombie2 (lawn, zombies), 0);
     //example_tests.into_iter{}.for_each{|{grid,zqueue,sol}| assert_eq!{pnz::plants_and_zombies{&grid,&zqueue},sol}};
 }
 
