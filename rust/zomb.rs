@@ -140,13 +140,12 @@ mod pnz {
             }
 
             for y in 0..height {
-                let mut dfc = 0;
                 for x in 0..width {
                     let (id, hp) = &graph[y][x];
 
                     if id == &Type::Plant {
 
-                        for i in 0..*hp {
+                        for _i in 0..*hp {
                             let mut hit = false;
                             for j in 1..width - x {
                                 let dx = j + x;
@@ -168,11 +167,10 @@ mod pnz {
             }
 
             for y in 0..height {
-                let mut dfc = 0;
                 for x in 0..width {
-                    let (id, hp) = &graph[y][x];
+                    let id = &graph[y][x].0;
 
-                    match (id) {
+                    match id {
                         Type::Multi => { disperse (&mut graph, x, y); },
                         Type::Zombe => { nzomb += 1 },
                         _ => {},
