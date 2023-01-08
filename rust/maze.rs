@@ -1,7 +1,3 @@
-fn search () {
-
-}
-
 
 fn rotate (grid: &mut Vec<Vec<i32>>) {
     let height = grid.len();
@@ -13,7 +9,7 @@ fn rotate (grid: &mut Vec<Vec<i32>>) {
 
             if cell > 0 && cell < 15 {
                 if cell < 8 {
-                    grid[y][x] *= 2;
+    grid[y][x] *= 2;
                 } else {
                     grid[y][x] -= (15 - grid[y][x]);
                 }
@@ -56,7 +52,7 @@ fn maze_solver (grid: &Vec<Vec<i32>>) {
                 let nxc = grid[ny][nx];
                 let node = &mut graph[ny][nx];
                 let out = if curr < 0 { 0 } else { curr >> i&1 };
-                let next = if nxc < 0 { 0 } else { nxc >> ((i + 2) % 4)&1 }; 
+                let next = if nxc < 0 { 0 } else { nxc >> ((i + 2) % 4)&1 };
 
                 if out == 0 && next == 0 && node.0 == 0 {
                     node.0 = 1;
@@ -95,10 +91,14 @@ fn main () {
         vec![ -1,  9,  6,  8],
         vec![ 12,  7,  7, -2]
     ];
+           /*
+           */
 
-  maze_solver(&grid); // ["NNE", "EE", "S", "SS"] <- one possible solution
-          //let mut orin = vec![String];
+        //maze_solver(&grid); // ["NNE", "EE", "S", "SS"] <- one possible solution
+        //let mut orin = vec![String];
         //orin[orin.len() - 1] += &format!("NE");
 
 
 }
+
+

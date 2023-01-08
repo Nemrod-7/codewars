@@ -240,16 +240,43 @@ std::string sierpinski (int n) {
     return asc;
 }
 
+char *human_readable_time (unsigned seconds, char *time_string) {
+
+    int hh = 0, mm = 0, ss = 0;
+
+    ss = seconds % 60;
+    mm = seconds / 60 % 60;
+    hh = seconds / 3600;
+    //human_readable_time (59, time);
+
+    printf ("%02i:%02i:%02i\n", hh,mm,ss);
+    return time_string; // return it
+}
+
 int main () {
 
-    auto start = std::chrono::high_resolution_clock::now();
+    auto start = std::chrono::high_resolution_clock::now();tom
 
 
-    for (int i = 26; i < 255; i++) {
-        cout << "[" << (char)i << "]";
-    }
+    human_readable_time (0, "00:00:00");
+    human_readable_time (59, "00:00:59");
+    human_readable_time (60, "00:01:00");
+    human_readable_time (90, "00:01:30");
+    human_readable_time (3599, "00:59:59");
+    human_readable_time (3600, "01:00:00");
+    human_readable_time (45296, "12:34:56");
+    human_readable_time (86399, "23:59:59");
+    human_readable_time (86400, "24:00:00");
+    human_readable_time (359999, "99:59:59");
 
+    /*
+    */
 
+    /*
+    HH = hours, padded to 2 digits, range: 00 - 99
+    MM = minutes, padded to 2 digits, range: 00 - 59
+    SS = seconds, padded to 2 digits, range: 00 - 59
+    */
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
