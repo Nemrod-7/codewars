@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <sstream>
 #include <map>
+#include <set>
 #include <vector>
 #include <list>
 #include <cmath>
@@ -30,65 +31,201 @@ struct instr {
 
 		}
 };
-string recover_secret (vector<vector<char>> &tri) {
-		int size = tri.size();
-		vector<int> visit (size);
-		list<char> link;
+string recover_secret2 (vector<vector<char>> &src) {
 
-		link.push_back(tri[0][0]);
-		link.push_back(tri[0][2]);
+		list<char> word;
+		list<vector<char>> tri (src.begin() + 1, src.end());
 
-		list<char>::iterator it, nx;
-		char a, b;
+		word.push_back(src[0][0]);
+		word.push_back(src[0][1]);
+		word.push_back(src[0][2]);
 
-		int index = 6;
-
+		int index = 3;
+		/*
 		while (index-->0) {
-				for (auto it = link.begin(); it != link.end(); it++) {
-						nx = std::next(it);
-						a = *it, b = *nx;
-						cout << a << b << endl;
-				}
 
-				it = link.begin(), nx = std::next(it);
-				a = *it, b = *nx;
+				for (auto it = word.begin(); it != word.end(); it++) {
+						char a = *it, b = *std::next(it);
+						cout << a << " " << b << " => ";
+						for (auto it2 = tri.begin(); it2 != tri.end(); ) {
+								vector<char> level = *it2;
+								char fst = level[0], sec = level[1], thr = level[2];
+								cout << "[" << fst << " " << sec << " " << thr  << "]";
 
-				for (int i = 0; i < size; i++) {
-						if (visit[i] == false) {
-								if (*it == tri[i][0] && *nx == tri[i][2]) {
-									link.insert(std::next(it), tri[i][1]);
-									visit[i] = true;
-									cout << *it << "[" << tri[i][1] << "]" << *nx << endl;
-								}
-								if (*it == tri[i][0] && *nx == tri[i][1]) {
-									link.insert(std::next(nx), tri[i][2]);
-									visit[i] = true;
-									cout << *it << *nx << "[" << tri[i][2] << "]" << endl;
-								}
-								if (*it == tri[i][1] && *nx == tri[i][2]) {
-									link.insert(it, tri[i][0]);
-									visit[i] = true;
-									cout << "[" << tri[i][0] << "]" << *it << *nx << endl;
+								if (a == fst && b == thr) {
+									word.insert(std::next(it), sec);
+									it2 = tri.erase(it2);
+									//cout << a << "[" << sec << "]" << b << '|';
+								} else if (a == fst && b == sec) {
+									word.insert(std::next(it,2), thr);
+									it2 = tri.erase(it2);
+									//cout << a << b << "[" << thr << "]" << '|';
+								} else if (a == sec && b == thr) {
+									word.insert(it, fst);
+									it2 = tri.erase(it2);
+									//cout << "[" << fst << "]" << a << b << '|';
+								} else {
+										it2++;
 								}
 						}
-
+						cout << endl;
 				}
+				cout << endl;
 		}
-
-
-		for (auto it = link.begin(); it != link.end(); it++) {
+		*/
+		cout << "\n";
+		for (auto it = word.begin(); it != word.end(); it++) {
 				cout << *it;
 		}
 
+		return "";
+}
+string recover_secret3 (vector<vector<char>> &tri) {
+
+		map<char, set<char>> mult;
+
+		for (auto &level : tri) {
+				char fst = level[0], sec = level[1], thr = level[2];
+				cout << "[" << fst << " " << sec << " " << thr  << "]\n";
+				mult[fst].insert(sec);
+				mult[fst].insert(thr);
+				mult[sec].insert(thr);
+		}
+		char start;
+
+		for (auto it : mult) {
+				bool found = false;
+				char letter = it.first;
+
+				for (auto it2 : mult) {
+						auto after = it2.second;
+						if (after.find(letter) != after.end()) {
+								found = true;
+						}
+				}
+				if (found == false)
+					start = letter;
+		}
+
+		for (auto letter : mult) {
+				cout << letter.first << " => ";
+				for (auto after : letter.second) {
+						cout << after << " ";
+				}
+				cout << endl;
+		}
+		/*
+		*/
+		return "";
+}
+
+bool search (vector<vector<char>> &tri, char letter) {
+		for (int i = 0; i < tri.size(); i++) {
+				for (int j = 1; j < tri[i].size(); j++) {
+						if (tri[i][j] == letter) {
+								return true;
+						}
+				}
+		}
+		return false;
+}
+bool search2 (vector<vector<char>> &tri, char letter) {
+
+		for (int i = 0; i < tri.size(); i++) {
+				int end = tri[i].size() - 1;
+				if (end > 0) {
+						for (int j = 0; j < end; j++) {
+								if (tri[i][j] == letter) {
+										return true;
+								}
+						}
+				}
+		}
+		return false;
+}
+string recover_secret (vector<vector<char>> &tri) {
+
+		string word;
+		char curr;
+		list<vector<char>> tt (tri.begin(), tri.end());
+		vector<set<char>> hist (2);
+
+		for (auto it = tt.begin(); it != tt.end(); it++) {
+				vector<char> level = *it;
+				for (int j = 0; j < 2; j++) {
+						hist[j].insert(level[j]);
+				}
+		}
+
+		bool running = true;
+		while (running) {
+				running = false;
+
+				for (int i = 0; i < tri.size(); i++) {
+						int size = tri[i].size();
+
+						if (size > 0) {
+								char last = tri[i][size - 1];
+								running = true;
+
+								if (search2 (tri, last) == false) {
+										//cout << " [" << last << "]\n";
+										word += last;
+										for (int j = 0; j < tri.size(); j++) {
+												if (tri[j].back() == last) {
+														tri[j].pop_back();
+												}
+										}
+										break;
+								}
+						}
+				}
+		}
+
+		reverse(word.begin(),word.end());
+
+		cout << word;
+
+		/*
+		for (int i = 0; i < tri.size(); i++) {
+				cout << "[";
+				for (int j = 0; j < tri[i].size(); j++) {
+						cout << tri[i][j];
+				}
+				cout << "]\n";
+		}
+		*/
 		return "";
 }
 int main () {
 
 		auto start = chrono::high_resolution_clock::now();
 		//instr::move (south);
-		vector<vector<char>>tri = {{'t','u','p'},{'w','h','i'},{'t','s','u'},{'a','t','s'},{'h','a','p'},{'t','i','s'},{'w','h','s'}};
-		recover_secret(tri);
+		vector<vector<char>> tri = {
+			{'t','u','p'},
+			{'w','h','i'},
+			{'t','s','u'},
+			{'a','t','s'},
+			{'h','a','p'},
+			{'t','i','s'},
+			{'w','h','s'}};
 
+			tri = {{'t','s','f'}, {'a','s','u'}, {'m','a','f'}, {'a','i','n'}, {'s','u','n'}, {'m','f','u'}, {'a','t','h'}, {'t','h','i'}, {'h','i','f'}, {'m','h','f'}, {'a','u','n'}, {'m','a','t'}, {'f','u','n'}, {'h','s','n'}, {'a','i','s'}, {'m','s','n'}, {'m','s','u'}};
+			 recover_secret(tri); /*
+
+{'t','u','p'},
+{'h','i'},
+{'t','s','u'},
+{'a','t','s'},
+{'h','a','p'},
+{'t','i','s'},
+{'h','s'}};
+
+=> w
+
+
+
+*/
 		/*
 		cycle 0 : t-p
 		use {'t','u','p'} => t [u] p
