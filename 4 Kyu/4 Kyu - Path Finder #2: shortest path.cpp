@@ -3,13 +3,14 @@
 #include <queue>
 
 #include <chrono>
+
 using namespace std;
 
-const char PATH{'x'}, FREE{'.'},EXIT{'E'},WALL{'W'};
+void Test();
+//const char PATH{'x'}, FREE{'.'},EXIT{'E'},WALL{'W'};
 using point = pair<int,int>;
 
-bool is_free (string &maze, int pos) { return pos >= 0 && pos < maze.size() && maze[pos] == FREE; }
-
+bool is_free (string &maze, int pos) { return pos >= 0 && pos < maze.size() && maze[pos] == '.'; }
 int path_finder(string maze) {
 
     if (maze.size() < 2) return 0;
@@ -23,7 +24,7 @@ int path_finder(string maze) {
         auto &[dist, coord] = q1.top();
         q1.pop();
         int alt = dist + 1;
-        maze[coord] = PATH;
+        maze[coord] = 'x';
         if (coord == maze.size() - 1) return dist;
 
         for (int pos : directions) {
@@ -42,7 +43,8 @@ int main () {
 
   auto start = chrono::high_resolution_clock::now();
 
-  path_finder(".W.\n.W.\n...");
+  // path_finder(".W.\n.W.\n...");
+  Test();
 
   auto end = chrono::high_resolution_clock::now();
   chrono::duration<double> elapsed = end - start;

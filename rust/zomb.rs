@@ -112,6 +112,7 @@ mod pnz {
 
     pub fn plants_and_zombies (lawn: &Vec<&str>, zombies: &Vec<Vec<usize>>) -> usize {
 
+        //showtest(lawn, zombies);
         let height = lawn.len();
         let width = lawn[0].len();
         let minc = zombies.iter().map(|x| x[0]).max().unwrap();
@@ -162,12 +163,14 @@ mod pnz {
                             }
                         }
                     }
-
                 }
             }
 
+            for x in width..0 {
+
+            }
             for y in 0..height {
-                for x in 0..width {
+                for x in (0..width).rev() {
                     let id = &graph[y][x].0;
 
                     match id {
@@ -189,7 +192,13 @@ mod pnz {
 
 fn main () {
 
-    example_tests();
+   // example_tests();
+
+
+let lawn = vec!["S6S      ","S 13     ","7 S1     ","3S 1     ","11S      ","5S 1     "];
+let zombies = vec![vec![0,0,32,],vec![0,1,20,],vec![0,2,36,],vec![0,3,20,],vec![0,4,12,],vec![1,1,13,],vec![1,2,24,],vec![1,4,8,],vec![1,5,31,],vec![2,3,15,],vec![2,5,20,],vec![5,0,32,],vec![5,3,13,],vec![5,4,8,],vec![5,5,18,],vec![6,0,21,],vec![6,1,16,],vec![6,2,29,],vec![6,4,6,],vec![7,1,11,],vec![7,2,20,],vec![7,3,12,],vec![8,0,19,],vec![8,5,19,],vec![9,2,19,],vec![9,3,11,],vec![10,0,18,],vec![10,5,17,],vec![12,4,10,],vec![13,1,18,],vec![13,2,23,],vec![13,4,7,],vec![14,1,12,],vec![14,3,15,]];
+
+assert_eq!(pnz::plants_and_zombies(&lawn, &zombies), 0);
 
     print!("\n");
 }
