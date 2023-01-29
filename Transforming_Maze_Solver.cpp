@@ -18,7 +18,7 @@ class Display {
         static string graph (const vector<vector<int>> &grid) {
             int height = grid.size(), width = grid[0].size();
             stringstream os;
-
+            os << '\n';
             for (int y = 0; y < height; y++) {
                 for (int x = 0; x < width; x++) {
                     int cell = grid[y][x];
@@ -96,14 +96,14 @@ bool is_inside (point p, int width, int height) {
     return p.first >= 0 && p.second >= 0 && p.first < width && p.second < height;
 }
 
-bool update2 (vector<vector<int>> &grid, vector<vector<vertex>> &graph, int move) {
+bool update2 (vector<vector<int>> &grid, vector<vector<vertex>> &graph, int cycle) {
 
     int height = grid.size(), width = grid[0].size();
     vector<point> stack;
 
     for (int y = 0; y < graph.size(); y++) {
         for (int x = 0; x < graph[0].size(); x++) {
-            if (graph[y][x].id == 0) {
+            if (graph[y][x].id <= cycle) {
                 stack.push_back({x,y});
                 graph[y][x].path.push_back("");
             }
@@ -128,8 +128,8 @@ bool update2 (vector<vector<int>> &grid, vector<vector<vertex>> &graph, int move
                 bool out = cell < 0 ? 0 : (cell >> i&1), door = next < 0 ? 0 : (next >> j&1);
                 vertex *vtx = &graph[nxp.second][nxp.first];
 
-                if (out == 0 && door == 0 && vtx->id == 9) {
-                    vtx->id = 0;
+                if (out == 0 && door == 0 && vtx->id == 99) {
+                    vtx->id = cycle + 1;
                     vtx->path = path;
                     vtx->path.back() += alp[i];
                     stack.push_back(nxp);
@@ -143,7 +143,7 @@ bool update2 (vector<vector<int>> &grid, vector<vector<vertex>> &graph, int move
 string maze_solver (vector<vector<int>> grid) {
 
     int height = grid.size(), width = grid[0].size();
-    vector<vector<vertex>> graph (height, vector<vertex> (width, {9}));
+    vector<vector<vertex>> graph (height, vector<vertex> (width, {99}));
     point exit;
     int move = 0;
 
@@ -156,8 +156,16 @@ string maze_solver (vector<vector<int>> grid) {
         }
     }
 
-    while (true) {
+    cout << Display::graph(grid) << endl;
+
+    while (move < 9) {
         if (update2(grid, graph, move) == true) {
+
+            /*
+            for (string &route : graph[exit.second][exit.first].path) {
+                cout << "[" << route << "]";
+            }
+            */
             break;
         }
 
@@ -165,27 +173,21 @@ string maze_solver (vector<vector<int>> grid) {
         move++;
     }
 
-    cout << Display::graph(grid) << endl;
-    for (string &route : graph[exit.second][exit.first].path) {
-        cout << "["<<route<<"]";
-    }
-
-    /*
+    cout << endl;
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             int cell = graph[y][x].id;
-            cout << cell;
+            cout << "[" << setw(2) << cell << "]";
         }
-        cout << endl;:exit
-
+        cout << endl;
     }
+    /*
     */
 
     return "nullptr";
 }
 
 int main () {
-  enum {east, south, west, north};
 
   vector<vector<int>> grid = {
       {  4,  2,  5,  4},
@@ -193,11 +195,19 @@ int main () {
       { -1,  9,  6,  8},
       { 12,  7,  7, -2}
   };
-  // maze_solver(&example); // ["NNE", "EE", "S", "SS"] <- one possible solution
-     maze_solver(grid);
+
+  vector<pair<vector<vector<int>>, vector<string>>> test {
+  {{ {4,2,5,4}, {4,15,11,1}, {-1,9,6,8}, {12,7,7,-2} }, {"NNE", "EE", "S", "SS"}},
+  {{ {6,3,10,4,11}, {8,10,4,8,5}, {-1,14,11,3,-2}, {15,3,4,14,15}, {14,7,15,5,5} }, {"", "", "E", "", "E", "NESE"}},
+  {{ {9,1,9,0,13,0}, {14,1,11,2,11,4}, {-1,2,11,0,0,15}, {4,3,9,6,3,-2} }, {"E", "SE", "", "E", "E", "E"}},
+  {{ {-1,6,12,15,11}, {8,7,15,7,10}, {13,7,13,15,-2}, {11,10,8,1,3}, {12,6,9,14,7} }, {}},
+  {{ {6,3,0,9,14,13,14}, {-1,14,9,11,15,14,15}, {2,15,0,12,6,15,-2}, {4,10,7,6,15,5,3}, {7,3,13,13,14,7,0} }, {}}
+  };
 
 
-  cout << "\nend\n";
+  string res = maze_solver(test[1].first);
+  //cout << "██";
+
 }
 ////////////////////////////////////////////////////////////////////////////////
 vector<point> mkstack (vector<vector<vertex>> &graph) {

@@ -1,11 +1,16 @@
 #include <iostream>
+#include <sstream>
+#include <fstream>
 #include <vector>
 #include <cmath>
 #include <algorithm>
 #include <cassert>
 #include <array>
 #include <set>
+#include <limits>
 #include <chrono>
+
+// NEQ5xBztxeg43aP
 using namespace std;
 /////////////////////////////////Assert/////////////////////////////////////////
 class Assert {
@@ -61,27 +66,32 @@ void Test ();
    [59, 24]                     166  <---- minimum value
    */
 
-vector<int> sieve (int num) {
+vector<uint64_t> sieve (uint64_t num) {
 
     bool *primes = new bool[num + 1];
-    vector<int> sieve {2};
+    vector<uint64_t> sieve {2};
 
     fill_n (primes, num + 1, true);
 
-    for (int p = 3; p * p <= num ; p += 2)
-        if (primes[p] == true)
-            for (int i = p * p; i <= num; i += 2 * p)
+    for (uint64_t p = 3; p * p <= num ; p += 2) {
+        if (primes[p] == true) {
+            for (uint64_t i = p * p; i <= num; i += 2 * p) {
                 primes[i] = false;
-
-    for (int i = 3; i <= num; i += 2)
-        if (primes[i] == true)
+            }
+        }
+    }
+    for (uint64_t i = 3; i <= num; i += 2) {
+        if (primes[i] == true) {
             sieve.push_back(i);
+        }
+    }
 
+    delete[] primes;
     return sieve;
 }
 string p_factors (int num) {
 
-    vector<int> primes = sieve (num);
+    vector<uint64_t> primes = sieve (num);
 
     for (auto &p : primes) {
         int ex = 0;
@@ -102,7 +112,7 @@ string p_factors (int num) {
 }
 int radical (int maxn, int n) {
 
-    vector<int> primes = sieve (maxn);
+    vector<uint64_t> primes = sieve (maxn);
     vector<pair<int,int>> hist;
     for (int k = 2; k <= maxn; k++) {
         int rad = 1;
@@ -255,28 +265,47 @@ char *human_readable_time (unsigned seconds, char *time_string) {
 
 int main () {
 
-    auto start = std::chrono::high_resolution_clock::now();tom
+    auto start = std::chrono::high_resolution_clock::now();
 
+/*
+     1: 1
+     3: 1,3
+     6: 1,2,3,6
+    10: 1,2,5,10
+    15: 1,3,5,15
+    21: 1,3,7,21
+    28: 1,2,4,7,14,28
 
-    human_readable_time (0, "00:00:00");
-    human_readable_time (59, "00:00:59");
-    human_readable_time (60, "00:01:00");
-    human_readable_time (90, "00:01:30");
-    human_readable_time (3599, "00:59:59");
-    human_readable_time (3600, "01:00:00");
-    human_readable_time (45296, "12:34:56");
-    human_readable_time (86399, "23:59:59");
-    human_readable_time (86400, "24:00:00");
-    human_readable_time (359999, "99:59:59");
+    What is the value of the first triangle number to have over five hundred divisors?
+*/
+    // 1621954689976164466
+    vector<uint64_t> primes = sieve (5000);
+    uint64_t sum = 1, tri, k = 2;
+
+    for (int i = 0; i < 501; i++) {
+        sum *= primes[i];
+    }
+    cout << sum << '\n';
 
     /*
+    do {
+        k++;
+        tri = (k * (k + 1)) / 2;
+    } while (tri < sum);
+
+    //cout << tri;
+
+    int cnt = 0;
+    for (int i = 1; i < tri; i++) {
+        if (tri % i == 0) {
+            cnt++;
+        }
+    }
+
+    cout << cnt;
     */
 
-    /*
-    HH = hours, padded to 2 digits, range: 00 - 99
-    MM = minutes, padded to 2 digits, range: 00 - 59
-    SS = seconds, padded to 2 digits, range: 00 - 59
-    */
+
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
