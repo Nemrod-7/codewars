@@ -16,22 +16,8 @@ class Assert {
 auto Equals (auto entry) { return entry;}
 void Test ();
 ////////////////////////////////////////////////////////////////////////////////
-string multiply(string a, string b);
 
-int main () {
-
-    auto start = chrono::high_resolution_clock::now();
-
-    //Test();
-    //cout << multiply ("1000","6") << endl;
-    multiply("98765", "56894");
-    auto end = chrono::high_resolution_clock::now();
-    std::chrono::duration<double> elapsed = end - start;
-    cout << "Process took " << elapsed.count()  << " ms" << endl;
-
-}
-
-string multiply(string a, string b) {
+string multiply (string a, string b) {
 
     int lena = a.size(), lenb = b.size(), ans[1000]{0};
 
@@ -61,6 +47,19 @@ string multiply(string a, string b) {
 
     //output.erase(0,  std::min (output.find_first_not_of('0'), output.size()-1));
     return output;
+  }
+
+int main () {
+
+    auto start = chrono::high_resolution_clock::now();
+
+    //Test();
+    //cout << multiply ("1000","6") << endl;
+    multiply("98765", "56894");
+    auto end = chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+    cout << "Process took " << elapsed.count()  << " ms" << endl;
+
 }
 
 void Test() {

@@ -89,6 +89,24 @@ vector<uint64_t> sieve (uint64_t num) {
     delete[] primes;
     return sieve;
 }
+uint64_t tau (uint64_t n) { // count number of divisors
+    uint64_t total = 1;
+
+    for (; (n & 1) == 0; n >>= 1) // Deal with powers of 2 first
+        ++total;
+
+    for (uint64_t p = 3; p * p <= n; p += 2) { // Odd prime factors up to the square root
+        uint64_t count = 1;
+        for (; n % p == 0; n /= p)
+            ++count;
+        total *= count;
+    }
+
+    if (n > 1)
+        total *= 2; // If n > 1 then it's prime
+
+    return total;
+}
 string p_factors (int num) {
 
     vector<uint64_t> primes = sieve (num);
@@ -161,7 +179,7 @@ int product (const vector<int> &clust) {
 
 vector<int> path; // it will store all current factors
 
-void recurse(int max, int val) {
+void recurse (int max, int val) {
 
     if (val == 1) {
         for (int i = 0; i < path.size(); i++)
@@ -179,7 +197,7 @@ void recurse(int max, int val) {
         }
     }
 }
-void Output(int value) {
+void Output (int value) {
     cout << "Result for " << value << ": " << endl;
     recurse(value, value);
 }
@@ -279,33 +297,15 @@ int main () {
     What is the value of the first triangle number to have over five hundred divisors?
 */
     // 1621954689976164466
-    vector<uint64_t> primes = sieve (5000);
-    uint64_t sum = 1, tri, k = 2;
+    uint64_t num = 5000, tri, k = 0, nd = 1;
 
-    for (int i = 0; i < 501; i++) {
-        sum *= primes[i];
-    }
-    cout << sum << '\n';
-
-    /*
     do {
         k++;
         tri = (k * (k + 1)) / 2;
-    } while (tri < sum);
+        nd = tau (tri);
+    } while (nd < 500);
 
-    //cout << tri;
-
-    int cnt = 0;
-    for (int i = 1; i < tri; i++) {
-        if (tri % i == 0) {
-            cnt++;
-        }
-    }
-
-    cout << cnt;
-    */
-
-
+    cout << k << " => "<< tri << " : " << nd;;
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
