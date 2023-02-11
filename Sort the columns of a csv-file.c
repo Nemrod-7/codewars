@@ -81,7 +81,7 @@ int cmpf (const void *a, const void *b) {
 int main () {
 
   const char *src = "myjinxin2015;raulbc777;smile67;Dentzil;SteffenVogel_79\n1;2;3;4;5\n1;2;3;4;5";
-  
+
   char *csv = strdup(src);
   int height = 2, width = 1, i = 0;
 

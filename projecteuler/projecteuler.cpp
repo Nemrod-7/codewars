@@ -4,6 +4,7 @@
 #include <fstream>
 
 #include <vector>
+#include <map>
 #include <queue>
 #include <cmath>
 #include <algorithm>
@@ -14,6 +15,30 @@
 // NEQ5xBztxeg43aP
 using namespace std;
 
+char getsep (string name) {
+    int maxv = 0;
+    char sep;
+    string buff;
+    map<char,int> hist;
+    istringstream file (name);
+
+    while (getline (file, buff)) {
+        for (char ch : buff) {
+            if (ispunct (ch)) {
+                hist[ch]++;
+            }
+        }
+    }
+
+    for (auto it : hist) {
+        if (it.second > maxv) {
+            maxv = it.second;
+            sep = it.first;
+        }
+    }
+
+    return sep;
+}
 vector<int> tokenize (const string &src, char delim) {
     istringstream iss (src);
     string token;
@@ -31,7 +56,7 @@ vector<vector<int>> getfile (string name) {
     vector<vector<int>> mat;
 
     while (getline (file, buff)) {
-        mat.push_back(tokenize (buff, ','));
+        mat.push_back(tokenize (buff, ' '));
     }
 
     file.close();
@@ -296,7 +321,6 @@ bool isPentagonal (uint64_t N) {
     return (n - (uint64_t) n) == 0;
 }
 
-
 int cntdiv (uint64_t num) {
     int np = 0;
 
@@ -320,48 +344,7 @@ int cntdiv (uint64_t num) {
 int main () {
 
     auto start = std::chrono::high_resolution_clock::now();
-    uint64_t lim = 30;
-/*
 
-Semiprimes
-Problem 187
-
-A composite is a number containing at least two prime factors. For example, 15 = 3 × 5; 9 = 3 × 3; 12 = 2 × 2 × 3.
-There are ten composites below thirty containing precisely two, not necessarily distinct, prime factors: 4, 6, 9, 10, 14, 15, 21, 22, 25, 26.
-How many composite integers, n < 10^8, have precisely two, not necessarily distinct, prime factors?
-
-*/
-
-    uint64_t index = 0;
-    double maxv = 0.0;
-    vector<int> prime (lim + 1);
-
-    for (uint64_t p = 2; p * p <= lim; p++) {
-        if (prime[p] == 0) {
-            for (uint64_t i = p * p; i <= lim; i += p) {
-                prime[i]++;
-            }
-        }
-    }
-
-    for (uint64_t i = 1; i < lim; i++) {
-        if (prime[i] >= 1) {
-
-            cout << i << ' ' << prime[i] << '\n';
-        }
-    }
-
-    /*
-    for (uint64_t k = 2; k < lim; k++) {
-        int np =  cntdiv(k);
-        //cout << k << " => " << cntdiv (k) << '\n';
-        if (np == 2) {
-        //    cout << k << ' ';
-        }
-    }
-    */
-    //cout << lim;
-    //cout << maxv << " => " << index << endl;
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
