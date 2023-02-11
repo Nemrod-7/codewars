@@ -105,9 +105,9 @@ uint64_t tau (uint64_t n) { // count number of divisors
 
     return total;
 }
-uint64_t phi (uint64_t num) { // totient funtion
+int phi (int num) { // totient funtion
 
-    uint64_t res = num;
+    int res = num;
 
     if (num % 2 == 0) {
         while (num % 2 == 0) {
@@ -116,7 +116,7 @@ uint64_t phi (uint64_t num) { // totient funtion
         res -= res / 2;
     }
 
-    for (uint64_t pr = 3; pr * pr <= num; pr += 2) {
+    for (int pr = 3; pr * pr <= num; pr += 2) {
         if (num % pr == 0) {
             while (num % pr == 0) {
                 num /= pr;
@@ -341,10 +341,53 @@ int cntdiv (uint64_t num) {
     return np;
 }
 
+vector<uint64_t> sieve3 (uint64_t num) {
+
+    uint64_t half = (num >> 1) + 1;
+    vector<bool> primes (half + 1);
+    vector<uint64_t> sieve {2};
+
+    for (uint64_t p = 3; p * p <= num ; p += 2) {
+        if (primes[p/2] == true) {
+            for (uint64_t i = p * p; i <= num; i += 2 * p) {
+                primes[i/2] = false;
+            }
+        }
+    }
+
+    for (uint64_t i = 3; i <= num; i += 2) {
+        if (primes[i/2] == true) {
+            sieve.push_back(i);
+        }
+    }
+
+    return sieve;
+}
+
 int main () {
 
     auto start = std::chrono::high_resolution_clock::now();
 
+    int lim = 1e6;
+    double maxv = 0;
+    int index = 0;
+
+    uint64_t num = lim;
+    vector<int> ndiv (lim);
+
+    for (int k = 2; k < lim; k++) {
+        double val = k / static_cast<double> (phi (k));
+
+        if (val > maxv) {
+            maxv = val;
+            index = k;
+        }
+        /*
+        cout << k << " => ";
+        cout << ndiv[k] << ' ' << val << endl;
+        */
+    }
+    cout << index;
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
