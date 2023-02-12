@@ -105,28 +105,7 @@ uint64_t tau (uint64_t n) { // count number of divisors
 
     return total;
 }
-int phi (int num) { // totient funtion
 
-    int res = num;
-
-    if (num % 2 == 0) {
-        while (num % 2 == 0) {
-            num /= 2;
-        }
-        res -= res / 2;
-    }
-
-    for (int pr = 3; pr * pr <= num; pr += 2) {
-        if (num % pr == 0) {
-            while (num % pr == 0) {
-                num /= pr;
-            }
-            res -= res / pr;
-        }
-    }
-
-    return (num > 1) ? res - res / num : res;
-}
 
 string p_factors (uint64_t num) {
     ostringstream os;
@@ -364,19 +343,71 @@ vector<uint64_t> sieve3 (uint64_t num) {
     return sieve;
 }
 
+int phi (int num) { // totient funtion
+
+    int res = num;
+
+    if (num % 2 == 0) {
+        while (num % 2 == 0) {
+            num /= 2;
+        }
+        res -= res / 2;
+    }
+
+    for (int pr = 3; pr * pr <= num; pr += 2) {
+        if (num % pr == 0) {
+            while (num % pr == 0) {
+                num /= pr;
+            }
+            res -= res / pr;
+        }
+    }
+
+    return (num > 1) ? res - res / num : res;
+}
+int phi2 (int num) { // totient funtion
+
+    int res = num;
+
+    if (num % 2 == 0) {
+        while (num % 2 == 0) {
+            num /= 2;
+        }
+        res *= (1 - (1 / (double) 2));
+    }
+
+    for (int pr = 3; pr * pr <= num; pr += 2) {
+        if (num % pr == 0) {
+            while (num % pr == 0) {
+                num /= pr;
+            }
+            res *= (1 - (1 / (double) pr));
+        }
+    }
+
+    return (num > 1) ? res - res / num : res;
+}
 int main () {
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    int lim = 1e6;
-    double maxv = 0;
+    const int lim = 1e6;
     int index = 0;
+    double maxv = 0;
 
-    uint64_t num = lim;
     vector<int> ndiv (lim);
 
+    vector<int> hist (10);
+
+    int num = 656;
+    /*
+    do {
+        hist[num % 10]++;
+    } while (num /= 10);
+    */
+
     for (int k = 2; k < lim; k++) {
-        double val = k / static_cast<double> (phi (k));
+        double val = k / static_cast<double> (phi2 (k));
 
         if (val > maxv) {
             maxv = val;

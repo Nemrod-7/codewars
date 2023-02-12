@@ -32,17 +32,17 @@ int phi (int num) { // totient funtion
     int res = num;
 
     if (num % 2 == 0) {
-        while (num % 2 == 0) {
+        while (num % 2 == 0)
             num /= 2;
-        }
+
         res -= res / 2;
     }
 
     for (int pr = 3; pr * pr <= num; pr += 2) {
         if (num % pr == 0) {
-            while (num % pr == 0) {
+            while (num % pr == 0)
                 num /= pr;
-            }
+
             res -= res / pr;
         }
     }
@@ -58,10 +58,30 @@ int main () {
 
     int index = 0;
     double maxv = 0.0;
-    vector<int> prim = sieve3 (lim);
+    vector<int> p = sieve3 (lim);
 
 
+    vector<int> phi3 (lim + 1);
 
+    for (int i = 0; i <= lim; i++)
+        phi3[i] = i;
+
+    for (int i = 2; i <= lim; i++) {
+        if (phi3[i] == i) {
+            for (int j = i; j <= lim; j += i)
+                phi3[j] -= phi3[j] / i;
+        }
+    }
+
+    for (int k = 2; k < lim; k++) {
+        double val = k / static_cast<double> (phi3[k]);
+
+        if (val > maxv) {
+            maxv = val;
+            index = k;
+        }
+
+    }
 
 
     cout << index;
