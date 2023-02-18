@@ -159,29 +159,55 @@ string square (const string &src) {
 
     return to_string (root);
   }
+string bigfactorial (int num) {
 
+    if (num < 0) return "";
+
+    int rem = 0;
+    string  os;
+    vector<int> fact = {1};
+
+    for (int i = 1; i <= num; i++) {
+        for (auto &dig : fact) {
+           int val = dig * i + rem;
+           dig = val % 10;
+           rem = val / 10;
+        }
+
+        while (rem) {
+          fact.push_back(rem % 10);
+          rem /= 10;
+        }
+    }
+
+    for (int i = fact.size() - 1; i >= 0; i--) {
+        os += fact[i] + '0';
+    }
+
+    return os;
+}
 int main () {
 
   Timer clock;
 
-  Bigint a;
-  Bigint fact;
+  for (int i = 10; i < 50; i++) {
+      cout << i << " => ";
+      string num = bigfactorial (i);
 
-  fact = "1";
+      int sz = num.size() - 1;
 
-  for (int k = 1; k <= 100; k++) {
-      fact = fact * to_string(k);
+      while (num[sz] == '0') {
+          sz--;
+      }
+
+      cout << num[sz-4];
+      cout << num[sz-3];
+      cout << num[sz-2];
+      cout << num[sz-1];
+      cout << num[sz-0];
+
+      cout << endl;
   }
-
-  int sum = 0;
-
-  string num = fact;
-
-  for (char ch : num) {
-      sum += ch - '0';
-  }
-  cout << sum << " ";
-
 
   clock.stop();
   clock.get_duration();

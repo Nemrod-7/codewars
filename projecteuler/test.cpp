@@ -1,6 +1,8 @@
 #include <iostream>
 #include <vector>
+#include <map>
 #include <cmath>
+#include <algorithm>
 
 #include <chrono>
 
@@ -8,6 +10,18 @@
 using namespace std;
 
 int gcd (int a, int b) { return b == 0 ? a : gcd (b, a % b); }
+
+bool is_prime (int num) {
+
+    if (num <= 3) return true;
+    if (num % 2 == 0 || num % 3 == 0) return false;
+
+    for (int i = 5; i <= sqrt(num); i += 6)
+        if (num % i == 0 || num % (i + 2) == 0)
+            return false;
+
+    return true;
+}
 
 vector<int> sieve3 (int num) {
 
@@ -31,6 +45,7 @@ vector<int> sieve3 (int num) {
 
     return prime;
 }
+
 int phi (int num) { // totient funtion
 
     int res = num;
@@ -69,7 +84,7 @@ int phi2 (int num, vector<int> &prime) { // totient funtion
 
     return (num > 1) ? res - res / num : res;
 }
-vector<int> phi3 (int lim) {
+vector<int> phi3 (int lim) { // sieve of totient
     vector<int> sieve (lim + 1);
 
     for (int i = 0; i <= lim; i++)
@@ -83,8 +98,44 @@ vector<int> phi3 (int lim) {
     }
     return sieve;
 }
+int sigma (int num) { // sum of proper divisors
 
+  int n = num, sum = 1;
+  int p = 2;
 
+  while (p * p <= n && n > 1) {
+    if (n % p == 0) {
+      int j = p * p;
+      n /= p;
+
+      while (n % p == 0) {
+        j *= p;
+        n /= p;
+      }
+
+      sum *= (j - 1) / (p - 1);
+    }
+    p = (p == 2) ? 3 : p + 2;
+  }
+
+  if (n > 1) sum *= (n + 1);
+
+  return sum - num;
+}
+
+bool check_goldbach (int num, const vector<int> &prime) {
+
+    for (int i = 0; i < prime.size() && prime[i] < num; i++) {
+        for (int k = 1; k * k < num; k++) {
+            if (prime[i] + 2 * (k * k) == num) {
+                //cout << prime[i] << " + 2 x " << k << "²";
+                return true;
+            }
+        }
+    }
+
+    return false;
+  }
 void farey (int n) {
     // We know first two terms are 0/1 and 1/n
     double x1 = 0, y1 = 1, x2 = 1, y2 = n;
@@ -101,13 +152,47 @@ void farey (int n) {
         x1 = x2, x2 = x, y1 = y2, y2 = y;
     }
 }
+bool check_sum (int num, vector<int> &vec) {
+
+    for (int j = 0; vec[j] < num; j++) {
+        int left = num - vec[j];
+        //cout << left << " ";
+        for (int k = j + 1; vec[k] <= left && left > 0 ; k++) {
+            if (left - vec[k] == 0) {
+              cout << num << " = " << vec[j] << "+" << vec[k] << endl;
+              return true;
+            }
+        }
+    }
+    return false;
+}
 
 int main () {
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    const int lim = 1e3;
+    const int lim = 1e8;
+    //vector<int> prime = sieve3 (lim);
 
+    string num = "";
+
+    int cycle = 10;
+
+    for (int i = 1; i < cycle; i++) {
+        string num;
+        for (int j = 1; j <= i; j++) {
+            num += j + '0';
+        }
+
+        do {
+          int dec = stoi(num);
+
+          if (is_prime (dec)) {
+              cout << dec << " ";
+          }
+        } while (next_permutation (num.begin(), num.end()));
+    }
+        //cout << endl;
 
 
     auto end = std::chrono::high_resolution_clock::now();

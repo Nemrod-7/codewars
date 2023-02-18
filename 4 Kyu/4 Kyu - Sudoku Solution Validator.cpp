@@ -1,4 +1,7 @@
 #include <iostream>
+#include <vector>
+
+using namespace std;
 
 bool validSolution (unsigned int board[9][9]) {
 

@@ -33,7 +33,7 @@ uint64_t binom_recurs (int n, int k) {    // binom_recurs (9, 5); -> 1 208 161 i
   if (k  < 0 || k  > n) return 0;
   return binom_recurs (n - 1, k - 1) + binom_recurs (n - 1, k);
 }
-uint64_t binomial (int n, int k) {        // binomial (9,5); -> 9 795 281 in 1s
+uint64_t binomial_mul (int n, int k) {        // binomial_mul (9,5); -> 9 795 281 in 1s
   // => binom (n k) = sum from i = 0 to k ((n + 1 - i) / i)
     if (k == 0 || k == n) return 1;
     if (k  < 0 || k  > n) return 0;
@@ -47,7 +47,20 @@ uint64_t binomial (int n, int k) {        // binomial (9,5); -> 9 795 281 in 1s
 
     return static_cast<uint64_t> (res);
 }
+uint64_t binomial (int n, int k) {        // binomial (9,5);
 
+    const uint64_t lim = n;
+    uint64_t tri[lim+1][lim+1];
+
+    for (int i = 0; i <= lim; ++i) {
+        tri[i][0] = tri[i][i] = 1;
+        for (int j = 1; j < i; ++j) {
+            tri[i][j] = tri[i-1][j-1] + tri[i -1][j];
+        }
+    }
+
+    return tri[n][k];
+}
 inline int mod3 (int n) {
 
     if (n < 0) return ((n %= 3) < 0) ? n + 3 : n;
@@ -117,33 +130,16 @@ void display_tri (vector<vector<uint64_t>> &tri) {
     }
 }
 
+
 int main () {
 
-  Timer clock;
-  const uint64_t limit = 23, epsilon = 1e6;
-  vector<vector<uint64_t>> tri (limit + 1);
-  uint64_t num = 0;
-  int cnt = 0;
+    Timer clock;
 
-  for (int n = 0; n <= limit; ++n) {
-      for (int k = 0; k <= n; ++k) {
-          if (k == 0 || k == n) {
-              num = 1;
-          } else {
-              num = tri[n-1][k-1] + tri[n-1][k];
-          }
-          tri[n].push_back (num);
-          if (num >= epsilon)
-              cnt++;
-          
-          cout << tri[n][k] << " ";
-      }
-      cout << endl;
-  }
-  //display_tri (tri);
 
-  clock.stop();
-  clock.get_duration();
 
-  return EXIT_SUCCESS;
+
+    clock.stop();
+    clock.get_duration();
+
+    return EXIT_SUCCESS;
 }

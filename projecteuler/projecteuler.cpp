@@ -4,6 +4,7 @@
 #include <fstream>
 
 #include <vector>
+#include <set>
 #include <map>
 #include <queue>
 #include <cmath>
@@ -62,51 +63,6 @@ vector<vector<int>> getfile (string name) {
     file.close();
     return mat;
 }
-
-vector<uint64_t> sieve (uint64_t num) {
-
-    bool *primes = new bool[num + 1];
-    vector<uint64_t> sieve {2};
-
-    fill_n (primes, num + 1, true);
-
-    for (uint64_t p = 3; p * p <= num ; p += 2) {
-        if (primes[p] == true) {
-            for (uint64_t i = p * p; i <= num; i += 2 * p) {
-                primes[i] = false;
-            }
-        }
-    }
-
-    for (uint64_t i = 3; i <= num; i += 2) {
-        if (primes[i] == true) {
-            sieve.push_back(i);
-        }
-    }
-
-    delete[] primes;
-    return sieve;
-}
-
-uint64_t tau (uint64_t n) { // count number of divisors
-    uint64_t total = 1;
-
-    for (; (n & 1) == 0; n >>= 1) // Deal with powers of 2 first
-        ++total;
-
-    for (uint64_t p = 3; p * p <= n; p += 2) { // Odd prime factors up to the square root
-        uint64_t count = 1;
-        for (; n % p == 0; n /= p)
-            ++count;
-        total *= count;
-    }
-
-    if (n > 1) total *= 2; // If n > 1 then it's prime
-
-    return total;
-}
-
-
 string p_factors (uint64_t num) {
     ostringstream os;
 
@@ -128,6 +84,18 @@ string p_factors (uint64_t num) {
     if (num > 1) os << to_string(num);
     return os.str();
 }
+vector<int> factorize (int n) {
+
+    vector<int> factors;
+
+    for (int k = 2; k < n; k++)
+        if (n % k == 0)
+            factors.push_back(k);
+
+    return factors;
+}
+
+int gcd (int a, int b) { return b == 0 ? a : gcd (b, a % b); }
 
 bool is_prime (int num) {
 
@@ -140,22 +108,122 @@ bool is_prime (int num) {
 
     return true;
 }
-vector<uint64_t> factorize (uint64_t n) {
+vector<uint64_t> sieve (uint64_t num) {
 
-    vector<uint64_t> factors;
+    uint64_t half = (num >> 1) + 1;
+    vector<bool> primes (half + 1);
+    vector<uint64_t> sieve {2};
 
-    for (uint64_t k = 2; k < n; k++)
-        if (n % k == 0)
-            factors.push_back(k);
+    for (uint64_t p = 3; p * p <= num ; p += 2) {
+        if (primes[p/2] == false) {
+            for (uint64_t i = p * p; i <= num; i += 2 * p) {
+                primes[i/2] = true;
+            }
+        }
+    }
 
-    return factors;
+    for (uint64_t i = 3; i <= num; i += 2) {
+        if (primes[i/2] == false) {
+            sieve.push_back(i);
+        }
+    }
+
+    return sieve;
 }
 
-uint64_t fibonacci (uint64_t n) {
-    if (n == 0) return 0;
-    if (n == 1) return 1;
-    return fibonacci (n - 1) + fibonacci (n - 2);
+int tau (int n) { // count number of divisors
+    int total = 1;
+
+    for (; (n & 1) == 0; n >>= 1) // Deal with powers of 2 first
+        ++total;
+
+    for (int p = 3; p * p <= n; p += 2) { // Odd prime factors up to the square root
+        int count = 1;
+        for (; n % p == 0; n /= p)
+            ++count;
+        total *= count;
+    }
+
+    if (n > 1) total *= 2; // If n > 1 then it's prime
+    return total;
 }
+int phi (int num) { // totient funtion
+
+    int res = num;
+
+    if (num % 2 == 0) {
+        while (num % 2 == 0)
+            num /= 2;
+
+        res -= res / 2;
+    }
+
+    for (int pr = 3; pr * pr <= num; pr += 2) {
+        if (num % pr == 0) {
+            while (num % pr == 0)
+                num /= pr;
+
+            res -= res / pr;
+        }
+    }
+
+    return (num > 1) ? res - res / num : res;
+}
+int phi2 (int num, vector<int> &prime) { // totient funtion
+
+    int res = num;
+    int *p = prime.data();
+
+    for (int i = 0; p[i] * p[i] <= num; i++) {
+        if (num % p[i] == 0) {
+            while (num % p[i] == 0)
+                num /= p[i];
+
+            res -= res / p[i];
+        }
+    }
+
+    return (num > 1) ? res - res / num : res;
+}
+vector<int> phi3 (int lim) { // sieve of totient
+    vector<int> sieve (lim + 1);
+
+    for (int i = 0; i <= lim; i++)
+        sieve[i] = i;
+
+    for (int i = 2; i <= lim; i++) {
+        if (sieve[i] == i) {
+            for (int j = i; j <= lim; j += i)
+                sieve[j] -= sieve[j] / i;
+        }
+    }
+    return sieve;
+}
+int sigma (int num) { // sum of proper divisors
+
+  int n = num, sum = 1;
+  int p = 2;
+
+  while (p * p <= n && n > 1) {
+    if (n % p == 0) {
+      int j = p * p;
+      n /= p;
+
+      while (n % p == 0) {
+        j *= p;
+        n /= p;
+      }
+
+      sum *= (j - 1) / (p - 1);
+    }
+    p = (p == 2) ? 3 : p + 2;
+  }
+
+  if (n > 1) sum *= (n + 1);
+
+  return sum - num;
+}
+
 uint64_t sumdig (uint64_t num) {
     uint64_t sum = 0;
     while (num) {
@@ -163,8 +231,13 @@ uint64_t sumdig (uint64_t num) {
         num /= 10;
     }
     return sum;
-}
+  }
 
+uint64_t fibonacci (uint64_t n) {
+    if (n == 0) return 0;
+    if (n == 1) return 1;
+    return fibonacci (n - 1) + fibonacci (n - 2);
+  }
 string collatz (uint64_t n) {
 
     string os;
@@ -175,124 +248,6 @@ string collatz (uint64_t n) {
     }
 
     return os + "1";
-}
-
-int pyramidsum (string file) {
-    vector<vector<int>> tri = getfile(file);
-
-    for (int y = (tri.size() - 2); y >= 0; y--) {
-        for (int x = 0; x <= y; x++) {
-            tri[y][x] += max (tri[y + 1][x], tri[y + 1][x + 1]);
-        }
-    }
-
-    return tri[0][0];
-}
-
-int gcd (int a, int b) { return b == 0 ? a : gcd (b, a % b); }
-
-using vertex = pair<int, pair<int,int>>;
-
-void project82 () {
-  vector<int> path = {131,201,96,342,746,422,121,37,331};
-
-  vector<vector<int>> grid = {
-    {131,673,234,103,18},
-    {201,96,342,965,150},
-    {630,803,746,422,111},
-    {537,699,497,121,956},
-    {805,732,524,37,331}};
-
-  //grid = getfile("p081_matrix.txt");
-
-  int size = grid.size();
-  pair<int,int> exit = {size-1, size-1 };
-  const vector<pair<int,int>> compass = {{0,1}, {1,0} , {0,-1}};
-
-  priority_queue<vertex, vector<vertex>, greater<vertex>> q1;
-  vector<vector<int>> dist (size, vector<int> (size));
-  vector<vector<int>> visit (size, vector<int> (size));
-
-  for (int i = 0; i < 0; i++) {
-      q1.push({grid[0][i], {i,0}});
-  }
-
-  while (!q1.empty()) {
-      auto [cost, u] = q1.top();
-      q1.pop();
-
-      dist[u.second][u.first] = cost;
-      visit[u.second][u.first] = 1;
-      if (u == exit) break;
-
-      for (auto dir : compass) {
-          int nx = u.first + dir.first;
-          int ny = u.second + dir.second;
-
-          if (nx>= 0 && ny >= 0 && nx < size && ny < size) {
-              int alt = cost + grid[ny][nx];
-
-              if ( dist[ny][nx] < alt && !visit[ny][nx]) {
-                  q1.push({alt, {nx, ny}});
-              }
-          }
-      }
-  }
-
-  for (int i = 0; i < size; i++) {
-      for (int j = 0; j < size; j++) {
-          cout << setw(5) << dist[i][j];
-      }
-      cout << endl;
-  }
-
-  /*
-
-      for (int i = 1; i < size; i++) {
-          grid[0][i] = grid[0][i] + grid[0][i-1];
-          grid[i][0] = grid[i][0] + grid[i-1][0];
-      }
-
-      for (int i = 1; i < size; i++) {
-          for (int j = 1; j < size; j++) {
-              grid[i][j] = grid[i][j] + min (grid[i][j-1],grid[i-1][j]);
-              //cout << setw(5) << grid[i][j];
-          }
-      }
-
-      for (int i = 0; i < size; i++) {
-          for (int j = 0; j < size; j++) {
-              cout << setw(5) << grid[i][j];
-          }
-          cout << endl;
-      }
-      */
-}
-
-void mult () {
-  vector<int> power {2};
-
-  for (int k = 1; k < 1000; k++) {
-      //cout << fast_power (2, k) << endl;
-      int rem = 0;
-      for (int i = 0; i < power.size(); i++) {
-          int sq = power[i] * 2;
-          power[i] = sq % 10 + rem;
-          rem = sq / 10;
-      }
-
-      if (rem > 0)
-          power.push_back(rem);
-  }
-
-  int sum = 0;
-  for (int i = power.size() - 1; i >= 0; i--) {
-      //cout << power[i];
-      sum += power[i];
-  }
-
-  cout << sum;
-
 }
 
 bool isPentagonal (uint64_t N) {
@@ -320,105 +275,50 @@ int cntdiv (uint64_t num) {
     return np;
 }
 
-vector<uint64_t> sieve3 (uint64_t num) {
-
-    uint64_t half = (num >> 1) + 1;
-    vector<bool> primes (half + 1);
-    vector<uint64_t> sieve {2};
-
-    for (uint64_t p = 3; p * p <= num ; p += 2) {
-        if (primes[p/2] == true) {
-            for (uint64_t i = p * p; i <= num; i += 2 * p) {
-                primes[i/2] = false;
-            }
-        }
-    }
-
-    for (uint64_t i = 3; i <= num; i += 2) {
-        if (primes[i/2] == true) {
-            sieve.push_back(i);
-        }
-    }
-
-    return sieve;
-}
-
-int phi (int num) { // totient funtion
-
-    int res = num;
-
-    if (num % 2 == 0) {
-        while (num % 2 == 0) {
-            num /= 2;
-        }
-        res -= res / 2;
-    }
-
-    for (int pr = 3; pr * pr <= num; pr += 2) {
-        if (num % pr == 0) {
-            while (num % pr == 0) {
-                num /= pr;
-            }
-            res -= res / pr;
-        }
-    }
-
-    return (num > 1) ? res - res / num : res;
-}
-int phi2 (int num) { // totient funtion
-
-    int res = num;
-
-    if (num % 2 == 0) {
-        while (num % 2 == 0) {
-            num /= 2;
-        }
-        res *= (1 - (1 / (double) 2));
-    }
-
-    for (int pr = 3; pr * pr <= num; pr += 2) {
-        if (num % pr == 0) {
-            while (num % pr == 0) {
-                num /= pr;
-            }
-            res *= (1 - (1 / (double) pr));
-        }
-    }
-
-    return (num > 1) ? res - res / num : res;
-}
 int main () {
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    const int lim = 1e6;
-    int index = 0;
-    double maxv = 0;
+    uint64_t lim ;
+    uint64_t sum = 1, maxv = 0;
+    set<uint64_t> binom;
+    uint64_t tri[60][60] = {{1},{1,1}};
+    vector<uint64_t> prime;
 
-    vector<int> ndiv (lim);
-
-    vector<int> hist (10);
-
-    int num = 656;
-    /*
-    do {
-        hist[num % 10]++;
-    } while (num /= 10);
-    */
-
-    for (int k = 2; k < lim; k++) {
-        double val = k / static_cast<double> (phi2 (k));
-
-        if (val > maxv) {
-            maxv = val;
-            index = k;
+    for (int n = 0; n < 51; n++) {
+        tri[n][0] = tri[n][n] = 1;
+        for (int k = 1; k < n; k++) {
+            tri[n][k] = tri[n-1][k] + tri[n-1][k-1];
+            binom.insert(tri[n][k]);
+            //cout << tri[n][k] << " ";
         }
-        /*
-        cout << k << " => ";
-        cout << ndiv[k] << ' ' << val << endl;
-        */
+        //cout << endl;
     }
-    cout << index;
+
+    maxv = *max_element (binom.begin(), binom.end());
+    lim = static_cast<uint64_t> (sqrt(maxv));
+    prime = sieve(lim);
+
+    for (auto num : binom) {
+        bool sqfree = true;
+
+        for (int i = 0; i < prime.size() && prime[i] * prime[i] <= num; i++) {
+
+            if (num % (prime[i] * prime[i]) == 0) {
+                sqfree = false;
+            }
+
+        }
+        if (sqfree == true) {
+            sum += num;
+        }
+
+    }
+    // 34 029 210 557 338
+    // 34029210557338
+    cout << sum << " ";
+    //cout << "\ncount : " << cnt;
+
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
