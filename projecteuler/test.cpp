@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <map>
+#include <set>
 #include <cmath>
 #include <algorithm>
 
@@ -136,21 +137,20 @@ bool check_goldbach (int num, const vector<int> &prime) {
 
     return false;
   }
-void farey (int n) {
-    // We know first two terms are 0/1 and 1/n
-    double x1 = 0, y1 = 1, x2 = 1, y2 = n;
-    printf("%.0f/%.0f %.0f/%.0f", x1, y1, x2, y2);
-    double x, y = 0; // For next terms to be evaluated
 
-    while (y != 1.0) {
-        // Using recurrence relation to find the next term
-        x = floor((y1 + n) / y2) * x2 - x1;
-        y = floor((y1 + n) / y2) * y2 - y1;
-        // Print next term
-        printf(" %.0f/%.0f", x, y);
-        // Update x1, y1, x2 and y2 for next iteration
-        x1 = x2, x2 = x, y1 = y2, y2 = y;
-    }
+void farey (int n) {
+
+  typedef struct { int d, n; } frac;
+	frac f1 = {0, 1}, f2 = {1, n}, tmp;
+	int k;
+	printf("%d/%d ", 1, n);
+	while (f2.n > 1) {
+			k = (n + f1.n) / f2.n;
+			tmp = f1;
+			f1 = f2;
+			f2 = (frac) { f2.d * k - tmp.d, f2.n * k - tmp.n };
+			std::cout << f2.d << "/" << f2.n << " ";
+	}
 }
 bool check_sum (int num, vector<int> &vec) {
 
@@ -167,32 +167,77 @@ bool check_sum (int num, vector<int> &vec) {
     return false;
 }
 
+bool ispalindrome (int num) {
+
+    if (num % 10 == 0) return false;
+    int ref = num, rev = 0;
+
+    do {
+        rev = rev * 10 + (num % 10);
+    } while (num /= 10);
+
+    return ref == rev;
+}
+
+void test () {
+    /*
+    Assert::That(values(100), Equals(3));
+    Assert::That(values(200),Equals(4));
+    Assert::That(values(300),Equals(4));
+    Assert::That(values(400),Equals(5));
+    Assert::That(values(1000), Equals(11));
+    */
+}
+
+int sqsum (int lim) {
+
+    int cnt = 0;
+
+    for (int i = 1; i < 500; i++) {
+        int sum = i * i;
+        //cout << i << " => ";
+        for (int j = i + 1; sum < lim; j++) {
+            sum += (j * j);
+
+            if (sum < lim && ispalindrome (sum)) {
+                cnt++;
+                cout << sum << " ";
+            }
+            //cout << sum << " ";
+        }
+        //cout << endl;
+    }
+
+    cout << " :: "<<  cnt;
+    return cnt;
+}
+
+int Ackermann(int m, int n) {
+    if (n == -1) return n;
+    if (m == 0) return n + 1;
+    if (n == 0) return Ackermann (m - 1, 1);
+    return Ackermann (m - 1, Ackermann (m, n - 1));
+}
+
 int main () {
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    const int lim = 1e8;
-    //vector<int> prime = sieve3 (lim);
+    const int lim = 1e4;
+    const int sq = sqrt(lim);
+    int cnt = 0;
+    set<int> res;
 
-    string num = "";
+    for (int i = 1; i < lim; i++) {
+  			int fn = 2 * (i * i) - 1;
 
-    int cycle = 10;
-
-    for (int i = 1; i < cycle; i++) {
-        string num;
-        for (int j = 1; j <= i; j++) {
-            num += j + '0';
+        if (is_prime (fn)) {
+            cnt++;
         }
+  			//std::cout << fn  <<  " ";
+  	}
+    cout << " :: "<<  cnt;
 
-        do {
-          int dec = stoi(num);
-
-          if (is_prime (dec)) {
-              cout << dec << " ";
-          }
-        } while (next_permutation (num.begin(), num.end()));
-    }
-        //cout << endl;
 
 
     auto end = std::chrono::high_resolution_clock::now();

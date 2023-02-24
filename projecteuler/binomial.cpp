@@ -61,6 +61,7 @@ uint64_t binomial (int n, int k) {        // binomial (9,5);
 
     return tri[n][k];
 }
+
 inline int mod3 (int n) {
 
     if (n < 0) return ((n %= 3) < 0) ? n + 3 : n;
@@ -130,11 +131,21 @@ void display_tri (vector<vector<uint64_t>> &tri) {
     }
 }
 
-
 int main () {
 
     Timer clock;
+    /*
+    int lim = 10;
+    uint64_t bell[lim+1][lim+1];
 
+    bell[0][0] = 1;
+    for (int i = 1; i <= lim; ++i) {
+        bell[i][0] = bell[i-1][i-1];
+        for (int j = 1; j <= i; ++j) {
+            bell[i][j] = bell[i-1][j-1] + bell[i][j-1];
+        }
+    }
+    */
 
 
 
