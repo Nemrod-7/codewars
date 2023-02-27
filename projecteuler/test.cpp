@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <vector>
 #include <map>
 #include <set>
@@ -12,232 +13,99 @@ using namespace std;
 
 int gcd (int a, int b) { return b == 0 ? a : gcd (b, a % b); }
 
-bool is_prime (int num) {
-
-    if (num <= 3) return true;
-    if (num % 2 == 0 || num % 3 == 0) return false;
-
-    for (int i = 5; i <= sqrt(num); i += 6)
-        if (num % i == 0 || num % (i + 2) == 0)
-            return false;
-
-    return true;
-}
-
-vector<int> sieve3 (int num) {
-
-    int half = (num >> 1) + 1;
-    vector<int> prime {2};
-    vector<bool> sieve (half);
-
-    for (int p = 3; p * p <= num ; p += 2) {
-        if (sieve[p/2] == false) {
-            for (int i = p * p; i <= num; i += 2 * p) {
-                sieve[i/2] = true;
-            }
-        }
-    }
-
-    for (int i = 3; i <= num; i += 2) {
-        if (sieve[i/2] == false) {
-            prime.push_back(i);
-        }
-    }
-
-    return prime;
-}
-
-int phi (int num) { // totient funtion
-
-    int res = num;
-
-    if (num % 2 == 0) {
-        while (num % 2 == 0)
-            num /= 2;
-
-        res -= res / 2;
-    }
-
-    for (int pr = 3; pr * pr <= num; pr += 2) {
-        if (num % pr == 0) {
-            while (num % pr == 0)
-                num /= pr;
-
-            res -= res / pr;
-        }
-    }
-
-    return (num > 1) ? res - res / num : res;
-}
-int phi2 (int num, vector<int> &prime) { // totient funtion
-
-    int res = num;
-    int *p = prime.data();
-
-    for (int i = 0; p[i] * p[i] <= num; i++) {
-        if (num % p[i] == 0) {
-            while (num % p[i] == 0)
-                num /= p[i];
-
-            res -= res / p[i];
-        }
-    }
-
-    return (num > 1) ? res - res / num : res;
-}
-vector<int> phi3 (int lim) { // sieve of totient
-    vector<int> sieve (lim + 1);
-
-    for (int i = 0; i <= lim; i++)
-        sieve[i] = i;
-
-    for (int i = 2; i <= lim; i++) {
-        if (sieve[i] == i) {
-            for (int j = i; j <= lim; j += i)
-                sieve[j] -= sieve[j] / i;
-        }
-    }
-    return sieve;
-}
-int sigma (int num) { // sum of proper divisors
-
-  int n = num, sum = 1;
-  int p = 2;
-
-  while (p * p <= n && n > 1) {
-    if (n % p == 0) {
-      int j = p * p;
-      n /= p;
-
-      while (n % p == 0) {
-        j *= p;
-        n /= p;
-      }
-
-      sum *= (j - 1) / (p - 1);
-    }
-    p = (p == 2) ? 3 : p + 2;
-  }
-
-  if (n > 1) sum *= (n + 1);
-
-  return sum - num;
-}
-
-bool check_goldbach (int num, const vector<int> &prime) {
-
-    for (int i = 0; i < prime.size() && prime[i] < num; i++) {
-        for (int k = 1; k * k < num; k++) {
-            if (prime[i] + 2 * (k * k) == num) {
-                //cout << prime[i] << " + 2 x " << k << "²";
-                return true;
-            }
-        }
-    }
-
-    return false;
-  }
-
-void farey (int n) {
-
-  typedef struct { int d, n; } frac;
-	frac f1 = {0, 1}, f2 = {1, n}, tmp;
-	int k;
-	printf("%d/%d ", 1, n);
-	while (f2.n > 1) {
-			k = (n + f1.n) / f2.n;
-			tmp = f1;
-			f1 = f2;
-			f2 = (frac) { f2.d * k - tmp.d, f2.n * k - tmp.n };
-			std::cout << f2.d << "/" << f2.n << " ";
-	}
-}
-bool check_sum (int num, vector<int> &vec) {
-
-    for (int j = 0; vec[j] < num; j++) {
-        int left = num - vec[j];
-        //cout << left << " ";
-        for (int k = j + 1; vec[k] <= left && left > 0 ; k++) {
-            if (left - vec[k] == 0) {
-              cout << num << " = " << vec[j] << "+" << vec[k] << endl;
-              return true;
-            }
-        }
-    }
-    return false;
-}
-
-bool ispalindrome (int num) {
-
-    if (num % 10 == 0) return false;
-    int ref = num, rev = 0;
-
-    do {
-        rev = rev * 10 + (num % 10);
-    } while (num /= 10);
-
-    return ref == rev;
-}
-
-void test () {
-    /*
-    Assert::That(values(100), Equals(3));
-    Assert::That(values(200),Equals(4));
-    Assert::That(values(300),Equals(4));
-    Assert::That(values(400),Equals(5));
-    Assert::That(values(1000), Equals(11));
-    */
-}
-
-int sqsum (int lim) {
-
+int pythagoreantriplet (int sum) {
+    const int s2 = sum / 2;
+    const int lim = ceil(sqrt(s2)) - 1;
     int cnt = 0;
 
-    for (int i = 1; i < 500; i++) {
-        int sum = i * i;
-        //cout << i << " => ";
-        for (int j = i + 1; sum < lim; j++) {
-            sum += (j * j);
+    for (int m = 2; m <= lim; m++) {
+        if (s2 % m == 0) {
+            int sm = s2 / m;
+            int k = (m % 2 == 1) ? m + 2 : m + 1;
 
-            if (sum < lim && ispalindrome (sum)) {
-                cnt++;
-                cout << sum << " ";
+            while (sm % 2 == 0)
+                sm /= 2;
+
+            while ((k < (2 * m)) && (k <= sm)) {
+                if (sm % k == 0 && gcd (k,m) == 1) {
+                    int d = s2 / (k * m);
+                    int n = k - m;
+
+                    int a = d * (m * m - n * n);
+                    int b = 2 * d * m * n;
+                    int c = d * (m * m + n * n);
+                    cnt++;
+                    //printf ("[%i, %i %i] ", a,b,c);
+                }
+                k += 2;
             }
-            //cout << sum << " ";
         }
-        //cout << endl;
     }
 
-    cout << " :: "<<  cnt;
-    return cnt;
-}
+    if (cnt != 0) {
+        cout << s2 << " " << cnt << endl;
+    }
 
-int Ackermann(int m, int n) {
-    if (n == -1) return n;
-    if (m == 0) return n + 1;
-    if (n == 0) return Ackermann (m - 1, 1);
-    return Ackermann (m - 1, Ackermann (m, n - 1));
+    return cnt;
 }
 
 int main () {
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    const int lim = 1e4;
-    const int sq = sqrt(lim);
-    int cnt = 0;
-    set<int> res;
+    vector<vector<int>> adj {{0,16,12,21,0,0,0}, {16,0,0,17,20,0,0}, {12,0,0,28,0,31,0}, {21,17,28,0,18,19,23}, {0,20,0,18,0,0,11}, {0,0,31,19,0,0,27}, {0,0,0,23,11,27,0}};
+    vector<vector<int>> grp (adj.size());
 
-    for (int i = 1; i < lim; i++) {
-  			int fn = 2 * (i * i) - 1;
+    set<int> weight;
 
-        if (is_prime (fn)) {
-            cnt++;
+    for (int i = 0; i < adj.size(); i++) {
+        for (int j = 0; j < adj[i].size(); j++) {
+              //cout << setw(2) << adj[i][j] << " ";
+              weight.insert (adj[i][j]);
+              if (adj[i][j] != 0) {
+                grp[i].push_back(j);
+                grp[j].push_back(i);
+              }
         }
-  			//std::cout << fn  <<  " ";
-  	}
-    cout << " :: "<<  cnt;
+        //cout << endl;
+    }
 
+    int lim = 15e5;
+
+    map<int,int> hist;
+
+
+    for (int i = 2; i < 50; i++) {
+        int cnt = pythagoreantriplet (i);
+
+        if (cnt > 0) {
+          //    cout << "[" << i << "]\n";
+
+            hist[i] = cnt;
+        }
+        /*
+        for (int j = i + 1; j < 10000; j++) {
+            int c = i * i + j * j;
+            int sq = sqrt (c);
+
+            if (sq * sq == c) {
+                int per = i + j + sq;
+                //cout << i << ' ' << j << endl;
+                //cout << per << " ";
+                hist[per]++;
+            }
+        }
+        */
+    }
+
+    for (auto [per, freq] : hist) {
+        if (freq > 0) {
+
+        //    cout << "[" << per << "]" << freq << endl;
+        }
+    }
+    /*
+    */
 
 
     auto end = std::chrono::high_resolution_clock::now();

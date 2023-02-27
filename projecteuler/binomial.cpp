@@ -134,20 +134,26 @@ void display_tri (vector<vector<uint64_t>> &tri) {
 int main () {
 
     Timer clock;
-    /*
-    int lim = 10;
-    uint64_t bell[lim+1][lim+1];
+// p`p145 is a curious number, as 1! + 4! + 5! = 1 + 24 + 120 = 145.`
+int res = 0;
+    for (int i = 10; i < 1000000; i++) {
+        int nu = i;
+        int sum = 0;
 
-    bell[0][0] = 1;
-    for (int i = 1; i <= lim; ++i) {
-        bell[i][0] = bell[i-1][i-1];
-        for (int j = 1; j <= i; ++j) {
-            bell[i][j] = bell[i-1][j-1] + bell[i][j-1];
+        do {
+
+            sum += factorial (nu % 10);
+        } while (nu /= 10);
+        //cout << factorial (i) << ' ';
+        if (sum == i) {
+            //cout << i << " => ";
+            //cout << sum << "\n";
+
+            res += i;
         }
     }
-    */
 
-
+    cout << res;
 
     clock.stop();
     clock.get_duration();

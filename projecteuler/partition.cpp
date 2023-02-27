@@ -98,11 +98,12 @@ int coinsum (int n, const vector<int> &coin) {
 
 int main () {
 
+    const int n = 1e6;
+    vector<int> prime = sieve (10000);
 
-
-    vector<int> coin {2,3,5,7,11,13,17};
-
-    int n = 10;
+    for (auto nu : prime) {
+        cout << nu << ' ';
+    }
 
     for (int i = 1; i < 1000; i++) {
 

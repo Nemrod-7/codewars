@@ -5,12 +5,19 @@ using namespace std;
 
 int main () {
 
-  vector<vector<int>> grid = {
-    {4,2,5,4},
-    {4,15,11,1},
-    {-1,9,6,8},
-    {12,7,7,-2} };
 
+    string greek = "αβδεικηθρπτμυωχγ";
 
+    string leet = "αβcδεfghιjκlmηθρqπsτμυωχγz";
 
+/*
+A=α (Alpha)      B=β (Beta)      D=δ (Delta)
+E=ε (Epsilon)    I=ι (Iota)      K=κ (Kappa)
+N=η (Eta)        O=θ (Theta)     P=ρ (Rho)
+R=π (Pi)         T=τ (Tau)       U=μ (Mu)
+V=υ (Upsilon)    W=ω (Omega)     X=χ (Chi)
+Y=γ (Gamma)
+
+*/
+    cout << greek;
 }

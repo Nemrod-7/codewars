@@ -254,7 +254,33 @@ bool isPentagonal (uint64_t N) {
     double n = (1 + sqrt(24*N + 1))/6;
     return (n - (uint64_t) n) == 0;
 }
+bool check_goldbach (int num, const vector<int> &prime) {
 
+    for (int i = 0; i < prime.size() && prime[i] < num; i++) {
+        for (int k = 1; k * k < num; k++) {
+            if (prime[i] + 2 * (k * k) == num) {
+                //cout << prime[i] << " + 2 x " << k << "²";
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+void farey (int n) {
+
+  typedef struct { int d, n; } frac;
+	frac f1 = {0, 1}, f2 = {1, n}, tmp;
+	int k;
+	printf("%d/%d ", 1, n);
+	while (f2.n > 1) {
+			k = (n + f1.n) / f2.n;
+			tmp = f1;
+			f1 = f2;
+			f2 = (frac) { f2.d * k - tmp.d, f2.n * k - tmp.n };
+			std::cout << f2.d << "/" << f2.n << " ";
+	}
+}
 int cntdiv (uint64_t num) {
     int np = 0;
 
