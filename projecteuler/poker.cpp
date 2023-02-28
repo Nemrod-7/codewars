@@ -116,7 +116,7 @@ bool run_test_hands (const PokerHand &player, const PokerHand &opponent, Result 
     return outcome != compare (player, opponent);
 }
 void run_test (const string &player, const string &opponent, Result outcome) {
-    PokerHand pl1(player), pl2 (opponent);
+    PokerHand pl1 (player), pl2 (opponent);
     if (run_test_hands (pl1, pl2, outcome)) {
         cout << player << " " << pl1.pts << " :: " << opponent << " " << pl2.pts << " error\n";
     }
@@ -146,23 +146,38 @@ void test () {
 
 int main () {
 
+    std::string line;
+    std::fstream file ("p054_poker.txt");
 
-    /*
-       std::string line;
-       std::fstream file ("p054_poker.txt");
+    int cnt = 0;
 
-       while (getline (file, line)) {
+    while (getline (file, line)) {
        std::string player1 = line.substr (0, 14);
        std::string player2 = line.substr (15, line.size() - 1);
+
+       Result res = compare (PokerHand(player1), PokerHand(player2));
+
+       if (res == Result::Win) {
+          cnt++;
+       }
+       /*
+
+       switch (res) {
+           case Result::Win : cout << "winner : Player 1\n"; break;
+           case Result::Loss : cout << "winner : Player 2\n"; break;
+           case Result::Tie : cout << "no winner\n"; break;
+       }
+
+       */
     //std::cout << player1 << " :: " << player2 << "\n" ;
     }
 
+    cout << cnt;
+
     file.close();
 
-*/
 
 /*
-
   test();
 
     vector<pair<string,string>> test =

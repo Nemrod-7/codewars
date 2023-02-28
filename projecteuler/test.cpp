@@ -1,113 +1,139 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
-#include <map>
-#include <set>
-#include <cmath>
-#include <algorithm>
-
 #include <chrono>
 
 // NEQ5xBztxeg43aP
 using namespace std;
 
-int gcd (int a, int b) { return b == 0 ? a : gcd (b, a % b); }
+pair<int,int> getm (vector<vector<int>> &adj) {
+    int maxv = 0;
+    pair<int,int> pt;
 
-int pythagoreantriplet (int sum) {
-    const int s2 = sum / 2;
-    const int lim = ceil(sqrt(s2)) - 1;
-    int cnt = 0;
+    for (int i = 0; i < adj.size(); i++) {
+        for (int j = 0; j < adj[i].size(); j++) {
+              if (adj[i][j] > maxv) {
+                  maxv = adj[i][j];
+                  pt = {i,j};
+              }
+        }
+    }
+    return pt;
+}
 
-    for (int m = 2; m <= lim; m++) {
-        if (s2 % m == 0) {
-            int sm = s2 / m;
-            int k = (m % 2 == 1) ? m + 2 : m + 1;
+bool detach (vector<vector<int>> &adj, pair<int,int> pt) {
+    const int size = adj.size();
+    int weight = adj[pt.first][pt.second];
 
-            while (sm % 2 == 0)
-                sm /= 2;
+    adj[pt.first][pt.second] = 0;
+    adj[pt.second][pt.first] = 0;
 
-            while ((k < (2 * m)) && (k <= sm)) {
-                if (sm % k == 0 && gcd (k,m) == 1) {
-                    int d = s2 / (k * m);
-                    int n = k - m;
+    //cout << "["<< pt.first << "," << pt.second << "] => " << weight << "\n";
 
-                    int a = d * (m * m - n * n);
-                    int b = 2 * d * m * n;
-                    int c = d * (m * m + n * n);
-                    cnt++;
-                    //printf ("[%i, %i %i] ", a,b,c);
+    int left = 0, right = 0;
+
+    for (int i = 0; i < size; i++) {
+        if (adj[pt.first][i] != 0) left++;
+        if (adj[pt.second][i] != 0) right++;
+    }
+
+    if (left == 0 || right == 0) {
+        adj[pt.first][pt.second] = weight;
+        adj[pt.second][pt.first] = weight;
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
+bool Hamiltonian_path (vector<vector<int>> &adj) {
+
+    const int N = adj.size();
+    int dp[N][(1 << N)];
+    // Initialize the table
+    //memset(dp, 0, sizeof dp);
+    // Set all dp[i][(1 << i)] to true
+    for (int i = 0; i < N; i++)
+        dp[i][(1 << i)] = true;
+
+    // Iterate over each subset of nodes
+    for (int i = 0; i < (1 << N); i++) {
+        for (int j = 0; j < N; j++) {
+            // If the jth nodes is included in the current subset
+            if (i & (1 << j)) {
+                // Find K, neighbour of j also present in the current subset
+                for (int k = 0; k < N; k++) {
+                    if (i & (1 << k) && adj[k][j] && j != k && dp[k][i ^ (1 << j)]) {
+                        // Update dp[j][i] to true
+                        dp[j][i] = true;
+                        break;
+                    }
                 }
-                k += 2;
             }
         }
     }
 
-    if (cnt != 0) {
-        cout << s2 << " " << cnt << endl;
+    // Traverse the vertices
+    for (int i = 0; i < N; i++) { // Hamiltonian Path exists
+        if (dp[i][(1 << N) - 1])
+            return true;
     }
 
-    return cnt;
+    return false;
 }
-
 int main () {
 
     auto start = std::chrono::high_resolution_clock::now();
 
     vector<vector<int>> adj {{0,16,12,21,0,0,0}, {16,0,0,17,20,0,0}, {12,0,0,28,0,31,0}, {21,17,28,0,18,19,23}, {0,20,0,18,0,0,11}, {0,0,31,19,0,0,27}, {0,0,0,23,11,27,0}};
-    vector<vector<int>> grp (adj.size());
+    const int size = 50;
 
-    set<int> weight;
+
+    /*
+
+         A	 B	 C	 D	 E	 F	 G
+      A	 -	16	12	21	 -	 -	 -
+      B	16	 -	 -	17	20	 -	 -
+      C	12	 -	 -	28	 -	31	 -
+      D	21	17	28	 -	18	19	23
+      E	 -	20	 -	18	 -	 -	11
+      F	 -	 -	31	19	 -	 -	27
+      G	 -	 -	 -	23	11	27	 -
+
+
+      */
+
+      pair<int,int> pt = getm (adj);
+      int weight = adj[pt.first][pt.second];
+
+      adj[pt.first][pt.second] = 0;
+      adj[pt.second][pt.first] = 0;
+
+
+    /*
+    vector<vector<int>> graph (size);
 
     for (int i = 0; i < adj.size(); i++) {
         for (int j = 0; j < adj[i].size(); j++) {
               //cout << setw(2) << adj[i][j] << " ";
-              weight.insert (adj[i][j]);
               if (adj[i][j] != 0) {
-                grp[i].push_back(j);
-                grp[j].push_back(i);
+                  graph[i].push_back(j);
+                  //grp[j].push_back(i);
               }
         }
         //cout << endl;
     }
+    for (int i = 0; i < graph.size(); i++) {
+        cout << static_cast<char> (i + 65) << " => ";
 
-    int lim = 15e5;
-
-    map<int,int> hist;
-
-
-    for (int i = 2; i < 50; i++) {
-        int cnt = pythagoreantriplet (i);
-
-        if (cnt > 0) {
-          //    cout << "[" << i << "]\n";
-
-            hist[i] = cnt;
+        for (int j = 0; j < graph[i].size(); j++) {
+            cout << static_cast<char> (graph[i][j] + 65) << " ";
         }
-        /*
-        for (int j = i + 1; j < 10000; j++) {
-            int c = i * i + j * j;
-            int sq = sqrt (c);
-
-            if (sq * sq == c) {
-                int per = i + j + sq;
-                //cout << i << ' ' << j << endl;
-                //cout << per << " ";
-                hist[per]++;
-            }
-        }
-        */
+        cout << "\n";
+        //cout << grp[i].size() << "\n";
     }
-
-    for (auto [per, freq] : hist) {
-        if (freq > 0) {
-
-        //    cout << "[" << per << "]" << freq << endl;
-        }
-    }
-    /*
     */
-
-
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
     std::cout << "\nProcess took " << elapsed.count()  << " ms" << std::endl;

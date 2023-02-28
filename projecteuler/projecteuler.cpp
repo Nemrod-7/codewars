@@ -224,6 +224,42 @@ int sigma (int num) { // sum of proper divisors
   return sum - num;
 }
 
+int pythagoreantriplet (int sum) {
+    const int s2 = sum / 2;
+    const int lim = ceil(sqrt(s2)) - 1;
+    int cnt = 0;
+
+    for (int m = 2; m <= lim; m++) {
+        if (s2 % m == 0) {
+            int sm = s2 / m;
+            int k = (m % 2 == 1) ? m + 2 : m + 1;
+
+            while (sm % 2 == 0)
+                sm /= 2;
+
+            while ((k < (2 * m)) && (k <= sm)) {
+                if (sm % k == 0 && gcd (k,m) == 1) {
+                    //cout << k << ' ';
+                    int d = s2 / (k * m);
+                    int n = k - m;
+
+                    int a = d * (m * m - n * n);
+                    int b = 2 * d * m * n;
+                    int c = d * (m * m + n * n);
+
+                    if (a+b+c == sum) {
+                      //printf ("[%i, %i %i] ", a,b,c);
+                        cnt++;
+                    }
+                }
+                k += 2;
+            }
+        }
+    }
+
+    return cnt;
+}
+
 uint64_t sumdig (uint64_t num) {
     uint64_t sum = 0;
     while (num) {
@@ -299,6 +335,38 @@ int cntdiv (uint64_t num) {
     }
     if (num > 1) np++;
     return np;
+}
+
+uint64_t reverse (uint64_t num) {
+
+    uint64_t rev = 0;
+
+    do {
+        rev = rev * 10 + num % 10;
+    } while (num /= 10);
+
+    return rev;
+}
+bool palindrome (uint64_t num) {
+    if (num % 10 == 0) return false;
+    return reverse (num) == num;
+}
+
+bool lychrel (uint64_t num) { // check for lychrel number
+    uint64_t iter = 24;
+
+    while (iter--> 0) {
+        uint64_t rev = reverse (num);
+
+        if (palindrome (num + rev)) {
+            //cout << num << " + " << rev << " = " << num + rev << endl;
+            return false;
+        } else {
+            num += rev;
+        }
+    }
+
+    return true;
 }
 
 int main () {

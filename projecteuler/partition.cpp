@@ -78,8 +78,6 @@ uint64_t countpart (int n) {
     return part[n];
 }
 
-
-
 int coinsum (int n, const vector<int> &coin) {
 
     vector<int> part(n + 1);
@@ -99,14 +97,11 @@ int coinsum (int n, const vector<int> &coin) {
 int main () {
 
     const int n = 1e6;
-    vector<int> prime = sieve (10000);
 
-    for (auto nu : prime) {
-        cout << nu << ' ';
-    }
-
-    for (int i = 1; i < 1000; i++) {
-
+    for (int i = 1; i < 10; i++) {
+        uint64_t npart = countpart (i);
+        //uint64_t res = npart % 1000000;
+        cout << npart << " " << i * (3 * i - 1) / 2 << "\n";
     }
 
     cout << "end";
