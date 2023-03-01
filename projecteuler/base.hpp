@@ -56,11 +56,13 @@ char getsep (string name) {
     char sep;
     string buff;
     map<char,int> hist;
-    istringstream file (name);
+    fstream file (name);
 
     while (getline (file, buff)) {
+
         for (char ch : buff) {
             if (ispunct (ch)) {
+                //cout << ch << ' ';
                 hist[ch]++;
             }
         }
@@ -73,28 +75,45 @@ char getsep (string name) {
         }
     }
 
+    file.close();
     return sep;
 }
-vector<int> tokenize (const string &src, char delim) {
+vector<string> tokenize (const string &src, char delim) {
     istringstream iss (src);
     string token;
-    vector<int> v;
+    vector<string> v;
 
     while (getline (iss, token, delim))
-        v.push_back (stoi (token));
+        v.push_back (token);
 
     return v;
 }
-vector<vector<int>> getfile (string name) {
-    int num;
+vector<vector<string>> getfile (string name) {
+
     string buff;
     fstream file (name);
-    vector<vector<int>> mat;
+    char delim = getsep (name);
+    vector<vector<string>> mat;
 
     while (getline (file, buff)) {
-        mat.push_back(tokenize (buff, ' '));
+        mat.push_back(tokenize (buff, delim));
     }
 
     file.close();
     return mat;
+}
+vector<vector<int>> txt2int (const vector<vector<string>> &txt) {
+  const int size = txt.size();
+  vector<vector<int>> adj (size, vector<int> (size));
+
+  for (int i = 0; i < size; i++) {
+      for (int j = 0; j < size; j++) {
+          if (txt[i][j] == "-") {
+              adj[i][j] = 0;
+          } else {
+              adj[i][j] = stoi(txt[i][j]);
+          }
+      }
+  }
+  return adj;
 }

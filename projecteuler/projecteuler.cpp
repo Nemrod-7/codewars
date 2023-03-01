@@ -63,6 +63,7 @@ vector<vector<int>> getfile (string name) {
     file.close();
     return mat;
 }
+
 string p_factors (uint64_t num) {
     ostringstream os;
 
@@ -373,45 +374,9 @@ int main () {
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    uint64_t lim ;
-    uint64_t sum = 1, maxv = 0;
-    set<uint64_t> binom;
-    uint64_t tri[60][60] = {{1},{1,1}};
-    vector<uint64_t> prime;
+    uint64_t p5[10] = {0,1,32,243,1024,3125,7778,16807,32768,59049};
+    uint64_t sum = 0;
 
-    for (int n = 0; n < 51; n++) {
-        tri[n][0] = tri[n][n] = 1;
-        for (int k = 1; k < n; k++) {
-            tri[n][k] = tri[n-1][k] + tri[n-1][k-1];
-            binom.insert(tri[n][k]);
-            //cout << tri[n][k] << " ";
-        }
-        //cout << endl;
-    }
-
-    maxv = *max_element (binom.begin(), binom.end());
-    lim = static_cast<uint64_t> (sqrt(maxv));
-    prime = sieve(lim);
-
-    for (auto num : binom) {
-        bool sqfree = true;
-
-        for (int i = 0; i < prime.size() && prime[i] * prime[i] <= num; i++) {
-
-            if (num % (prime[i] * prime[i]) == 0) {
-                sqfree = false;
-            }
-
-        }
-        if (sqfree == true) {
-            sum += num;
-        }
-
-    }
-    // 34 029 210 557 338
-    // 34029210557338
-    cout << sum << " ";
-    //cout << "\ncount : " << cnt;
 
 
     auto end = std::chrono::high_resolution_clock::now();

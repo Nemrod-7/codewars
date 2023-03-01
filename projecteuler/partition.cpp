@@ -94,15 +94,16 @@ int coinsum (int n, const vector<int> &coin) {
     return part[n];
 }
 
+uint64_t pentagonal (int n) { return n * (3 * n - 1) / 2; }
+
 int main () {
 
-    const int n = 1e6;
-
-    for (int i = 1; i < 10; i++) {
+    for (int i = 1; i < 417; i++) {
         uint64_t npart = countpart (i);
         //uint64_t res = npart % 1000000;
-        cout << npart << " " << i * (3 * i - 1) / 2 << "\n";
+//        cout << npart << " ";// << pentagonal (i) << "\n";
     }
+
 
     cout << "end";
 }
