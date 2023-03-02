@@ -1,68 +1,8 @@
 #include <iostream>
-#include <iomanip>
-#include <sstream>
-#include <fstream>
-
-#include <vector>
-#include <set>
-#include <map>
-#include <queue>
 #include <cmath>
-#include <algorithm>
-#include <numeric>
-#include <limits>
-
-#include <chrono>
+#include "base.hpp"
 // NEQ5xBztxeg43aP
 using namespace std;
-
-char getsep (string name) {
-    int maxv = 0;
-    char sep;
-    string buff;
-    map<char,int> hist;
-    istringstream file (name);
-
-    while (getline (file, buff)) {
-        for (char ch : buff) {
-            if (ispunct (ch)) {
-                hist[ch]++;
-            }
-        }
-    }
-
-    for (auto it : hist) {
-        if (it.second > maxv) {
-            maxv = it.second;
-            sep = it.first;
-        }
-    }
-
-    return sep;
-}
-vector<int> tokenize (const string &src, char delim) {
-    istringstream iss (src);
-    string token;
-    vector<int> v;
-
-    while (getline (iss, token, delim))
-        v.push_back (stoi (token));
-
-    return v;
-}
-vector<vector<int>> getfile (string name) {
-    int num;
-    string buff;
-    fstream file (name);
-    vector<vector<int>> mat;
-
-    while (getline (file, buff)) {
-        mat.push_back(tokenize (buff, ' '));
-    }
-
-    file.close();
-    return mat;
-}
 
 string p_factors (uint64_t num) {
     ostringstream os;
@@ -371,15 +311,28 @@ bool lychrel (uint64_t num) { // check for lychrel number
 }
 
 int main () {
+    Timer chrono;
 
-    auto start = std::chrono::high_resolution_clock::now();
-
-    uint64_t p5[10] = {0,1,32,243,1024,3125,7778,16807,32768,59049};
+    const int lim = 1e8;
     uint64_t sum = 0;
+    int cnt = 0;
 
+    for (int i = 1; i < 30; i++) {
+        int nu = i, np = 0;
 
+        while (nu % 2 == 0) {
+            nu /= 2, np++;
+            if (np > 2) break;
+        }
 
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> elapsed = end - start;
-    std::cout << "\nProcess took " << elapsed.count()  << " ms" << std::endl;
+        if (np == 2) {
+            cnt++;
+            cout << i << ' ';
+        }
+        //cout << setw(2) << i << " => " << sigma(i) << endl;
+    }
+
+    cout << cnt;
+    chrono.stop();
+    chrono.get_duration();
 }
