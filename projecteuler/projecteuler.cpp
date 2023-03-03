@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cmath>
+#include <algorithm>
 #include "base.hpp"
 // NEQ5xBztxeg43aP
 using namespace std;
@@ -38,6 +39,10 @@ vector<int> factorize (int n) {
 
 int gcd (int a, int b) { return b == 0 ? a : gcd (b, a % b); }
 
+bool issquare (int num) {
+    int sq = sqrt(num);
+    return sq * sq == num;
+}
 bool is_prime (int num) {
 
     if (num <= 3) return true;
@@ -49,21 +54,21 @@ bool is_prime (int num) {
 
     return true;
 }
-vector<uint64_t> sieve (uint64_t num) {
+vector<int> sieve (int num) {
 
-    uint64_t half = (num >> 1) + 1;
+    int half = (num >> 1) + 1;
     vector<bool> primes (half + 1);
-    vector<uint64_t> sieve {2};
+    vector<int> sieve {2};
 
-    for (uint64_t p = 3; p * p <= num ; p += 2) {
+    for (int p = 3; p * p <= num ; p += 2) {
         if (primes[p/2] == false) {
-            for (uint64_t i = p * p; i <= num; i += 2 * p) {
+            for (int i = p * p; i <= num; i += 2 * p) {
                 primes[i/2] = true;
             }
         }
     }
 
-    for (uint64_t i = 3; i <= num; i += 2) {
+    for (int i = 3; i <= num; i += 2) {
         if (primes[i/2] == false) {
             sieve.push_back(i);
         }
@@ -310,29 +315,57 @@ bool lychrel (uint64_t num) { // check for lychrel number
     return true;
 }
 
-int main () {
-    Timer chrono;
+bool palindrome (int n1, int n2) {
+    int d1[10] = {}, d2[10] = {};
 
-    const int lim = 1e8;
-    uint64_t sum = 0;
-    int cnt = 0;
-
-    for (int i = 1; i < 30; i++) {
-        int nu = i, np = 0;
-
-        while (nu % 2 == 0) {
-            nu /= 2, np++;
-            if (np > 2) break;
-        }
-
-        if (np == 2) {
-            cnt++;
-            cout << i << ' ';
-        }
-        //cout << setw(2) << i << " => " << sigma(i) << endl;
+    for (int i = 0; i < 4; i++) {
+        d1[n1 % 10]++, d2[n2 % 10]++;
+        n1 /= 10, n2 /= 10;
     }
 
-    cout << cnt;
+    for (int i = 0; i < 10; i++) {
+        if (d1[i] != d2[i]) return false;
+    }
+
+    return true;
+}
+int main () {
+
+    Timer chrono;
+
+    const int limit = 1e2;
+    int sum = 0, num, res = 0;
+    int maxv = 0;
+    int sq[10] = {0,1,4,9,16,25,36,49,64,81};
+
+    // 1487, 4817, 8147
+
+    vector<int> prime = sieve (9999);
+
+    for (int i = 168; i < prime.size(); i++) {
+    //      cout << prime[i] << ' ';
+        for (int j = i + 1; j < prime.size(); j++) {
+              if (palindrome(prime[i], prime[j])) {
+                cout << prime[i] << ' ' << prime[j] << "\n";
+
+              }
+        }
+    }
+    /*
+    num = 100;
+    string nn = to_string (num);
+
+    do {
+        int perm = stoi(nn);
+
+        if (is_prime(perm)) {
+          cout << stoi(nn) << ' ';
+        }
+
+    } while (next_permutation (nn.begin(), nn.end()));
+    */
+
+
     chrono.stop();
     chrono.get_duration();
 }
