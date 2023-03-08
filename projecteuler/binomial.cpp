@@ -1,6 +1,7 @@
 #include "base.hpp"
 
 #include <cmath>
+#include <set>
 
 using namespace std;
 
@@ -134,26 +135,10 @@ void display_tri (vector<vector<uint64_t>> &tri) {
 int main () {
 
     Timer clock;
-// p`p145 is a curious number, as 1! + 4! + 5! = 1 + 24 + 120 = 145.`
-int res = 0;
-    for (int i = 10; i < 1000000; i++) {
-        int nu = i;
-        int sum = 0;
 
-        do {
-
-            sum += factorial (nu % 10);
-        } while (nu /= 10);
-        //cout << factorial (i) << ' ';
-        if (sum == i) {
-            //cout << i << " => ";
-            //cout << sum << "\n";
-
-            res += i;
-        }
+    for (int n = 3; n <= 7; n++) {
+        cout << binomial_mul (7, n) << ' ';
     }
-
-    cout << res;
 
     clock.stop();
     clock.get_duration();

@@ -3,29 +3,6 @@
 
 using namespace std;
 
-vector<int> sieve (int num) {
-
-    int half = (num >> 1) + 1;
-    vector<bool> primes (half + 1);
-    vector<int> sieve {2};
-
-    for (int p = 3; p * p <= num ; p += 2) {
-        if (primes[p/2] == false) {
-            for (int i = p * p; i <= num; i += 2 * p) {
-                primes[i/2] = true;
-            }
-        }
-    }
-
-    for (int i = 3; i <= num; i += 2) {
-        if (primes[i/2] == false) {
-            sieve.push_back(i);
-        }
-    }
-
-    return sieve;
-}
-
 int partition (int num) {
 
     vector<int> cluster (num), prod;
@@ -98,12 +75,56 @@ uint64_t pentagonal (int n) { return n * (3 * n - 1) / 2; }
 
 int main () {
 
-    for (int i = 1; i < 417; i++) {
-        uint64_t npart = countpart (i);
-        //uint64_t res = npart % 1000000;
-//        cout << npart << " ";// << pentagonal (i) << "\n";
-    }
+    int size = 7;
 
+        int tlsz = 3;
+        int ntile = size / tlsz;
 
-    cout << "end";
+        for (int i = 3; i < 7; i++) {
+
+        }
+        //for (int i = 0; i < size; i++) {
+
+        int nd = size - tlsz;
+        for (int j = 0; j < nd; j++) {
+          std::vector<int> v(size);
+
+            for (int k = 0; k <= tlsz; k++) {
+                v[j+k] = 1;
+            }
+
+            for (int k = 0; k < size; k++) {
+            //    cout << v[k];
+            }
+            cout << endl;
+        }
+    //}
+
+    /*
+    1
+    1111111
+    2
+    1111110
+    0111111
+    3
+    1111100
+    0111110
+    0011111
+    4
+    1111000
+    0111100
+    0011110
+    0001111
+    6
+    1110000
+    0111000
+    0011100
+    0001110
+    0000111
+
+    1110111
+
+    */
+
+    cout << "\nend\n";
 }

@@ -1,5 +1,7 @@
-#include "base.hpp"
+#include <cmath>
+#include <set>
 #include <algorithm>
+#include "base.hpp"
 
 class Bigint {
     private :
@@ -186,28 +188,31 @@ string bigfactorial (int num) {
 
     return os;
 }
+
+Bigint power (int i, int j) {
+    string a = to_string(i);
+    Bigint num = to_string(1);
+
+    while (j-->0)
+        num = num * a;
+
+    return num;
+}
+
 int main () {
 
   Timer clock;
+  Bigint sum = to_string(0);
 
-  for (int i = 10; i < 50; i++) {
-      cout << i << " => ";
-      string num = bigfactorial (i);
+  cout << power(300,300);
 
-      int sz = num.size() - 1;
-
-      while (num[sz] == '0') {
-          sz--;
-      }
-
-      cout << num[sz-4];
-      cout << num[sz-3];
-      cout << num[sz-2];
-      cout << num[sz-1];
-      cout << num[sz-0];
-
-      cout << endl;
+  for (int i = 1; i <= 10; i++) {
+      string num = power(i,i);
+      //sum = sum + num;
+      //cout << num << "\n";
   }
+
+
 
   clock.stop();
   clock.get_duration();

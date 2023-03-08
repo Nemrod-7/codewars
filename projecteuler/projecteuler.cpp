@@ -169,6 +169,15 @@ int sigma (int num) { // sum of proper divisors
 
   return sum - num;
 }
+uint64_t modpow (uint64_t base, uint64_t exp, uint64_t mod) {
+    uint64_t x = 1, e = 0;
+
+    while (e < exp) {
+        e++;
+        x = (base * x) % mod;
+    }
+    return x;
+}
 
 int pythagoreantriplet (int sum) {
     const int s2 = sum / 2;
@@ -329,42 +338,70 @@ bool palindrome (int n1, int n2) {
 
     return true;
 }
+
+void collatz2 (uint64_t a1) {
+  const char alpha[3] = {'D','U','d'};
+  string seq;
+  cout << a1 << " => ";
+  while (a1 > 1) {
+      int mod = a1 % 3;
+
+      switch (mod) {
+        case 0 : a1 = a1 / 3; break;
+        case 1 : a1 = (4 * a1 + 2) / 3; break;
+        case 2 : a1 = (2 * a1 - 1) / 3; break;
+        default: break;
+      }
+      seq += alpha[mod];
+      cout << alpha[mod];
+  }
+}
 int main () {
 
     Timer chrono;
 
-    const int limit = 1e2;
-    int sum = 0, num, res = 0;
-    int maxv = 0;
-    int sq[10] = {0,1,4,9,16,25,36,49,64,81};
+    const uint64_t limit = 1e15;
+    int a2 = 1004064;
 
-    // 1487, 4817, 8147
+    const char alpha[3] = {'D','U','d'};
+    const string ref = "UDDDUdddDDUDDddDdDddDDUDDdUUDd";
+    //U D  D  D   U   d
+    // vector<int> ve {1,4,13,40,202,202,931,5305};
 
-    vector<int> prime = sieve (9999);
+    /*
+    string sub = ref;
+    vector<uint64_t> sq1;
+    uint64_t step = 1;
+    for (uint64_t i = 0; i < 23 ; i++) {
+        step *= 3;
+    }
+    uint64_t start = 24974353390;
+    for (uint64_t i = start; i < 1e16 ; i += step){
+        uint64_t a1 = i;
+        string seq;
+        //cout << a1 << " => ";
+        while (a1 > 1) {
+            int mod = a1 % 3;
 
-    for (int i = 168; i < prime.size(); i++) {
-    //      cout << prime[i] << ' ';
-        for (int j = i + 1; j < prime.size(); j++) {
-              if (palindrome(prime[i], prime[j])) {
-                cout << prime[i] << ' ' << prime[j] << "\n";
-
-              }
+            switch (mod) {
+              case 0 : a1 = a1 / 3; break;
+              case 1 : a1 = (4 * a1 + 2) / 3; break;
+              case 2 : a1 = (2 * a1 - 1) / 3; break;
+              default: break;
+            }
+            seq += alpha[mod];
+            //cout << alpha[mod];
         }
+
+        if (seq.substr(0, ref.size()) == ref && i > 1e15) {
+            //cout << i << " => " << seq << '\n';
+            break;
+        }
+        //cout << endl;
+        //cout << i % 3 << ' ';
     }
     /*
-    num = 100;
-    string nn = to_string (num);
-
-    do {
-        int perm = stoi(nn);
-
-        if (is_prime(perm)) {
-          cout << stoi(nn) << ' ';
-        }
-
-    } while (next_permutation (nn.begin(), nn.end()));
     */
-
 
     chrono.stop();
     chrono.get_duration();
