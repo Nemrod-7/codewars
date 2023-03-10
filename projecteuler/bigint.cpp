@@ -7,6 +7,40 @@ class Bigint {
     private :
         string m_value;
 
+        int substract (string &a, string &b, size_t pos) {
+
+            size_t lena = a.size(), lenb = b.size();
+            int rem = 0;
+
+            if (lena >= lenb + pos) {
+              string tmp = string (lenb, '0');
+              int u = 0;
+
+              for (size_t i = 0; i < lenb; ++i) {
+                  size_t pos2 = lenb - 1 - i;
+
+                  u += a[pos + pos2] - b[pos2];
+                  tmp[pos2] += u + (u < 0 ? 10 : 0);
+
+                  u = (u < 0 ? -1 : 0);
+              }
+
+              if (u == 0) {
+                  rem = 1;
+              }
+              else if (pos > 0) {
+                  if (a[pos - 1] > '0') {
+                      a[pos - 1]--;
+                      rem = 1;
+                  }
+              }
+
+              if (rem != 0)
+                  a.replace (pos, tmp.size(), tmp);
+            }
+
+            return rem;
+        }
         bool ismaller (string a, string b) {
             if (b.size() > a.size()) return true;
             if (b.size() < a.size()) return false;
@@ -27,12 +61,12 @@ class Bigint {
         }
         */
         template<class T> &operator T() { return m_value; }
-
+        size_t size() { return m_value.size(); }
         friend ostream &operator <<(ostream &os, const Bigint &x) {
             return os << x.m_value;
         }
-        void operator= (const string &b) { m_value = b; }
-
+        //void operator= (const string &b) { m_value = b; }
+        void operator= (const char *b) { m_value = (b); }
         void operator++ (int) {
             m_value = to_string (stoi (m_value) + 1);
         }
@@ -114,7 +148,25 @@ class Bigint {
 
             return minus ? '-' + sub : sub;
         }
+        Bigint operator/ (string b) {
+          string a = m_value;
+          size_t lena = a.size(), lenb = b.size ();
+          string quot ("0"), den (a);
 
+          for (size_t i = 0 ; lena >= lenb; ++i, --lena) {
+              if (i > 0) quot += '0';
+              char d = '*';
+
+              while (quot[i] != d) {
+                  d = quot[i];
+                  quot[i] += substract (den, b, i);
+              }
+          }
+
+          quot.erase(0, min (quot.find_first_not_of ('0'), quot.size() - 1));
+          //den.erase(0, min (den.find_first_not_of ('0'), den.size() - 1));
+          return quot;
+        }
         bool operator<= (const string &b) {
             if (m_value.size () < b.size()) return true;
             if (m_value.size() > b.size()) return false;
@@ -199,23 +251,32 @@ Bigint power (int i, int j) {
     return num;
 }
 
-int main () {
+void convergence (int n) { //  convergence of e
+  Bigint seq[120];
 
-  Timer clock;
-  Bigint sum = to_string(0);
+  seq[0] = "1";
+  seq[1] = "1";
+  seq[2] = "2";
 
-  cout << power(300,300);
-
-  for (int i = 1; i <= 10; i++) {
-      string num = power(i,i);
-      //sum = sum + num;
-      //cout << num << "\n";
+  for (int n = 3; n <= 120; n++) {
+      if (n % 3 == 1) {
+          seq[n] = seq[n-1] * to_string (2 * (n-1)) / "3"  + seq[n-2];
+      } else {
+          seq[n] = seq[n-1] + seq[n-2];
+      }
+      //cout << seq[n] << " ";
   }
 
+}
+
+int main () {
+
+    Timer clock;
 
 
-  clock.stop();
-  clock.get_duration();
 
-  return EXIT_SUCCESS;
+    clock.stop();
+    clock.get_duration();
+
+    return EXIT_SUCCESS;
 }

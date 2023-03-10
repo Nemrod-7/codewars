@@ -49,7 +49,8 @@ uint64_t binomial_mul (int n, int k) {        // binomial_mul (9,5); -> 9 795 28
     return static_cast<uint64_t> (res);
 }
 uint64_t binomial (int n, int k) {        // binomial (9,5);
-
+    if (k == 0 || k == n) return 1;
+    if (k  < 0 || k  > n) return 0;
     const uint64_t lim = n;
     uint64_t tri[lim+1][lim+1];
 

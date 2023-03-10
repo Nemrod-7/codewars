@@ -128,28 +128,78 @@ bool bouncy (int num) {
 
 int main () {
 
+/*
+Problem 51
+
+By replacing the 1st digit of the 2-digit number *3, it turns out that six of the nine possible values: 13, 23, 43, 53, 73, and 83, are all prime.
+
+By replacing the 3rd and 4th digits of 56**3 with the same digit,
+this 5-digit number is the first example having seven primes among the ten generated numbers,
+yielding the family: 56003, 56113, 56333, 56443, 56663, 56773, and 56993. Consequently 56003,
+being the first member of this family, is the smallest prime with this property.
+
+Find the smallest prime which, by replacing part of the number (not necessarily adjacent digits) with the same digit, is part of an eight prime value family.
+*/
+  int limit = 100000;
+  std::vector<bool> prime (limit, true);
+
+  for (int i = 4; i <= limit ; i += 2) {
+      prime[i] = false;
+  }
+
+  for (int p = 3; p * p <= limit ; p += 2) {
+      if (prime[p] == true) {
+          for (int i = p * p; i <= limit; i += 2 * p) {
+              prime[i] = false;
+          }
+      }
+  }
+
+  for (int i = 56000; i < 56004; i++) {
+      string num = to_string(i);
+
+      for (int j = 0; j < 10; j++) {
+          char dig = j + '0';
+          num[2] = num[3] = dig;
+
+          int dec = stoi(num);
+          if (prime[dec] == true) {
+            cout << dec << ' ';
+
+          }
+      }
+      cout << "\n";
+  }
+
+
+    /*
     // problem 74
 
-    int num = 1, cnt = 0, i = 1;
+    int num = 1, cnt = 0;
     double rate = 0.0, limit = 99.0;
 
     int bn = 0, nb = 0;
     string googol = "10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+    vector<int> hist;
 
-
-    /*
-    for (; i < 100000000; i++) {
+    for (int i = 1; i < 100000000; i++) {
         if (bouncy (i)) {
             bn++;
         } else {
             nb++;
         }
 
-        if (i % 10000000 == 0) {
-
-          cout << i << " => " << bn << " " << nb << "\n";
+        if (i % 1000000 == 0) {
+          hist.push_back(nb);
+          //cout << i << " => " << bn << " " << nb << "\n";
         }
     }
+
+    for (int i = 1; i < hist.size(); i++) {
+        cout << hist[i] - hist[i-1] << ' ';
+    }
+
+
     /*
     while (rate < limit) {
 
