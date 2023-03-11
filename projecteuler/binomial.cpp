@@ -133,13 +133,81 @@ void display_tri (vector<vector<uint64_t>> &tri) {
     }
 }
 
+int sum_product (int x, int b) {
+    int sum_x = 0;
+    int prod = 1;
+
+    while (x > 0) {
+        if (x % b > 0) {
+            sum_x = sum_x + x % b;
+            prod = prod * (x % b);
+            x = x / b;
+        }
+    }
+
+    return sum_x * prod;
+}
+int harshad (int num) {
+
+  int ref = num, sum = 0;
+
+  do {
+      sum += ref % 10;
+  } while (ref /= 10);
+
+  return num % sum == 0 ? sum : 0;
+}
+bool strong (int num, const vector<bool> &sieve) {
+    if (num == 0) return false;
+    int div = harshad (num);
+    return (div != 0 && sieve[num / div] == true);
+}
+bool rightrunc (int num) {
+
+    while (num && harshad (num)) {
+        num /= 10;
+    }
+    return num == 0;
+}
 int main () {
 
     Timer clock;
 
-    for (int n = 3; n <= 7; n++) {
-        cout << binomial_mul (7, n) << ' ';
+    int limit = 10000;
+    vector<bool> sieve (limit + 1, true);
+    vector<int> prime {2};
+
+    for (int i = 4; i <= limit ; i += 2) {
+        sieve[i] = false;
     }
+
+    for (int p = 3; p * p <= limit ; p += 2) {
+        if (sieve[p] == true) {
+            for (int i = p * p; i <= limit; i += 2 * p) {
+                sieve[i] = false;
+            }
+        }
+    }
+
+    for (int p = 3; p < limit ; p += 2) {
+        if (sieve[p] == true) {
+            prime.push_back(p);
+        }
+    }
+
+    int res = 0;
+
+    for (int i = 0; i < prime.size(); i++) {
+
+        if (rightrunc (prime[i]) && strong (prime[i] / 10, sieve)) {
+            res += prime[i];
+        }
+    }
+    // 90619
+
+
+    cout << res;
+
 
     clock.stop();
     clock.get_duration();

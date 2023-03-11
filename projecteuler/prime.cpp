@@ -126,50 +126,109 @@ bool bouncy (int num) {
     return dec == 0 && inc == 0;
 }
 
+int replace (string num, const vector<bool> &sieve) {
+
+    int maxv = 0;
+    for (int j = 0; j < 10; j++) {
+        vector<int> pos;
+        int np = 0;
+
+        for (int k = 0; k < num.size(); k++) {
+            if (num[k] == j + '0'){
+                pos.push_back(k);
+            }
+        }
+
+        if (pos.size()) {
+            string ref = num;
+
+            for (int l = 1; l < 10; l++) {
+                for (int k = 0; k < pos.size(); k++) {
+                    ref[pos[k]] = l + '0';
+                }
+                int idn = stoi(ref);
+                if (sieve[idn] == true) {
+                    np++;
+                    cout << ref << " ";
+                }
+            }
+            cout << "\n";
+        }
+        if (np > maxv) {
+            maxv = np;
+        }
+    }
+    return maxv;
+}
 int main () {
 
-/*
-Problem 51
+    int limit = 1000000;
+    vector<bool> sieve (limit + 1, true);
+    vector<int> prime {2};
 
-By replacing the 1st digit of the 2-digit number *3, it turns out that six of the nine possible values: 13, 23, 43, 53, 73, and 83, are all prime.
+    for (int i = 4; i <= limit ; i += 2) {
+        sieve[i] = false;
+    }
 
-By replacing the 3rd and 4th digits of 56**3 with the same digit,
-this 5-digit number is the first example having seven primes among the ten generated numbers,
-yielding the family: 56003, 56113, 56333, 56443, 56663, 56773, and 56993. Consequently 56003,
-being the first member of this family, is the smallest prime with this property.
+    for (int p = 3; p * p <= limit ; p += 2) {
+        if (sieve[p] == true) {
+            for (int i = p * p; i <= limit; i += 2 * p) {
+                sieve[i] = false;
+            }
+        }
+    }
 
-Find the smallest prime which, by replacing part of the number (not necessarily adjacent digits) with the same digit, is part of an eight prime value family.
-*/
-  int limit = 100000;
-  std::vector<bool> prime (limit, true);
+    for (int p = 3; p <= limit ; p += 2) {
+        if (sieve[p] == true) {
+            prime.push_back(p);
+        }
+    }
 
-  for (int i = 4; i <= limit ; i += 2) {
-      prime[i] = false;
-  }
+    int maxv = 0, res = 0;
 
-  for (int p = 3; p * p <= limit ; p += 2) {
-      if (prime[p] == true) {
-          for (int i = p * p; i <= limit; i += 2 * p) {
-              prime[i] = false;
-          }
-      }
-  }
 
-  for (int i = 56000; i < 56004; i++) {
-      string num = to_string(i);
+    //replace ("111857", sieve);
 
-      for (int j = 0; j < 10; j++) {
-          char dig = j + '0';
-          num[2] = num[3] = dig;
 
-          int dec = stoi(num);
-          if (prime[dec] == true) {
-            cout << dec << ' ';
+    for (int i = 5683; i < prime.size(); i++) {
+        string num = to_string(prime[i]);
+        //cout << num << ' ';
+        for (int j = 0; j < 10; j++) {
+            vector<int> pos;
+            int np = 0;
 
-          }
-      }
-      cout << "\n";
-  }
+            for (int k = 0; k < num.size(); k++) {
+                if (num[k] == j + '0'){
+                    pos.push_back(k);
+                }
+            }
+
+            if (pos.size()) {
+                string ref = num;
+
+                for (int l = 1; l < 10; l++) {
+                    for (int k = 0; k < pos.size(); k++) {
+                        ref[pos[k]] = l + '0';
+                    }
+                    int idn = stoi(ref);
+                    if (sieve[idn] == true) {
+                        np++;
+                        // cout << ref << " ";
+                    }
+                }
+                // cout << "\n";
+            }
+
+            if (np > maxv) {
+                maxv = np;
+                res = prime[i];
+            }
+
+        }
+        //cout << "\n";
+    }
+    cout << res << " :: " << maxv;
+
 
 
     /*
@@ -183,31 +242,31 @@ Find the smallest prime which, by replacing part of the number (not necessarily 
     vector<int> hist;
 
     for (int i = 1; i < 100000000; i++) {
-        if (bouncy (i)) {
-            bn++;
-        } else {
-            nb++;
-        }
+    if (bouncy (i)) {
+    bn++;
+    } else {
+    nb++;
+    }
 
-        if (i % 1000000 == 0) {
-          hist.push_back(nb);
-          //cout << i << " => " << bn << " " << nb << "\n";
-        }
+    if (i % 1000000 == 0) {
+    hist.push_back(nb);
+    //cout << i << " => " << bn << " " << nb << "\n";
+    }
     }
 
     for (int i = 1; i < hist.size(); i++) {
-        cout << hist[i] - hist[i-1] << ' ';
+    cout << hist[i] - hist[i-1] << ' ';
     }
 
 
     /*
     while (rate < limit) {
 
-        for (; i <= num; i++) {
-            cnt += bouncy (i);
-        }
-        rate = cnt * 100.0 / num;
-        num++;
+    for (; i <= num; i++) {
+    cnt += bouncy (i);
+    }
+    rate = cnt * 100.0 / num;
+    num++;
     }
 
 
