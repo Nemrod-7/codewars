@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cmath>
 #include <algorithm>
+#include <set>
 #include "base.hpp"
 // NEQ5xBztxeg43aP
 using namespace std;
@@ -136,28 +137,101 @@ bool palindrome (uint64_t num) {
     return reverse (num) == num;
 }
 
+bool is_prime (int num) {
+    if (num < 2) return false;
+    if (num < 4) return true;
+    if (num % 2 == 0 || num % 3 == 0) return false;
+
+    for (int i = 5; i * i <= num; i += 6)
+        if (num % i == 0 || num % (i + 2) == 0)
+            return false;
+
+    return true;
+}
+
+uint64_t harshad (uint64_t num) {
+  uint64_t sum = sumdig (num);
+  return (sum && num % sum == 0) ? sum : 0;
+}
+bool strong (int num, const vector<bool> &sieve) {
+    if (num == 0) return false;
+    int div = harshad (num);
+    return (div != 0 && sieve[num / div] == true);
+}
+bool rightrunc (int num) {
+
+    while (num && harshad (num)) {
+        num /= 10;
+    }
+    return num == 0;
+}
+
 int main () {
 
     Timer chrono;
 
+    uint64_t limit = 1e15;
 
+    int fp[9] = {2, 3, 5, 7, 11, 13, 17, 19, 23};
 
+    /*
 
-  /*
-    for (int i = 2; i <= 50000000; i++) {
-        uint64_t pn = (2 * (i * i) - 1);
+    problem 387 : harshad numbers
 
-        //cout << setw(3) << i << " => " << setw(4) << pn ;
-        //cout << " :: " << 2 * i * i;
-        if (is_prime(pn) == true) {
-            cnt++;
-            //cout <<  " prime " ;
+    vector<bool> sieve (limit + 1, true);
+    vector<uint64_t> prime {2};
+
+    sieve[0] = sieve[1] = false;
+
+    for (uint64_t i = 4; i <= limit ; i += 2) {
+        sieve[i] = false;
+    }
+
+    for (int p = 3; p * p <= limit ; p += 2) {
+        if (sieve[p] == true) {
+            for (int i = p * p; i <= limit; i += 2 * p) {
+                sieve[i] = false;
+            }
         }
-
-        //cout << "\n";
-
     }
     */
+    uint64_t res = 0;
+
+    for (uint64_t p = 23; p * p <= limit ; p += 2) {
+        /*
+        if (sieve[p] == true) {
+            int num = p / 10, div = harshad (p / 10);
+
+            if (rightrunc (num) && sieve[num / div] ) {
+                cout << num / div << ' ';
+                res += p;
+            }
+        }
+        */
+
+    }
+
+
+
+    vector<uint64_t> divs = {3,6,9,11,13,18,19,21};
+    vector<uint64_t> nudiv = {2,3,5,7,19,37,47,67,73,89,223,227,229,467,3079,4447,19087,25579,382867,666667,1267579,1541539,2285743,3076939};
+
+
+    for (int i = 1; i < nudiv.size(); i++) {
+        cout << nudiv[i] - nudiv[i-1] << ' ';
+    }
+    /*
+    for (auto div : divs) {
+      for (auto num : nudiv) {
+
+          cout << div * num << ' ';
+    }
+  }
+    divisors : 3 6 9 11 13 18 19 21
+    num / div : 2 3 5 7 19 37 47 67 73 89 223 227 229 467 3079 4447 19087 25579 382867 666667
+    */
+    // cout << res << " :: " ;
+
 
     chrono.stop();
     chrono.get_duration();

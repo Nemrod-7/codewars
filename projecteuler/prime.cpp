@@ -7,8 +7,8 @@
 using namespace std;
 
 bool is_prime (int num) {
-
-    if (num <= 3) return true;
+    if (num < 2) return false;
+    if (num < 4) return true;
     if (num % 2 == 0 || num % 3 == 0) return false;
 
     for (int i = 5; i <= sqrt(num); i += 6)
@@ -160,74 +160,51 @@ int replace (string num, const vector<bool> &sieve) {
     }
     return maxv;
 }
+
+int harshad (int num) {
+
+  int ref = num, sum = 0;
+
+  do {
+      sum += ref % 10;
+  } while (ref /= 10);
+
+  return (sum && num % sum == 0) ? sum : 0;
+}
+bool strong (int num, const vector<bool> &sieve) {
+    if (num == 0) return false;
+    int div = harshad (num);
+    return (div != 0 && sieve[num / div] == true);
+}
+bool rightrunc (int num) {
+
+    while (num && harshad (num)) {
+        num /= 10;
+    }
+    return num == 0;
+}
 int main () {
 
-    int limit = 1000000;
-    vector<bool> sieve (limit + 1, true);
-    vector<int> prime {2};
+  int limit = 1e7;
 
-    for (int i = 4; i <= limit ; i += 2) {
-        sieve[i] = false;
-    }
+  /*
+  vector<bool> sieve (limit + 1, true);
+  vector<int> prime {2};
 
-    for (int p = 3; p * p <= limit ; p += 2) {
-        if (sieve[p] == true) {
-            for (int i = p * p; i <= limit; i += 2 * p) {
-                sieve[i] = false;
-            }
-        }
-    }
+  sieve[0] = sieve[1] = false;
 
-    for (int p = 3; p <= limit ; p += 2) {
-        if (sieve[p] == true) {
-            prime.push_back(p);
-        }
-    }
+  for (int i = 4; i <= limit ; i += 2) {
+      sieve[i] = false;
+  }
 
-    int maxv = 0, res = 0;
-
-
-    //replace ("111857", sieve);
-
-
-    for (int i = 5683; i < prime.size(); i++) {
-        string num = to_string(prime[i]);
-        //cout << num << ' ';
-        for (int j = 0; j < 10; j++) {
-            vector<int> pos;
-            int np = 0;
-
-            for (int k = 0; k < num.size(); k++) {
-                if (num[k] == j + '0'){
-                    pos.push_back(k);
-                }
-            }
-
-            if (pos.size()) {
-                string ref = num;
-
-                for (int l = 1; l < 10; l++) {
-                    for (int k = 0; k < pos.size(); k++) {
-                        ref[pos[k]] = l + '0';
-                    }
-                    int idn = stoi(ref);
-                    if (sieve[idn] == true) {
-                        np++;
-                        // cout << ref << " ";
-                    }
-                }
-                // cout << "\n";
-            }
-
-            if (np > maxv) {
-                maxv = np;
-                res = prime[i];
-            }
-
-        }
-        //cout << "\n";
-    }
-    cout << res << " :: " << maxv;
+  for (int p = 3; p * p <= limit ; p += 2) {
+      if (sieve[p] == true) {
+          for (int i = p * p; i <= limit; i += 2 * p) {
+              sieve[i] = false;
+          }
+      }
+  }
+  */
 
 
 

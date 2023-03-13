@@ -133,20 +133,7 @@ void display_tri (vector<vector<uint64_t>> &tri) {
     }
 }
 
-int sum_product (int x, int b) {
-    int sum_x = 0;
-    int prod = 1;
 
-    while (x > 0) {
-        if (x % b > 0) {
-            sum_x = sum_x + x % b;
-            prod = prod * (x % b);
-            x = x / b;
-        }
-    }
-
-    return sum_x * prod;
-}
 int harshad (int num) {
 
   int ref = num, sum = 0;
@@ -155,7 +142,7 @@ int harshad (int num) {
       sum += ref % 10;
   } while (ref /= 10);
 
-  return num % sum == 0 ? sum : 0;
+  return (sum && num % sum == 0) ? sum : 0;
 }
 bool strong (int num, const vector<bool> &sieve) {
     if (num == 0) return false;
@@ -189,7 +176,7 @@ int main () {
         }
     }
 
-    for (int p = 3; p < limit ; p += 2) {
+    for (int p = 3; p <= limit ; p += 2) {
         if (sieve[p] == true) {
             prime.push_back(p);
         }
@@ -197,17 +184,19 @@ int main () {
 
     int res = 0;
 
-    for (int i = 0; i < prime.size(); i++) {
+    for (int i = 0; i < prime.size() ; i++) {
+        int num = prime[i] / 10, div = harshad(prime[i] / 10);
 
-        if (rightrunc (prime[i]) && strong (prime[i] / 10, sieve)) {
-            res += prime[i];
+        if (rightrunc (num)&& strong(num,sieve) ) {
+          res += prime[i] / 10;
+
         }
     }
+
     // 90619
 
 
-    cout << res;
-
+cout << res;
 
     clock.stop();
     clock.get_duration();
