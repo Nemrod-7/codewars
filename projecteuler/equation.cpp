@@ -6,11 +6,26 @@
 
 using namespace std;
 
+typedef unsigned __int128 uint128_t;
+
 double trunc (double x) { return round (x * 1e5) / 1e5; }
 bool is_square (double x) {
     int sq = sqrt(x);
     return (sq * sq) == (int) x;
 }
+pair<int, int> getFraction (const vector<int> &a) {
+  int size = a.size();
+  int num = a[size-1], den = 1;
+
+  for(int i = size - 2; i >= 0; i--) {
+    int nextd = num * a[i] + den;
+    den = num;
+    num = nextd;
+    cout << num << ' ' << den << '\n';
+  }
+  return make_pair (num, den);
+}
+
 vector<int> convergence (const double x) {
 
     vector<int> frac;
@@ -36,6 +51,115 @@ vector<int> convergence (const double x) {
 
     return frac;
 }
+uint64_t diophantine5 (int delta) {
+    double sq = sqrt (delta);
+    if (is_square (delta)) return 1;
+
+    vector<int> a = convergence (sq);
+    vector<uint64_t> p = {0,1, uint64_t(a[0])}, q = {1,0,1};
+
+    for (int k = 0; k < 20; k++) {
+        uint64_t an = a[k % (a.size() - 1) + 1];
+        uint64_t x = an * p[k+2] + p[k+1];
+        uint64_t y = an * q[k+2] + q[k+1];
+        int64_t eq = x * x - (uint64_t) delta * y * y;
+        //cout << eq << ' ';
+        cout << x  * x << "^2 - " << delta << " * " << y << "^2 => " << eq ;
+        cout << endl;
+        if (eq == 1) {
+            return x;
+        }
+
+        p.push_back(x), q.push_back(y);
+    }
+
+    return 0;
+}
+
+void render (vector<int> ve) {
+  cout << "[" << ve[0] << ";";
+  for (int i = 1; i < ve.size(); i++) {
+    cout << ' ' << ve[i];
+  }
+  cout << "]\n";
+}
+
+uint64_t pell (int delta) {
+    int sq = sqrt(delta);
+
+    if (sq * sq == delta) return 1;
+
+    int64_t an = 2 * sq;
+    int64_t y = sq;
+    int64_t z = 1;
+
+    vector<uint64_t> p = {1,0}, q = {0,1};
+    uint64_t x, b;
+
+    while (true) {
+        //cout << an << ' ' << z << ' ' << y << '\n';
+        y = an * z - y;
+        z = (delta - y * y) / z;
+        an = (sq + y) / z;
+
+        p = {p[1], an * p[1] + p[0]};
+        q = {q[1], an * q[1] + q[0]};
+
+        x = p[1] + sq * q[1];
+        b = q[1];
+
+        if (x * x - delta * b * b == 1) {
+            //cout << x << "^2 - " << delta << " * " << b << "^2 => ";
+            //cout << '\n';
+            break;
+        }
+    }
+
+    return x;
+}
+int main () {
+
+    auto start = std::chrono::high_resolution_clock::now();
+    // 1766319049^2 - 61 * 226153980^2 => 1
+    //  29718^2 - 61 * 3805^2 == -1
+    const double eps = 1e-8;
+    uint64_t n, maxv = 0, res, cnt = 0;;
+
+    map<int,int> sqr;
+    for (int i = 1; i < 1000; i++) {
+        sqr[i*i] = true;
+    }
+
+    for (int i = 1; i < 1000; i++) {
+        if (sqr[i] == false) {
+
+            uint64_t x = pell (i);
+            //render (convergence (sqrt (i)));
+
+            //cout  << "\n";
+            if ( x > maxv ) {
+                cout << i << " = > ";
+                cout << x << '\n';
+                maxv = x;
+                res = i;
+            }
+
+        }
+    }
+
+    cout << res << '\n';
+    /*
+    cout << cnt;
+     * x^2 - z * y^2 == 1
+     * sqrt (-z * y^2)  == 1 / (x^2 )
+     *
+     */
+
+     auto end = std::chrono::high_resolution_clock::now();
+     std::chrono::duration<double> elapsed = end - start;
+     std::cout << "\nProcess took " << elapsed.count()  << " ms" << std::endl;
+}
+////////////////////////////////////////////////////////////////////////////////
 
 int64_t diophantine1 (int64_t d) {
 
@@ -100,69 +224,36 @@ int64_t diophantine3 (int delta) {
         }
         //cout << p[k] << ' ' << q[k] << " :: " << eq << '\n';
     }
-
+    for (int k = 0; k < size; k++) {
+        cout << p[k] << ' ';
+    }
     return 0;
 }
+int64_t diophantine4 (int delta) {
+  const double sq = sqrt (delta);
+  if (is_square (delta)) return 1;
 
-void render (vector<int> ve) {
-  cout << "[" << ve[0] << ";";
-  for (int i = 1; i < ve.size(); i++) {
-    cout << ' ' << ve[i];
+  double rn = sq, ip = floor(rn);
+  vector<uint64_t> p = {0,1}, q = {1,0};
+
+  for (int k = 2; k < 25; k++) {
+      cout << trunc (ip) << ' ';
+      uint64_t x  = round(ip) * p[k-1] + p[k-2];
+      uint64_t y = round(ip) * q[k-1] + q[k-2];
+      uint64_t x2 = x * x;
+      uint64_t y2 = y * y;
+      uint64_t z = delta * y2;
+      int64_t eq = x2 - z;
+
+      //cout << x << "^2 - " << delta << " * " << y << "^2 == " << eq << "\n";
+
+      if (x * x - delta * y * y == 1) {
+          return x;
+      }
+      rn = 1 / (rn - ip);
+      ip = floor (rn);
+
+      p.push_back(x), q.push_back(y);
   }
-  cout << "]\n";
+  return 0;
 }
-
-pair<int, int> getFraction (const vector<int> &a) {
-  int size = a.size();
-  int num = a[size-1], den = 1;
-
-  for(int i = size - 2; i >= 0; i--) {
-    int nextd = num * a[i] + den;
-    den = num;
-    num = nextd;
-    cout << num << ' ' << den << '\n';
-  }
-  return make_pair (num, den);
-}
-
-int main () {
-
-    auto start = std::chrono::high_resolution_clock::now();
-
-
-    const double eps = 1e-8;
-    int n, maxv = 0, res;
-
-    ///diophantine3 (11);
-
-    map<int,int> sqr;
-    for (int i = 1; i < 100; i++) {
-        sqr[i*i] = true;
-    }
-
-
-    for (int i = 1; i < 100; i++) {
-        if (sqr[i] == false) {
-
-            cout << i << " = > ";
-            int x = diophantine3 (i);
-            //render (convergence (sqrt (i)));
-            cout  << "\n";
-            if ( x > maxv ) {
-                maxv = x;
-                res = i;
-            }
-
-        }
-    }
-
-    /*
-     * x^2 - z * y^2 == 1
-     * sqrt (-z * y^2)  == 1 / (x^2 )
-     *
-     */
-
-     auto end = std::chrono::high_resolution_clock::now();
-     std::chrono::duration<double> elapsed = end - start;
-     std::cout << "\nProcess took " << elapsed.count()  << " ms" << std::endl;
-  }

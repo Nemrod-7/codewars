@@ -1,7 +1,13 @@
+
+#include <string>
+#include <vector>
+#include <map>
 #include <cmath>
-#include <set>
 #include <algorithm>
+#include <iostream>
 #include "base.hpp"
+
+using namespace std;
 
 class Bigint {
     private :
@@ -70,6 +76,7 @@ class Bigint {
         void operator++ (int) {
             m_value = to_string (stoi (m_value) + 1);
         }
+
         Bigint operator+ (string b) {
             string add;
             int i = m_value.size(), j = b.size(), index = max (i,j);
@@ -167,6 +174,8 @@ class Bigint {
           //den.erase(0, min (den.find_first_not_of ('0'), den.size() - 1));
           return quot;
         }
+
+        bool operator== (const string &b) { return m_value == b; }
         bool operator<= (const string &b) {
             if (m_value.size () < b.size()) return true;
             if (m_value.size() > b.size()) return false;
@@ -174,6 +183,17 @@ class Bigint {
             for (int i = 0; i < m_value.size(); i++) {
                 if (m_value[i] < b[i]) return true;
                 if (m_value[i] > b[i]) return false;
+            }
+
+            return true;
+        }
+        bool operator > (const string &b) {
+            if (m_value.size() > b.size()) return true;
+            if (m_value.size() < b.size()) return false;
+
+            for (int i = 0; i < m_value.size(); i++) {
+                if (m_value[i] > b[i]) return true;
+                if (m_value[i] < b[i]) return false;
             }
 
             return true;
@@ -251,27 +271,138 @@ Bigint power (int i, int j) {
     return num;
 }
 
-void convergence (int n) { //  convergence of e
-  Bigint seq[120];
+bool is_square (double x) {
+    int sq = sqrt(x);
+    return (sq * sq) == (int) x;
+}
+double trunc (double x) { return round (x * 1e5) / 1e5; }
 
-  seq[0] = "1";
-  seq[1] = "1";
-  seq[2] = "2";
+vector<int> convergence (const double x) {
 
-  for (int n = 3; n <= 120; n++) {
-      if (n % 3 == 1) {
-          seq[n] = seq[n-1] * to_string (2 * (n-1)) / "3"  + seq[n-2];
-      } else {
-          seq[n] = seq[n-1] + seq[n-2];
-      }
-      //cout << seq[n] << " ";
-  }
+    vector<int> frac;
+    double rn = x, ip = floor (rn), fp = rn - ip;
+    map<double, bool> cycle;
+    const double thresh = 1e-8;
+    //printf ("%f => ", rn);
+    frac.push_back (static_cast<int> (round(ip)));
 
+    while (fp > thresh) {
+        rn = 1 / fp;
+        ip = floor (rn);
+        fp = rn - ip;
+
+        if (cycle[trunc (fp)]) {
+            break;
+        } else {
+            cycle[trunc (fp)] = true;
+        }
+        frac.push_back (static_cast<int> (round(ip)));
+        //printf ("%5.2f %5.2f %5.2f\n", ip, fp, rn);
+    }
+
+    return frac;
 }
 
+string diophantine5 (int n) {
+    double sq = sqrt (n);
+    if (is_square (n)) return "1";
+
+    Bigint delta (to_string (n));
+    Bigint x, y, z, eq;
+    vector<int> a = convergence (sq);
+    vector<Bigint> p (3), q (3);
+    int size = a.size() - 1;
+
+    p[0] = "0", p[1] = "1", p[2] = to_string (a[0]);
+    q[0] = "1", q[1] = "0", q[2] = "1";
+
+    for (int k = 0; k < 40; k++) {
+        string an = to_string (a[(k % size) + 1]);
+        x = p[k+1] + p[k+2] * an;
+        y = q[k+1] + q[k+2] * an;
+        z = delta * y * y;
+        eq = x * x - z;
+
+        cout << x << "^2 - " << delta << " * " << y << "^2 => " << eq ;
+        cout << '\n';
+
+        if (eq == "1") {
+            return x;
+        }
+
+        p.push_back(x);
+        q.push_back(y);
+        /*
+        */
+
+        //cout << endl;
+    }
+
+
+    return "0";
+}
+
+string pell (int n) {
+
+    if (is_square (n)) return "1";
+
+    Bigint delta (to_string(n)), sq (to_string ( static_cast<int> (sqrt(n))));
+    Bigint an (sq * "2"), y (sq), z ("1");
+    Bigint x, b, tmp;
+    vector<Bigint> p (2), q(2);
+
+    p[0] = "1", p[1] = "0";
+    q[0] = "0", q[1] = "1";
+
+    for (int i = 0; i < 30; i++) {
+        y = an * z - y;
+        z = (delta - y * y) / z;
+        an = (sq + y) / z;
+
+        p = {p[1], an * p[1] + p[0]};
+        q = {q[1], an * q[1] + q[0]};
+
+        x = sq * q[1] + p[1];
+        b = q[1];
+
+        if (x * x - delta * b * b == "1") {
+            cout << x << "^2 - " << delta << " * " << b << "^2 => ";
+            cout << x * x - delta * b * b << '\n';
+            break;
+        }
+    }
+    /*
+    */
+    return x;
+}
 int main () {
 
-    Timer clock;
+  Timer clock;
+
+  map<int,bool> sqr;
+  for (int i = 1; i < 100; i++) {
+      sqr[i*i] = true;
+  }
+
+  Bigint val, maxv;
+  string res;
+
+  for (int i = 1; i <= 1000; i++) {
+      if (sqr[i] == false) {
+
+          cout << i << " = > ";
+          val = pell (i);// = diophantine5 (i);
+
+          if (val > maxv) {
+              maxv = val;
+              res = to_string (i);
+          }
+      }
+  }
+  cout << res ;
+
+  /*
+  */
 
 
 
