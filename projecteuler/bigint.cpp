@@ -354,7 +354,7 @@ string pell (int n) {
     p[0] = "1", p[1] = "0";
     q[0] = "0", q[1] = "1";
 
-    for (int i = 0; i < 30; i++) {
+    for (int i = 0; i < 150; i++) {
         y = an * z - y;
         z = (delta - y * y) / z;
         an = (sq + y) / z;
@@ -366,14 +366,14 @@ string pell (int n) {
         b = q[1];
 
         if (x * x - delta * b * b == "1") {
-            cout << x << "^2 - " << delta << " * " << b << "^2 => ";
-            cout << x * x - delta * b * b << '\n';
-            break;
+            //cout << x << "^2 - " << delta << " * " << b << "^2 => ";
+            //cout << x * x - delta * b * b << '\n';
+            return x;
         }
     }
     /*
     */
-    return x;
+    return "0";
 }
 int main () {
 
@@ -390,7 +390,7 @@ int main () {
   for (int i = 1; i <= 1000; i++) {
       if (sqr[i] == false) {
 
-          cout << i << " = > ";
+          //cout << i << " = > ";
           val = pell (i);// = diophantine5 (i);
 
           if (val > maxv) {

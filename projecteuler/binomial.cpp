@@ -160,43 +160,38 @@ int main () {
 
     Timer clock;
 
-    int limit = 10000;
-    vector<bool> sieve (limit + 1, true);
-    vector<int> prime {2};
+    int lim = 100;
+    // Find the number of entries which are not divisible by 7 in the first one billion (10^9) rows of Pascal's triangle.
+    vector<vector<uint64_t>> tri (lim+1, vector<uint64_t> (lim+1));
+    vector<int> seq;
 
-    for (int i = 4; i <= limit ; i += 2) {
-        sieve[i] = false;
-    }
+    for (int i = 0; i <= lim; ++i) {
+        tri[i][0] = tri[i][i] = 1;
+        //cout << setw(3) <<i << " => ";
+        //cout << string ((tri.size() - i) , ' ');
+        int cnt = 0;
+        for (int j = 1; j < i; ++j) {
+            tri[i][j] = tri[i-1][j-1] + tri[i -1][j];
 
-    for (int p = 3; p * p <= limit ; p += 2) {
-        if (sieve[p] == true) {
-            for (int i = p * p; i <= limit; i += 2 * p) {
-                sieve[i] = false;
+            if (tri[i][j] % 7 == 0) {
+                cnt++;
             }
+            //cout << tri[i][j] % 7 << ' ';
         }
+        if (cnt == 0) {
+          seq.push_back(i);
+        }
+
+        /*
+        cout << cnt;
+        cout << "\n";
+        */
     }
 
-    for (int p = 3; p <= limit ; p += 2) {
-        if (sieve[p] == true) {
-            prime.push_back(p);
-        }
+
+    for (int i = 1; i < seq.size(); i++) {
+        cout << seq[i] - seq[i-1] << ' ';
     }
-
-    int res = 0;
-
-    for (int i = 0; i < prime.size() ; i++) {
-        int num = prime[i] / 10, div = harshad(prime[i] / 10);
-
-        if (rightrunc (num)&& strong(num,sieve) ) {
-          res += prime[i] / 10;
-
-        }
-    }
-
-    // 90619
-
-
-cout << res;
 
     clock.stop();
     clock.get_duration();

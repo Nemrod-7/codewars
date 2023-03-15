@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <vector>
 #include <cmath>
 #include <map>
@@ -8,7 +9,7 @@ using namespace std;
 
 typedef unsigned __int128 uint128_t;
 
-double trunc (double x) { return round (x * 1e5) / 1e5; }
+double trunc (double x) { return round (x * 1e12) / 1e12; }
 bool is_square (double x) {
     int sq = sqrt(x);
     return (sq * sq) == (int) x;
@@ -26,29 +27,19 @@ pair<int, int> getFraction (const vector<int> &a) {
   return make_pair (num, den);
 }
 
-vector<int> convergence (const double x) {
+vector<int> convergence (const double &x) {
+    if (is_square (x)) return {};
 
-    vector<int> frac;
-    double rn = x, ip = floor(rn), fp = rn - ip;
-    map<double, bool> cycle;
-    const double thresh = 1e-8;
-    //printf ("%f => ", rn);
-    frac.push_back (static_cast<int> (round(ip)));
+    const int sq = sqrt(x);
+    int an = 2 * sq, y = sq, z = 1;
+    vector<int> frac {sq};
 
-    while (fp > thresh) {
-        rn = 1 / fp;
-        ip = floor (rn);
-        fp = rn - ip;
-
-        if (cycle[trunc (fp)]) {
-            break;
-        } else {
-            cycle[trunc (fp)] = true;
-        }
-        frac.push_back (static_cast<int> (round(ip)));
-        //printf ("%5.2f %5.2f %5.2f\n", ip, fp, rn);
-    }
-
+    do {
+      y = an * z - y;
+      z = (x - y * y) / z;
+      an = (sq + y) / z;
+      frac.push_back(an);
+    } while (an != 2 * sq);
     return frac;
 }
 uint64_t diophantine5 (int delta) {
@@ -86,7 +77,6 @@ void render (vector<int> ve) {
 
 uint64_t pell (int delta) {
     int sq = sqrt(delta);
-
     if (sq * sq == delta) return 1;
 
     int64_t an = 2 * sq;
@@ -117,43 +107,26 @@ uint64_t pell (int delta) {
 
     return x;
 }
+
+
 int main () {
 
     auto start = std::chrono::high_resolution_clock::now();
     // 1766319049^2 - 61 * 226153980^2 => 1
     //  29718^2 - 61 * 3805^2 == -1
     const double eps = 1e-8;
-    uint64_t n, maxv = 0, res, cnt = 0;;
+    int cnt = 0;
 
-    map<int,int> sqr;
-    for (int i = 1; i < 1000; i++) {
-        sqr[i*i] = true;
+    for (int i = 2; i <= 10000; i++) {
+      if (is_square (i)) continue;
+      vector<int> frac = convergence2(i);
+      int period = frac.size() - 1;
+      
+      if (period % 2 == 1) {
+          cnt++;
+      }
     }
-
-    for (int i = 1; i < 1000; i++) {
-        if (sqr[i] == false) {
-
-            uint64_t x = pell (i);
-            //render (convergence (sqrt (i)));
-
-            //cout  << "\n";
-            if ( x > maxv ) {
-                cout << i << " = > ";
-                cout << x << '\n';
-                maxv = x;
-                res = i;
-            }
-
-        }
-    }
-
-    cout << res << '\n';
-    /*
     cout << cnt;
-     * x^2 - z * y^2 == 1
-     * sqrt (-z * y^2)  == 1 / (x^2 )
-     *
-     */
 
      auto end = std::chrono::high_resolution_clock::now();
      std::chrono::duration<double> elapsed = end - start;
@@ -161,6 +134,29 @@ int main () {
 }
 ////////////////////////////////////////////////////////////////////////////////
 
+vector<int> convergence2 (const double x) {
+
+    vector<int> frac;
+    double rn = x, ip = floor(rn), fp = rn - ip;
+    map<double, bool> cycle;
+    const double thresh = 1e-8;
+    //printf ("%f => ", rn);
+    frac.push_back (static_cast<int> (round(ip)));
+
+    while (fp > thresh) {
+        rn = 1 / fp;
+        ip = floor (rn);
+        fp = rn - ip;
+
+        if (cycle[trunc (fp)]) break;
+        cycle[trunc (fp)] = true;
+
+        frac.push_back (static_cast<int> (round(ip)));
+        //printf ("%5.2f %5.2f %5.2f\n", ip, fp, rn);
+    }
+
+    return frac;
+}
 int64_t diophantine1 (int64_t d) {
 
     for (int64_t x = 2; x < 100000; x++) {
