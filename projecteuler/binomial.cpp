@@ -156,42 +156,126 @@ bool rightrunc (int num) {
     }
     return num == 0;
 }
+
+void count (int lim) {
+  // Find the number of entries which are not divisible by 7 in the first one billion (10^9) rows of Pascal's triangle.
+
+  using u64 = uint64_t;
+  vector<int> seq;
+  //fstream ofs ("triangle", ios::out);
+  vector<vector<u64>> tri (lim+1, vector<u64> (lim + 1));
+
+  int cnt = 0, dig;
+  for (int n = 0; n < lim ; n++) {
+      tri[n][0] = tri[n][n] = 1;
+      //cout << setw(3) << n << " => ";
+      cout << string ((lim - n) , ' ');
+
+      for (int k = 1; k <= n; ++k) {
+
+          /*
+          dig = lucasth (n, k, 7);
+
+          if (dig != 0) {
+              cnt++;
+          }
+          if (dig != 0) {
+            cout << dig << ' ';
+          } else {
+            cout << "  ";
+          }
+          */
+
+      }
+      /*
+      cout << " :: " << cnt;
+      */
+      cout << '\n';
+  }
+  cout << cnt;
+}
+
+uint64_t cntline7 (int num) {
+    uint64_t cnt = 1;
+
+    while (num != 0) {
+        int dig = num % 7;
+        cnt *= (dig + 1);
+        num /= 7;
+    }
+
+    return cnt;
+}
+
+uint64_t project198_1 (int lim) {
+  int dig;
+  uint64_t cnt = 0;
+
+  for (int n = 0; n < lim ; n++) {
+      //cnt += cntline7 (n);
+      for (int k = 0; k <= n; ++k) {
+          dig = lucasth (n, k, 7);
+
+          if (dig != 0) {
+              cnt++;
+          }
+          /*
+          if (dig != 0) {
+            cout << dig << ' ';
+          } else {
+            cout << "  ";
+          }
+          */
+      }
+      /*
+      if (n % 49 == 48) {
+        cout << "    <--- ";
+      }
+      cout << '\n';
+      */
+  }
+  return cnt;
+}
+uint64_t project198_2 (int lim) {
+
+  uint64_t cnt = 0;
+  int n = 0, cycle = 1;
+
+  while (n + 49 < lim) {
+      cnt += 784 * cycle;
+      cycle++;
+      n += 49;
+  }
+
+  for (; n < lim ; n++) {
+      cnt += cntline7 (n);
+  }
+
+  return cnt;
+}
+
 int main () {
 
     Timer clock;
 
-    int lim = 100;
     // Find the number of entries which are not divisible by 7 in the first one billion (10^9) rows of Pascal's triangle.
-    vector<vector<uint64_t>> tri (lim+1, vector<uint64_t> (lim+1));
-    vector<int> seq;
 
-    for (int i = 0; i <= lim; ++i) {
-        tri[i][0] = tri[i][i] = 1;
-        //cout << setw(3) <<i << " => ";
-        //cout << string ((tri.size() - i) , ' ');
-        int cnt = 0;
-        for (int j = 1; j < i; ++j) {
-            tri[i][j] = tri[i-1][j-1] + tri[i -1][j];
+    uint64_t lim = 1e9;
+    int cnt1 = 0, cnt2 = 0, dig;
 
-            if (tri[i][j] % 7 == 0) {
-                cnt++;
-            }
-            //cout << tri[i][j] % 7 << ' ';
-        }
-        if (cnt == 0) {
-          seq.push_back(i);
-        }
+    uint64_t num = lim, rev = 0;
+    int base = 7;
 
-        /*
-        cout << cnt;
-        cout << "\n";
-        */
+    while (num != 0) {
+      int dig = num % base;
+      //cout << dig;
+      rev = rev * 10 + dig;
+      num /= base;
     }
 
+    cout << rev << '\n';
 
-    for (int i = 1; i < seq.size(); i++) {
-        cout << seq[i] - seq[i-1] << ' ';
-    }
+    //cout << '\n' << cnt1 <<  " :: " << cnt2;
 
     clock.stop();
     clock.get_duration();
