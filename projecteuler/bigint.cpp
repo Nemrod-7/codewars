@@ -379,27 +379,29 @@ int main () {
 
   Timer clock;
 
-  map<int,bool> sqr;
+  Bigint lim ("1000000000");
+
+  string num = power (99,99);
+  uint64_t res = 0;
+
   for (int i = 1; i < 100; i++) {
-      sqr[i*i] = true;
+    for (size_t j = 1; j < 100; j++) {
+        string num = power (i,j);
+        int sum = 0;
+
+        for (auto dig : num) {
+          sum += dig - '0';
+        }
+
+        if (sum > res) {
+            res = sum;
+        }
+    }
   }
 
-  Bigint val, maxv;
-  string res;
+  cout << res;
 
-  for (int i = 1; i <= 1000; i++) {
-      if (sqr[i] == false) {
 
-          //cout << i << " = > ";
-          val = pell (i);// = diophantine5 (i);
-
-          if (val > maxv) {
-              maxv = val;
-              res = to_string (i);
-          }
-      }
-  }
-  cout << res ;
 
   /*
   */

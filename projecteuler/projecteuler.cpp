@@ -28,7 +28,7 @@ string p_factors (uint64_t num) {
     return os.str();
 }
 
-uint64_t sumdig (uint64_t num) {
+uint64_t digsum (uint64_t num) {
     uint64_t sum = 0;
     while (num) {
         sum += num % 10;
@@ -150,7 +150,7 @@ bool is_prime (int num) {
 }
 
 uint64_t harshad (uint64_t num) {
-  uint64_t sum = sumdig (num);
+  uint64_t sum = digsum (num);
   return (sum && num % sum == 0) ? sum : 0;
 }
 bool strong (int num, const vector<bool> &sieve) {
@@ -171,11 +171,26 @@ int main () {
     Timer chrono;
 
     uint64_t limit = 1e15;
+    int cnt = 0;
 
-    int fp[9] = {2, 3, 5, 7, 11, 13, 17, 19, 23};
+    for (int i = 1; i < 10; i++) {
+      for (int j = 1; j < 20; j++) {
+          uint64_t nu = pow (i,j);
+          uint64_t len = log10 (nu) + 1;
+
+          if (len == j) {
+            //cout << nu << ' ';
+            cnt++;
+          }
+      }
+      //cout << '\n';
+    }
+
+    cout << cnt;
 
     /*
 
+    int fp[9] = {2, 3, 5, 7, 11, 13, 17, 19, 23};
     problem 387 : harshad numbers
 
     vector<bool> sieve (limit + 1, true);
@@ -195,10 +210,12 @@ int main () {
         }
     }
     */
+
+    /*
     uint64_t res = 0;
 
     for (uint64_t p = 23; p * p <= limit ; p += 2) {
-        /*
+
         if (sieve[p] == true) {
             int num = p / 10, div = harshad (p / 10);
 
@@ -207,11 +224,11 @@ int main () {
                 res += p;
             }
         }
-        */
 
     }
+    */
 
-
+    /*
 
     vector<uint64_t> divs = {3,6,9,11,13,18,19,21};
     vector<uint64_t> nudiv = {2,3,5,7,19,37,47,67,73,89,223,227,229,467,3079,4447,19087,25579,382867,666667,1267579,1541539,2285743,3076939};
@@ -220,7 +237,6 @@ int main () {
     for (int i = 1; i < nudiv.size(); i++) {
         cout << nudiv[i] - nudiv[i-1] << ' ';
     }
-    /*
     for (auto div : divs) {
       for (auto num : nudiv) {
 

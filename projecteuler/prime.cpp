@@ -208,8 +208,7 @@ int main () {
 
 
 
-    /*
-    // problem 74
+    // problem 113
 
     int num = 1, cnt = 0;
     double rate = 0.0, limit = 99.0;
@@ -218,12 +217,15 @@ int main () {
     string googol = "10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
     vector<int> hist;
 
+    /*
     for (int i = 1; i < 100000000; i++) {
-    if (bouncy (i)) {
-    bn++;
-    } else {
-    nb++;
+      if (bouncy (i)) {
+        bn++;
+      } else {
+        nb++;
     }
+
+
 
     if (i % 1000000 == 0) {
     hist.push_back(nb);

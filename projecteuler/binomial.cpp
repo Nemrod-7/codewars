@@ -52,7 +52,7 @@ uint64_t binomial (int n, int k) {        // binomial (9,5);
     if (k == 0 || k == n) return 1;
     if (k  < 0 || k  > n) return 0;
     const uint64_t lim = n;
-    uint64_t tri[lim+1][lim+1];
+    vector<vector<int>> tri (lim+1, vector<int> (lim+1));
 
     for (int i = 0; i <= lim; ++i) {
         tri[i][0] = tri[i][i] = 1;
@@ -89,13 +89,13 @@ int lucas3 (int n, int k) {
 int lucasth (int n, int k, int p) {
 
     int prod = 1, np, kp;
-    //vector<vector<int>> base = mk_triangle (9);
+
     // => lucas (n k) = prod from i = 0 to infinity (binom(n_i k_i) mod p)
     do {
         np = n % p, kp = k % p;
         //cout << '(' << np << ' ' << kp << ") => " << binomial (np, kp) << endl;
         if (kp > np) return 0;
-        prod *= binomial (np, kp);
+        prod *= binomial_mul (np, kp);
 
         n /= p, k /= p;
 
@@ -104,16 +104,13 @@ int lucasth (int n, int k, int p) {
     return prod % p;
 }
 
-vector<vector<uint64_t>> mk_triangle (int size) {
-    vector<vector<uint64_t>> tri;
-    uint64_t num;
-    for (int n = 0; n <= size; ++n) {
-        tri.push_back(vector<uint64_t>());
-        for (int k = 0; k <= n; ++k) {
-            //num = round (binomial (n, k));
-            num = binomial (n, k);
+vector<vector<uint64_t>> mk_triangle (int lim) {
+    vector<vector<uint64_t>> tri (lim+1, vector<uint64_t> (lim+1));
 
-            tri[n].push_back (num);
+    for (int n = 0; n <= lim; n++) {
+        tri[n][0] = tri[n][n] = 1;
+        for (int k = 1; k < n; k++) {
+            tri[n][k] = tri[n-1][k-1] + tri[n -1][k];
         }
     }
 
@@ -132,7 +129,6 @@ void display_tri (vector<vector<uint64_t>> &tri) {
         cout << endl;
     }
 }
-
 
 int harshad (int num) {
 
@@ -159,7 +155,6 @@ bool rightrunc (int num) {
 
 void count (int lim) {
   // Find the number of entries which are not divisible by 7 in the first one billion (10^9) rows of Pascal's triangle.
-
   using u64 = uint64_t;
   vector<int> seq;
   //fstream ofs ("triangle", ios::out);
@@ -207,75 +202,47 @@ uint64_t cntline7 (int num) {
     return cnt;
 }
 
-uint64_t project198_1 (int lim) {
-  int dig;
-  uint64_t cnt = 0;
-
-  for (int n = 0; n < lim ; n++) {
-      //cnt += cntline7 (n);
-      for (int k = 0; k <= n; ++k) {
-          dig = lucasth (n, k, 7);
-
-          if (dig != 0) {
-              cnt++;
-          }
-          /*
-          if (dig != 0) {
-            cout << dig << ' ';
-          } else {
-            cout << "  ";
-          }
-          */
-      }
-      /*
-      if (n % 49 == 48) {
-        cout << "    <--- ";
-      }
-      cout << '\n';
-      */
-  }
-  return cnt;
-}
-uint64_t project198_2 (int lim) {
+uint64_t project148 (int lim) {
 
   uint64_t cnt = 0;
   int n = 0, cycle = 1;
 
-  while (n + 49 < lim) {
-      cnt += 784 * cycle;
-      cycle++;
-      n += 49;
-  }
-
-  for (; n < lim ; n++) {
+  for (int n = 0; n < lim; n++) {
       cnt += cntline7 (n);
   }
 
   return cnt;
 }
 
+
+uint64_t serie (uint64_t n) { return (n * (n + 1)) / 2; }
+
 int main () {
 
     Timer clock;
 
-    // Find the number of entries which are not divisible by 7 in the first one billion (10^9) rows of Pascal's triangle.
+    uint64_t lim = 200, dig, cnt = 0;
 
-    uint64_t lim = 1e9;
-    int cnt1 = 0, cnt2 = 0, dig;
+    ofstream ofs ("triangle", ios::out);
 
-    uint64_t num = lim, rev = 0;
-    int base = 7;
+    for (int n = 0; n <= lim; n++) {
 
-    while (num != 0) {
-      int dig = num % base;
-      //cout << dig;
-      rev = rev * 10 + dig;
-      num /= base;
+        ofs << string ((lim - n) , ' ');
+        for (int k = 0; k <= n; k++) {
+            dig = lucasth (n, k, 2);
+
+            if (dig != 0) {
+                cnt++;
+            }
+            if (dig != 0) {
+              ofs << '#' << ' ';
+            } else {
+              ofs << "  ";
+            }
+        }
+        ofs << '\n';
     }
-
-    cout << rev << '\n';
-
-    //cout << '\n' << cnt1 <<  " :: " << cnt2;
+    ofs.close();
 
     clock.stop();
     clock.get_duration();
