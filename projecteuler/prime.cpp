@@ -161,28 +161,6 @@ int replace (string num, const vector<bool> &sieve) {
     return maxv;
 }
 
-int harshad (int num) {
-
-  int ref = num, sum = 0;
-
-  do {
-      sum += ref % 10;
-  } while (ref /= 10);
-
-  return (sum && num % sum == 0) ? sum : 0;
-}
-bool strong (int num, const vector<bool> &sieve) {
-    if (num == 0) return false;
-    int div = harshad (num);
-    return (div != 0 && sieve[num / div] == true);
-}
-bool rightrunc (int num) {
-
-    while (num && harshad (num)) {
-        num /= 10;
-    }
-    return num == 0;
-}
 int main () {
 
   int limit = 1e7;

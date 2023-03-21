@@ -57,75 +57,26 @@ class Bigint {
             }
             return false;
         }
-    public :
-        Bigint (const string &input = "0") : m_value (input) { m_value.erase(0, min (m_value.find_first_not_of ('0'), m_value.size() - 1));};
-        /*
-        void operator= (const string &x) {
-          //  m_value = x;
-            cout << x;
-            //m_value.erase(0, min (m_value.find_first_not_of ('0'), m_value.size() - 1));
-        }
-        */
-        template<class T> &operator T() { return m_value; }
-        size_t size() { return m_value.size(); }
-        friend ostream &operator <<(ostream &os, const Bigint &x) {
-            return os << x.m_value;
-        }
-        //void operator= (const string &b) { m_value = b; }
-        void operator= (const char *b) { m_value = (b); }
-        void operator++ (int) {
-            m_value = to_string (stoi (m_value) + 1);
-        }
-
-        Bigint operator+ (string b) {
-            string add;
-            int i = m_value.size(), j = b.size(), index = max (i,j);
-            int rem = 0, digit, num;
+        Bigint add (const string &b) {
+            string res;
+          int i = m_value.size(), j = b.size(), index = max (i,j);
+            int rem = 0, num;
 
             while (index-->0) {
                 num = (i > 0 ? (m_value[--i] - '0') : 0) + (j > 0 ? (b[--j] - '0') : 0) + rem;
                 rem = num / 10;
-                add += ((num % 10) + '0');
+                res += ((num % 10) + '0');
             }
 
-            if (rem > 0) add += (rem + '0');
+            if (rem > 0) res += (rem + '0');
 
-            reverse (add.begin(), add.end());
-            add.erase(0, min (add.find_first_not_of ('0'), add.size() - 1));
+            reverse (res.begin(), res.end());
+            res.erase(0, min (res.find_first_not_of ('0'), res.size() - 1));
 
-            return add;
+            return res;
         }
-        Bigint operator* (string b) {
-            string mul, a = m_value;
-            int lena = a.size(), lenb = b.size(), ans[1000]{0};
 
-            if (m_value == "0") return m_value;
-            if (b == "0") return b;
-            /*
-            if ((lena == 1 && m_value[0] == '0')|| (lenb == 1 && b[0] == '0')) {
-                return  m_value;
-            }
-            */
-            int i,j,rem = 0, num, size;
-            reverse (a.begin(), a.end()), reverse(b.begin(), b.end());
-
-            for (i = 0; i < lena; ++i) {
-                for (j = 0; j < lenb; ++j) {
-                    ans[i + j] +=  (a[i] - '0') * (b[j] - '0');
-                    ans[i + j + 1] = ans[i + j + 1] + ans[i + j] / 10;
-                    ans[i + j] %= 10;
-                }
-            }
-            size = i + j;
-            while (ans[size] == 0) size--;
-
-            do {
-                mul.push_back ((ans[size] + '0'));
-            } while (size-->0);
-
-            return mul;
-        }
-        Bigint operator- (string b) {
+        Bigint sub (string b) {
             string a = m_value;
             int carry = 0;
             bool minus = false;
@@ -155,8 +106,39 @@ class Bigint {
 
             return minus ? '-' + sub : sub;
         }
-        Bigint operator/ (string b) {
-          string a = m_value;
+        Bigint mul (string b) {
+            string mul, a = m_value;
+            int lena = a.size(), lenb = b.size(), ans[1000]{0};
+
+            if (m_value == "0") return m_value;
+            if (b == "0") return b;
+            /*
+            if ((lena == 1 && m_value[0] == '0')|| (lenb == 1 && b[0] == '0')) {
+                return  m_value;
+            }
+            */
+            int i,j,rem = 0, num, size;
+            reverse (a.begin(), a.end()), reverse(b.begin(), b.end());
+
+            for (i = 0; i < lena; ++i) {
+                for (j = 0; j < lenb; ++j) {
+                    ans[i + j] +=  (a[i] - '0') * (b[j] - '0');
+                    ans[i + j + 1] = ans[i + j + 1] + ans[i + j] / 10;
+                    ans[i + j] %= 10;
+                }
+            }
+            size = i + j;
+            while (ans[size] == 0) size--;
+
+            do {
+                mul.push_back ((ans[size] + '0'));
+            } while (size-->0);
+
+            return mul;
+
+        }
+        Bigint div (string b) {
+         string a = m_value;
           size_t lena = a.size(), lenb = b.size ();
           string quot ("0"), den (a);
 
@@ -173,10 +155,71 @@ class Bigint {
           quot.erase(0, min (quot.find_first_not_of ('0'), quot.size() - 1));
           //den.erase(0, min (den.find_first_not_of ('0'), den.size() - 1));
           return quot;
+
+        }
+        Bigint mod (string b) {
+     string a = m_value;
+            size_t lena = a.size(), lenb = b.size ();
+            string quot ("0"), den (a);
+
+            for (size_t i = 0 ; lena >= lenb; ++i, --lena) {
+                if (i > 0) quot += '0';
+                char d = '*';
+
+                while (quot[i] != d) {
+                    d = quot[i];
+                    quot[i] += substract (den, b, i);
+                }
+            }
+
+            //quot.erase(0, min (quot.find_first_not_of ('0'), quot.size() - 1));
+            den.erase(0, min (den.find_first_not_of ('0'), den.size() - 1));
+            return den;
+
         }
 
-        bool operator== (const string &b) { return m_value == b; }
-        bool operator<= (const string &b) {
+    public :
+        Bigint (const string &input = "0") : m_value (input) { m_value.erase(0, min (m_value.find_first_not_of ('0'), m_value.size() - 1));};
+
+        /*
+           void operator= (const string &x) {
+        //  m_value = x;
+        cout << x;
+        //m_value.erase(0, min (m_value.find_first_not_of ('0'), m_value.size() - 1));
+        }
+        */
+        template<class T> operator T() { return m_value; }
+        size_t size() { return m_value.size(); }
+
+        friend ostream &operator << (ostream &os, const Bigint &x) {
+            return os << x.m_value;
+        }
+        //void operator= (const string &b) { m_value = b; }
+        void operator = (const char *b) { m_value = (b); }
+        void operator ++ (int) {
+            m_value = to_string (stoi (m_value) + 1);
+        }
+
+        Bigint operator + (const char b[]) { return add (string(b)); }
+        Bigint operator + (const Bigint &b) { return add (b.m_value); }
+
+        Bigint operator * (const char b[]) { return mul (string (b)); }
+        Bigint operator * (const Bigint &b) { return mul (b.m_value); }
+
+        Bigint operator - (const char b[]) { return sub (string(b)); }
+        Bigint operator - (const Bigint &b) { return sub (b.m_value); }
+
+        Bigint operator / (const char b[]) { return div (string (b)); }
+        Bigint operator / (const Bigint &b) { return div (b.m_value); }
+
+        Bigint operator % (const char b[]) { return mod (string (b)); }
+        Bigint operator % (const Bigint &b) { return mod (b.m_value); }
+
+        bool operator == (const char b[]) { return m_value == b; }
+        bool operator == (const string &b) { return m_value == b; }
+        bool operator == (const Bigint &b) { return m_value == b.m_value; }
+
+        bool operator <= (const string &b) {
             if (m_value.size () < b.size()) return true;
             if (m_value.size() > b.size()) return false;
 
@@ -196,7 +239,7 @@ class Bigint {
                 if (m_value[i] < b[i]) return false;
             }
 
-            return true;
+            return false;
         }
 };
 
@@ -228,11 +271,11 @@ string square (const string &src) {
     }
 
     if (carry < 0) root -= 1;
-        //cout << carry << endl;
+    //cout << carry << endl;
 
 
     return to_string (root);
-  }
+}
 string bigfactorial (int num) {
 
     if (num < 0) return "";
@@ -243,14 +286,14 @@ string bigfactorial (int num) {
 
     for (int i = 1; i <= num; i++) {
         for (auto &dig : fact) {
-           int val = dig * i + rem;
-           dig = val % 10;
-           rem = val / 10;
+            int val = dig * i + rem;
+            dig = val % 10;
+            rem = val / 10;
         }
 
         while (rem) {
-          fact.push_back(rem % 10);
-          rem /= 10;
+            fact.push_back(rem % 10);
+            rem /= 10;
         }
     }
 
@@ -375,37 +418,63 @@ string pell (int n) {
     */
     return "0";
 }
+Bigint sigma (Bigint num) { // sum of proper divisors
+
+    Bigint n (num), sum ("1");
+    Bigint p ("2"), j;
+
+    while (p * p <= n && n > "1") {
+        if (n % p == "0") {
+            j = p * p;
+            n = n / p;
+
+            while (n % p == "0") {
+                j = j * p;
+                n = n / p;
+            }
+
+            sum =  sum * (j - "1") / (p - "1");
+        }
+
+        p = (p == "2") ? p + "1" : p + "2";
+    }
+
+
+    if (n > "1") sum = sum * (n + "1");
+
+    return sum - num;
+}
+
 int main () {
 
-  Timer clock;
+    Timer clock;
+    const int limit = 100;
 
-  Bigint lim ("1000000000");
+    Bigint mod ("1000000007");
 
-  string num = power (99,99);
-  uint64_t res = 0;
+    Bigint sn;
+    vector<vector<Bigint>> tri (limit+1, vector<Bigint> (limit+1));
 
-  for (int i = 1; i < 100; i++) {
-    for (size_t j = 1; j < 100; j++) {
-        string num = power (i,j);
-        int sum = 0;
-
-        for (auto dig : num) {
-          sum += dig - '0';
-        }
-
-        if (sum > res) {
-            res = sum;
+    for (int n = 0; n <= limit; n++) {
+        tri[n][0] = "1";
+        tri[n][n] = "1";
+        for (int k = 1; k < n; k++) {
+            tri[n][k] = tri[n-1][k-1] + tri[n -1][k];
         }
     }
-  }
+    
+    for (int n = 1; n <= limit; n++) {
+        Bigint bn ("1");
 
-  cout << res;
+        for (int k = 0; k <= n; k++) {
+            bn = tri[n][k] * bn;
+        }
 
-
-
-  /*
-  */
-
+      //  sn = sn + sigma (bn) + bn;
+    }
+    /*
+    */
+    cout << sn;
 
 
     clock.stop();

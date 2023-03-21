@@ -4,6 +4,7 @@
 #include <set>
 
 using namespace std;
+using i64 = int64_t;
 
 class check {
   public :
@@ -51,6 +52,7 @@ uint64_t binomial_mul (int n, int k) {        // binomial_mul (9,5); -> 9 795 28
 uint64_t binomial (int n, int k) {        // binomial (9,5);
     if (k == 0 || k == n) return 1;
     if (k  < 0 || k  > n) return 0;
+    
     const uint64_t lim = n;
     vector<vector<int>> tri (lim+1, vector<int> (lim+1));
 
@@ -95,7 +97,7 @@ int lucasth (int n, int k, int p) {
         np = n % p, kp = k % p;
         //cout << '(' << np << ' ' << kp << ") => " << binomial (np, kp) << endl;
         if (kp > np) return 0;
-        prod *= binomial_mul (np, kp);
+        prod *= binomial (np, kp);
 
         n /= p, k /= p;
 
@@ -213,36 +215,60 @@ uint64_t project148 (int lim) {
 
   return cnt;
 }
-
-
 uint64_t serie (uint64_t n) { return (n * (n + 1)) / 2; }
 
 int main () {
 
     Timer clock;
 
-    uint64_t lim = 200, dig, cnt = 0;
 
-    ofstream ofs ("triangle", ios::out);
+    const int limit = 100;
 
-    for (int n = 0; n <= lim; n++) {
+    uint64_t cnt = 0, res = 0;
 
-        ofs << string ((lim - n) , ' ');
-        for (int k = 0; k <= n; k++) {
-            dig = lucasth (n, k, 2);
+    for (int k = 0; k <= 7; k++) {
+      cout << binomial (7,k) << ' ';
 
-            if (dig != 0) {
-                cnt++;
-            }
-            if (dig != 0) {
-              ofs << '#' << ' ';
-            } else {
-              ofs << "  ";
-            }
-        }
-        ofs << '\n';
     }
-    ofs.close();
+
+    // # problem 61
+    // Cyclical figurate numbers
+
+    /*
+
+    Triangle 	  	P3,n=n(n+1)/2 	  	1, 3, 6, 10, 15, ...
+    Square 	  	  P4,n=n2 	  	      1, 4, 9, 16, 25, ...
+    Pentagonal 	  P5,n=n(3n−1)/2 	  	1, 5, 12, 22, 35, ...
+    Hexagonal 	  P6,n=n(2n−1) 	  	  1, 6, 15, 28, 45, ...
+    Heptagonal 	  P7,n=n(5n−3)/2 	  	1, 7, 18, 34, 55, ...
+    Octagonal 	  P8,n=n(3n−2) 	  	  1, 8, 21, 40, 65, ...
+
+    */
+    /*
+    vector<int> cycle {8128, 2882, 8281};
+
+    for (size_t n = 0; n < lim; n++) {
+        int p3 = n * (n + 1) / 2;     // triangle
+        int p4 = n * n;               // square
+        int p5 = n * (3 * n - 1) / 2; // pentagonal
+        int p6 = n * (3 * n - 1);     // Hexagonal
+        int p7 = n * (5 * n - 3) / 2; // heptagonal
+        int p8 = n * (3 * n - 2);     // octogonal
+
+    }
+
+    vector<vector<uint64_t>> tri (lim+1, vector<uint64_t> (lim+1));
+    enum {ones,natural, triangular, };
+    // 1, n,
+    for (int n = 0; n <= lim; n++) {
+        tri[n][0] = tri[n][n] = 1;
+        for (int k = 1; k < n; k++) {
+            tri[n][k] = tri[n-1][k-1] + tri[n -1][k];
+            cout << setw(4) << tri[n][k] << ' ';
+        }
+        cout << '\n';
+    }
+    */
 
     clock.stop();
     clock.get_duration();

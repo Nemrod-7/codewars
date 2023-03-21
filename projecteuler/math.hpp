@@ -10,8 +10,9 @@ bool issquare (int num) {
 }
 bool is_prime (uint64_t num) {
 
-    if (num <= 3) return true;
-    if (num % 2 == 0 || num % 3 == 0  || num % 5 == 0 || num % 7 == 0) return false;
+    if (num < 2) return false;
+    if (num < 4) return true;
+    if (num % 2 == 0 || num % 3 == 0 ) return false;
 
     for (uint64_t i = 5; i * i  <= num; i += 6)
         if (num % i == 0 || num % (i + 2) == 0)

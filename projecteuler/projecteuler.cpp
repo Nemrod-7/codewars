@@ -6,6 +6,16 @@
 // NEQ5xBztxeg43aP
 using namespace std;
 
+class check {
+  public :
+      static void overflow (uint64_t a, uint64_t b) {
+          uint64_t limit = numeric_limits<uint64_t>::max() / b;
+          //if (b > 1) limit /= b;
+          if (a > limit) throw overflow_error ("integer overflow\n");
+
+      }
+};
+
 string p_factors (uint64_t num) {
     ostringstream os;
 
@@ -26,6 +36,150 @@ string p_factors (uint64_t num) {
 
     if (num > 1) os << to_string(num);
     return os.str();
+}
+int gcd (int a, int b) { return b == 0 ? a : gcd (b, a % b); }
+int lcm (int a, int b) { return a * gcd (a,b) / b; }
+
+bool issquare (int num) {
+    int sq = sqrt(num);
+    return sq * sq == num;
+}
+bool is_prime (uint64_t num) {
+
+    if (num < 2) return false;
+    if (num < 4) return true;
+    if (num % 2 == 0 || num % 3 == 0 ) return false;
+
+    for (uint64_t i = 5; i * i  <= num; i += 6)
+        if (num % i == 0 || num % (i + 2) == 0)
+            return false;
+
+    return true;
+}
+vector<int> sieve (int num) {
+
+    int half = (num >> 1) + 1;
+    std::vector<bool> primes (half + 1);
+    std::vector<int> sieve {2};
+
+    for (int p = 3; p * p <= num ; p += 2) {
+        if (primes[p/2] == false) {
+            for (int i = p * p; i <= num; i += 2 * p) {
+                primes[i/2] = true;
+            }
+        }
+    }
+
+    for (int i = 3; i <= num; i += 2) {
+        if (primes[i/2] == false) {
+            sieve.push_back(i);
+        }
+    }
+
+    return sieve;
+}
+
+uint64_t tau (uint64_t n) { // count number of divisors
+    uint64_t total = 1;
+
+    for (; (n & 1) == 0; n >>= 1) // Deal with powers of 2 first
+        ++total;
+
+    for (uint64_t p = 3; p * p <= n; p += 2) { // Odd prime factors up to the square root
+        int count = 1;
+        for (; n % p == 0; n /= p)
+            ++count;
+        total *= count;
+    }
+
+    if (n > 1) total *= 2; // If n > 1 then it's prime
+    return total;
+}
+uint64_t phi (uint64_t num) { // totient funtion
+
+    uint64_t res = num;
+
+    if (num % 2 == 0) {
+        while (num % 2 == 0)
+            num /= 2;
+
+        res -= res / 2;
+    }
+
+    for (uint64_t pr = 3; pr * pr <= num; pr += 2) {
+        if (num % pr == 0) {
+            while (num % pr == 0)
+                num /= pr;
+
+            res -= res / pr;
+        }
+    }
+
+    return (num > 1) ? res - res / num : res;
+}
+uint64_t phi2 (uint64_t num, vector<uint64_t> &prime) { // totient funtion
+
+    uint64_t res = num;
+    uint64_t *p = prime.data();
+
+    for (uint64_t i = 0; p[i] * p[i] <= num; i++) {
+        if (num % p[i] == 0) {
+            while (num % p[i] == 0)
+                num /= p[i];
+
+            res -= res / p[i];
+        }
+    }
+
+    return (num > 1) ? res - res / num : res;
+}
+vector<uint64_t> phi3 (uint64_t lim) { // sieve of totient
+    vector<uint64_t> sieve (lim + 1);
+
+    for (uint64_t i = 0; i <= lim; i++)
+        sieve[i] = i;
+
+    for (uint64_t i = 2; i <= lim; i++) {
+        if (sieve[i] == i) {
+            for (uint64_t j = i; j <= lim; j += i)
+                sieve[j] -= sieve[j] / i;
+        }
+    }
+    return sieve;
+}
+int64_t sigma (int64_t num) { // sum of proper divisors
+
+  int64_t n = num, sum = 1;
+  int64_t p = 2;
+
+  while (p * p <= n && n > 1) {
+    if (n % p == 0) {
+      int64_t j = p * p;
+      n /= p;
+
+      while (n % p == 0) {
+        j *= p;
+        n /= p;
+      }
+
+      sum = sum * (j - 1) / (p - 1);
+    }
+    p += (p == 2) ? 1 : 2;
+  }
+
+  if (n > 1) sum *= (n + 1);
+
+  return sum - num;
+}
+
+uint64_t modpow (uint64_t base, uint64_t exp, uint64_t mod) {
+    uint64_t x = 1, e = 0;
+
+    while (e < exp) {
+        e++;
+        x = (base * x) % mod;
+    }
+    return x;
 }
 
 uint64_t digsum (uint64_t num) {
@@ -137,116 +291,17 @@ bool palindrome (uint64_t num) {
     return reverse (num) == num;
 }
 
-bool is_prime (int num) {
-    if (num < 2) return false;
-    if (num < 4) return true;
-    if (num % 2 == 0 || num % 3 == 0) return false;
-
-    for (int i = 5; i * i <= num; i += 6)
-        if (num % i == 0 || num % (i + 2) == 0)
-            return false;
-
-    return true;
-}
-
-uint64_t harshad (uint64_t num) {
-  uint64_t sum = digsum (num);
-  return (sum && num % sum == 0) ? sum : 0;
-}
-bool strong (int num, const vector<bool> &sieve) {
-    if (num == 0) return false;
-    int div = harshad (num);
-    return (div != 0 && sieve[num / div] == true);
-}
-bool rightrunc (int num) {
-
-    while (num && harshad (num)) {
-        num /= 10;
-    }
-    return num == 0;
-}
 
 int main () {
 
     Timer chrono;
 
-    uint64_t limit = 1e15;
-    int cnt = 0;
+    const int limit = 100;
 
-    for (int i = 1; i < 10; i++) {
-      for (int j = 1; j < 20; j++) {
-          uint64_t nu = pow (i,j);
-          uint64_t len = log10 (nu) + 1;
+    uint64_t cnt = 0, res = 0;
 
-          if (len == j) {
-            //cout << nu << ' ';
-            cnt++;
-          }
-      }
-      //cout << '\n';
-    }
+    //cout << "\nres :: " << sn % mod;
 
-    cout << cnt;
-
-    /*
-
-    int fp[9] = {2, 3, 5, 7, 11, 13, 17, 19, 23};
-    problem 387 : harshad numbers
-
-    vector<bool> sieve (limit + 1, true);
-    vector<uint64_t> prime {2};
-
-    sieve[0] = sieve[1] = false;
-
-    for (uint64_t i = 4; i <= limit ; i += 2) {
-        sieve[i] = false;
-    }
-
-    for (int p = 3; p * p <= limit ; p += 2) {
-        if (sieve[p] == true) {
-            for (int i = p * p; i <= limit; i += 2 * p) {
-                sieve[i] = false;
-            }
-        }
-    }
-    */
-
-    /*
-    uint64_t res = 0;
-
-    for (uint64_t p = 23; p * p <= limit ; p += 2) {
-
-        if (sieve[p] == true) {
-            int num = p / 10, div = harshad (p / 10);
-
-            if (rightrunc (num) && sieve[num / div] ) {
-                cout << num / div << ' ';
-                res += p;
-            }
-        }
-
-    }
-    */
-
-    /*
-
-    vector<uint64_t> divs = {3,6,9,11,13,18,19,21};
-    vector<uint64_t> nudiv = {2,3,5,7,19,37,47,67,73,89,223,227,229,467,3079,4447,19087,25579,382867,666667,1267579,1541539,2285743,3076939};
-
-
-    for (int i = 1; i < nudiv.size(); i++) {
-        cout << nudiv[i] - nudiv[i-1] << ' ';
-    }
-    for (auto div : divs) {
-      for (auto num : nudiv) {
-
-          cout << div * num << ' ';
-    }
-  }
-    divisors : 3 6 9 11 13 18 19 21
-    num / div : 2 3 5 7 19 37 47 67 73 89 223 227 229 467 3079 4447 19087 25579 382867 666667
-    */
-    // cout << res << " :: " ;
 
 
     chrono.stop();
