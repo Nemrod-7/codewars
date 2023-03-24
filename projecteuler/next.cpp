@@ -1,58 +1,34 @@
 #include <iostream>
 #include <vector>
-#include <algorithm>
+#include <cmath>
+
 using namespace std;
-using vertex = pair<int,vector<int>>;
 
-void read (int byte) {
-    for (int i = 0; i < 10; i++) {
-      if ((byte >> i &1) == true) {
-          cout << i << " ";
-      }
-    }
-}
-void mark (int &byte, int pos) { byte |= 1 << pos; }
-void clear (int &byte, int pos) { byte &= ~(1 << pos); }
+int A (int n, int k) {
+    return  n * k * (n + 1) * (k + 1) / 4;
 
-vector<vertex> mkgraph (vector<int> input) {
-    vector<int> digit (10);
-    vector<vertex> graph;
-    //cout << a << " => ";
-    for (int i = 0; i < input.size(); i++) {
-        int a = (input[i] / 100) % 10, b = (input[i] / 10) % 10, c = input[i] % 10;
-        digit[a] |= 1 << b;
-        digit[a] |= 1 << c;
-        digit[b] |= 1 << c;
-    }
+    int cnt = 0;
 
-    for (int i = 0; i < 10; i++) {
-        vector<int> node;
-
-        for (int j = 0; j < 10; j++) {
-            if ((digit[i] >> j &1) == true) {
-                node.push_back(j);
-            }
+    for (int i = 1; i <= n; i++) {
+        for (int j = 1; j <= k; j++) {
+            cnt += (n - i + 1) * (k - j + 1);
         }
-        if (node.size())
-            graph.push_back({i, node});
     }
-    return graph;
+    return cnt;
 }
 
 int main () {
 
-  vector<int> input = {319, 680, 180, 690, 129, 620, 762, 689, 762, 318, 368, 710, 720, 710, 629, 168, 160, 689, 716, 731, 736, 729, 316, 729, 729, 710, 769, 290, 719, 680, 318, 389, 162, 289, 162, 718, 729, 319, 790, 680, 890, 362, 319, 760, 316, 729, 380, 319, 728, 716};
-  vector<int> pass;
+    const int limit = 2000000;
+    const int limx = 20, limy = 20;
 
-  for (int i = 0; i < input.size(); i++) {
-      int a = (input[i] / 100) % 10, b = (input[i] / 10) % 10, c = input[i] % 10;
-      pass.push_back(input[i]);
+    const double num = 2;
+    const double sq = sqrt (num);
 
-  }
+    int ip = floor(sq);
 
-  sort(pass.begin(), pass.end());
+    cout << sq;
 
-  for (auto it : pass) {
-    cout << it << ' ';
-  }
+    cout << "\nend";
+
 }

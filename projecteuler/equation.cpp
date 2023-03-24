@@ -28,7 +28,9 @@ pair<int, int> getFraction (const vector<int> &a) {
 }
 
 vector<int> convergence (const double &x) {
-    if (is_square (x)) return {};
+    if (is_square (x)) {
+
+      return {};}
 
     const int sq = sqrt(x);
     int an = 2 * sq, y = sq, z = 1;
@@ -40,6 +42,7 @@ vector<int> convergence (const double &x) {
       an = (sq + y) / z;
       frac.push_back(an);
     } while (an != 2 * sq);
+
     return frac;
 }
 uint64_t diophantine5 (int delta) {
@@ -67,7 +70,7 @@ uint64_t diophantine5 (int delta) {
     return 0;
 }
 
-void render (vector<int> ve) {
+void showvec (vector<int> ve) {
   cout << "[" << ve[0] << ";";
   for (int i = 1; i < ve.size(); i++) {
     cout << ' ' << ve[i];
@@ -76,7 +79,7 @@ void render (vector<int> ve) {
 }
 
 uint64_t pell (int delta) {
-    int sq = sqrt(delta);
+    int sq = sqrt (delta);
     if (sq * sq == delta) return 1;
 
     int64_t an = 2 * sq;
@@ -108,7 +111,6 @@ uint64_t pell (int delta) {
     return x;
 }
 
-
 int main () {
 
     auto start = std::chrono::high_resolution_clock::now();
@@ -116,18 +118,32 @@ int main () {
     //  29718^2 - 61 * 3805^2 == -1
     const double eps = 1e-8;
     int cnt = 0;
+    auto frac = convergence (2);
+    int dec = frac.size() - 1;
 
-    for (int i = 2; i <= 10000; i++) {
-      if (is_square (i)) continue;
-      vector<int> frac = convergence2(i);
-      int period = frac.size() - 1;
-      
-      if (period % 2 == 1) {
-          cnt++;
-      }
+    int n = 2;
+    int a  = 5 * n, b = 5;
+
+    for (int i = 0; i < 20; i++) {
+        if (a >= b) {
+            a = a - b;
+            b = b + 10;
+        } else {
+            a = a * 100;
+            b = (b - b % 10) * 10 + 5;
+        }
+        cout << a  << ' ' << b << '\n';
     }
-    cout << cnt;
+    //showvec(frac);
+    /*
 
+    for (int i = 2; i <= 10; i++) {
+      if (is_square (i)) continue;
+      vector<int> frac = convergence(i);
+      showvec (frac);
+
+    }
+    */
      auto end = std::chrono::high_resolution_clock::now();
      std::chrono::duration<double> elapsed = end - start;
      std::cout << "\nProcess took " << elapsed.count()  << " ms" << std::endl;

@@ -304,9 +304,8 @@ string bigfactorial (int num) {
     return os;
 }
 
-Bigint power (int i, int j) {
-    string a = to_string(i);
-    Bigint num = to_string(1);
+Bigint power (const string &a, int j) {
+    Bigint num ("1");
 
     while (j-->0)
         num = num * a;
@@ -448,33 +447,12 @@ Bigint sigma (Bigint num) { // sum of proper divisors
 int main () {
 
     Timer clock;
-    const int limit = 100;
 
-    Bigint mod ("1000000007");
+    Bigint a ("28433");
+    Bigint res;
 
-    Bigint sn;
-    vector<vector<Bigint>> tri (limit+1, vector<Bigint> (limit+1));
-
-    for (int n = 0; n <= limit; n++) {
-        tri[n][0] = "1";
-        tri[n][n] = "1";
-        for (int k = 1; k < n; k++) {
-            tri[n][k] = tri[n-1][k-1] + tri[n -1][k];
-        }
-    }
     
-    for (int n = 1; n <= limit; n++) {
-        Bigint bn ("1");
-
-        for (int k = 0; k <= n; k++) {
-            bn = tri[n][k] * bn;
-        }
-
-      //  sn = sn + sigma (bn) + bn;
-    }
-    /*
-    */
-    cout << sn;
+    //res = power ("2", 7830457) + "1";
 
 
     clock.stop();

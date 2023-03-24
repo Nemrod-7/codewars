@@ -52,7 +52,7 @@ uint64_t binomial_mul (int n, int k) {        // binomial_mul (9,5); -> 9 795 28
 uint64_t binomial (int n, int k) {        // binomial (9,5);
     if (k == 0 || k == n) return 1;
     if (k  < 0 || k  > n) return 0;
-    
+
     const uint64_t lim = n;
     vector<vector<int>> tri (lim+1, vector<int> (lim+1));
 
@@ -217,6 +217,19 @@ uint64_t project148 (int lim) {
 }
 uint64_t serie (uint64_t n) { return (n * (n + 1)) / 2; }
 
+int A (int n, int k) { // count n possibilities out of k ?
+    return  n * k * (n + 1) * (k + 1) / 4;
+    /*
+    int cnt = 0;
+
+    for (int i = 1; i <= n; i++) {
+        for (int j = 1; j <= k; j++) {
+            cnt += (n - i + 1) * (k - j + 1);
+        }
+    }
+    return area;
+    */
+}
 int main () {
 
     Timer clock;
@@ -231,31 +244,7 @@ int main () {
 
     }
 
-    // # problem 61
-    // Cyclical figurate numbers
 
-    /*
-
-    Triangle 	  	P3,n=n(n+1)/2 	  	1, 3, 6, 10, 15, ...
-    Square 	  	  P4,n=n2 	  	      1, 4, 9, 16, 25, ...
-    Pentagonal 	  P5,n=n(3n−1)/2 	  	1, 5, 12, 22, 35, ...
-    Hexagonal 	  P6,n=n(2n−1) 	  	  1, 6, 15, 28, 45, ...
-    Heptagonal 	  P7,n=n(5n−3)/2 	  	1, 7, 18, 34, 55, ...
-    Octagonal 	  P8,n=n(3n−2) 	  	  1, 8, 21, 40, 65, ...
-
-    */
-    /*
-    vector<int> cycle {8128, 2882, 8281};
-
-    for (size_t n = 0; n < lim; n++) {
-        int p3 = n * (n + 1) / 2;     // triangle
-        int p4 = n * n;               // square
-        int p5 = n * (3 * n - 1) / 2; // pentagonal
-        int p6 = n * (3 * n - 1);     // Hexagonal
-        int p7 = n * (5 * n - 3) / 2; // heptagonal
-        int p8 = n * (3 * n - 2);     // octogonal
-
-    }
 
     vector<vector<uint64_t>> tri (lim+1, vector<uint64_t> (lim+1));
     enum {ones,natural, triangular, };

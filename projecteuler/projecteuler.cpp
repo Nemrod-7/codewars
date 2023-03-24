@@ -8,18 +8,18 @@ using namespace std;
 
 class check {
   public :
-      static void overflow (uint64_t a, uint64_t b) {
-          uint64_t limit = numeric_limits<uint64_t>::max() / b;
+      static void overflow (int64_t a, int64_t b) {
+          int64_t limit = numeric_limits<int64_t>::max() / b;
           //if (b > 1) limit /= b;
           if (a > limit) throw overflow_error ("integer overflow\n");
 
       }
 };
 
-string p_factors (uint64_t num) {
+string p_factors (int64_t num) {
     ostringstream os;
 
-    for (uint64_t k = 2; k * k <= num; k++) {
+    for (int64_t k = 2; k * k <= num; k++) {
         int ex = 0;
 
         while (num % k == 0) {
@@ -37,40 +37,40 @@ string p_factors (uint64_t num) {
     if (num > 1) os << to_string(num);
     return os.str();
 }
-int gcd (int a, int b) { return b == 0 ? a : gcd (b, a % b); }
-int lcm (int a, int b) { return a * gcd (a,b) / b; }
+int64_t gcd (int64_t a, int64_t b) { return b == 0 ? a : gcd (b, a % b); }
+int64_t lcm (int64_t a, int64_t b) { return a * gcd (a,b) / b; }
 
-bool issquare (int num) {
-    int sq = sqrt(num);
+bool issquare (int64_t num) {
+    int64_t sq = sqrt(num);
     return sq * sq == num;
 }
-bool is_prime (uint64_t num) {
+bool is_prime (int64_t num) {
 
     if (num < 2) return false;
     if (num < 4) return true;
     if (num % 2 == 0 || num % 3 == 0 ) return false;
 
-    for (uint64_t i = 5; i * i  <= num; i += 6)
+    for (int64_t i = 5; i * i  <= num; i += 6)
         if (num % i == 0 || num % (i + 2) == 0)
             return false;
 
     return true;
 }
-vector<int> sieve (int num) {
+vector<int64_t> sieve (int64_t num) {
 
-    int half = (num >> 1) + 1;
+    int64_t half = (num >> 1) + 1;
     std::vector<bool> primes (half + 1);
-    std::vector<int> sieve {2};
+    std::vector<int64_t> sieve {2};
 
-    for (int p = 3; p * p <= num ; p += 2) {
+    for (int64_t p = 3; p * p <= num ; p += 2) {
         if (primes[p/2] == false) {
-            for (int i = p * p; i <= num; i += 2 * p) {
+            for (int64_t i = p * p; i <= num; i += 2 * p) {
                 primes[i/2] = true;
             }
         }
     }
 
-    for (int i = 3; i <= num; i += 2) {
+    for (int64_t i = 3; i <= num; i += 2) {
         if (primes[i/2] == false) {
             sieve.push_back(i);
         }
@@ -79,13 +79,13 @@ vector<int> sieve (int num) {
     return sieve;
 }
 
-uint64_t tau (uint64_t n) { // count number of divisors
-    uint64_t total = 1;
+int64_t tau (int64_t n) { // count number of divisors
+    int64_t total = 1;
 
     for (; (n & 1) == 0; n >>= 1) // Deal with powers of 2 first
         ++total;
 
-    for (uint64_t p = 3; p * p <= n; p += 2) { // Odd prime factors up to the square root
+    for (int64_t p = 3; p * p <= n; p += 2) { // Odd prime factors up to the square root
         int count = 1;
         for (; n % p == 0; n /= p)
             ++count;
@@ -95,9 +95,9 @@ uint64_t tau (uint64_t n) { // count number of divisors
     if (n > 1) total *= 2; // If n > 1 then it's prime
     return total;
 }
-uint64_t phi (uint64_t num) { // totient funtion
+int64_t phi (int64_t num) { // totient funtion
 
-    uint64_t res = num;
+    int64_t res = num;
 
     if (num % 2 == 0) {
         while (num % 2 == 0)
@@ -106,7 +106,7 @@ uint64_t phi (uint64_t num) { // totient funtion
         res -= res / 2;
     }
 
-    for (uint64_t pr = 3; pr * pr <= num; pr += 2) {
+    for (int64_t pr = 3; pr * pr <= num; pr += 2) {
         if (num % pr == 0) {
             while (num % pr == 0)
                 num /= pr;
@@ -117,12 +117,12 @@ uint64_t phi (uint64_t num) { // totient funtion
 
     return (num > 1) ? res - res / num : res;
 }
-uint64_t phi2 (uint64_t num, vector<uint64_t> &prime) { // totient funtion
+int64_t phi2 (int64_t num, vector<int64_t> &prime) { // totient funtion
 
-    uint64_t res = num;
-    uint64_t *p = prime.data();
+    int64_t res = num;
+    int64_t *p = prime.data();
 
-    for (uint64_t i = 0; p[i] * p[i] <= num; i++) {
+    for (int64_t i = 0; p[i] * p[i] <= num; i++) {
         if (num % p[i] == 0) {
             while (num % p[i] == 0)
                 num /= p[i];
@@ -133,15 +133,15 @@ uint64_t phi2 (uint64_t num, vector<uint64_t> &prime) { // totient funtion
 
     return (num > 1) ? res - res / num : res;
 }
-vector<uint64_t> phi3 (uint64_t lim) { // sieve of totient
-    vector<uint64_t> sieve (lim + 1);
+vector<int64_t> phi3 (int64_t lim) { // sieve of totient
+    vector<int64_t> sieve (lim + 1);
 
-    for (uint64_t i = 0; i <= lim; i++)
+    for (int64_t i = 0; i <= lim; i++)
         sieve[i] = i;
 
-    for (uint64_t i = 2; i <= lim; i++) {
+    for (int64_t i = 2; i <= lim; i++) {
         if (sieve[i] == i) {
-            for (uint64_t j = i; j <= lim; j += i)
+            for (int64_t j = i; j <= lim; j += i)
                 sieve[j] -= sieve[j] / i;
         }
     }
@@ -172,18 +172,21 @@ int64_t sigma (int64_t num) { // sum of proper divisors
   return sum - num;
 }
 
-uint64_t modpow (uint64_t base, uint64_t exp, uint64_t mod) {
-    uint64_t x = 1, e = 0;
+int64_t modpow (int64_t base, int64_t exp, int64_t mod) {
+    int64_t res = 1;
 
-    while (e < exp) {
-        e++;
-        x = (base * x) % mod;
+    while (exp > 0) {
+       if ((exp & 1) > 0) res = (res * base) % mod;
+       exp >>= 1;
+       if (exp > 0)
+         base = (base * base) % mod;
     }
-    return x;
-}
 
-uint64_t digsum (uint64_t num) {
-    uint64_t sum = 0;
+    return res;
+  }
+
+int64_t digsum (int64_t num) {
+    int64_t sum = 0;
     while (num) {
         sum += num % 10;
         num /= 10;
@@ -191,12 +194,12 @@ uint64_t digsum (uint64_t num) {
     return sum;
   }
 
-uint64_t fibonacci (uint64_t n) {
+int64_t fibonacci (int64_t n) {
     if (n == 0) return 0;
     if (n == 1) return 1;
     return fibonacci (n - 1) + fibonacci (n - 2);
   }
-string collatz (uint64_t n) {
+string collatz (int64_t n) {
 
     string os;
 
@@ -207,7 +210,7 @@ string collatz (uint64_t n) {
 
     return os + "1";
 }
-void collatz2 (uint64_t a1) {
+void collatz2 (int64_t a1) {
   const char alpha[3] = {'D','U','d'};
   string seq;
   cout << a1 << " => ";
@@ -225,14 +228,14 @@ void collatz2 (uint64_t a1) {
   }
 }
 
-bool isPentagonal (uint64_t N) {
+bool isPentagonal (int64_t N) {
     double n = (1 + sqrt(24*N + 1))/6;
-    return (n - (uint64_t) n) == 0;
+    return (n - (int64_t) n) == 0;
 }
-bool check_goldbach (int num, const vector<int> &prime) {
+bool check_goldbach (int64_t num, const vector<int64_t> &prime) {
 
-    for (int i = 0; i < prime.size() && prime[i] < num; i++) {
-        for (int k = 1; k * k < num; k++) {
+    for (int64_t i = 0; i < prime.size() && prime[i] < num; i++) {
+        for (int64_t k = 1; k * k < num; k++) {
             if (prime[i] + 2 * (k * k) == num) {
                 //cout << prime[i] << " + 2 x " << k << "²";
                 return true;
@@ -256,7 +259,7 @@ void farey (int n) {
 			std::cout << f2.d << "/" << f2.n << " ";
 	}
 }
-int cntdiv (uint64_t num) {
+int64_t cntdiv (int64_t num) {
     int np = 0;
 
     while ((num &1) == 0) {
@@ -265,7 +268,7 @@ int cntdiv (uint64_t num) {
         if (np > 2) return np;
     }
 
-    for (uint64_t p = 3; p * p <= num; p += 2) {
+    for (int64_t p = 3; p * p <= num; p += 2) {
         while (num % p == 0) {
             num /= p;
             np++;
@@ -276,9 +279,9 @@ int cntdiv (uint64_t num) {
     return np;
 }
 
-uint64_t reverse (uint64_t num) {
+int64_t reverse (int64_t num) {
 
-    uint64_t rev = 0;
+    int64_t rev = 0;
 
     do {
         rev = rev * 10 + num % 10;
@@ -286,7 +289,7 @@ uint64_t reverse (uint64_t num) {
 
     return rev;
 }
-bool palindrome (uint64_t num) {
+bool palindrome (int64_t num) {
     if (num % 10 == 0) return false;
     return reverse (num) == num;
 }
@@ -296,13 +299,10 @@ int main () {
 
     Timer chrono;
 
-    const int limit = 100;
+    const int limit = 1000000007;
+    int cnt = 0, res = 0, mmax = 0, index = 0;
 
-    uint64_t cnt = 0, res = 0;
-
-    //cout << "\nres :: " << sn % mod;
-
-
+    cout << "\nres :: " << index;
 
     chrono.stop();
     chrono.get_duration();
