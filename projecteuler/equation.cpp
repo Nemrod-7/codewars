@@ -78,16 +78,13 @@ void showvec (vector<int> ve) {
   cout << "]\n";
 }
 
-uint64_t pell (int delta) {
-    int sq = sqrt (delta);
+uint64_t pell (int64_t delta) { // pell's equation
+    const int64_t sq = sqrt (delta);
     if (sq * sq == delta) return 1;
 
-    int64_t an = 2 * sq;
-    int64_t y = sq;
-    int64_t z = 1;
-
-    vector<uint64_t> p = {1,0}, q = {0,1};
+    int64_t an = 2 * sq, y = sq, z = 1;
     uint64_t x, b;
+    vector<int64_t> p = {1,0}, q = {0,1};
 
     while (true) {
         //cout << an << ' ' << z << ' ' << y << '\n';
@@ -102,8 +99,9 @@ uint64_t pell (int delta) {
         b = q[1];
 
         if (x * x - delta * b * b == 1) {
-            //cout << x << "^2 - " << delta << " * " << b << "^2 => ";
-            //cout << '\n';
+            cout << x << "^2 - " << delta << " * " << b << "^2 => ";
+            //cout << (b + 1) / 2 << " " << (x + 1) / 2;
+            cout << '\n';
             break;
         }
     }
@@ -120,30 +118,25 @@ int main () {
     int cnt = 0;
     auto frac = convergence (2);
     int dec = frac.size() - 1;
+    //pell(2);
+    cout << "\n";
 
-    int n = 2;
-    int a  = 5 * n, b = 5;
-
-    for (int i = 0; i < 20; i++) {
-        if (a >= b) {
-            a = a - b;
-            b = b + 10;
-        } else {
-            a = a * 100;
-            b = (b - b % 10) * 10 + 5;
-        }
-        cout << a  << ' ' << b << '\n';
-    }
-    //showvec(frac);
     /*
+    for (int i = 0; i < 8; i++) {
+        int64_t b = v[i] * (v[i] - 1);
 
-    for (int i = 2; i <= 10; i++) {
-      if (is_square (i)) continue;
-      vector<int> frac = convergence(i);
-      showvec (frac);
+        for (int64_t blu = v[i] / 2; blu < v[i]; blu++) {
+            int64_t a = 2 * (blu * (blu - 1));
 
+            if (b - a == 0) {
+              cout << blu << " " << v[i] << " " << 0 << "\n";
+              break;
+            }
+
+        }
     }
     */
+
      auto end = std::chrono::high_resolution_clock::now();
      std::chrono::duration<double> elapsed = end - start;
      std::cout << "\nProcess took " << elapsed.count()  << " ms" << std::endl;

@@ -17,17 +17,11 @@ int A (int n, int k) {
     return cnt;
 }
 
-int main () {
+int main (int argc, char *argv[]) {
 
-    const int limit = 2000000;
-    const int limx = 20, limy = 20;
 
-    const double num = 2;
-    const double sq = sqrt (num);
-
-    int ip = floor(sq);
-
-    cout << sq;
+    int x = 6, y = 5, z = 3;
+    vector<int> origin = {0,0,0}, exit = {6,5,3};
 
     cout << "\nend";
 

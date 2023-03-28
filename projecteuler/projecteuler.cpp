@@ -95,6 +95,30 @@ int64_t tau (int64_t n) { // count number of divisors
     if (n > 1) total *= 2; // If n > 1 then it's prime
     return total;
 }
+int64_t sigma (int64_t num) { // sum of proper divisors
+
+  int64_t n = num, sum = 1;
+  int64_t p = 2;
+
+  while (p * p <= n && n > 1) {
+    if (n % p == 0) {
+      int64_t j = p * p;
+      n /= p;
+
+      while (n % p == 0) {
+        j *= p;
+        n /= p;
+      }
+
+      sum = sum * (j - 1) / (p - 1);
+    }
+    p += (p == 2) ? 1 : 2;
+  }
+
+  if (n > 1) sum *= (n + 1);
+
+  return sum - num;
+}
 int64_t phi (int64_t num) { // totient funtion
 
     int64_t res = num;
@@ -146,30 +170,6 @@ vector<int64_t> phi3 (int64_t lim) { // sieve of totient
         }
     }
     return sieve;
-}
-int64_t sigma (int64_t num) { // sum of proper divisors
-
-  int64_t n = num, sum = 1;
-  int64_t p = 2;
-
-  while (p * p <= n && n > 1) {
-    if (n % p == 0) {
-      int64_t j = p * p;
-      n /= p;
-
-      while (n % p == 0) {
-        j *= p;
-        n /= p;
-      }
-
-      sum = sum * (j - 1) / (p - 1);
-    }
-    p += (p == 2) ? 1 : 2;
-  }
-
-  if (n > 1) sum *= (n + 1);
-
-  return sum - num;
 }
 
 int64_t modpow (int64_t base, int64_t exp, int64_t mod) {
@@ -294,15 +294,52 @@ bool palindrome (int64_t num) {
     return reverse (num) == num;
 }
 
+vector<int> decompose (int num) {
+  vector<int> digits;
+
+  do {
+      digits.push_back(num % 10);
+  } while (num /= 10);
+
+  reverse (digits.begin(), digits.end());
+  return digits;
+}
+void decompose2 (int num) {
+    int size = floor (log10 (num)) + 1;
+
+    do {
+        for (int i = 1; i <= size; i++) {
+            cout << num % static_cast<int> (pow (10, i)) << " ";
+        }
+        cout << "\n";
+        size--;
+    } while (num /= 10);
+
+}
 
 int main () {
 
     Timer chrono;
 
-    const int limit = 1000000007;
     int cnt = 0, res = 0, mmax = 0, index = 0;
 
-    cout << "\nres :: " << index;
+
+    int64_t sq = 6724;
+
+    int64_t rt = sqrt (sq);
+    int size = floor (log10 (sq)) + 1;
+    vector<int> digit = decompose(sq);
+
+    vector<vector<int>> cub (size);
+    for (int i = 0; i < size; i++) {
+        int tmp = 0;
+        for (int j = i ; j < size; j++) {
+            tmp = tmp * 10 + digit[j];
+            cub[i].push_back (tmp);
+        }
+    }
+
+    cout << "\nres :: " << res;
 
     chrono.stop();
     chrono.get_duration();
