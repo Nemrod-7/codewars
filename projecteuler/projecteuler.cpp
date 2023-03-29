@@ -294,53 +294,85 @@ bool palindrome (int64_t num) {
     return reverse (num) == num;
 }
 
-vector<int> decompose (int num) {
-  vector<int> digits;
 
-  do {
-      digits.push_back(num % 10);
-  } while (num /= 10);
-
-  reverse (digits.begin(), digits.end());
-  return digits;
+double resilience2 (int d) {
+    return phi (d) / static_cast<double> (d-1);
 }
-void decompose2 (int num) {
-    int size = floor (log10 (num)) + 1;
 
-    do {
-        for (int i = 1; i <= size; i++) {
-            cout << num % static_cast<int> (pow (10, i)) << " ";
+int rad2 (int n) {
+    if (is_prime (n)) return n;
+
+    int res = (n % 2 == 0) ? 2 : 1;
+    while (n % 2 == 0) n /= 2;
+
+    for (int i = 3; i * i <= n; i += 2) {
+        if (n % i == 0) {
+            res *= i;
+            while (n % i == 0) n /= i;
         }
-        cout << "\n";
-        size--;
-    } while (num /= 10);
+    }
 
+    if (n != 1) res *= n;
+    return res;
 }
 
 int main () {
 
     Timer chrono;
 
-    int cnt = 0, res = 0, mmax = 0, index = 0;
+    const int64_t limit = 100;
+    const double thresh = 15499.0 / 94744.0;
+    uint64_t res = 0;
 
+    cout << fixed << setprecision(4);
 
-    int64_t sq = 6724;
+    auto prime = sieve (limit);
 
-    int64_t rt = sqrt (sq);
-    int size = floor (log10 (sq)) + 1;
-    vector<int> digit = decompose(sq);
+    double t = 1.0 / 1.0;
+    double minv = 1.1;
+    map<int,int> hist;
+    // problem 243
+    vector<int> seq {1,2,4}; // A060735 -> a(n) = a(n-1) + rad(a(n-1))
+    // # problem 124 : Ordered radicals
+    vector<int> rad (19, 1); // A007947 ->
+    vector<int> ref = {1,2,3,2,5,6,7,2,3,10,11,6,13,14,15,2,17,6,19};
 
-    vector<vector<int>> cub (size);
-    for (int i = 0; i < size; i++) {
-        int tmp = 0;
-        for (int j = i ; j < size; j++) {
-            tmp = tmp * 10 + digit[j];
-            cub[i].push_back (tmp);
+    for (int64_t i = 1; i < 20; i++) {
+        //t = phi (i) / static_cast<double> (i - 1);
+    //    rd.push_back (rad (i));
+        rad[i] = rad2 (i+1);
+        /*
+        if (rad[i] == 1) {
+            for (int j = i; j < 20; j += i) {
+                rad[j] *= i;
+            }
+        }
+        */
+    }
+
+    if (rad != ref) {
+        for (auto it : ref) {
+            cout << it << " ";
+        }
+        cout << "\n";
+        for (auto it : rad) {
+            cout << it << " ";
         }
     }
 
-    cout << "\nres :: " << res;
+    /*
+    /*
+    //{ 2, 4, 6, 12, 16 }
+    for (int i = 1; i < seq.size(); i++) {
+    //      hist[seq[i] - seq[i-1]]++;
+    //    cout << seq[i] - seq[i-1] << ' ';
+    }
 
+    for (auto [num, freq] : hist) {
+    //  cout << num << " => " << freq << "\n";
+    }
+    //cout << "\nres :: " << res;
+    */
     chrono.stop();
     chrono.get_duration();
 }
