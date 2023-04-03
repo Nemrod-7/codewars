@@ -2,6 +2,7 @@
 #include <sciplot/sciplot.hpp>
 
 using namespace sciplot;
+
 class Draw {
     private :
 
@@ -11,7 +12,6 @@ class Draw {
     public :
         static void point (const Point &p) {
             cout << "<" << setw(2) << p.x << "," << setw(2) << p.y << "> ";
-
         }
 
         static void img () {
@@ -24,7 +24,12 @@ class Draw {
             canvas.size(800, 800);
             canvas.show();
         }
-
+        static void rect (const vector<Point> &graph) {
+            line ({graph[0], graph[1]});
+            line ({graph[0], graph[2]});
+            line ({graph[1], graph[3]});
+            line ({graph[2], graph[3]});
+        }
         static void dots (const vector<Point> &graph) {
             vector<double> x, y;
             for (auto &p : graph) {
@@ -32,7 +37,7 @@ class Draw {
                 y.push_back (p.y);
             }
 
-            draw.drawPoints(x, y).pointType(5);
+            draw.drawPoints (x, y).pointType(5);
         }
         static void line (const vector<Point> &graph) {
             vector<double> x, y;
@@ -40,8 +45,9 @@ class Draw {
                 x.push_back (p.x);
                 y.push_back (p.y);
             }
-            draw.drawBrokenCurveWithPoints(x, y);
+            draw.drawCurve (x, y);
         }
+
         static void graph (Point start, Point exit, vector<Circle> graph) {
           double  maxv = max (maxp (start), maxp (exit));
 

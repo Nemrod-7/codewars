@@ -62,6 +62,7 @@ vector<point> mkpoint (int size) {
   }
   return ve;
 }
+
 int main () {
 
 

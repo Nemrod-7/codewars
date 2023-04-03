@@ -22,12 +22,13 @@ struct Circle {
 
 bool operator == (const Point &a, const Point &b) { return a.x == b.x && a.y == b.y; }
 bool operator != (const Point &a, const Point &b) { return a.x != b.x || a.y != b.y; }
-bool operator  < (const Point &a, const Point &b) { return make_pair (a.x,a.y) < make_pair (b.x,b.y); }
+bool operator < (const Point &a, const Point &b) { return make_pair (a.x,a.y) < make_pair (b.x,b.y); }
 
-
-double distance (Point a, Point b) { return std::hypot (a.x - b.x, a.y - b.y); }
+double distance (const Point &a, const Point &b) { return std::hypot (a.x - b.x, a.y - b.y); }
 bool inside_circle (const Circle &c, const Point &p) { return distance (c.ctr, p) < c.r; }
-double slope (Point a, Point b) { return (b.y - a.y) / (b.x - a.x); }
+
+double slope (const Point &a, const Point &b) { return (b.y - a.y) / (b.x - a.x); }
+double intercept (const Point &a, const double m) { return a.y - (m * a.x); }
 
 int nearest_point (const vector<Point> &curr, const Point &a) {
 

@@ -6,6 +6,13 @@
 // NEQ5xBztxeg43aP
 using namespace std;
 
+void showvec (const vector<int64_t> &v) {
+  for (auto it : v) {
+      cout << it << " ";
+  }
+  cout << "\n";
+}
+
 class check {
   public :
       static void overflow (int64_t a, int64_t b) {
@@ -198,7 +205,7 @@ int64_t fibonacci (int64_t n) {
     if (n == 0) return 0;
     if (n == 1) return 1;
     return fibonacci (n - 1) + fibonacci (n - 2);
-  }
+}
 string collatz (int64_t n) {
 
     string os;
@@ -294,85 +301,39 @@ bool palindrome (int64_t num) {
     return reverse (num) == num;
 }
 
+int64_t radical (int64_t n) {
+  // A007947 -> r(n) -> Π p|n
+  if (is_prime (n)) return n;
 
-double resilience2 (int d) {
+  int64_t res = (n % 2 == 0) ? 2 : 1;
+  while (n % 2 == 0) n /= 2;
+
+  for (int64_t i = 3; i * i <= n; i += 2) {
+    if (n % i == 0) {
+      res *= i;
+      while (n % i == 0) n /= i;
+    }
+  }
+
+  if (n != 1) res *= n;
+  return res;
+}
+double resilience (int64_t d) {
     return phi (d) / static_cast<double> (d-1);
 }
 
-int rad2 (int n) {
-    if (is_prime (n)) return n;
-
-    int res = (n % 2 == 0) ? 2 : 1;
-    while (n % 2 == 0) n /= 2;
-
-    for (int i = 3; i * i <= n; i += 2) {
-        if (n % i == 0) {
-            res *= i;
-            while (n % i == 0) n /= i;
-        }
-    }
-
-    if (n != 1) res *= n;
-    return res;
-}
 
 int main () {
 
     Timer chrono;
 
     const int64_t limit = 100;
-    const double thresh = 15499.0 / 94744.0;
-    uint64_t res = 0;
 
-    cout << fixed << setprecision(4);
 
-    auto prime = sieve (limit);
+    cout << "\n";
 
-    double t = 1.0 / 1.0;
-    double minv = 1.1;
-    map<int,int> hist;
-    // problem 243
-    vector<int> seq {1,2,4}; // A060735 -> a(n) = a(n-1) + rad(a(n-1))
-    // # problem 124 : Ordered radicals
-    vector<int> rad (19, 1); // A007947 ->
-    vector<int> ref = {1,2,3,2,5,6,7,2,3,10,11,6,13,14,15,2,17,6,19};
+    //showvec(seq);
 
-    for (int64_t i = 1; i < 20; i++) {
-        //t = phi (i) / static_cast<double> (i - 1);
-    //    rd.push_back (rad (i));
-        rad[i] = rad2 (i+1);
-        /*
-        if (rad[i] == 1) {
-            for (int j = i; j < 20; j += i) {
-                rad[j] *= i;
-            }
-        }
-        */
-    }
-
-    if (rad != ref) {
-        for (auto it : ref) {
-            cout << it << " ";
-        }
-        cout << "\n";
-        for (auto it : rad) {
-            cout << it << " ";
-        }
-    }
-
-    /*
-    /*
-    //{ 2, 4, 6, 12, 16 }
-    for (int i = 1; i < seq.size(); i++) {
-    //      hist[seq[i] - seq[i-1]]++;
-    //    cout << seq[i] - seq[i-1] << ' ';
-    }
-
-    for (auto [num, freq] : hist) {
-    //  cout << num << " => " << freq << "\n";
-    }
-    //cout << "\nres :: " << res;
-    */
     chrono.stop();
     chrono.get_duration();
 }
