@@ -5,7 +5,6 @@
 using namespace std;
 
 struct Point {
-
     double x,y;
 
     Point() : x(0.0), y(0.0) {}
@@ -24,32 +23,14 @@ bool operator == (const Point &a, const Point &b) { return a.x == b.x && a.y == 
 bool operator != (const Point &a, const Point &b) { return a.x != b.x || a.y != b.y; }
 bool operator < (const Point &a, const Point &b) { return make_pair (a.x,a.y) < make_pair (b.x,b.y); }
 
-double distance (const Point &a, const Point &b) { return std::hypot (a.x - b.x, a.y - b.y); }
-bool inside_circle (const Circle &c, const Point &p) { return distance (c.ctr, p) < c.r; }
+double rnd (const double x) { return round (x * 1e8) / 1e8; }
+double distance (const Point &a, const Point &b) { return rnd (hypot (a.x - b.x, a.y - b.y)); }
+bool inside_circle (const Point &p, const Circle &c) { return distance (c.ctr, p) < c.r; }
 
-double slope (const Point &a, const Point &b) { return (b.y - a.y) / (b.x - a.x); }
-double intercept (const Point &a, const double m) { return a.y - (m * a.x); }
-
-int nearest_point (const vector<Point> &curr, const Point &a) {
-
-    double minv = numeric_limits<double>::infinity(), dist;
-    int near;
-
-    for (int i = 0; i < curr.size(); i++) {
-        dist = distance (a, curr[i]);
-
-        if (a != curr[i] && dist < minv) {
-            near = i;
-            minv = dist;
-        }
-    }
-
-    return near;
-}
-bool isvalid (const Point &p, const vector<Circle> &space) {
+bool is_valid (const Point &p, const vector<Circle> &space) {
 
     for (auto &cir : space) {
-        if (inside_circle (cir, p) == true) {
+        if (inside_circle (p, cir) == true) {
             return false;
         }
     }

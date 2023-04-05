@@ -3,12 +3,28 @@
 
 using namespace sciplot;
 
+
 class Draw {
     private :
 
         inline static Plot2D draw;
         static double maxp (const Point &p) { return max (abs (p.x), abs (p.y)); }
+        static int nearest_point (const vector<Point> &curr, const Point &a) {
 
+            double minv = numeric_limits<double>::infinity(), dist;
+            int near;
+
+            for (int i = 0; i < curr.size(); i++) {
+                dist = distance (a, curr[i]);
+
+                if (a != curr[i] && dist < minv) {
+                    near = i;
+                    minv = dist;
+                }
+            }
+
+            return near;
+        }
     public :
         static void point (const Point &p) {
             cout << "<" << setw(2) << p.x << "," << setw(2) << p.y << "> ";
