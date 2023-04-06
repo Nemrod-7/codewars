@@ -27,6 +27,19 @@ double rnd (const double x) { return round (x * 1e8) / 1e8; }
 double distance (const Point &a, const Point &b) { return rnd (hypot (a.x - b.x, a.y - b.y)); }
 bool inside_circle (const Point &p, const Circle &c) { return distance (c.ctr, p) < c.r; }
 
+double sq (const double x) { return x * x; }
+double radian (const double deg) { return deg * M_PI / 180.0; }
+double slope (const Point &a, const Point &b) { return (b.y - a.y) / (b.x - a.x); }
+double intercept (const Point &a, const double m) { return a.y - (m * a.x); }
+double quadratic (const double a, const double b, const double c) {
+
+    const double delta = b * b - 4 * a * c;
+    const double x1 = -(b + sqrt (delta)) / (2 * a);
+    const double x2 = c / (a * x1);
+
+    return x2;
+}
+
 bool is_valid (const Point &p, const vector<Circle> &space) {
 
     for (auto &cir : space) {

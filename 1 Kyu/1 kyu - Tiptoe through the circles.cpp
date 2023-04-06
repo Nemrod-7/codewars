@@ -14,31 +14,6 @@ using namespace std;
 
 const double epsilon = 1e-8;
 
-struct vertex {
-    double cost, dist, heur;
-		vector<Point> hist;
-};
-struct comp {
-    bool operator()(const vertex &a, const vertex &b ) {
-        return  a.cost == b.cost ? a.heur > b.heur : a.cost > b.cost;
-        //return  a.heur == b.heur ? a.cost > b.cost : a.heur > b.heur;
-    }
-};
-
-
-double sq (const double x) { return x * x; }
-double radian (const double deg) { return deg * M_PI / 180.0; }
-double slope (const Point &a, const Point &b) { return (b.y - a.y) / (b.x - a.x); }
-double intercept (const Point &a, const double m) { return a.y - (m * a.x); }
-double quadratic (const double a, const double b, const double c) {
-
-    const double delta = b * b - 4 * a * c;
-    const double x1 = -(b + sqrt (delta)) / (2 * a);
-    const double x2 = c / (a * x1);
-
-    return x2;
-}
-
 vector<Point> tangent (const Point &p1, const Circle &c) { // tangent points of a cricle
     auto [c1,rad] = c;
     const double theta = acos (rad / distance (p1,c1));
@@ -82,15 +57,15 @@ vector<Point> hcenter (const Circle &c1, const Circle &c2) { // homothetic cente
     return {h1,h2};
 }
 
-bool collision (Point &p1, Point &p2, vector<Circle> &graph) {
+bool collision (const Point &p1, const Point &p2, const vector<Circle> &graph) {
     const double dist = distance (p1,p2);
 
-		for (Circle &c1 : graph) {
+		for (const Circle &c1 : graph) {
         if (inside_circle (p1, c1) || inside_circle (p2, c1)) {
            return true;
         }
         for (auto ip : interception (p1, p2, c1)) {
-            if (distance (p1, ip) + distance (ip, p2) <= dist) {
+            if ((distance (p1, ip) + distance (ip, p2) - dist) <= epsilon) {
                 return true;
             }
         }
@@ -98,9 +73,76 @@ bool collision (Point &p1, Point &p2, vector<Circle> &graph) {
 
     return false;
 }
+vector<vector<Point>> tangraph (vector<Circle> graph) {  // tangent visibility graph
+
+  const int size = graph.size();
+  vector<vector<Point>> edge;
+
+  for (int i = 0; i < size; i++) {
+    Circle c1 = graph[i];
+
+    for (int j = i + 1; j < size; j++) {
+      Circle c2 = graph[j];
+
+      for (auto p2 : hcenter (c1, c2)) {
+        if (is_valid (p2, graph)) {
+          vector<Point> t1 = tangent (p2, c1), t2 = tangent (p2, c2);
+
+          if (collision (t1[0], t2[0], graph) == false) {
+              edge.push_back ({t1[0],t2[0]});
+          }
+
+          if (collision (t1[1], t2[1], graph) == false) {
+              edge.push_back ({t1[1],t2[1]});
+          }
+        }
+      }
+    }
+  }
+
+  return edge;
+}
+vector<Point> find_tangent (const Point &p1, const vector<Circle> &graph) { // find valid tangent from point
+    const int size = graph.size();
+		vector<Point> vect;
+
+    for (int i = 0; i < size; i++) {
+        Circle c1 = graph[i];
+        for (Point p2 : tangent (p1, c1)) {
+            if (collision (p1,p2, graph) == false) {
+                vect.push_back(p2);
+            }
+        }
+    }
+
+		return vect;
+}
+
+int identify (const Point &p1, const vector<Circle> &graph) {
+
+    for (int i = 0; i < graph.size(); i++) {
+        auto [p2,rad] = graph[i];
+        //cout << distance (graph[i].ctr, p) << " " << graph[i].r << "\n";
+        if (abs (distance (p1, p2) - rad) < epsilon) {
+            return i;
+        }
+    }
+    return -1;
+}
 
 void astar (Point start, Point exit, vector<Circle> graph) {
-		const double rad = 0.1;
+    struct vertex {
+        double cost, dist, heur;
+    		vector<Point> hist;
+    };
+    struct comp {
+        bool operator()(const vertex &a, const vertex &b ) {
+            return  a.cost == b.cost ? a.heur > b.heur : a.cost > b.cost;
+            //return  a.heur == b.heur ? a.cost > b.cost : a.heur > b.heur;
+        }
+    };
+
+    const double rad = 0.1;
     const vector<Point> direct { {rad,0.0},{0.0,rad},{-rad,0.0},{0.0,-rad},  {rad,rad},{-rad,rad},{rad,-rad},{-rad,-rad} };
 
 		priority_queue<vertex,vector<vertex>,comp> q1;
@@ -154,35 +196,34 @@ void astar (Point start, Point exit, vector<Circle> graph) {
  		//Draw::dots(vect);
 		//Draw::img();
 }
-vector<vector<Point>> mknode (vector<Circle> graph) {
 
-  const int size = graph.size();
-  vector<vector<Point>> edge;
+double astar_distance_proto (Point p1, Point p2, vector<Circle> graph) {
+    double alt;
+    int id1 = identify (p1, graph);
+    double ab = distance (p1,p2);
+    int id2 = identify (p2, graph);
 
-  for (int i = 0; i < size; i++) {
-    Circle c1 = graph[i];
-
-    for (int j = i + 1; j < size; j++) {
-      Circle c2 = graph[j];
-      //vector<Point> hc = hcenter (c1, c2);
-      for (auto p2 : hcenter (c1, c2)) {
-        // Point p2 = hc[k];
-        if (is_valid (p2, graph)) {
-          vector<Point> t1 = tangent (p2, c1), t2 = tangent (p2, c2);
-
-          if (collision (t1[0], t2[0], graph) == false) {
-              edge.push_back ({t1[0],t2[0]});
-          }
-
-          if (collision (t1[1], t2[1], graph) == false) {
-              edge.push_back ({t1[1],t2[1]});
-          }
-        }
-      }
+    if (id2 == id1) { // if p1 and p2 lies on the same sphere : dist = arc length
+        auto [p3,rad] = graph[id2];
+        const double hyp = distance (p1,p3);
+        alt = 2 * rad * asin (0.5 * ab / hyp);
+    } else {
+        alt = ab;
     }
+    return alt;
+}
+void mkcircle (Point p1, Point p2) {
+
+  double m = slope (p1,p2);
+  const double rad = 0.5;
+  double cosine = 1.0 / sqrt (1.0 + sq (m)), sine = m / sqrt (1.0 + sq (m));
+
+  for (double deg = 0; deg < 90; deg++) {
+      double alpha = radian(deg);
+  //    Point p2 = {p1.x + rad * cos (alpha), p1.y + rad * sin (alpha)};
+  //    node.push_back(p2);
   }
 
-  return edge;
 }
 
 int main () {
@@ -191,62 +232,34 @@ int main () {
     vector<Circle> graph = {  {0.0, 0.0, 2.5}, {1.5, 2.0, 0.5}, {3.5, 1.0, 1.0}, {3.5, -1.7, 1.2} };
 
     const int size = graph.size();
-    auto edge = mknode (graph);
 
+    vector<vector<Point>> edge = tangraph (graph);
     // cout << fixed << setprecision (5);
-    vector<Point> vect;
-    Point p1 = exit;
+    vector<vector<Point>> stnode {{{-3,1},{-1.390877081867,2.077368754732}},{{-3,1},{-2.359122918333 ,-0.827368754666}}};
 
-    for (int i = 0; i < size; i++) {
-        Circle c1 = graph[i];
-        for (Point p2 : tangent (p1, c1)) {
-            const double dist = distance (p1, p2);
-            bool valid = true;
-            // Display::point (p2);
-            /*
-            */
-            for (int j = i + 1; j < size; j++) {
-                Circle c2 = graph[j];
-                vector<Point> interc = interception (p1, p2, c2);
 
-                for (auto &i1 : interc) {
-                    //vect.push_back(i1);
-                    // cout << distance (p1, i1) + distance (i1, p2) << " " << dist << "\n";
-                    if (distance (p1, i1) + distance (i1, p2) <= dist) {
-                        valid = false;
-                    }
-                }
-            }
+  /*
 
-            if (valid == true) {
-            //     vect.push_back(p2);
-                Draw::line({exit,p2});
-            }
-        }
+  vector<Point> node;
+
+  for (auto p : find_tangent (start,graph)) {
+      node.push_back(p);
+      //Display::vect (node);
     }
+    for (auto p : find_tangent (exit,graph)) {
+        node.push_back(p);
+    }
+
+
 
     /*
-    for (auto e : edge) {
-        Draw::line(e);
-    }
 
-
-    double m = slope (p1,p2);
-    const double rad = 0.5;
-    double cosine = 1.0 / sqrt (1.0 + sq (m)), sine = m / sqrt (1.0 + sq (m));
-
-    for (double deg = 0; deg < 90; deg++) {
-        double alpha = radian(deg);
-    //    Point p2 = {p1.x + rad * cos (alpha), p1.y + rad * sin (alpha)};
-    //    edge.push_back(p2);
-    }
-		// astar(start, exit, graph);
 
     Draw::graph (start,exit,graph);
-    //Draw::dots (vect);
+    Draw::dots (node);
     Draw::img();
-
     */
+
 }
 ////////////////////////////Arkive////////////////////////////////
 
@@ -261,7 +274,13 @@ double area (const Point &a, const Point &b, const Point &c) { // triangle area
     return rnd (abs (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)) * 0.5);
     //area2 = abs((b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y))
 }
+double degree (double radian) { return radian * 180.0 / M_PI; }
 
+void arclenth (Point a, Point b, Point c, double r) { // arc length of circle segment a-b
+    double ab = distance (a,b) / 2, hyp = distance (a,c); // ab -> opposite side, hyp = hypthenuse
+    double theta = degree (asin (ab / hyp));
+    double arclen = 2 * M_PI * r * (theta / 360);
+}
 class Graph {
     private :
 
@@ -293,38 +312,3 @@ class Graph {
         }
         bool isinside (const Point &p) { return p.x > minx && p.x < maxx && p.y > miny && p.y < maxy; }
 };
-
-vector<Point> find_tangent (const Point &p1, const vector<Circle> &space) {
-
-		const double epsilon = 1e-8;
-    //const vector<double> sign {1.0,-1.0};
-		vector<Point> vect;
-
-    for (Circle c1 : space) {
-        for (Point p2 : tangent (p1, c1)) {
-            const double dist = distance (p1, p2);
-            bool valid = true;
-            // Display::point (p2);
-            for (Circle c2 : space) {
-                if (c2.ctr != c1.ctr) {
-                    vector<Point> interc = interception (p1, p2, c2);
-
-                    for (auto &i1 : interc) {
-
-                        if (distance (p1, i1) + distance (i1, p2) - dist <= epsilon) {
-                            valid = false;
-                        }
-                        /*
-                        */
-                    }
-                }
-            }
-
-            if (valid == true) {
-                vect.push_back(p2);
-            }
-        }
-    }
-    // Draw::dots (vect);
-		return vect;
-}
