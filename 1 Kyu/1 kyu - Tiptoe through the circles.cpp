@@ -130,6 +130,21 @@ int identify (const Point &p1, const vector<Circle> &graph) {
     return -1;
 }
 
+double astar_distance_proto (Point p1, Point p2, vector<Circle> graph) {
+    double alt;
+    int id1 = identify (p1, graph);
+    double ab = distance (p1,p2);
+    int id2 = identify (p2, graph);
+
+    if (id2 == id1) { // if p1 and p2 lies on the same sphere : dist = arc length
+        auto [p3,rad] = graph[id2];
+        const double hyp = distance (p1,p3);
+        alt = 2 * rad * asin (0.5 * ab / hyp);
+    } else {
+        alt = ab;
+    }
+    return alt;
+}
 void astar (Point start, Point exit, vector<Circle> graph) {
     struct vertex {
         double cost, dist, heur;
@@ -197,21 +212,85 @@ void astar (Point start, Point exit, vector<Circle> graph) {
 		//Draw::img();
 }
 
-double astar_distance_proto (Point p1, Point p2, vector<Circle> graph) {
-    double alt;
-    int id1 = identify (p1, graph);
-    double ab = distance (p1,p2);
-    int id2 = identify (p2, graph);
+int nearest_point (const Point &a, const vector<Point> &curr) {
 
-    if (id2 == id1) { // if p1 and p2 lies on the same sphere : dist = arc length
-        auto [p3,rad] = graph[id2];
-        const double hyp = distance (p1,p3);
-        alt = 2 * rad * asin (0.5 * ab / hyp);
-    } else {
-        alt = ab;
+    double minv = numeric_limits<double>::infinity(), dist;
+    int near;
+
+    for (int i = 0; i < curr.size(); i++) {
+        dist = distance (a, curr[i]);
+
+        if (a != curr[i] && dist < minv) {
+            near = i;
+            minv = dist;
+        }
     }
-    return alt;
+
+    return near;
 }
+int main () {
+
+    Point start = {-3, 1}, exit = {4.25, 0};
+    vector<Circle> graph = {{0.0, 0.0, 2.5}, {1.5, 2.0, 0.5}, {3.5, 1.0, 1.0}, {3.5, -1.7, 1.2}};
+
+    const int size = graph.size();
+    vector<vector<int>> adj (size);
+
+    vector<vector<Point>> edge = tangraph (graph);
+    // cout << fixed << setprecision (5);
+    vector<Point> stnode {{-1.390877081867,2.077368754732},{-2.359122918333 ,-0.827368754666}};
+
+    for (auto p : find_tangent (exit,graph)) { // connect exit tangents to tan visibility graph
+       // edge.push_back({p, exit}); // -> exit return -1 !!
+    }
+
+    for (int i = 0; i < edge.size(); i++) { // attach edges to circles
+        int id1 = identify (edge[i][0], graph), id2 = identify (edge[i][1], graph);
+        adj[id1].push_back(i); adj[id2].push_back(i);
+    }
+
+    struct vertex { double dist; vector<Point> path; };
+    struct comp {
+        bool operator() (const vertex &a, const vertex &b ) {
+            return  a.dist > b.dist;
+        }
+    };
+
+    priority_queue<vertex,vector<vertex>,comp> q1;
+		map<Point,bool> visit;
+
+    for (auto p : find_tangent (start,graph)) {
+        vertex source = {distance (start,p),{p}};
+        // Display::point (p);
+        q1.push(source);
+    }
+
+    auto [dist,path] = q1.top();
+    Point p1 = path.back();
+    q1.pop();
+
+    int id = identify (p1, graph);
+
+    for (int i = 0; i < adj[id].size(); i++) {
+        vector<Point> nxe = adj[id][i];
+    }
+
+    
+    /*
+    int idx = nearest_point (p1, adj[id]);
+    vector<Point> nxe = edge[idx];
+    */
+
+    /*
+
+
+    Draw::graph (start,exit,graph);
+    Draw::dots (node);
+    Draw::img();
+    */
+
+}
+////////////////////////////Arkive////////////////////////////////
 void mkcircle (Point p1, Point p2) {
 
   double m = slope (p1,p2);
@@ -225,44 +304,6 @@ void mkcircle (Point p1, Point p2) {
   }
 
 }
-
-int main () {
-
-    Point start = {-3, 1}, exit = {4.25, 0};
-    vector<Circle> graph = {  {0.0, 0.0, 2.5}, {1.5, 2.0, 0.5}, {3.5, 1.0, 1.0}, {3.5, -1.7, 1.2} };
-
-    const int size = graph.size();
-
-    vector<vector<Point>> edge = tangraph (graph);
-    // cout << fixed << setprecision (5);
-    vector<vector<Point>> stnode {{{-3,1},{-1.390877081867,2.077368754732}},{{-3,1},{-2.359122918333 ,-0.827368754666}}};
-
-
-  /*
-
-  vector<Point> node;
-
-  for (auto p : find_tangent (start,graph)) {
-      node.push_back(p);
-      //Display::vect (node);
-    }
-    for (auto p : find_tangent (exit,graph)) {
-        node.push_back(p);
-    }
-
-
-
-    /*
-
-
-    Draw::graph (start,exit,graph);
-    Draw::dots (node);
-    Draw::img();
-    */
-
-}
-////////////////////////////Arkive////////////////////////////////
-
 pair<double,double> barycentre (const Point &p1, const Point &p2, const Point &p3) {
   double x = (p1.x + p2.x + p3.x) / 3;
   double y = (p1.y + p2.y + p3.y) / 3;
