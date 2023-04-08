@@ -212,22 +212,6 @@ void astar (Point start, Point exit, vector<Circle> graph) {
 		//Draw::img();
 }
 
-int nearest_point (const Point &a, const vector<Point> &curr) {
-
-    double minv = numeric_limits<double>::infinity(), dist;
-    int near;
-
-    for (int i = 0; i < curr.size(); i++) {
-        dist = distance (a, curr[i]);
-
-        if (a != curr[i] && dist < minv) {
-            near = i;
-            minv = dist;
-        }
-    }
-
-    return near;
-}
 int main () {
 
     Point start = {-3, 1}, exit = {4.25, 0};
@@ -265,29 +249,41 @@ int main () {
         q1.push(source);
     }
 
-    auto [dist,path] = q1.top();
+    auto [heur,path] = q1.top();
     Point p1 = path.back();
     q1.pop();
 
     int id = identify (p1, graph);
+    vector<Point> nxp;
+    // nearsest point on a circle
+    double minv = numeric_limits<double>::infinity(), dist;
 
     for (int i = 0; i < adj[id].size(); i++) {
-        vector<Point> nxe = adj[id][i];
-    }
+        vector<Point> nxe = edge[adj[id][i]];
+        int ida = identify (nxe[0], graph);//, idb = identify (nxe[1], graph);
+        if (ida != id) swap (nxe[0], nxe[1]);
+        Point tmp = nxe[0];
+        //cout << ida << " " << idb << "\n";
+        dist = distance (p1,tmp);
 
-    
+        if (dist < minv) {
+            minv = dist;
+            nxp = nxe;
+        }
+    }
     /*
     int idx = nearest_point (p1, adj[id]);
     vector<Point> nxe = edge[idx];
     */
 
-    /*
-
-
     Draw::graph (start,exit,graph);
-    Draw::dots (node);
-    Draw::img();
+    Draw::line ({start, p1});
+    Draw::line ({p1, nxp[0]});
+    Draw::line ({nxp[0], nxp[1]});
+    /*
+    // Draw::dots (node);
     */
+    Draw::img();
 
 }
 ////////////////////////////Arkive////////////////////////////////
