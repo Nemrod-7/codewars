@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <map>
 #include <cmath>
 
 using namespace std;
@@ -63,25 +64,33 @@ int pythagoreantriplet (int sum) {
 
     return cnt;
 }
+
 int main () {
 
     int t = 0;
     // triangle ratio : 3-4-5 -> base : 1 left 0.8, right = 0.6
-		int lim = 1200;
+		int lim = 120000;
 		// int base = 272, hyp = 305, h = 273;
 
+		map<int64_t,bool> sq;
+
+		for (int64_t i = 1; i < lim; i++) {
+				sq[i * i] = true;
+		}
+
 		vector<double> sig = {-1.0,1.0};
+		// bc2 = ab2 + ac2
+		for (int64_t ac = 2; ac < lim; ac++) {
+				int64_t base = ac * 2;
 
-		for (int opp = 2; opp < 500; opp++) {
 				for (auto sg : sig) {
-						int h = (opp * 2) + sg;
-						int hy = opp * opp + h * h;
+						int64_t ab = base + sg;
+						int64_t bc2 = ac * ac + ab * ab;
 
-						double hyp = sqrt (hy);
-						if (hyp == static_cast<int> (hyp)) {
-							// cout << "base : " << (opp * 2) << " hyp : " << hyp << " h: " << h << "\n";
-
+						if (sq[bc2] == true) {
+							cout << "base : " << base << " hyp : " << sqrt (bc2) << " h: " << ab << "\n";
 						}
+
 				}
 			// cout << "\n";
 		}
