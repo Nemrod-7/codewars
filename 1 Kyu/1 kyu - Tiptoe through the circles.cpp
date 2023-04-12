@@ -212,25 +212,62 @@ void astar (Point start, Point exit, vector<Circle> graph) {
 		//Draw::img();
 }
 
+double area (const vector<Point> &curr) {
+    double sum = 0;
+
+    for (size_t i = 0; i < curr.size(); ++i) {
+        sum += (curr[i].x * curr[i].y + 1) - (curr[i].x + 1 * curr[i].y);
+    }
+
+    return abs (sum) / 2;
+}
+double ccw (const Point &o, const Point &a, const Point &b) { // counter clockwise
+    return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+}
+vector<Point> convex_hull (vector<Point> curr) {
+
+    const int size = curr.size();
+    int i, t, k = 0;
+    vector<Point> hull (size * 2);
+    //sort (begin(curr), end(curr), vertcmp);
+
+    for (i = 0; i < size; i++) {
+        while (k >= 2 && ccw (hull[k - 2], hull[k - 1], curr[i]) <= 0) {
+            k--;
+        }
+
+        hull[k++] = curr[i];
+    }
+
+    for (i = size - 2, t = k + 1; i >= 0; i--) {
+        while (k >= t && ccw (hull[k - 2], hull[k - 1], curr[i]) <= 0) {
+            k--;
+        }
+        hull[k++] = curr[i];
+    }
+
+  //return vector<point>(h.begin(), h.begin() + k - (k > 1));
+    hull.resize (k - 1);
+    return hull;
+}
+
 int main () {
 
     Point start = {-3, 1}, exit = {4.25, 0};
     vector<Circle> graph = {{0.0, 0.0, 2.5}, {1.5, 2.0, 0.5}, {3.5, 1.0, 1.0}, {3.5, -1.7, 1.2}};
 
     const int size = graph.size();
-    vector<vector<int>> adj (size);
+    vector<vector<int>> neigh (size);
+    vector<vector<Point>> edge;
+    map<Point,int> base;
+    
+    sort (graph.begin(), graph.end());
 
-    vector<vector<Point>> edge = tangraph (graph);
+    edge = tangraph (graph);
     // cout << fixed << setprecision (5);
-    vector<Point> stnode {{-1.390877081867,2.077368754732},{-2.359122918333 ,-0.827368754666}};
-
-    for (auto p : find_tangent (exit,graph)) { // connect exit tangents to tan visibility graph
-       // edge.push_back({p, exit}); // -> exit return -1 !!
-    }
-
     for (int i = 0; i < edge.size(); i++) { // attach edges to circles
         int id1 = identify (edge[i][0], graph), id2 = identify (edge[i][1], graph);
-        adj[id1].push_back(i); adj[id2].push_back(i);
+        neigh[id1].push_back(i); neigh[id2].push_back(i);
     }
 
     struct vertex { double dist; vector<Point> path; };
@@ -244,46 +281,78 @@ int main () {
 		map<Point,bool> visit;
 
     for (auto p : find_tangent (start,graph)) {
-        vertex source = {distance (start,p),{p}};
-        // Display::point (p);
+        vertex source = {distance (start,p),{start,p}};
         q1.push(source);
     }
 
-    auto [heur,path] = q1.top();
-    Point p1 = path.back();
-    q1.pop();
-
-    int id = identify (p1, graph);
-    vector<Point> nxp;
-    // nearsest point on a circle
-    double minv = numeric_limits<double>::infinity(), dist;
-
-    for (int i = 0; i < adj[id].size(); i++) {
-        vector<Point> nxe = edge[adj[id][i]];
-        int ida = identify (nxe[0], graph);//, idb = identify (nxe[1], graph);
-        if (ida != id) swap (nxe[0], nxe[1]);
-        Point tmp = nxe[0];
-        //cout << ida << " " << idb << "\n";
-        dist = distance (p1,tmp);
-
-        if (dist < minv) {
-            minv = dist;
-            nxp = nxe;
-        }
+    for (auto p : find_tangent (exit,graph)) { // connect exit tangents to tan visibility graph
+        int id1 = identify (p, graph);
+        edge.push_back({p, exit}); // -> exit return -1 !!
+        neigh[id1].push_back(edge.size());
     }
+    // Draw::graph (start,exit,graph);
+
+    for (auto e : edge) {
+        Draw::line(e);
+    }
+
+    int cycle = 0;
+/*
+    while (!q1.empty()) {
+        auto [heur,path] = q1.top();
+        Point p1 = path.back();
+        q1.pop();
+
+        cycle++;
+
+        if (cycle == 4) {
+          // Draw::line(path);
+          Display::vect(path);
+          cout << "\n";
+           break;
+        }
+
+        int id = identify (p1, graph);
+        auto [p3,rad] = graph[id];
+
+        vector<Point> nxp;
+        // nearsest point on a circle
+        double minv = numeric_limits<double>::infinity();
+
+        for (int i = 0; i < neigh[id].size(); i++) {
+            vector<Point> nxe = edge[neigh[id][i]];
+            int ida = identify (nxe[0], graph);
+            if (ida != id) swap (nxe[0], nxe[1]);
+            Point tmp = nxe[0];
+            //cout << ida << " " << idb << "\n";
+            double dist = distance (p1,tmp);
+
+            if (dist < minv) {
+                minv = dist;
+                nxp = nxe;
+            }
+        }
+
+        const double ab = distance (p1,nxp[0]);
+        const double hyp = distance (p1,p3);
+        //            arc legth                      + distance to next circle
+        double alt = 2 * rad * asin (0.5 * ab / hyp) + distance (nxp[0], nxp[1]);
+
+        vector<Point> route = path;
+        route.push_back(nxp[0]);
+        route.push_back(nxp[1]);
+        vertex nextv = {heur + alt, route};
+        q1.push(nextv);
+    }
+*/
+
+
     /*
-    int idx = nearest_point (p1, adj[id]);
-    vector<Point> nxe = edge[idx];
     */
 
-    Draw::graph (start,exit,graph);
-    Draw::line ({start, p1});
-    Draw::line ({p1, nxp[0]});
-    Draw::line ({nxp[0], nxp[1]});
-    /*
-    // Draw::dots (node);
-    */
-    Draw::img();
+
+
+    // Draw::img();
 
 }
 ////////////////////////////Arkive////////////////////////////////
