@@ -10,6 +10,15 @@
 #include "graph.hpp"
 #include "plot.hpp"
 
+/*
+trigonometry spreadsheet
+
+theta = asin (opp / hyp);
+theta = acos (adj / hyp);
+theta = atan (opp / adj);
+
+*/
+
 using namespace std;
 
 const double epsilon = 1e-8;
@@ -260,7 +269,7 @@ int main () {
     vector<vector<int>> neigh (size);
     vector<vector<Point>> edge;
     map<Point,int> base;
-    
+
     sort (graph.begin(), graph.end());
 
     edge = tangraph (graph);

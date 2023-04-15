@@ -448,10 +448,25 @@ int main () {
 
     Timer clock;
 
-    Bigint a ("28433");
-    Bigint res;
+    const int lim = 60;
 
-    
+    Bigint res, sum;
+    vector<Bigint> fib (lim);
+
+    Bigint an;
+  	fib[0] = "1";
+    fib[1] = "1";
+
+  	for (int i = 2; i < lim; i++) {
+  			fib[i] = fib[i-2] + fib[i-1];
+  	}
+
+    for (int i = 10; i < 11; i++) {
+        // string n = to_string (i);
+        // an = fib[i * 6 + 2] / "2";
+        cout << i * 6 + 2 << " ";
+
+    }
     //res = power ("2", 7830457) + "1";
 
 

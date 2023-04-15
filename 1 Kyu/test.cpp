@@ -1,9 +1,8 @@
 #include <iostream>
 #include "graph.hpp"
-#include "plot.hpp"
+// #include "plot.hpp"
 // using namespace std;
 
-double sq (const double x) { return x * x; }
 vector<Point> interception (const Point &p1, const Point &p2, Circle &c) {
     auto [c2,r2] = c;
     const Point p3 = {p1.x - c2.x, p1.y - c2.y}, p4 = {p2.x - c2.x, p2.y - c2.y}; //shifted line Points
@@ -40,7 +39,7 @@ vector<Point> reduce (vector<Point> &path, vector<Circle> &space) {
     return reduce;
 }
 
-double radian (double deg) { return deg * M_PI / 180.0; }
+double degree (double radian) { return radian * 180.0 / M_PI; }
 
 void pythagorasTree (Point a, Point b, int cycle) {
 
@@ -53,14 +52,14 @@ void pythagorasTree (Point a, Point b, int cycle) {
 	e.x = d.x - (height + width) * 0.5;
 	e.y = d.y - (height - width) * 0.5;
 
-  Draw::rect ({a,b,c,d});
+  // Draw::rect ({a,b,c,d});
 
   if (cycle > 0) {
 		pythagorasTree (e, d, cycle - 1);
 		pythagorasTree (c, e, cycle - 1);
 	}
 }
-double dstfromline (Point a, Point b, Point c) {
+double distfromline (Point a, Point b, Point c) { // return distance of point C from line AB
     double hyp = distance (a,c), line = distance (a,b);
     if (line == 0.0) return hyp;
     /*
@@ -71,78 +70,90 @@ double dstfromline (Point a, Point b, Point c) {
     */
     return abs ((b.x - a.x) * (a.y - c.y) - (a.x - c.x) * (b.y - a.y)) / line;
 }
+void mkcircle (Point p1, Point p2) {
+
+  double m = slope (p1,p2);
+  const double rad = 0.5;
+  double cosine = 1.0 / sqrt (1.0 + sq (m)), sine = m / sqrt (1.0 + sq (m));
+
+  for (double deg = 0; deg < 90; deg++) {
+      double alpha = radian(deg);
+  //    Point p2 = {p1.x + rad * cos (alpha), p1.y + rad * sin (alpha)};
+  //    node.push_back(p2);
+  }
+
+}
+
+pair<double,double> barycentre (const Point &p1, const Point &p2, const Point &p3) {
+  double x = (p1.x + p2.x + p3.x) / 3;
+  double y = (p1.y + p2.y + p3.y) / 3;
+  return {x, y};
+}
 
 int main () {
 
-    Point start = {-3, 1}, exit = {4.25, 0};
-    vector<Circle> space = {  {0.0, 0.0, 2.5}, {1.5, 2.0, 0.5}, {3.5, 1.0, 1.0}, {3.5, -1.7, 1.2} };
 
-    vector<Point> path {{-3,1},{-2.9,1},{-3,1.1},{-3.1,1},{-3,0.9},{-2.9,1.1},{-3.1,1.1},{-2.9,0.9},{-2.8,0.9},{-2.9,0.8},{-2.8,1},{-3,1},{-2.8,0.8},{-2.7,0.8},{-2.8,0.7},{-2.7,0.9},{-2.6,1},{-2.5,1.1},{-2.4,1.2},{-2.3,1.3},{-2.2,1.4},{-2.1,1.5},{-2,1.6},{-1.9,1.7},{-1.8,1.8},{-1.7,1.9},{-1.6,2},{-1.5,2},{-1.4,2.1},{-1.3,2.2},{-1.2,2.2},{-1.1,2.3},{-1,2.3},{-0.9,2.4},{-0.8,2.4},{-0.7,2.4},{-0.6,2.5},{-0.5,2.5},{-0.4,2.5},{-0.3,2.5},{-0.2,2.5},{-0.1,2.5},{0,2.5},{0.1,2.5},{0.2,2.5},{0.3,2.5},{0.4,2.5},{0.5,2.5},{0.6,2.5},{0.7,2.5},{0.7,2.6},{0.7,2.4},{0.8,2.4},{0.9,2.4},{1,2.4},{1,2.5},{1,2.3},{1.1,2.4},{1.2,2.5},{1.3,2.5},{1.4,2.5},{1.5,2.5},{1.6,2.5},{1.7,2.5},{1.8,2.5},{1.9,2.5},{1.9,2.6},{1.9,2.4},{2,2.4},{2,2.5},{2,2.3},{2.1,2.3},{2,2.2},{2.1,2.4},{2.1,2.2},{2.2,2.2},{2.1,2.1},{2.2,2.3},{2.2,2.1},{2.3,2.1},{2.2,2},{2.3,2.2},{2.3,2},{2.4,2},{2.3,1.9},{2.4,2.1},{2.4,1.9},{2.5,1.9},{2.4,1.8},{2.5,2},{2.5,1.8},{2.6,1.8},{2.5,1.7},{2.6,1.9},{2.6,1.7},{2.7,1.7},{2.6,1.6},{2.6,1.5},{2.5,1.4},{2.5,1.3},{2.5,1.2},{2.5,1.1},{2.5,1},{2.5,0.9},{2.5,0.8},{2.5,0.7},{2.5,0.6},{2.5,0.5},{2.6,0.5},{2.6,0.4},{2.6,0.3},{2.7,0.3},{2.7,0.2},{2.8,0.2},{2.9,0.2},{2.8,0.1},{2.9,0.1},{3,0.1},{2.9,0},{3,0},{3.1,0},{3.2,0},{3.3,0},{3.4,0},{3.5,0},{3.6,0},{3.7,0},{3.8,0},{3.9,0},{4,0}};
+    /*
+    trigonometry spreadsheet => theta is angle between hypothenus and adjacent size
+    Soh cah toa
 
-    //cout << path.size() << "\n";
+    theta = asin (opp / hyp);
+    theta = acos (adj / hyp);
+    theta = atan (opp / adj);
+    */
+
     vector<Point> vect;
-
     Point a = {-2.0, 2.0}, b = {4.0, -3.0}, c;
-    Point center = {(a.x + b.x) * 0.5, (a.y + b.y) * 0.5};
 
-    double base = std::hypot (a.x - b.x, a.y - b.y);
-    double left = base * 4.00 / 5.0, right = base * 3.0 / 5.0;
+    a = {0,0}, b = {3,0};
+    Point mid = {(a.x + b.x) * 0.5, (a.y + b.y) * 0.5};
 
-    const double rad = base / 2;
-    double minv = 999.0, minagl;
-    Point tr;
-    //return abs ((b.x - a.x) * (a.y - c.y) - (a.x - c.x) * (b.y - a.y)) / base;
+    double hyp = hypot (a.x - b.x, a.y - b.y);
+    double adj = hyp * 4.00 / 5.0, opp = hyp * 3.0 / 5.0;
 
-    for (double deg = 0; deg < 360; deg += 0.1) {
-        double angle = radian (deg);
-        Point p2 = {center.x + rad * cos (angle), center.y + rad * sin (angle)};
-        double t = distance (a, p2) - left;
+    double rad = hyp / 2;
 
-        if (t > 0) {
-            if (t < minv) {
-                minv = t;
-                tr = p2;
-            }
-        }
+    double theta = asin (opp / hyp); //, theta = asin (rad / opp); // atan (3.0 / 4.0)
+    c = {mid.x + rad * cos (theta), mid.y + rad * sin (theta)};
+
+    cout << setprecision (4);//
+    vect.push_back (mid);
+    cout << "\n";
+
+    for (double deg = 70; deg < 80; deg += 1) {
+       theta = radian (deg);
+       Point p2 = {mid.x + rad * cos (theta), mid.y + rad * sin (theta)};
+       vect.push_back(p2);
+       cout << distance (a,p2) << " " << distance (b,p2) << " => " << theta << " :: " << deg << "\n";
     }
 
-    vect.push_back(tr);
-    /*
-    double alpha = π / 2 * w(v2) / (w(v1) + w(v2)) ; // w : weight of node
+    // cout << adj << " " << opp << " => " << theta << "\n";
+    // cout << adj << " " << distance (a,c) << "\n";
+    // cout << opp << " " << distance (b,c) << "\n";
 
-    const double m = slope (a,b) ;
-    const double y = a.y - (m * a.x);
+    /*
+    double m = slope (a,b) ;
+    double y = a.y - (m * a.x);
+    double cosine = 1.0 / sqrt (1.0 + sq (m)), sine = m / sqrt (1.0 + sq (m));
 
     for (double i = 0; i < 3; i += 0.1) {
         const double nx = center.x + i;
         const double ny = m * nx + y;
-
-        if (nx < b.x) {
-            //cout << ny << ' ';
-            vect.push_back({nx,ny});
-        }
     }
+
     */
 
-    Draw::dots({{-5,5},{5,5},{-5,-5},{5,5}});
-    Draw::dots(vect);
-
-    Draw::line({a,b});
-    Draw::dots({center});
-    Draw::img();
 
     /*
 
+    Draw::dots({{-5,5},{5,5},{-5,-5},{5,5}});
+    Draw::line({a,b,c,a});
+    Draw::dots(vect);
+    Draw::img();
+
+
     pythagorasTree ({0.0,0.0}, {5.0,0.0}, 4);
 
-    for (int i = 0; i < path.size(); i++) {
-        Point curr = path[i];
-        if (collision (start, curr, space) == true) {
-            start = curr;
-            vect.push_ccack (curr);
-            //cout << i << " ";
-        }
-    }
 
     */
 
