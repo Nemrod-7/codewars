@@ -154,6 +154,189 @@ double astar_distance_proto (Point p1, Point p2, vector<Circle> graph) {
     }
     return alt;
 }
+
+double area (const vector<Point> &curr) {
+    double sum = 0;
+
+    for (size_t i = 0; i < curr.size(); ++i) {
+        sum += (curr[i].x * curr[i].y + 1) - (curr[i].x + 1 * curr[i].y);
+    }
+
+    return abs (sum) / 2;
+}
+double ccw (const Point &o, const Point &a, const Point &b) { // counter clockwise
+    return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+}
+vector<Point> convex_hull (vector<Point> curr) {
+
+    const int size = curr.size();
+    int i, t, k = 0;
+    vector<Point> hull (size * 2);
+    //sort (begin(curr), end(curr), vertcmp);
+
+    for (i = 0; i < size; i++) {
+        while (k >= 2 && ccw (hull[k - 2], hull[k - 1], curr[i]) <= 0) {
+            k--;
+        }
+
+        hull[k++] = curr[i];
+    }
+
+    for (i = size - 2, t = k + 1; i >= 0; i--) {
+        while (k >= t && ccw (hull[k - 2], hull[k - 1], curr[i]) <= 0) {
+            k--;
+        }
+        hull[k++] = curr[i];
+    }
+
+  //return vector<point>(h.begin(), h.begin() + k - (k > 1));
+    hull.resize (k - 1);
+    return hull;
+}
+
+void astar2 (Point start, Point exit, vector<Circle> graph) {
+
+  struct vertex { double dist; vector<Point> path; };
+  struct comp {
+      bool operator() (const vertex &a, const vertex &b ) {
+          return  a.dist > b.dist;
+      }
+  };
+
+  const int size = graph.size();
+  vector<vector<int>> neigh (size);
+  vector<vector<Point>> edge;
+  map<Point,int> base;
+
+  priority_queue<vertex,vector<vertex>,comp> q1;
+  map<Point,bool> visit;
+
+  edge = tangraph (graph);
+  // cout << fixed << setprecision (5);
+  for (int i = 0; i < edge.size(); i++) { // attach edges to circles
+      for (int j = 0; j < edge[i].size(); j++) {
+          int id = identify (edge[i][j], graph);
+          neigh[id].push_back(i);
+      }
+      // int id1 = identify (edge[i][0], graph), id2 = identify (edge[i][1], graph);
+      // neigh[id1].push_back(i); neigh[id2].push_back(i);
+      // Display::vect(edge[i]);
+  }
+
+  for (auto p : find_tangent (exit,graph)) { // connect exit tangents to tan visibility graph
+      int id = identify (p, graph);
+      edge.push_back({p, exit}); // -> exit return -1 !!
+      neigh[id].push_back(edge.size());
+  }
+
+  for (auto p : find_tangent (start,graph)) {
+      vertex source = {distance (start,p),{start,p}};
+      q1.push(source);
+  }
+
+  int cycle = 0;
+
+  while (!q1.empty()) {
+      auto [heur,path] = q1.top();
+      Point p1 = path.back();
+      q1.pop();
+
+      cycle++;
+
+      if (cycle == 2) {
+        // Draw::line(path);
+          Display::vect(path);
+          cout << "\n";
+          break;
+      }
+
+      // nearsest point on a circle
+      int id = identify (p1, graph);
+      vector<Point> nxp;
+      double minv = numeric_limits<double>::infinity();
+
+      for (int i = 0; i < neigh[id].size(); i++) {
+          vector<Point> nxe = edge[neigh[id][i]];
+          int ida = identify (nxe[0], graph);
+
+          if (ida != id) swap (nxe[0], nxe[1]);
+
+          Point tmp = nxe[0];
+          double dist = distance (p1,tmp);
+          //cout << ida << " " << idb << "\n";
+          if (dist < minv) {
+              minv = dist;
+              nxp = nxe;
+          }
+      }
+      auto [p3,rad] = graph[id];
+      const double ab = distance (p1,nxp[0]);
+      const double hyp = distance (p1,p3);
+      //            arc legth                      + distance to next circle
+      double alt = 2 * rad * asin (0.5 * ab / hyp) + distance (nxp[0], nxp[1]);
+
+      vector<Point> route = path;
+
+      for (auto e : nxp) {
+        route.push_back(e);
+      }
+
+      vertex nextv = {heur + alt, route};
+      q1.push(nextv);
+  }
+
+    /*
+    for (int i = 0; i < neigh.size(); i++) {
+        cout << "circle " << i << " :: ";
+        for (int j = 0; j < neigh[i].size(); j++) {
+            cout << neigh[i][j] << " ";
+        }
+        cout << "\n";
+    }
+  */
+}
+
+int main () {
+
+    Point start = {-3, 1}, exit = {4.25, 0};
+    vector<Circle> graph = {{0.0, 0.0, 2.5}, {1.5, 2.0, 0.5}, {3.5, 1.0, 1.0}, {3.5, -1.7, 1.2}};
+    // Draw::graph (start,exit,graph);
+    astar2(start,exit,graph);
+    // Draw::img();
+
+}
+////////////////////////////Arkive////////////////////////////////
+void mkcircle (Point p1, Point p2) {
+
+  double m = slope (p1,p2);
+  const double rad = 0.5;
+  double cosine = 1.0 / sqrt (1.0 + sq (m)), sine = m / sqrt (1.0 + sq (m));
+
+  for (double deg = 0; deg < 90; deg++) {
+      double alpha = radian(deg);
+  //    Point p2 = {p1.x + rad * cos (alpha), p1.y + rad * sin (alpha)};
+  //    node.push_back(p2);
+  }
+
+}
+pair<double,double> barycentre (const Point &p1, const Point &p2, const Point &p3) {
+  double x = (p1.x + p2.x + p3.x) / 3;
+  double y = (p1.y + p2.y + p3.y) / 3;
+  return {x, y};
+}
+double area (const Point &a, const Point &b, const Point &c) { // triangle area
+    double x1 = a.x, x2 = b.x, x3 = c.x;
+    double y1 = a.y, y2 = b.y, y3 = c.y;
+    return rnd (abs (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)) * 0.5);
+    //area2 = abs((b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y))
+}
+double degree (double radian) { return radian * 180.0 / M_PI; }
+
+void arclenth (Point a, Point b, Point c, double r) { // arc length of circle segment a-b
+    double ab = distance (a,b) / 2, hyp = distance (a,c); // ab -> opposite side, hyp = hypthenuse
+    double theta = degree (asin (ab / hyp));
+    double arclen = 2 * M_PI * r * (theta / 360);
+}
 void astar (Point start, Point exit, vector<Circle> graph) {
     struct vertex {
         double cost, dist, heur;
@@ -221,181 +404,6 @@ void astar (Point start, Point exit, vector<Circle> graph) {
 		//Draw::img();
 }
 
-double area (const vector<Point> &curr) {
-    double sum = 0;
-
-    for (size_t i = 0; i < curr.size(); ++i) {
-        sum += (curr[i].x * curr[i].y + 1) - (curr[i].x + 1 * curr[i].y);
-    }
-
-    return abs (sum) / 2;
-}
-double ccw (const Point &o, const Point &a, const Point &b) { // counter clockwise
-    return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
-}
-vector<Point> convex_hull (vector<Point> curr) {
-
-    const int size = curr.size();
-    int i, t, k = 0;
-    vector<Point> hull (size * 2);
-    //sort (begin(curr), end(curr), vertcmp);
-
-    for (i = 0; i < size; i++) {
-        while (k >= 2 && ccw (hull[k - 2], hull[k - 1], curr[i]) <= 0) {
-            k--;
-        }
-
-        hull[k++] = curr[i];
-    }
-
-    for (i = size - 2, t = k + 1; i >= 0; i--) {
-        while (k >= t && ccw (hull[k - 2], hull[k - 1], curr[i]) <= 0) {
-            k--;
-        }
-        hull[k++] = curr[i];
-    }
-
-  //return vector<point>(h.begin(), h.begin() + k - (k > 1));
-    hull.resize (k - 1);
-    return hull;
-}
-
-int main () {
-
-    Point start = {-3, 1}, exit = {4.25, 0};
-    vector<Circle> graph = {{0.0, 0.0, 2.5}, {1.5, 2.0, 0.5}, {3.5, 1.0, 1.0}, {3.5, -1.7, 1.2}};
-
-    const int size = graph.size();
-    vector<vector<int>> neigh (size);
-    vector<vector<Point>> edge;
-    map<Point,int> base;
-
-    sort (graph.begin(), graph.end());
-
-    edge = tangraph (graph);
-    // cout << fixed << setprecision (5);
-    for (int i = 0; i < edge.size(); i++) { // attach edges to circles
-        int id1 = identify (edge[i][0], graph), id2 = identify (edge[i][1], graph);
-        neigh[id1].push_back(i); neigh[id2].push_back(i);
-    }
-
-    struct vertex { double dist; vector<Point> path; };
-    struct comp {
-        bool operator() (const vertex &a, const vertex &b ) {
-            return  a.dist > b.dist;
-        }
-    };
-
-    priority_queue<vertex,vector<vertex>,comp> q1;
-		map<Point,bool> visit;
-
-    for (auto p : find_tangent (start,graph)) {
-        vertex source = {distance (start,p),{start,p}};
-        q1.push(source);
-    }
-
-    for (auto p : find_tangent (exit,graph)) { // connect exit tangents to tan visibility graph
-        int id1 = identify (p, graph);
-        edge.push_back({p, exit}); // -> exit return -1 !!
-        neigh[id1].push_back(edge.size());
-    }
-    // Draw::graph (start,exit,graph);
-
-    for (auto e : edge) {
-        Draw::line(e);
-    }
-
-    int cycle = 0;
-/*
-    while (!q1.empty()) {
-        auto [heur,path] = q1.top();
-        Point p1 = path.back();
-        q1.pop();
-
-        cycle++;
-
-        if (cycle == 4) {
-          // Draw::line(path);
-          Display::vect(path);
-          cout << "\n";
-           break;
-        }
-
-        int id = identify (p1, graph);
-        auto [p3,rad] = graph[id];
-
-        vector<Point> nxp;
-        // nearsest point on a circle
-        double minv = numeric_limits<double>::infinity();
-
-        for (int i = 0; i < neigh[id].size(); i++) {
-            vector<Point> nxe = edge[neigh[id][i]];
-            int ida = identify (nxe[0], graph);
-            if (ida != id) swap (nxe[0], nxe[1]);
-            Point tmp = nxe[0];
-            //cout << ida << " " << idb << "\n";
-            double dist = distance (p1,tmp);
-
-            if (dist < minv) {
-                minv = dist;
-                nxp = nxe;
-            }
-        }
-
-        const double ab = distance (p1,nxp[0]);
-        const double hyp = distance (p1,p3);
-        //            arc legth                      + distance to next circle
-        double alt = 2 * rad * asin (0.5 * ab / hyp) + distance (nxp[0], nxp[1]);
-
-        vector<Point> route = path;
-        route.push_back(nxp[0]);
-        route.push_back(nxp[1]);
-        vertex nextv = {heur + alt, route};
-        q1.push(nextv);
-    }
-*/
-
-
-    /*
-    */
-
-
-
-    // Draw::img();
-
-}
-////////////////////////////Arkive////////////////////////////////
-void mkcircle (Point p1, Point p2) {
-
-  double m = slope (p1,p2);
-  const double rad = 0.5;
-  double cosine = 1.0 / sqrt (1.0 + sq (m)), sine = m / sqrt (1.0 + sq (m));
-
-  for (double deg = 0; deg < 90; deg++) {
-      double alpha = radian(deg);
-  //    Point p2 = {p1.x + rad * cos (alpha), p1.y + rad * sin (alpha)};
-  //    node.push_back(p2);
-  }
-
-}
-pair<double,double> barycentre (const Point &p1, const Point &p2, const Point &p3) {
-  double x = (p1.x + p2.x + p3.x) / 3;
-  double y = (p1.y + p2.y + p3.y) / 3;
-  return {x, y};
-}
-double area (const Point &a, const Point &b, const Point &c) { // triangle area
-    double x1 = a.x, x2 = b.x, x3 = c.x;
-    double y1 = a.y, y2 = b.y, y3 = c.y;
-    return rnd (abs (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)) * 0.5);
-    //area2 = abs((b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y))
-}
-double degree (double radian) { return radian * 180.0 / M_PI; }
-
-void arclenth (Point a, Point b, Point c, double r) { // arc length of circle segment a-b
-    double ab = distance (a,b) / 2, hyp = distance (a,c); // ab -> opposite side, hyp = hypthenuse
-    double theta = degree (asin (ab / hyp));
-    double arclen = 2 * M_PI * r * (theta / 360);
-}
 class Graph {
     private :
 

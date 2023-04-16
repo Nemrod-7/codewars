@@ -1,6 +1,6 @@
 #include <iostream>
 #include "graph.hpp"
-// #include "plot.hpp"
+#include "plot.hpp"
 // using namespace std;
 
 vector<Point> interception (const Point &p1, const Point &p2, Circle &c) {
@@ -47,7 +47,7 @@ void pythagorasTree (Point a, Point b, int cycle) {
   const double width = b.x - a.x, height = b.y - a.y;
   //cout << a.x - b.x - height << ' '<< height + width << '\n';
   Point c = {a.x - height, a.y + width};
-  Point d = {b.x - height, b.y + width};;
+  Point d = {b.x - height, b.y + width};
 
 	e.x = d.x - (height + width) * 0.5;
 	e.y = d.y - (height - width) * 0.5;
@@ -89,7 +89,41 @@ pair<double,double> barycentre (const Point &p1, const Point &p2, const Point &p
   double y = (p1.y + p2.y + p3.y) / 3;
   return {x, y};
 }
+void mktriangle () {
+  vector<Point> vect;
+  Point a = {-2.0, 2.0}, b = {4.0, -3.0}, c;
 
+  // a = {0,0}, b = {3,0};
+  Point mid = {(a.x + b.x) * 0.5, (a.y + b.y) * 0.5};
+
+  double hyp = hypot (a.x - b.x, a.y - b.y);
+  double adj = hyp * 4.00 / 5.0, opp = hyp * 3.0 / 5.0;
+
+  double rad = hyp / 2;
+
+  double theta = asin (rad / opp); // atan (3.0 / 4.0)
+  //c = {mid.x + hyp * cos (theta) * cos (theta), mid.y + hyp * cos (theta) * sin (theta)};
+
+  cout << setprecision (4);//
+  vect.push_back (mid);
+  cout << "\n";
+
+  for (double deg = 0; deg < 80; deg += 1) {
+     theta = radian (deg);
+     Point p2 = {mid.x + rad * cos (theta), mid.y + rad * sin (theta)};
+     vect.push_back(p2);
+     //cout << distance (a,p2) << " " << distance (b,p2) << " => " << theta << " :: " << deg << "\n";
+  }
+
+  // cout << adj << " " << opp << " => " << theta << "\n";
+  cout << adj << " " << distance (a,c) << "\n";
+  cout << opp << " " << distance (b,c) << "\n";
+
+  double m = -1 / slope (a,b) ;
+  double y = a.y - (m * a.x);
+
+
+}
 int main () {
 
 
@@ -101,56 +135,32 @@ int main () {
     theta = acos (adj / hyp);
     theta = atan (opp / adj);
     */
+    cout << fixed << setprecision(3);
 
-    vector<Point> vect;
-    Point a = {-2.0, 2.0}, b = {4.0, -3.0}, c;
+    double angle = 60.0, h = 0.5, length = 1.8;
+    double theta = radian (angle);
+    Point p1 = {0.0,h};
 
-    a = {0,0}, b = {3,0};
-    Point mid = {(a.x + b.x) * 0.5, (a.y + b.y) * 0.5};
+    vector<Point> vect = {p1};
 
-    double hyp = hypot (a.x - b.x, a.y - b.y);
-    double adj = hyp * 4.00 / 5.0, opp = hyp * 3.0 / 5.0;
+    Draw::line({{0,0},{0,1},{1,1},{1,0},{0,0}});
 
-    double rad = hyp / 2;
+    for (double i = 0; i < length; i += 0.01) {
+        double nx = p1.x + 0.1 * cos (theta), ny = p1.y + 0.1 * sin (theta);
+        cout << nx << " " << ny << "\n";
+        if (ny > 1.0 || ny < 0.0) {
+          theta = -theta;
+        }
 
-    double theta = asin (opp / hyp); //, theta = asin (rad / opp); // atan (3.0 / 4.0)
-    c = {mid.x + rad * cos (theta), mid.y + rad * sin (theta)};
+        p1 = {p1.x + 0.1 * cos (theta), p1.y + 0.1 * sin (theta)};
 
-    cout << setprecision (4);//
-    vect.push_back (mid);
-    cout << "\n";
-
-    for (double deg = 70; deg < 80; deg += 1) {
-       theta = radian (deg);
-       Point p2 = {mid.x + rad * cos (theta), mid.y + rad * sin (theta)};
-       vect.push_back(p2);
-       cout << distance (a,p2) << " " << distance (b,p2) << " => " << theta << " :: " << deg << "\n";
+        vect.push_back(p1);
     }
-
-    // cout << adj << " " << opp << " => " << theta << "\n";
-    // cout << adj << " " << distance (a,c) << "\n";
-    // cout << opp << " " << distance (b,c) << "\n";
-
-    /*
-    double m = slope (a,b) ;
-    double y = a.y - (m * a.x);
-    double cosine = 1.0 / sqrt (1.0 + sq (m)), sine = m / sqrt (1.0 + sq (m));
-
-    for (double i = 0; i < 3; i += 0.1) {
-        const double nx = center.x + i;
-        const double ny = m * nx + y;
-    }
-
-    */
-
 
     /*
 
-    Draw::dots({{-5,5},{5,5},{-5,-5},{5,5}});
-    Draw::line({a,b,c,a});
     Draw::dots(vect);
     Draw::img();
-
 
     pythagorasTree ({0.0,0.0}, {5.0,0.0}, 4);
 
