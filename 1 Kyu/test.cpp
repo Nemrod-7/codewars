@@ -89,6 +89,7 @@ pair<double,double> barycentre (const Point &p1, const Point &p2, const Point &p
   double y = (p1.y + p2.y + p3.y) / 3;
   return {x, y};
 }
+
 void mktriangle () {
   vector<Point> vect;
   Point a = {-2.0, 2.0}, b = {4.0, -3.0}, c;
@@ -124,6 +125,8 @@ void mktriangle () {
 
 
 }
+
+
 int main () {
 
 
@@ -135,35 +138,41 @@ int main () {
     theta = acos (adj / hyp);
     theta = atan (opp / adj);
     */
+
     cout << fixed << setprecision(3);
 
     double angle = 60.0, h = 0.5, length = 1.8;
-    double theta = radian (angle);
-    Point p1 = {0.0,h};
 
+    double theta = radian (angle), sign = 1.0;
+    Point p1 = {0.0,h};
+    double step = 0.01;
     vector<Point> vect = {p1};
 
     Draw::line({{0,0},{0,1},{1,1},{1,0},{0,0}});
 
-    for (double i = 0; i < length; i += 0.01) {
-        double nx = p1.x + 0.1 * cos (theta), ny = p1.y + 0.1 * sin (theta);
-        cout << nx << " " << ny << "\n";
+    for (double i = 0; i < 5.0; i += step) {
+        double nx = p1.x + step * cos (theta) * sign, ny = p1.y + step * sin (theta) * sign;
+        // cout << nx << " " << ny << "\n";
         if (ny > 1.0 || ny < 0.0) {
           theta = -theta;
         }
-
-        p1 = {p1.x + 0.1 * cos (theta), p1.y + 0.1 * sin (theta)};
+        if (nx > 1.0 || nx < 0.0) {
+          sign = -sign;
+          theta = -theta;
+        }
+        p1 = {p1.x + step * cos (theta) * sign, p1.y + step * sin (theta) * sign};
 
         vect.push_back(p1);
     }
-
     /*
+    */
 
     Draw::dots(vect);
     Draw::img();
 
-    pythagorasTree ({0.0,0.0}, {5.0,0.0}, 4);
+    /*
 
+    pythagorasTree ({0.0,0.0}, {5.0,0.0}, 4);
 
     */
 
