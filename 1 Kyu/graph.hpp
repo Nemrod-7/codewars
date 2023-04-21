@@ -24,7 +24,7 @@ bool operator != (const Point &a, const Point &b) { return a.x != b.x || a.y != 
 bool operator < (const Point &a, const Point &b) { return make_pair (a.x,a.y) < make_pair (b.x,b.y); }
 
 double rnd (const double x) { return round (x * 1e8) / 1e8; }
-double distance (const Point &a, const Point &b) { return rnd (hypot (a.x - b.x, a.y - b.y)); }
+double distance (const Point &a, const Point &b) { /* magnitude of point AB */ return rnd (hypot (a.x - b.x, a.y - b.y)); }
 bool inside_circle (const Point &p, const Circle &c) { return distance (c.ctr, p) < c.r; }
 
 double sq (const double x) { return x * x; }

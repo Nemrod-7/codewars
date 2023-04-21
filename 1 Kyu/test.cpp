@@ -83,9 +83,7 @@ int main () {
 
     vector<Point> border {{-5,-5},{-5,5},{5,5},{5,-5},{-5,-5}};
 
-    pythagorasTree ({0.0,0.0}, {5.0,0.0}, 3);
-
-
+    cout << 180.0 / 360.0;
     // Draw::img();
 
 
