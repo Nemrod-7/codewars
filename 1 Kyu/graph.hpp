@@ -40,7 +40,7 @@ double quadratic (const double a, const double b, const double c) {
     return x2;
 }
 
-bool is_valid (const Point &p, const vector<Circle> &space) {
+bool is_free (const Point &p, const vector<Circle> &space) {
 
     for (auto &cir : space) {
         if (inside_circle (p, cir) == true) {
