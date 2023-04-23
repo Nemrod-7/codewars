@@ -44,27 +44,26 @@ vector<Point> convex_hull (vector<Point> curr) {
     return hull;
 }
 vector<Point> neighrestpoint (vector<Circle> space, vector<int> circle, vector<vector<Point>> edge, Point p1) {
-  int id = identify (p1, space);
-  vector<Point> nxp;
-  double minv = numeric_limits<double>::infinity();
+    int id = identify (p1, space);
+    vector<Point> nxp;
+    double minv = numeric_limits<double>::infinity();
 
-  for (int i = 0; i < circle.size(); i++) {
-      vector<Point> nxe = edge[circle[i]];
-      int ida = identify (nxe[0], space);
+    for (int i = 0; i < circle.size(); i++) {
+        vector<Point> nxe = edge[circle[i]];
+        int ida = identify (nxe[0], space);
 
-      if (ida != id) swap (nxe[0], nxe[1]);
+        if (ida != id) swap (nxe[0], nxe[1]);
 
-      Point tmp = nxe[0];
-      double dist = distance (p1,tmp);
-      //cout << ida << " " << idb << "\n";
-      if (dist < minv) {
-          minv = dist;
-          nxp = nxe;
-      }
-  }
-  return nxp;
+        Point tmp = nxe[0];
+        double dist = distance (p1,tmp);
+        //cout << ida << " " << idb << "\n";
+        if (dist < minv) {
+            minv = dist;
+            nxp = nxe;
+        }
+    }
+    return nxp;
 }
-
 
 void mkcircle (Point p1, Point p2) {
 
