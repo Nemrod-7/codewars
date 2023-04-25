@@ -227,9 +227,10 @@ int A (int n, int k) { // count n possibilities out of k ?
             cnt += (n - i + 1) * (k - j + 1);
         }
     }
-    return area;
+    return cnt;
     */
 }
+
 int main () {
 
     Timer clock;
@@ -238,13 +239,20 @@ int main () {
     const int limit = 100;
 
     uint64_t cnt = 0, res = 0;
+    int k = 7;
+    int tile[3] = {2,3,4};
 
-    for (int k = 0; k <= 7; k++) {
-      cout << binomial (7,k) << ' ';
 
+    int blk = k-3;
+    for (int i = 3; i <= 3; i++) {
+        for (int j = 1; j <= k; j++) {
+            cout << (3 - i + 1) * (k - j + 1) << " ";
+        }
     }
+    // cout << k << " " << blk << " => " << k / 3;
 
-
+    // cout << factorial (1);
+    /*
 
     vector<vector<uint64_t>> tri (lim+1, vector<uint64_t> (lim+1));
     enum {ones,natural, triangular, };
@@ -257,6 +265,7 @@ int main () {
         }
         cout << '\n';
     }
+
     */
 
     clock.stop();

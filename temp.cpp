@@ -23,15 +23,24 @@ bool is_in_cantor (unsigned num, unsigned den, unsigned n) {
 }
 
 int main () {
+  int64_t mod = 50515093;
+
+  int64_t s0 = 290797;
+  int64_t s1 = (s0 * s0) % mod;
+
+  for (int i = 0; i < 14; i++) {
+      s0 = (s0 * s0) % mod;
+      printf ("%zu ", s0);
+  }
   /*
   num = 1
   den = 613999
   n   = 40
-  */
     bool res = is_in_cantor (1,37,6); // false
 
     switch (res) {
         case 0 : printf ("false"); break;
         case 1 : printf ("true"); break;
     }
+    */
 }

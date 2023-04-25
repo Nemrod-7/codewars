@@ -45,6 +45,7 @@ vector<Point> circles_intersection (const Circle &c1, const Circle &c2) { // int
     return {};
 }
 
+
 int main () {
 
     /*
