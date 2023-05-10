@@ -322,17 +322,51 @@ double resilience (int64_t d) {
     return phi (d) / static_cast<double> (d-1);
 }
 
+int64_t sumdigsum (int64_t n) {
+    int64_t nu[10] = {0,1,2,3,4,5,6,7,8,9};
+
+    for (int i = 0; i < 17; i++) {
+        for (int j = 0; j < 10; j++) {
+            if (digsum(nu[j]) == n) {
+                return nu[j];
+            }
+            nu[j] = nu[j] * 10 + 9;
+        }
+    }
+
+    return 0;
+}
 
 int main () {
 
     Timer chrono;
 
-    const int64_t limit = 100;
+    const int64_t mod = 1000000007;
+    const int64_t limit = 20;
 
+    int64_t sum = 0, sum2 = 0;
 
-    cout << "\n";
+    int64_t fib[100] = {0,1};
+    // problemm 684 Inverse Digit Sum
+    for (int k = 2; k <= 90; k++) {
+        fib[k] = fib[k-2] + fib[k-1];
+        // cout << fib[k] << " ";
+        int64_t f9 = fib[k] / 9;
+        int64_t prefix = fib[k] - 9 * f9;
+        int64_t sn = (modpow (10, f9, mod) * (1 + prefix) )  - 1;
+        // cout << " " << (modpow (10, f9, mod) * (1 + prefix))  - 1 << '\n';
+        sum = sum + sn;
+        // cout << modpow (10, f9, mod) * (1 + prefix)   << '\n';
+    }
 
-    //showvec(seq);
+    for (int k = 1; k <= 20; k++) {
+      // cout << (modpow (10, k / 9, mod) * (1 + k / 9)) - 1 << " ";
+
+    }
+    /*
+    */
+
+    cout << sum % mod << "\n";
 
     chrono.stop();
     chrono.get_duration();
