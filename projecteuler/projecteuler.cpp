@@ -348,25 +348,25 @@ int main () {
 
     int64_t fib[100] = {0,1};
     // problemm 684 Inverse Digit Sum
-    for (int k = 2; k <= 90; k++) {
+    for (int k = 2; k <= 20; k++) {
         fib[k] = fib[k-2] + fib[k-1];
-        // cout << fib[k] << " ";
-        int64_t f9 = fib[k] / 9;
+
+        int64_t f9 =  (fib[k] / 9);
         int64_t prefix = fib[k] - 9 * f9;
-        int64_t sn = (modpow (10, f9, mod) * (1 + prefix) )  - 1;
+        int64_t sn = (modpow (10, (fib[k] / 9), mod) * (1 + prefix))  - 1;
         // cout << " " << (modpow (10, f9, mod) * (1 + prefix))  - 1 << '\n';
-        sum = sum + sn;
-        // cout << modpow (10, f9, mod) * (1 + prefix)   << '\n';
+        // sum = sum + sn  ;
+        // cout << sumdigsum (fib[k]) << "\n";
     }
 
-    for (int k = 1; k <= 20; k++) {
-      // cout << (modpow (10, k / 9, mod) * (1 + k / 9)) - 1 << " ";
-
+    for (int k = 1; k <= 10; k++) {
+        sum += sumdigsum (fib[k]);
     }
+
+    cout << sum;
     /*
     */
 
-    cout << sum % mod << "\n";
 
     chrono.stop();
     chrono.get_duration();
