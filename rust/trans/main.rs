@@ -5,11 +5,38 @@ fn tokenize (src: &str) -> Vec<String> {
     let token = Regex::new("->|_?[0-9]+(\\.[0-9]+|_)?|_?[a-zA-Z]+_?|[{}();,]").unwrap();
     token.captures_iter(src).map(|x| x[0].to_string()).collect::<Vec<_>>()
 }
+fn valid_braces (expr: &str) -> bool {
+    let mut brc = Vec::new();
+
+    for ch in expr.chars() {
+        match ch {
+            '(' => brc.push(')'),
+            '[' => brc.push(']'),
+            '{' => brc.push('}'),
+             _  => if Some(ch) != brc.pop() { return false },
+        }
+    }
+    false
+}
+fn valid_braces1 (code :&Vec<String>) -> bool {
+    let mut brc = Vec::new();
+
+    for cell in code {
+        if cell == "(" { brc.push(")") }
+        else if cell == "[" { brc.push("]") }
+        else if cell == "{" { brc.push("}") }
+        else {
+            if let Some(back) = brc.pop() {
+                if back != cell { return false }
+            }
+        }
+    }
+    false
+}
 fn isvalid (code :&Vec<String>) -> bool {
 
     let size = code.len();
     let mut index = 0;
-
     let mut paren = 0;
     let mut brace = 0;
     let mut param = 0;
@@ -106,7 +133,6 @@ fn transpile (expr: &str) -> Result<String, String> {
     // print!("{:?}",code);
     while index != size {
         let tok = &code[index];
-
         // print! ("[{tok}]");
         if tok == "(" {
             os += &format! ("{tok}");
