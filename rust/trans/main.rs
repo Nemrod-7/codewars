@@ -21,8 +21,11 @@ fn isvalid (code :&Vec<String>) -> bool {
         let token = &code[index];
         let last = if index > 0 { &code[index - 1] } else { " " };
 
-
-        if token == "(" {
+        if token.as_bytes()[0].is_ascii_digit() {
+            if token.chars().any(char::is_alphabetic) {
+                return false
+            }
+        } else if token == "(" {
             paren += 1;
         } else if token == ")" {
             paren -= 1;
@@ -103,6 +106,7 @@ fn transpile (expr: &str) -> Result<String, String> {
     // print!("{:?}",code);
     while index != size {
         let tok = &code[index];
+
         // print! ("[{tok}]");
         if tok == "(" {
             os += &format! ("{tok}");
@@ -127,9 +131,7 @@ fn transpile (expr: &str) -> Result<String, String> {
                 os += &format!("{it},")
             }
 
-            if let Some (id) = os.chars().last() {
-                if id == ',' { os.pop(); }
-            }
+            if os.chars().last() == Some(',') { os.pop(); }
 
         } else if tok == "{" {
             if index >= 2 {
@@ -142,7 +144,11 @@ fn transpile (expr: &str) -> Result<String, String> {
             // print!("lamda :: {tmp}\n");
             os += &tmp;
         } else {
-            os += &format! ("{tok}")
+            os += &format! ("{tok}");
+
+            if index+1 < size && code[index+1] != "(" {
+                os += "(";
+            }
         }
 
         index += 1;
