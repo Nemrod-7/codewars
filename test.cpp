@@ -311,29 +311,3 @@ int main () {
     std::chrono::duration<double> elapsed = end - start;
     std::cout << "\nProcess took " << elapsed.count()  << " ms" << std::endl;
 }
-
-void Test () {
-
-    int n = 10;
-    std::array<int, 3> arr = {0, 0, 0};
-
-    Assert::That(findEmirp(n), Equals(arr));
-    n = 50;
-    arr = {4, 37, 98};
-    Assert::That(findEmirp(n), Equals(arr));
-    n = 100;
-    arr = {8, 97, 418};
-    Assert::That(findEmirp(n), Equals(arr));
-    n = 200;
-    arr = {15, 199, 1489};
-    Assert::That(findEmirp(n), Equals(arr));
-    n = 500;
-    arr = {20, 389, 3232};
-    Assert::That(findEmirp(n), Equals(arr));
-    n = 750;
-    arr = {25, 743, 6857};
-    Assert::That(findEmirp(n), Equals(arr));
-    n = 1000;
-    arr = {36, 991, 16788};
-    Assert::That(findEmirp(n), Equals(arr));
-}

@@ -88,44 +88,6 @@ bool king_is_in_check (const char board[8][8]) {
 
 int main () {
 
-  bool chkdiag (const char board[8][8], const point p, int dist) {
-
-
-    for (int i = 1; i <= dist; i++) {
-
-      for (int j = 0; j < 4; j++) {
-        point nx = {p.x + diag[j].x * i, p.y + diag[j].y * i};
-        char tile = board[nx.x][nx.y];
-        if (is_inside (nx) && tile != ' ') {
-          printf ("%c", tile);
-          if (tile == 'Q' || tile == 'B') {
-            return true;
-          } else {
-
-          }
-        }
-      }
-    }
-    return false;
-  }
-  bool chkcross (const char board[8][8], const point p, int dist) {
-
-    for (int i = 1; i <= dist; i++) {
-
-      for (int j = 0; j < 4; j++) {
-        point nx = {p.x + cross[j].x * i, p.y + cross[j].y * i};
-        char tile = board[nx.x][nx.y];
-
-        if (is_inside (nx) && tile != ' ') {
-          //printf ("%c ", tile);
-          if (tile == 'R' || tile == 'Q') {
-            //    return true;
-          }
-        }
-      }
-    }
-    return false;
-  }
    char board[8][8] = {
      "        ",
    		"        ",
@@ -140,4 +102,43 @@ int main () {
 
    printf ("%i", check);
 
+}
+
+bool chkdiag (const char board[8][8], const point p, int dist) {
+
+
+  for (int i = 1; i <= dist; i++) {
+
+    for (int j = 0; j < 4; j++) {
+      point nx = {p.x + diag[j].x * i, p.y + diag[j].y * i};
+      char tile = board[nx.x][nx.y];
+      if (is_inside (nx) && tile != ' ') {
+        printf ("%c", tile);
+        if (tile == 'Q' || tile == 'B') {
+          return true;
+        } else {
+
+        }
+      }
+    }
+  }
+  return false;
+}
+bool chkcross (const char board[8][8], const point p, int dist) {
+
+  for (int i = 1; i <= dist; i++) {
+
+    for (int j = 0; j < 4; j++) {
+      point nx = {p.x + cross[j].x * i, p.y + cross[j].y * i};
+      char tile = board[nx.x][nx.y];
+
+      if (is_inside (nx) && tile != ' ') {
+        //printf ("%c ", tile);
+        if (tile == 'R' || tile == 'Q') {
+          //    return true;
+        }
+      }
+    }
+  }
+  return false;
 }

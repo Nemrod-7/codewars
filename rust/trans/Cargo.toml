@@ -9,5 +9,5 @@ edition = "2021"
 regex = { git = "https://github.com/rust-lang/regex.git" }
 
 [[bin]]
-name = "trans"
+name = "transpiler"
 path = "main.rs"

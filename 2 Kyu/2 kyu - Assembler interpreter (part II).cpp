@@ -19,7 +19,7 @@ vector<string> format3 (const string &input) {
 }
 vector<string> tokenize (string line) {
     line = line.substr (0, line.find (";"));
-    regex tok ("\\w+|\'.+?\'");
+    regex tok ("->|_?\\w+|[{}();,]");
     sregex_token_iterator it (line.begin(), line.end(), tok);
 
     return vector<string> (it, sregex_token_iterator());
