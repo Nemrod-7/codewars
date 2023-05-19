@@ -7,28 +7,30 @@ fn tokenize (src: &str) -> Vec<String> {
 }
 fn valid_expres (expr: &str) -> bool {
 
-    // a() or a(){} or {}() or {}(){} or {}{}
+    // a() or {}() or {}{} or a(){} or {}(){}
     if Regex::new(r"^[\s\n]*(\w+|(\{[^\{\}]*\}))[\s\n]*(\([^\(\)]*\))?[\s\n]*(\{[^\{\}]*\})?[\s\n]*$").unwrap().find(expr) == None { return false };
-    if Regex::new(r"^\s*\(|[^\)\}\s\n]$|^[\s\n]*$").unwrap().find(expr).is_some() { return false }  // the expression begins with '(' or ends with any char exept '}' or ')'
-    if Regex::new(r"([^\w]|^)[0-9]+[A-z]+|[^>,_\-\w\(\)\{\}\s\n]").unwrap().find(expr).is_some() { return false }  // bad name : 1a or bad character
+    if Regex::new(r"^[\s\n]*\{[^\{\}]*\}[\s\n]*$").unwrap().find(expr).is_some() { return false }   // rejects {...} :  single lambda
 
-    if Regex::new(r"\{[^\}]$|^[^\{]*\}|^[^\(]*\)|\([^\)]$").unwrap().find(expr).is_some() { return false }
+    if Regex::new(r"^\s*\(|[^\)\}\s\n]$|^[\s\n]*$").unwrap().find(expr).is_some() { return false }  // the expression begins with '(' or ends with any char exept '}' or ')'
+    if Regex::new(r"([^\w]|^)[0-9]+[A-z]+|[^,_\w\{\}\s\n->]").unwrap().find(expr).is_some() { return false }  // bad name : 1a or bad character
 
     if Regex::new(r"->[^\}]*,[^\}]*\}").unwrap().find(expr).is_some() { return false }              // rejects  -> x , y }
-    if Regex::new(r"[\{\(]\s*[,-]|,\s*[\}\)]").unwrap().find(expr).is_some() { return false }       // rejects (-> or {-> or (, or {,
+    if Regex::new(r"\{[^\}]$|^[^\{]*\}|^[^\(]*\)|\([^\)]$").unwrap().find(expr).is_some() { return false }
+
+    if Regex::new(r"[\{\(]\s*[,-]|,\s*[\}\)\-]").unwrap().find(expr).is_some() { return false }       // rejects (-> or {-> or (, or {,
     if Regex::new(r"\{[^\{]*\w+\s+\w+[^\}]*->").unwrap().find(expr).is_some() { return false }      // rejects { x y ->
 
-    if Regex::new(r"\([^\{]*\w+\s+\w+[^\}]*\)").unwrap().find(expr).is_some() { return false }      // rejects ( a b c )
-    if Regex::new(r"^[\s\n]*\{[^\{\}]*\}[\s\n]*$").unwrap().find(expr).is_some() { return false }   // rejects {x y z} :  single lambda
-    if Regex::new(r"\{[^>]*\w+\s*,\s*\w+[^\}-]*\}|,\s+,").unwrap().find(expr).is_some() { return false }   // rejects {a,b ,c} or , ,
+    if Regex::new(r"\{[^>\(]*\w+[\s\n]*,[\s\n]*\w+[^\}-]*\}|,\s+,").unwrap().find(expr).is_some() { return false }   // rejects {a,b ,c} or , ,
+    if Regex::new(r"\([^\{]*(\w+|(\{[^\{\}]*\}))[\s\n]+(\w+|(\{[^\{\}]*\}))[^\}]*\)").unwrap().find(expr).is_some() { return false }  // rejects ( a b c )
 
     true
 }
-
 fn valid_braces (expr: &str) -> bool {
     let mut brc = Vec::new();
 
-    for ch in expr.chars() {
+    for index in 0.. expr.len() {
+        let ch = expr.chars().nth(index).unwrap();
+
         match ch {
             '(' => brc.push(')'),
             '[' => brc.push(']'),
@@ -36,12 +38,15 @@ fn valid_braces (expr: &str) -> bool {
             ')' => if Some(ch) != brc.pop() { return false },
             '}' => if Some(ch) != brc.pop() { return false },
             ']' => if Some(ch) != brc.pop() { return false },
+            '-' => if expr.chars().nth(index+1) != Some('>') { return false } ,
+            '>' => if expr.chars().nth(index-1) != Some('-') { return false } ,
              _  => (),
         }
     }
 
     brc.is_empty()
 }
+
 fn lambda (code :&Vec<String>, end: &mut usize) -> String {
     *end += 1;
     if code[*end] == "}" { return "(){}".to_string() }
@@ -76,15 +81,9 @@ fn lambda (code :&Vec<String>, end: &mut usize) -> String {
     *end = index;
     os + "}"
 }
-
-fn form (src: &str) -> Vec<String> {
-    let token = Regex::new(r"^[\s\n]*(\w+|(\{[^\{\}]*\}))[\s\n]*(\([^\(\)]*\))?[\s\n]*(\{[^\{\}]*\})?[\s\n]*$").unwrap();
-    token.captures_iter(src).map(|x| x[0].to_string()).collect::<Vec<_>>()
-}
 fn transpile (expr: &str) -> Result<String, String> {
 
     if !valid_braces (expr) || !valid_expres (expr)  { return Err (format! ("Hugh?")) }
-    // print!("{:?}\n" , form(expr));
     let code = tokenize (expr);
     let size = code.len();
     let mut index = 0;
@@ -138,33 +137,20 @@ fn transpile (expr: &str) -> Result<String, String> {
 
 fn main () {
 
-    let expr =     "HvPmL2t11xY  (11028 ,  37  , OQzdmyowcC4   ){kJ5gn2PTfnC  ,gvgNAHzToaq ->iPKP48OXt1r   43340  3017253    ieA6ugL3Wmk 2}{904361, 96437261  ,   9,  540 ->}";
+    let expr = "{xJ31FzZujAp   ,32012626  -> vESH9h3M1JG   12044     C5lbSZczACi     9949}  ({jv0hXeAkz5d,   48556321 ,  8790025,   P3arIy90UVg ,   ry5zPoPoKRX   ->   OQMRuNsK74A  8    35572    7360604   94 }   , {  dmvU7SP2wED   }  VcGxpePfPZZ ,  {4,  QJMRpMyp5Wr  ,  25529-> 386954  dufIAW0SLjD   PX1JSLustbu   }  , {416736   ,12144234  ,  DDlVf5hhIHU,  91231263  ,   627 ->  91428207    yZDfdOC6Keu    6031   5} ){3283->  wU5MXXc3SkQ   }";
 
-    let expr =     "call (a , b , c ){d  ,e ->f   g }{a, b ->}";
     let res = transpile (expr);
     // print!("{:?}\n", res);
 
-    /*
-
-^
-[\s\n]*
-(\w+|(\{[^\{\}]*\})
-[\s\n]*
-
-(\([^\(\)]*\))?
-[\s\n]*
-(\{[^\{\}]*\})?
-[\s\n]*
-$
-
-*/
     test();
+/*
+    (?<=-)
+*/
 
-    /*
-        let token = Regex::new("^[\w+(\{.*\})]\s*(\(.*\))?\s*(\{.*\})?\s*$").unwrap();
-        token.captures_iter(src).map(|x| x[0].to_string()).collect::<Vec<_>>()
-   */
-
+}
+fn form (src: &str) -> Vec<String> {
+    let token = Regex::new(r"^[\s\n]*(\w+|(\{[^\{\}]*\}))[\s\n]*(\([^\(\)]*\))?[\s\n]*(\{[^\{\}]*\})?[\s\n]*$").unwrap();
+    token.captures_iter(src).map(|x| x[0].to_string()).collect::<Vec<_>>()
 }
 
 fn accepts(expr: &str, expected: &str) { do_test(expr, Ok(expected.to_string())); }
@@ -172,7 +158,6 @@ fn rejects(expr: &str) { do_test(expr, Err("Hugh?".to_string())); }
 fn do_test(expr: &str, expected: Result<String,String>) {
     assert_eq!(transpile(expr), expected, "\nYour result (left) did not match expected output (right) for the expression:\n{expr:?}");
 }
-
 fn test() {
 
 
@@ -246,18 +231,21 @@ fn test() {
 
         rejects ("{a}(cde,y,z){x,y,d jj}");
         rejects ("{a o , p}(cde,y,z){x,y,d,jj}");
-rejects("{JyWcROvDBOn  ,   99-> 84326   18716553 }  {4 ,  161593   66  1358   715749   BurWnFKgHIR   4153  53246599 }");
 
         rejects ("");
         rejects ("$call()");
         rejects ("{}{}{}");
+        rejects("{JyWcROvDBOn  ,   99-> 84326   18716553 }  {4 ,  161593   66  1358   715749   BurWnFKgHIR   4153  53246599 }");
         rejects ("QRq2xe2XmpC {BMtnT2rwhVF   , 1 ,  ,  wz4uxTyEx72 ->IOrVlTAZ7IT D0ycvp65akz dBRjS6qzodu  67794030 DSexeNW0zGm KCGBKbn0P95  }");
+        reject
+        s("tAE6l69bP16(9107 , jWZUMmX80uA  ,   84029796   ){5110817   ,  nuXj244xThu  ,  ->FOKLA28f1XC 30020877   H8DcfachlMa cHwHGdOymdQ DBVyPVOsg4m   8   }");
 
         accepts ("call({},{},{},  {},{}  ,{})","call((){},(){},(){},(){},(){},(){})");
         accepts ("GVGYpa6ob62   {pTGlOqfgQnY,  YOMDes44si3,   rKPntLrcs1V  ,vDFfY49Zmx2,   AJrByI3Cpky   ->  2930370  }","GVGYpa6ob62((pTGlOqfgQnY,YOMDes44si3,rKPntLrcs1V,vDFfY49Zmx2,AJrByI3Cpky){2930370;})");
         accepts ("{653601   -> hZAn2HSnx22    efMH581zDFN      824745      4    3063301 } ({ixpM9l1r7ak, hfynVkvPxtL ->  3     25038    7395 I1gHgvAw2HE }   ){BFEBdI7WFXf    SRSMZmOBDbd    6   }", "(653601){hZAn2HSnx22;efMH581zDFN;824745;4;3063301;}((ixpM9l1r7ak,hfynVkvPxtL){3;25038;7395;I1gHgvAw2HE;},(){BFEBdI7WFXf;SRSMZmOBDbd;6;})");
+        rejects("{ 5    19160432    26852}   ({76086094  ,   nG4o570a11t->   J0gZWBZfV9I  vDA88FDTeru }   74  ){89694 ,   ESAf6DQbcnr   , ouACbv83b4C  ,4114008  ->   LWwRqYkP5Um   67087    KQHNqO8cBEt    22  fANQUNM9Kq3}");
 
         /*
-        */
 
+        */
 }

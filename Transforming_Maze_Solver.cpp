@@ -15,7 +15,7 @@ struct vertex {
 
 class Display {
     public :
-        static string graph (const vector<vector<int>> &grid) {
+        static string board (const vector<vector<int>> &grid) {
             int height = grid.size(), width = grid[0].size();
             stringstream os;
             os << '\n';
@@ -53,7 +53,6 @@ class Display {
 
             return os;
         }
-
 };
 
 point operator+ (const point& a, const point& b) {
@@ -96,7 +95,7 @@ bool is_inside (point p, int width, int height) {
     return p.first >= 0 && p.second >= 0 && p.first < width && p.second < height;
 }
 
-bool update2 (vector<vector<int>> &grid, vector<vector<vertex>> &graph, int cycle) {
+bool update (vector<vector<int>> &grid, vector<vector<vertex>> &graph, int cycle) {
 
     int height = grid.size(), width = grid[0].size();
     vector<point> stack;
@@ -140,12 +139,12 @@ bool update2 (vector<vector<int>> &grid, vector<vector<vertex>> &graph, int cycl
 
     return false;
 }
-string maze_solver (vector<vector<int>> grid) {
+vector<string> maze_solver (vector<vector<int>> grid) {
 
+    int cycle = 0;
     int height = grid.size(), width = grid[0].size();
-    vector<vector<vertex>> graph (height, vector<vertex> (width, {99}));
     point exit;
-    int move = 0;
+    vector<vector<vertex>> graph (height, vector<vertex> (width, {99}));
 
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
@@ -156,21 +155,20 @@ string maze_solver (vector<vector<int>> grid) {
         }
     }
 
-    cout << Display::graph(grid) << endl;
+    cout << Display::board(grid) << endl;
 
-    while (move < 9) {
-        if (update2(grid, graph, move) == true) {
+    while (cycle < 2) {
+        if (update(grid, graph, cycle) == true) {
 
-            /*
             for (string &route : graph[exit.second][exit.first].path) {
-                cout << "[" << route << "]";
+                //cout << "[" << route << "]";
             }
-            */
+            // return graph[exit.second][exit.first].path;
             break;
         }
-
+        // cout << Display::board(grid) << endl;
         rotate (grid);
-        move++;
+        cycle++;
     }
 
     cout << endl;
@@ -184,7 +182,7 @@ string maze_solver (vector<vector<int>> grid) {
     /*
     */
 
-    return "nullptr";
+    return {};
 }
 
 int main () {
@@ -205,11 +203,27 @@ int main () {
   };
 
 
-  string res = maze_solver(test[1].first);
-  //cout << "██";
+  auto res = maze_solver(test[0].first);
+  // cout << res << "\n";
+  // cout << "██";
 
 }
 ////////////////////////////////////////////////////////////////////////////////
+void Test () {
+
+    using grid = vector<vector<int>>;
+
+    pair<vector<vector<int>>, vector<string>> test;
+
+    test = {{ {4,2,5,4}, {4,15,11,1}, {-1,9,6,8}, {12,7,7,-2} }, {"NNE", "EE", "S", "SS"}};
+    test = {{ {6,3,10,4,11}, {8,10,4,8,5}, {-1,14,11,3,-2}, {15,3,4,14,15}, {14,7,15,5,5} }, {"", "", "E", "", "E", "NESE"}};
+    test = {{ {9,1,9,0,13,0}, {14,1,11,2,11,4}, {-1,2,11,0,0,15}, {4,3,9,6,3,-2} }, {"E", "SE", "", "E", "E", "E"}};
+    test = {{ {-1,6,12,15,11}, {8,7,15,7,10}, {13,7,13,15,-2}, {11,10,8,1,3}, {12,6,9,14,7} }, {}};
+    test = {{ {6,3,0,9,14,13,14}, {-1,14,9,11,15,14,15}, {2,15,0,12,6,15,-2}, {4,10,7,6,15,5,3}, {7,3,13,13,14,7,0} }, {}};
+
+  }
+
+/*
 vector<point> mkstack (vector<vector<vertex>> &graph) {
     vector<point> stack;
 
@@ -273,17 +287,4 @@ bool update (vector<vector<int>> &grid, vector<vector<vertex>> &graph, int move)
 
     return false;
 }
-
-void Test () {
-
-    using grid = vector<vector<int>>;
-
-    pair<vector<vector<int>>, vector<string>> test;
-
-    test = {{ {4,2,5,4}, {4,15,11,1}, {-1,9,6,8}, {12,7,7,-2} }, {"NNE", "EE", "S", "SS"}};
-    test = {{ {6,3,10,4,11}, {8,10,4,8,5}, {-1,14,11,3,-2}, {15,3,4,14,15}, {14,7,15,5,5} }, {"", "", "E", "", "E", "NESE"}};
-    test = {{ {9,1,9,0,13,0}, {14,1,11,2,11,4}, {-1,2,11,0,0,15}, {4,3,9,6,3,-2} }, {"E", "SE", "", "E", "E", "E"}};
-    test = {{ {-1,6,12,15,11}, {8,7,15,7,10}, {13,7,13,15,-2}, {11,10,8,1,3}, {12,6,9,14,7} }, {}};
-    test = {{ {6,3,0,9,14,13,14}, {-1,14,9,11,15,14,15}, {2,15,0,12,6,15,-2}, {4,10,7,6,15,5,3}, {7,3,13,13,14,7,0} }, {}};
-
-}
+*/

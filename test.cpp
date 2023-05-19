@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cassert>
 #include <array>
+#include <map>
 #include <set>
 #include <limits>
 #include <chrono>
@@ -64,228 +65,86 @@ void Test ();
    [59, 8, 3]                   210
    [59, 6, 4]                   207
    [59, 24]                     166  <---- minimum value
-   */
 
-vector<uint64_t> sieve (uint64_t num) {
+*/
 
-    bool *primes = new bool[num + 1];
-    vector<uint64_t> sieve {2};
+int rate (vector<int> part) {
+    int res = 0;
+    map<int,int> hist;
 
-    fill_n (primes, num + 1, true);
+    for (auto &num : part) {
+        hist[num]++;
+        // if let Some(cnt) = hist.get(&num) {
+        //     hist.insert (*num, cnt+1);
+        // } else {
+        //     hist.insert (*num, 1);
+        // }
+    }
 
-    for (uint64_t p = 3; p * p <= num ; p += 2) {
-        if (primes[p] == true) {
-            for (uint64_t i = p * p; i <= num; i += 2 * p) {
-                primes[i] = false;
-            }
+    for (auto &it : hist) {
+        auto [x,y] = it;
+        res += pow(x,y);
+    }
+
+    return res * part.size();
+}
+
+pair<vector<int>, int> recurse (int n, int k, vector<int> &part, string mode) {
+
+    if (n == 1) {
+        cout << rate(part) << " => [";
+        for (auto &it : part) {
+            cout << " " << it;
         }
-    }
-    for (uint64_t i = 3; i <= num; i += 2) {
-        if (primes[i] == true) {
-            sieve.push_back(i);
-        }
-    }
+        cout << "]\n";
 
-    delete[] primes;
-    return sieve;
-}
-uint64_t tau (uint64_t n) { // count number of divisors
-    uint64_t total = 1;
+        return {part, rate (part)};
+    } else {
+        pair<vector<int>,int> ref;
+        ref.second = mode == "max" ? numeric_limits<int>::min() : numeric_limits<int>::max();
 
-    for (; (n & 1) == 0; n >>= 1) // Deal with powers of 2 first
-        ++total;
+        while (k > 1) {
+            if (n % k == 0){
+                part.push_back(k);
+                auto res = recurse (n / k, k, part, mode);
 
-    for (uint64_t p = 3; p * p <= n; p += 2) { // Odd prime factors up to the square root
-        uint64_t count = 1;
-        for (; n % p == 0; n /= p)
-            ++count;
-        total *= count;
-    }
-
-    if (n > 1)
-        total *= 2; // If n > 1 then it's prime
-
-    return total;
-}
-string p_factors (int num) {
-
-    vector<uint64_t> primes = sieve (num);
-
-    for (auto &p : primes) {
-        int ex = 0;
-
-        while (num % p == 0) {
-            num /= p;
-            ex++;
-        }
-
-        if (ex > 0) {
-            cout << p;
-            if (ex > 1) cout << "^" << ex;
-            if (num > 1) cout << " * ";
-        }
-    }
-
-    return "";
-}
-int radical (int maxn, int n) {
-
-    vector<uint64_t> primes = sieve (maxn);
-    vector<pair<int,int>> hist;
-    for (int k = 2; k <= maxn; k++) {
-        int rad = 1;
-
-        for (auto &p : primes) {
-            if (k % p == 0) {
-                rad *= p;
-            }
-            if (p >= k) break;
-        }
-        hist.push_back({rad, k});
-    }
-    sort(hist.begin(), hist.end());
-    return hist[n - 1].second;
-}
-
-bool is_prime (int num) {
-
-    if (num <= 3) return true;
-    if (num % 2 == 0 || num % 3 == 0) return false;
-
-    for (int i = 5; i <= sqrt(num); i += 6)
-        if (num % i == 0 || num % (i + 2) == 0)
-            return false;
-
-    return true;
-}
-vector<int> factorize (int n) {
-
-    vector<int> factors;
-
-    for (int k = 2; k < n; k++)
-        if (n % k == 0)
-            factors.push_back(k);
-
-    return factors;
-}
-int product (const vector<int> &clust) {
-    int prod = 1;
-
-    for (auto &num : clust)
-        prod *= num;
-
-    return prod;
-}
-
-vector<int> path; // it will store all current factors
-
-void recurse (int max, int val) {
-
-    if (val == 1) {
-        for (int i = 0; i < path.size(); i++)
-            cout << path[i] << " ";
-
-        cout << endl;
-        return;
-    }
-
-    for (int i = max; i > 1; i--) {
-        if (val % i == 0) {
-            path.push_back(i);
-            recurse(i, val / i);
-            path.pop_back();
-        }
-    }
-}
-void Output (int value) {
-    cout << "Result for " << value << ": " << endl;
-    recurse(value, value);
-}
-
-std::set<int> sieve2 (const int num) {
-
-    const int end = sqrt (num);
-    bool primes[num / 2 + 1];
-    std::set<int> sieve;
-
-    std::fill_n (primes, num / 2 + 1, true);
-    sieve.insert(2);
-
-    for (int p = 3; p <= end ; p += 2)
-        if (primes[p / 2] == true)
-            for (int i = p * p; i <= num ; i += 2 * p)
-                primes[i / 2] = false;
-
-    for (int i = 3; i <= num; i += 2)
-        if (primes[i / 2] == true)
-            sieve.insert(i);
-
-    return sieve;
-}
-std::array<int, 3> findEmirp (const int lim) {
-
-    int cnt = 0, maxv = 0, sum = 0;
-    std::set<int> primes = sieve2 (lim * 2);
-
-    for (auto p : primes) {
-        int num = p, rev = 0;
-
-        if (p > lim) break;
-
-        do {
-            rev = rev * 10 + num % 10;
-        } while (num /= 10);
-
-        if (rev != p && primes.find(rev) != primes.end()) {
-            cnt++;
-            maxv = max (maxv, p);
-            sum += p;
-            cout << rev << " " << p << endl;
-        }
-    }
-
-    return {cnt, maxv, sum};
-}
-std::string sierpinski (int n) {
-
-    const int dim = pow (3, n);
-    std::string asc;
-
-    for (int y = 0; y < dim; y++) {
-        for (int x = 0; x < dim; x++) {
-            bool flag = true;
-
-            for (int i = dim / 3; i ; i /= 3) {
-                if ((y % (i * 3)) / i == 1 && (x % (i * 3)) / i == 1) {
-                    flag = false;
+                if (mode == "max") {
+                    if (res.second > ref.second) {
+                        ref = res;
+                    }
+                } else {
+                    if (res.second < ref.second) {
+                        ref = res;
+                    }
                 }
+
+                part.pop_back();
             }
-            asc += (flag == true ? "██" : "  ");
+            k--;
         }
-        if (y < dim - 1) asc += "\n";
+
+        return ref;
     }
-
-    return asc;
 }
+pair<vector<int>,int> find_spec_prod_part (int n, string mode) {
 
-char *human_readable_time (unsigned seconds, char *time_string) {
+    vector<int> part;
+    pair<vector<int>,int> res = recurse (n, n-1, part, mode);
 
-    int hh = 0, mm = 0, ss = 0;
-
-    ss = seconds % 60;
-    mm = seconds / 60 % 60;
-    hh = seconds / 3600;
-    //human_readable_time (59, time);
-
-    printf ("%02i:%02i:%02i\n", hh,mm,ss);
-    return time_string; // return it
+    return res;
 }
 
 int main () {
 
     auto start = std::chrono::high_resolution_clock::now();
 
+    auto res = find_spec_prod_part(1416, "max"); // ([708, 2], 1420)
+
+    // find_spec_prod_part(1416, "min"); // ([59, 24], 166)
+    // dotest(10007, "max", None);
 /*
+
+
      1: 1
      3: 1,3
      6: 1,2,3,6
@@ -295,7 +154,6 @@ int main () {
     28: 1,2,4,7,14,28
 
     What is the value of the first triangle number to have over five hundred divisors?
-*/
     // 1621954689976164466
     uint64_t num = 5000, tri, k = 0, nd = 1;
 
@@ -305,7 +163,8 @@ int main () {
         nd = tau (tri);
     } while (nd < 500);
 
-    cout << k << " => "<< tri << " : " << nd;;
+    cout << k << " => "<< tri << " : " << nd;
+    */
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;

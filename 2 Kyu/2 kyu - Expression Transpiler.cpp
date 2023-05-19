@@ -14,15 +14,21 @@ vector<string> tokenize (string src) {
 
 bool isvalid3 (const string expr) {
 
-    // vector<string> badexp {"[0-9]+[A-z]+", "[^\\)\\}\\s\\n]$|^\\s*\\(", "[\\(|\\{]\\s*->", "\\([\\s\\n]*,|,[\\s\\n]*\\)|\\(.*\\w+\\s+\\w+.*\\)", "->[^\\}]*,[^\\}]*\\}", "\\{([^>]*\\w+,\\w+.*\\}|.*\\w+\\s+\\w+.*(->))"};
-    if (regex_search (expr, regex("[0-9]+[A-z]+"))) return false;    // parameter or function name with mixed digit and alpha characters
-    if (regex_search (expr, regex("[^\\)\\}\\s\\n]$|^\\s*\\("))) return false;   // the epression begins with '(' or ends with any character except ')' or '}' or ' ' or '\n'
+    // a() or {}() or {}{} or a(){} or {}(){}
+    if (regex_search (expr, regex("^[\\s\\n]*(\\w+|(\\{[^\\{\\}]*\\}))[\\s\\n]*(\\([^\\(\\)]*\\))?[\\s\\n]*(\\{[^\\{\\}]*\\})?[\\s\\n]*$")) == false) return false ;
+    if (regex_search (expr, regex("^[\\s\\n]*\\{[^\\{\\}]*\\}[\\s\\n]*$"))) return false;   // rejects {...} :  single lambda
 
-    if (regex_search (expr, regex("[\\(\\{]\\s*->"))) return false;
-    if (regex_search (expr, regex("\\([\\s\\n]*,|,[\\s\\n]*\\)|\\(.*\\w+\\s+\\w+.*\\)"))) return false;  // invalid argument
+    if (regex_search (expr, regex("^\\s*\\(|[^\\)\\}\\s\\n]$|^[\\s\\n]*$"))) return false;  // the expression begins with '(' or ends with any char exept '}' or ')'
+    if (regex_search (expr, regex("([^\\w]|^)[0-9]+[A-z]+|[^,_\\w\\{\\}\\s\\n->]"))) return false;  // bad name : 1a or bad character
 
-    if (regex_search (expr, regex("->[^\\}]*,[^\\}]*\\}"))) return false;
-    if (regex_search (expr, regex("\\{([^>]*\\w+,\\w+.*\\}|.*\\w+\\s+\\w+.*->)"))) return false;
+    if (regex_search (expr, regex("->[^\\}]*,[^\\}]*\\}"))) return false;              // rejects  -> x , y }
+    if (regex_search (expr, regex("\\{[^\\}]$|^[^\\{]*\\}|^[^\\(]*\\)|\\([^\\)]$"))) return false;
+
+    if (regex_search (expr, regex("[\\{\\(]\\s*[,-]|,\\s*[\\}\\)\\-]"))) return false;       // rejects (-> or {-> or (, or {,
+    if (regex_search (expr, regex("\\{[^\\{]*\\w+\\s+\\w+[^\\}]*->"))) return false;      // rejects { x y ->
+
+    if (regex_search (expr, regex("\\{[^>\\(]*\\w+[\\s\\n]*,[\\s\\n]*\\w+[^\\}-]*\\}|,\\s+,"))) return false;   // rejects {a,b ,c} or , ,
+    if (regex_search (expr, regex("\\([^\\{]*(\\w+|(\\{[^\\{\\}]*\\}))[\\s\\n]+(\\w+|(\\{[^\\{\\}]*\\}))[^\\}]*\\)"))) return false;  // rejects ( a b c )
 
     return true;
 }
@@ -191,17 +197,6 @@ int main () {
   shouldFail ("f({p,t,})");
   shouldFail ("f({a b -> c})");
 
-  // expre : [A-z]+|\\{.*?\\}
-  // param : (\\(.*?\\))?
-
-  // lmbda : \\{    (->)?  \\}
-  // \\{
-  //  [A-z]+,?
-  //   (->)?
-  //
-  // \\}
-  // shouldFail ("{a,b->c}");
-
   cout << "finish";
 
 /*
@@ -226,155 +221,4 @@ f { a -> } => f((a){})
 {}{} => (){}((){})
 */
 
-}
-
-vector<string> tokenize2 (string src) {
-    string::iterator it = src.begin();
-    vector<string> tok;
-
-    while (it < src.end()) {
-        while (*it == ' ') it++;
-        string buffer;
-
-        if (isalnum (*it)) {
-            while (isalnum (*it)) buffer += *it++;
-
-        } else {
-            if (*it == '-' && *(it + 1) == '>')
-                buffer += *it++;
-
-            if (ispunct (*it)) buffer += *it;
-            it++;
-        }
-
-        if (buffer.size()) tok.push_back (buffer);
-    }
-
-    return tok;
-}
-bool isvalid (const vector<string> &code) {
-
-    size_t index = 0, size = code.size();
-    int param = 0, separ = 0;
-    string token, last;
-    int hist[10] = {0};
-
-    if (code[size-1] != ")" && code[size-1] != "}") return false;
-
-    for (int i = 0; i < size; i++) {
-        if (regex_match (code[i], regex("[0-9]+[A-Za-z]+"))) {
-           return false;
-        }
-    }
-
-    if (code[0] == "(") {
-        return false;
-    } else if (code[0] == "{") {
-
-    } else {
-
-    }
-    return true;
-}
-bool isvalid1 (const vector<string> &code) {
-
-    size_t index = 0, size = code.size();
-    int param = 0, separ = 0, paren = 0, brace = 0;
-    string token, last;
-
-    if (code.size() && code[0] == "(") return false; // function parameters without function name
-    if (code[size-1] != ")" && code[size-1] != "}") return false;
-
-    while (index < code.size()) {
-        token = code[index], last = index > 0 ? code[index - 1] : " ";
-
-        if (isdigit (token[0])) {      // expression begining with digit
-            for (size_t i = 1; i < token.size(); i++) {
-                if (isalpha (token[i])) return false;
-            }
-        }
-        else if (token == "(") paren++;
-        else if (token == ")") paren--;
-        else if (token == "}") brace++;
-        else if (token == "{") {
-            brace--;
-            if (paren) param++;
-        }
-        else if (token == ",") {
-            if (last == "(") return false;
-            if (index + 1 < code.size() && code[index + 1]== ")") return false;
-            if (paren) separ++;
-        }
-        else if (token == "->") {
-            if (last == "(" || last == "{") return false;
-        }
-        else {
-            if (paren && !brace) param++;
-        }
-        index++;
-    }
-
-    last = index > 0 ? code[index - 1] : " ";
-
-    if (paren || brace) return false; // invalid parenthesis or brace number
-    if (param - separ >= 2) return false; // invalide number of parameters
-
-    return true;
-}
-bool isvalid2 (vector<string> code) {
-    size_t index = 0, size = code.size();
-    vector<string> brc;
-
-    if (code[0] == "(") return false;
-    if (code[size-1] != ")" && code[size-1] != "}") return false;
-
-    while (index < size) {
-        string cell = code[index];
-
-             if (cell == "[") { brc.push_back("]"); }
-        else if (cell == "{") { brc.push_back("}"); }
-        else if (cell == "(") { brc.push_back(")"); }
-        else if (cell == "]") { if (brc.size() && cell == brc.back()) brc.pop_back(); }
-        else if (cell == "}") { if (brc.size() && cell == brc.back()) brc.pop_back(); }
-        else if (cell == ")") { if (brc.size() && cell == brc.back()) brc.pop_back(); }
-        else if (cell == ",") {
-            if (regex_match (code[index+1], regex("\\)|\\}"))) {
-                return false;
-            }
-            if (regex_match (code[index-1], regex("\\(|\\{"))) {
-                return false;
-            }
-        }
-        else if (cell == "->") {
-            if (regex_match (code[index+1], regex("\\)"))) {
-                return false;
-            }
-            if (regex_match (code[index-1], regex("\\{|\\("))) {
-                return false;
-            }
-        }
-        else if (regex_match (cell, regex("[0-9]+[A-Za-z]+"))) {
-              return false;
-        }
-
-        index++;
-    }
-
-    return brc.empty();
-}
-const char *transpile2 (const char* src) {
-
-    string expr = src, os = "result";
-
-    if (!isvalid3(src)) return strdup("");
-
-
-    // cout << "\n";
-
-    //
-    // if (regex_search (expr, regex("[\\{\\(]\\w+\\s+\\w+"))) { // \\s*[->|\\)]
-    //
-    // }
-
-    return strdup(os.c_str());
 }
