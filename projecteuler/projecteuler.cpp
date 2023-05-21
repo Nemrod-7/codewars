@@ -17,9 +17,7 @@ class check {
   public :
       static void overflow (int64_t a, int64_t b) {
           int64_t limit = numeric_limits<int64_t>::max() / b;
-          //if (b > 1) limit /= b;
           if (a > limit) throw overflow_error ("integer overflow\n");
-
       }
 };
 
@@ -191,7 +189,6 @@ int64_t modpow (int64_t base, int64_t exp, int64_t mod) {
 
     return res;
   }
-
 int64_t digsum (int64_t num) {
     int64_t sum = 0;
     while (num) {
@@ -212,9 +209,7 @@ string collatz (int64_t n) {
 
     while (n != 1) {
         os += to_string (n) + " -> ";
-        n = (n % 2 == 0) ? n * 0.5 : 3 * n + 1;
-    }
-
+        n = (n % 2 == 0) ? n * 0.5 : 3 * n + 1; }
     return os + "1";
 }
 void collatz2 (int64_t a1) {
@@ -337,6 +332,27 @@ int64_t sumdigsum (int64_t n) {
     return 0;
 }
 
+int problem510 (int n) {
+    int sum = 0;
+    cout << sqrt (n) << "\n";
+    for (double i = 1; i <= n; i++) {
+        double c1 = 1 / sqrt (i);
+        for (int j = i ; j <= n; j++) {
+            double c2 = (1 / sqrt (j));
+            double c3 =  1 / (c1 + c2);
+            double sq = c3 * c3;
+            // double num = i * j, den = sqrt(i) + sqrt (j);
+            // sq = num / (den * den);
+            if (abs (sq - round (sq)) < 1e-8) {
+              sum += i + j + sq;
+              cout << i << " " << j << " " << sq << " :: " << sum << "\n";
+            }
+        }
+    }
+    cout << sum;
+    return sum;
+}
+
 int main () {
 
     Timer chrono;
@@ -344,29 +360,24 @@ int main () {
     const int64_t mod = 1000000007;
     const int64_t limit = 20;
 
-    int64_t sum = 0, sum2 = 0;
+    vector<vector<int>> vg = {{4,4,1},{9,36,4},{12,12,3},{20,20,5},{28,28,7},{44,44,11},{52,52,13}};
+    double a = 9.0, b = 36.0;
+    int n = 100; // 3072
 
-    int64_t fib[100] = {0,1};
-    // problemm 684 Inverse Digit Sum
-    for (int k = 2; k <= 20; k++) {
-        fib[k] = fib[k-2] + fib[k-1];
+    vector<int> prime {1,3,5,7,11};
 
-        int64_t f9 =  (fib[k] / 9);
-        int64_t prefix = fib[k] - 9 * f9;
-        int64_t sn = (modpow (10, (fib[k] / 9), mod) * (1 + prefix))  - 1;
-        // cout << " " << (modpow (10, f9, mod) * (1 + prefix))  - 1 << '\n';
-        // sum = sum + sn  ;
-        // cout << sumdigsum (fib[k]) << "\n";
+    for (int i = 0; i < 1; i++) {
+      int p2 = prime[i] * 4 ;
+
+      for (int j = 1; j < 10; j += 2) {
+
+        cout << p2 * j << " " << p2 * j<< " " << prime[i] * j * 2  << "\n";
+      }
     }
 
-    for (int k = 1; k <= 10; k++) {
-        sum += sumdigsum (fib[k]);
-    }
 
-    cout << sum;
-    /*
-    */
-
+    // for (in)
+    // problem510 (100);
 
     chrono.stop();
     chrono.get_duration();

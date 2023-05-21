@@ -134,14 +134,81 @@ pair<vector<int>,int> find_spec_prod_part (int n, string mode) {
     return res;
 }
 
+unsigned long digsum (unsigned long num) {
+    unsigned long sum = 0;
+    while (num) {
+        sum += num % 10;
+        num /= 10;
+    }
+    return sum;
+}
+
 int main () {
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    auto res = find_spec_prod_part(1416, "max"); // ([708, 2], 1420)
+    // auto res = find_spec_prod_part(1416, "max"); // ([708, 2], 1420)
+    // 81 512 2401 4913 5832 34012224 612220032 81920000000000000
 
-    // find_spec_prod_part(1416, "min"); // ([59, 24], 166)
-    // dotest(10007, "max", None);
+    vector<unsigned long> seq;
+    int lim = 100;
+    /*
+    for (int i = 2; i < 300; i++) {
+        int pw = 0;
+        vector<unsigned long> arr (lim);
+        arr[0] = i;
+
+        while (pw++ < 30) {
+            int sum = 0;
+            for (int j = 0; j < lim; j++) {
+                arr[j] = arr[j] * i;
+            }
+
+            for (int j = 0; j < lim; j++) {
+                arr[j + 1] += arr[j] / 10;
+                arr[j] = arr[j] % 10;
+            }
+
+            for (int j = 0; j  < lim; j++) {
+                sum += arr[j];
+            }
+
+            if (sum == i) {
+              int end = lim;
+
+              while (arr[end] == 0)
+                  end--;
+
+              for (int j = end; j >= 0; j--) {
+                  cout << arr[j];
+              }
+              cout << "\n";
+            }
+        }
+    }
+    */
+
+
+    for (int i = 2; i < 69; i++) {
+        int64_t nu = i;
+
+        while (nu < numeric_limits<int64_t>::max() / i) {
+            nu *= i;
+
+            if (digsum(nu) == i) {
+                seq.push_back(nu);
+            }
+        }
+    }
+
+    sort(seq.begin(),seq.end());
+    // cout << seq.size();
+    for (auto num : seq) {
+        cout << num << " ";
+    }
+
+    /*
+
 /*
 
 
