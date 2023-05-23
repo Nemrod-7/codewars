@@ -332,27 +332,6 @@ int64_t sumdigsum (int64_t n) {
     return 0;
 }
 
-int problem510 (int n) {
-    int sum = 0;
-    cout << sqrt (n) << "\n";
-    for (double i = 1; i <= n; i++) {
-        double c1 = 1 / sqrt (i);
-        for (int j = i ; j <= n; j++) {
-            double c2 = (1 / sqrt (j));
-            double c3 =  1 / (c1 + c2);
-            double sq = c3 * c3;
-            // double num = i * j, den = sqrt(i) + sqrt (j);
-            // sq = num / (den * den);
-            if (abs (sq - round (sq)) < 1e-8) {
-              sum += i + j + sq;
-              cout << i << " " << j << " " << sq << " :: " << sum << "\n";
-            }
-        }
-    }
-    cout << sum;
-    return sum;
-}
-
 int main () {
 
     Timer chrono;
@@ -364,19 +343,14 @@ int main () {
     double a = 9.0, b = 36.0;
     int n = 100; // 3072
 
-    vector<int> prime {1,3,5,7,11};
-
-    for (int i = 0; i < 1; i++) {
-      int p2 = prime[i] * 4 ;
-
-      for (int j = 1; j < 10; j += 2) {
-
-        cout << p2 * j << " " << p2 * j<< " " << prime[i] * j * 2  << "\n";
-      }
+    for (int i = 1;  4 * i <= n; i += 2) {
+      int p1 =  i;
+      int p2 = p1 + 1;
+      // cout << p1 * 4 << " " << p1 * 4 << " " << p1  << "\n";
+      cout << p2 * 4  << " " << p2 * 4  << " " << p2  << "\n";
     }
 
 
-    // for (in)
     // problem510 (100);
 
     chrono.stop();
