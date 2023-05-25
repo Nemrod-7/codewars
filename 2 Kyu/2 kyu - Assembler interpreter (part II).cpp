@@ -74,7 +74,13 @@ string assembler_interpreter (string input) {
           if (com == "mul") reg[key] *= val;
           if (com == "div") reg[key] /= val;
           if (com == "cmp") cmp = reg[key] - val;
-
+          if (com == "jmp") jump = true;
+          if (com == "jne" && cmp != 0) jump = true;
+          if (com == "je"  && cmp == 0) jump = true;
+          if (com == "jge" && cmp >= 0) jump = true;
+          if (com == "jg"  && cmp  > 0) jump = true;
+          if (com == "jle" && cmp <= 0) jump = true;
+          if (com == "jl"  && cmp  < 0) jump = true;
           if (com == "call") {
               pos.push (line + 1);
               jump = true;
@@ -83,14 +89,6 @@ string assembler_interpreter (string input) {
               line = pos.top() - 1;
               pos.pop();
           }
-          if (com == "jmp") jump = true;
-          if (com == "jne" && cmp != 0) jump = true;
-          if (com == "je"  && cmp == 0) jump = true;
-          if (com == "jge" && cmp >= 0) jump = true;
-          if (com == "jg"  && cmp  > 0) jump = true;
-          if (com == "jle" && cmp <= 0) jump = true;
-          if (com == "jl"  && cmp  < 0) jump = true;
-
           if (com == "msg") os += mkmsg (reg, code);
 
           if (jump == true) line = find (prog.begin(), prog.end(), code[1] + ':');

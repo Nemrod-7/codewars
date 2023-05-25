@@ -28,8 +28,8 @@ string simulated_annealing (vector<pair<string,int>> clue) {
     int size = clue[0].first.size();
     string next, curr  (size,'0');// generate(clue);
 
-    random_device rd; 
-    mt19937 gen(rd()); 
+    random_device rd;
+    mt19937 gen(rd());
     uniform_real_distribution<> rng (0, 1);
     uniform_int_distribution<> pos (0, size - 1), dig (0, 9);
 
@@ -38,7 +38,7 @@ string simulated_annealing (vector<pair<string,int>> clue) {
 
     while (T > t_min) {
         // mutation
-        int x = pos(gen), c0 = cost (clue,curr);
+        int x = pos(gen), c0 = cost(clue,curr);
         next = curr;
 
         if (c0 == 0) {
@@ -63,6 +63,7 @@ string simulated_annealing (vector<pair<string,int>> clue) {
     // cout << maxv;
     return "";
 }
+
 int main () {
 
     chrono::steady_clock::time_point start = chrono::steady_clock::now (), end;
@@ -104,4 +105,3 @@ void Test () {
 
 */
 };
-

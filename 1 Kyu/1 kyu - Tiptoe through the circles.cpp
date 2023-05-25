@@ -11,7 +11,7 @@
 
 /*
 
-trigonometry spreadsheet => theta is angle between hypothenus and adjacent size
+trigonometry  => theta is angle between hypothenus and adjacent size
 Soh cah toa
 
 theta = asin (opp / hyp);
@@ -39,12 +39,12 @@ struct comp {
 class Base {
     public :
         vector<vector<int>> edge;
-        vector<vector<Point>> gate, itc;
+        vector<vector<Point>> gate, inter;
         map<Point,int> hist;
 
         Base (int size) {
             edge.resize(size);
-            itc.resize(size);
+            inter.resize(size);
         }
 };
 
@@ -218,8 +218,8 @@ Base mkgraph (const Point &start, const Point &exit, const vector<Circle> &graph
         for (int j = i + 1; j < size; j++) { // check for circle intersections
             vector<Point> cip = circles_intersection (c1, graph[j]);
             for (auto p : cip) {
-                base.itc[i].push_back(p);
-                base.itc[j].push_back(p);
+                base.inter[i].push_back(p);
+                base.inter[j].push_back(p);
             }
         }
     }
@@ -231,18 +231,18 @@ Base mkgraph (const Point &start, const Point &exit, const vector<Circle> &graph
 void astar3 (Point start, Point exit, vector<Circle> graph) {
 
     const int size = graph.size();
-    auto [edge,gate,itc,base] = mkgraph (start,exit,graph);
+    auto [edge,gate,inter,base] = mkgraph (start,exit,graph);
     priority_queue<vertex,vector<vertex>,comp> q1;
-    // cout << fixed << setprecision (5);
+
     for (auto p : find_tangent (start,graph)) {
         q1.push (vertex {distance (start,p), {start,p}});
-        printf ("{%f %f}", p.x, p.y);
+        // printf ("{%f %f}", p.x, p.y);
     }
 
     int cycle = 0;
 
     while (!q1.empty()) {
-        auto [heur,path] = q1.top();
+        auto [dist,path] = q1.top();
         Point p1 = path.back();
         q1.pop();
 
@@ -255,30 +255,29 @@ void astar3 (Point start, Point exit, vector<Circle> graph) {
             break;
         }
 
-        int id = base[p1];
-        Circle c1 = graph[id];
+        int id = base[p1];      // get circle id
+        Circle c1 = graph[id];  // get circle
 
         double minv = numeric_limits<double>::max();
 
-        for (auto p2 : itc[id]) {
-            double theta = 2.0 * asin (distance (p1,p2) * 0.5 / c1.r);
-            minv = min (minv, degree (theta));
+        for (auto p2 : inter[id]) {                                      // search nearest intersection
+            double theta = asin (distance (p1,p2) * 0.5 / c1.r) * 2.0; // in radian
+            minv = min (minv, theta);
         }
 
         for (int i = 0; i < edge[id].size(); i++) {
             vector<Point> nxe = gate[edge[id][i]];
-            // printf ("%i ", i);
             if (base[nxe[0]] != id)
                 swap (nxe[0],nxe[1]);
             // printf ("{%f %f}", nxe[0].x, nxe[0].y);
             Point p2 = nxe[0];
-            double theta = degree (2.0 * asin (distance (p1,p2) * 0.5 / c1.r)) ;
+            double theta = asin (distance (p1,p2) * 0.5 / c1.r) * 2.0; // in radian
 
             if (theta < minv) {
-                double arc = 2 * M_PI * c1.r * theta / 360.0;  // double arc =  c1.r * 2.0 * asin (distance (p1,p2) * 0.5 / c1.r); // arc length
-                double alt = arc + distance(p2,nxe[1]);
+                double arc = c1.r * theta;
+                double alt = arc + distance (p2,nxe[1]);
+                // 2 * M_PI * c1.r * theta / 360.0;  // double arc =  c1.r * 2.0 * asin (distance (p1,p2) * 0.5 / c1.r); // arc length
                 vector<Point> route = path;
-
                 for (auto p : nxe) {
                     route.push_back(p);
                 }
@@ -287,12 +286,16 @@ void astar3 (Point start, Point exit, vector<Circle> graph) {
             }
         }
     }
-
+    while (!q1.empty()) {
+        auto [dist,hist] = q1.top();
+        q1.pop();
+        Display::point(hist.back());
+    }
 }
 
 int main () {
 
-    cout << fixed << setprecision(3);
+    // cout << fixed << setprecision(3);
 
     Point start = {-3, 1}, exit = {4.25, 0};
     vector<Circle> graph = {{0.0, 0.0, 2.5}, {1.5, 2.0, 0.5}, {3.5, 1.0, 1.0}, {3.5, -1.7, 1.2}};
@@ -314,13 +317,20 @@ int main () {
             }
         }
     }
+    /*
+    const double hyp = r1, opp = distance (a,b) * 0.5;
 
+    const double theta = asin (opp/hyp) * 2.0;
+    const double arc = r1 * theta;
+
+    const double inv = r1 * (2 * M_PI - theta);
+    */
 
     astar3 (start,exit,graph);
 
     /*
     Draw::graph (start,exit,graph);
-    Draw::dots(vect);
+    // Draw::dots(vect);
     Draw::img();
 
 

@@ -28,9 +28,16 @@ class Assert {
 };
 template<class T> const T& Equals (const T& entry) { return entry;}
 void Test();
+void display (vector<string> expr) {
+    for (auto it : expr) {
+        cout << "[" << it << "]";
+    }
+    cout << endl;
+}
 ////////////////////////////////////////////////////////////////////////////////
 vector<string> tokenize (const string &expr) {
-  regex token ("\\*|\\+|/|-?[0-9]+(\\.[0-9]+)?|-|\\(|\\)");
+  // regex token ("\\*|\\+|/|-?[0-9]+(\\.[0-9]+)?|-|\\(|\\)");
+  regex token ("-?[0-9]+(\\.[0-9]+)?|[/*+%()-]");
   sregex_token_iterator it (expr.begin(), expr.end(), token);
   return vector<string> (it, sregex_token_iterator());
 }
@@ -44,9 +51,9 @@ double pass1 (vector<string> expr) {
 
     regex number ("^-?[0-9]+(\\.[0-9]+)?$");
     vector<string>::iterator it = expr.begin();
-
     vector<string> oper;
     vector<double> vars;
+    // display(expr);
 
     while (it - expr.begin() < expr.size()) {
 
@@ -93,7 +100,10 @@ double pass1 (vector<string> expr) {
     return !vars.empty() ? vars.back() : 0;
 }
 
-double calc (string src) { return pass1 (tokenize(src)); }
+double calc (string input) {
+
+  return pass1 (tokenize(input));
+}
 
 int main () {
 
@@ -101,13 +111,13 @@ int main () {
 
     Assert::That(calc ("(123.45*(678.90 / (-2.5+ 11.5)-(((80 -(19))) *33.25)) / 20) - (123.45*(678.90 / (-2.5+ 11.5)-(((80 -(19))) *33.25)) / 20) + (13 - 2)/ -(-11)"), Equals(1.0));
     Assert::That(calc ("(64) * (-97 / 51 * -(55)) - (21 * -((((71 - -33)))) - 44)"), 8922.901960784315);
-
     Assert::That(calc (""), 0.0);
     Assert::That(calc ("3 -(-1)"), Equals(4.0));
 
     Assert::That(calc ("2 + 3 * 4 / 3 - 6 / 3 * 3 + 8"), 8.0);
     Assert::That(calc ("-7 * -6 / 3"), Equals(14.0));
     Assert::That(calc ("10- 2- -5"), Equals(13.0));
+
     Assert::That(calc ("8/16"), Equals(0.5));
     Assert::That(calc ("2 + -2"), Equals(0.0));
     Assert::That(calc ("3 * 5"), Equals(15.0));
@@ -120,8 +130,9 @@ int main () {
     Assert::That(calc ("(((10)))"), Equals(10.0));
 
     Assert::That(calc ("63 - -20 / 84 - 33 * 87 + -17 * 41 + -10"), -3514.761905);
+    /*
+    */
 
-    cout << "end";
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
     std::cout << "\nProcess took " << elapsed.count()  << " ms" << std::endl;

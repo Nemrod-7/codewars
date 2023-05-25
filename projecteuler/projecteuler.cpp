@@ -18,6 +18,8 @@ class check {
       static void overflow (int64_t a, int64_t b) {
           int64_t limit = numeric_limits<int64_t>::max() / b;
           if (a > limit) throw overflow_error ("integer overflow\n");
+
+
       }
 };
 

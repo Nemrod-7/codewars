@@ -3,11 +3,7 @@
 #include <fstream>
 #include <vector>
 #include <cmath>
-#include <algorithm>
-#include <cassert>
-#include <array>
 #include <map>
-#include <set>
 #include <limits>
 #include <chrono>
 
@@ -42,6 +38,14 @@ class Assert {
 template<class T> T Equals (const T& entry) { return entry;}
 template<class T> T EqualsContainer (const T& entry) { return entry;}
 void Test ();
+
+class check {
+  public :
+      static void overflow (int64_t a, int64_t b) {
+          int64_t limit = numeric_limits<int64_t>::max() / b;
+          if (a > limit) throw overflow_error ("integer overflow\n");
+      }
+};
 ////////////////////////////////////////////////////////////////////////////////
 /*
    Product Partition           Score(sc)
@@ -142,7 +146,10 @@ unsigned long digsum (unsigned long num) {
     }
     return sum;
 }
-
+void overflow (int a, int b) {
+    int limit = numeric_limits<int>::max() / b;
+    if (a > limit) throw overflow_error ("integer overflow ");
+}
 int main () {
 
     auto start = std::chrono::high_resolution_clock::now();
@@ -150,67 +157,43 @@ int main () {
     // auto res = find_spec_prod_part(1416, "max"); // ([708, 2], 1420)
     // 81 512 2401 4913 5832 34012224 612220032 81920000000000000
 
-    vector<unsigned long> seq;
-    int lim = 100;
+    int lim = 4000;
+    int count = 0;
+    int p = 2;
+
+    int pw = 2;
+    vector<unsigned long> arr (lim);
+    arr[0] = p;
+
+    // cout << log10(123) << " " << log2(2) << " " << log10(124);
+
+    for (int i = 1; i < 20 ; i++) {
+      double lg = i * log10(i);
+      cout << lg  << "\n";
+    }
     /*
-    for (int i = 2; i < 300; i++) {
-        int pw = 0;
-        vector<unsigned long> arr (lim);
-        arr[0] = i;
+    int p = 2;
+    int ex = p;
 
-        while (pw++ < 30) {
-            int sum = 0;
-            for (int j = 0; j < lim; j++) {
-                arr[j] = arr[j] * i;
-            }
-
-            for (int j = 0; j < lim; j++) {
-                arr[j + 1] += arr[j] / 10;
-                arr[j] = arr[j] % 10;
-            }
-
-            for (int j = 0; j  < lim; j++) {
-                sum += arr[j];
-            }
-
-            if (sum == i) {
-              int end = lim;
-
-              while (arr[end] == 0)
-                  end--;
-
-              for (int j = end; j >= 0; j--) {
-                  cout << arr[j];
-              }
-              cout << "\n";
-            }
+    while (true) {
+        try {
+            overflow (ex, p);
+            ex *= p;
+        } catch (const std::exception &x) {
+            // std::cerr << "error: " << x.what() ;
+            break;
         }
+    }
+
+
+
+    while (ex < numeric_limits<int>::max() / p) {
+        ex *= p;
     }
     */
 
 
-    for (int i = 2; i < 69; i++) {
-        int64_t nu = i;
-
-        while (nu < numeric_limits<int64_t>::max() / i) {
-            nu *= i;
-
-            if (digsum(nu) == i) {
-                seq.push_back(nu);
-            }
-        }
-    }
-
-    sort(seq.begin(),seq.end());
-    // cout << seq.size();
-    for (auto num : seq) {
-        cout << num << " ";
-    }
-
     /*
-
-/*
-
 
      1: 1
      3: 1,3
@@ -232,6 +215,36 @@ int main () {
 
     cout << k << " => "<< tri << " : " << nd;
     */
+
+
+    /*
+    while (pw < 1000) {
+        // cout << pw % 1 << ' ';
+        int sum = 0;
+        for (int j = 0; j < lim; j++) {
+            arr[j] = arr[j] * p;
+        }
+        for (int j = 0; j < lim; j++) {
+            arr[j + 1] += arr[j] / 10;
+            arr[j] = arr[j] % 10;
+        }
+
+        int end = lim;
+
+        while (arr[end] == 0)
+            end--;
+        // cout << arr[end-1] << " ";
+        if (arr[end] == 1 && arr[end-1] == 2 && arr[end-2] == 3) {
+            count ++;
+            for (int j = end; j >= 0; j--) {
+              cout << arr[j];
+            }
+            cout << "\n";
+          }
+        pw++;
+    }
+    */
+
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;

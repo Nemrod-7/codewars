@@ -10,19 +10,20 @@ using namespace std;
 
 /////////////////////////////////Assert/////////////////////////////////////////
 class Assert {
-  public :
-  static void That (const double& actual, const double& expression) {
-    cout << fixed;
-    if (actual != expression) {
-      cout << "actual : " << actual;
-      cout << "\nexpect : " << expression;
+    public :
+      template<class T> static void That (const T& actual, const T& expression) {
+          cout << fixed;
+          if (actual != expression) {
+              cout << "actual : " << actual;
+              cout << "\nexpect : " << expression;
 
-      cout << endl;
+              cout << endl;
+          }
     }
-  }
 };
 const double& Equals (const double& entry) { return entry;}
 void Test();
+////////////////////////////////////////////////////////////////////////////////
 /*
 
 function        ::= fn-keyword fn-name { identifier } fn-operator expression
@@ -54,13 +55,18 @@ template<class T = void> struct modul {
         return fmod (lhs, rhs);
     }
 };
+template<class T = void> struct power {
+    const T operator ()(const T &lhs, const T &rhs) {
+        return pow (lhs, rhs);
+    }
+};
 
-map<string,int> order {{"+",1},{"-",1},{"*",2},{"/",2},{"%",2}};
+map<string,int> order {{"+",1},{"-",1},{"*",2},{"/",2},{"%",2},{"^",2}};
 map<string,func> operate {{"+", plus<double>()},{"-", minus<double>()},
-{"*", multiplies<double>()},{"/", divides<double>()}, {"%", modul<double>()}};
+{"*", multiplies<double>()},{"/", divides<double>()}, {"%", modul<double>()}, {"^", power<double>()} };
 
-map<string, double> vars;
-map<string, pair<string,string>> fbase;
+map<string, double> vars;               // values base : <arg name, value>
+map<string, pair<string,string>> fbase; // functions base : <func name, <args, function>>
 
 template<class T> T getstack (vector<T> &S) {
     if (S.empty()) throw runtime_error("Invalid stack size");
@@ -120,7 +126,7 @@ bool isvar (const vector<string> &expr, int index) {
 
 double pass1 (vector<string> expr) {
 
-    vector<string>::iterator it = expr.begin(), end = expr.end(), bg = expr.begin();
+    vector<string>::iterator it = expr.begin(), end = expr.end(), start = expr.begin();
     regex number ("^-?[0-9]+(.[0-9]+)?$");
     regex identi ("_?[a-zA-Z]+_?|_[0-9]+");
 
@@ -133,7 +139,7 @@ double pass1 (vector<string> expr) {
 
         int sign = 1;
 
-        if (isvar (expr, it - bg)) {
+        if (isvar (expr, it - start)) {
             sign = -1, it++;
         }
 
@@ -149,11 +155,11 @@ double pass1 (vector<string> expr) {
                 auto mid = find (it, end, "=>");
 
                 for (auto fn_ex = it + 1; fn_ex != mid; fn_ex++) {
-                      if (find (mid, end, *fn_ex) == end)
-                          throw::logic_error ("Unknown identifier.");
+                    if (find (mid, end, *fn_ex) == end)
+                        throw::logic_error ("Unknown identifier.");
 
-                      if (find (it + 1, fn_ex, *fn_ex) != fn_ex)
-                          throw::logic_error ("Invalid function.");
+                    if (find (it + 1, fn_ex, *fn_ex) != fn_ex)
+                        throw::logic_error ("Invalid function.");
                 }
 
                 fbase[name] = {getsub (it, mid), getsub (it, end)};
@@ -216,93 +222,87 @@ double pass1 (vector<string> expr) {
 }
 double interpret (const string &input) {
 
+    double res = 0.0;
     vector<string> expr = tokenize(input);
-    if (!expr.size())  return 0;
 
-    return pass1(expr);
+    if (!expr.size()) return 0;
 
+    try {
+        res = pass1(expr);
+        cout << input << " ::=> ";
+        cout << res << "\n";
+    } catch (const exception &x) {
+        cout << "error : " << x.what() << "\n";
+    }
+
+    return res;
 }
 
-int main () {
 
+int main (int argc, char **argv) {
 
-    Assert::That(interpret("fn inc x => x + 1"), Equals(0));
-    Assert::That(interpret("fn avg x y => (x + y) / 2"), Equals(0));
-    Assert::That(interpret("fn add x y => x + y"), Equals(0));
-    Assert::That(interpret("fn echo x => x"), Equals(0));
+    // interpret("(fn f => 1)");
+    enum {normal, differ};
 
-    Assert::That(interpret("a = 2"), Equals(2));
-    Assert::That(interpret("b = 3"), Equals(3));
-    Assert::That(interpret("x = 7"), Equals(7));
-    Assert::That(interpret("x + 6"), Equals(13));
-    Assert::That(interpret("x = 13 + (y = 3)"), Equals(16));
+    string input;
+    int mode = normal;
+    cout << "Interpreter : \n"
+    "commands : derivate, interpret, exit | type input\n"
+    ;
 
-    Assert::That(interpret("a = 0"), Equals(0));
-    Assert::That(interpret("a = inc a"), Equals(1));
-    Assert::That(interpret("a = inc a"), Equals(2));
+    while (true) {
+        getline (cin, input);
 
-    Assert::That(interpret("add a b"), Equals(5));
-    Assert::That(interpret("avg a b"), Equals(2.5));
-    Assert::That(interpret("add echo 3 echo 7"), Equals(10));
-
-    Assert::That(interpret("1 + 1"), Equals(2.0));
-    Assert::That(interpret("2 - 1"), Equals(1.0));
-    Assert::That(interpret("2 * 3"), Equals(6.0));
-    Assert::That(interpret("8 / 4"), Equals(2.0));
-    Assert::That(interpret("7 % 4"), Equals(3.0));
-    Assert::That(interpret("avg 4 2 + avg 10 30"), Equals(23.0));
-
-    Assert::That(interpret("4 / 2 * 3"), Equals(6));
-
-    Assert::That(interpret("x = -6"), Equals(-6));
-
-
-    interpret("(fn f => 1)");
-
-    /*
-    "add echo 3 echo 7 * - avg 4 2 + avg 10 30 "
-
-    */
-
-    /*
-    try {
-        interpret("avg 7");
-        interpret("fn add x x => x + x");
-
-        Assert::That(0, Equals(1));
-    } catch (...) {
-        Assert::That(1, Equals(1));
+        if (input == "exit" || input == "quit") {
+            break;
+        } else if (input == "derivate") {
+            mode = differ;
+        } else if (input == "interpret") {
+            mode = normal;
+        } else {
+            switch (mode) {
+                case normal: interpret(input); break;
+                case differ: break;
+                default: break;
+            }
+        }
     }
-    */
 
-    /*
+    cout << "end";
+    // Test();
 
-
-
-    it_should_handle_subtraction
-     right: `Ok(Some(-2.0))`: (input: `4-6`)
-
-    it_should_throw_an_error_when_function_contains_contains_duplicate_arguments
-    right: `Err(..)`): (input: `fn add x x => x + x`)
-
-    it_should_throw_an_error_when_function_is_declared_within_an_expression
-    called `Option::unwrap()` on a `None` value at src/lib.rs:159:54
-
-    */
-
-    //Test();
     cout << "end";
 }
 
-
 void Test () {
 
-  /*
-    try {
-        interpret("y");
-        Assert::That(0, Equals(1));
-    } catch (...) {
-        Assert::That(1, Equals(1));
-    }
-    */
+      Assert::That(interpret("fn inc x => x + 1"), Equals(0));
+      Assert::That(interpret("fn avg x y => (x + y) / 2"), Equals(0));
+      Assert::That(interpret("fn add x y => x + y"), Equals(0));
+      Assert::That(interpret("fn echo x => x"), Equals(0));
+
+      Assert::That(interpret("a = 2"), Equals(2));
+      Assert::That(interpret("b = 3"), Equals(3));
+      Assert::That(interpret("x = 7"), Equals(7));
+      Assert::That(interpret("x + 6"), Equals(13));
+      Assert::That(interpret("x = 13 + (y = 3)"), Equals(16));
+
+      Assert::That(interpret("a = 0"), Equals(0));
+      Assert::That(interpret("a = inc a"), Equals(1));
+      Assert::That(interpret("a = inc a"), Equals(2));
+
+      Assert::That(interpret("add a b"), Equals(5));
+      Assert::That(interpret("avg a b"), Equals(2.5));
+      Assert::That(interpret("add echo 3 echo 7"), Equals(10));
+
+      Assert::That(interpret("1 + 1"), Equals(2.0));
+      Assert::That(interpret("2 - 1"), Equals(1.0));
+      Assert::That(interpret("2 * 3"), Equals(6.0));
+      Assert::That(interpret("8 / 4"), Equals(2.0));
+      Assert::That(interpret("7 % 4"), Equals(3.0));
+      Assert::That(interpret("avg 4 2 + avg 10 30"), Equals(23.0));
+
+      Assert::That(interpret("4 / 2 * 3"), Equals(6));
+
+      Assert::That(interpret("x = -6"), Equals(-6));
 }
