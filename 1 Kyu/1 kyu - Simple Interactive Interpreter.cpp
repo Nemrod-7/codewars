@@ -23,6 +23,12 @@ class Assert {
 };
 const double& Equals (const double& entry) { return entry;}
 void Test();
+void display (vector<string> expr) {
+    for (auto it : expr) {
+        cout << "[" << it << "]";
+    }
+    cout << endl;
+}
 ////////////////////////////////////////////////////////////////////////////////
 /*
 
@@ -87,19 +93,29 @@ vector<string> getargs (vector<string>::iterator &it, const vector<string> &expr
     const string name = *it;
     const int nargs = tokenize(fbase[name].first).size();
     vector<string> args;
+    cout << name << " => ";
 
     while (it + 1 < expr.end() && args.size() < nargs) {
         it++;
-        string arg = *it;
+        string cell = *it;
 
-        if (fbase.find(arg) != fbase.end()) {
-            vector <string> nxt = getargs (it, expr);
+        if (cell == "(") {
+            while (*it != ")") {
+              cell += *++it;
+            }
+        } else if (fbase.find(cell) != fbase.end()) {
+            vector<string> nxt = getargs (it, expr);
 
-            for (auto &it2 : nxt)
-                arg += " " + it2;
+            for (auto &it2 : nxt) {
+                cell += " " + it2;
+            }
         }
 
-        args.push_back(arg);
+        cout << "["<< cell << "]";
+        /*
+
+        */
+        args.push_back(cell);
     }
 
     return args;
@@ -130,6 +146,7 @@ double pass1 (vector<string> expr) {
     regex number ("^-?[0-9]+(.[0-9]+)?$");
     regex identi ("_?[a-zA-Z]+_?|_[0-9]+");
 
+    display(expr);
     bool running = true;
 
     vector<double> value;
@@ -174,9 +191,10 @@ double pass1 (vector<string> expr) {
                 value.push_back (vars[token]);
             } else if (fbase.find (token) != fbase.end()) {
 
-                vector<string> args = getargs (it, expr), sub;
+                vector<string> args = getargs (it, expr);
                 vector<string> vars = tokenize (fbase[token].first), lmda = tokenize (fbase[token].second);
-
+                cout << token << "\n";
+                // display(args);
                 if (args.size() != vars.size())
                     throw::logic_error ("Invalid number of argument.");
 
@@ -229,8 +247,8 @@ double interpret (const string &input) {
 
     try {
         res = pass1(expr);
-        cout << input << " ::=> ";
-        cout << res << "\n";
+        // cout << input << " => ";
+        // cout << res << "\n";
     } catch (const exception &x) {
         cout << "error : " << x.what() << "\n";
     }
@@ -238,10 +256,8 @@ double interpret (const string &input) {
     return res;
 }
 
+void getinput () {
 
-int main (int argc, char **argv) {
-
-    // interpret("(fn f => 1)");
     enum {normal, differ};
 
     string input;
@@ -270,6 +286,20 @@ int main (int argc, char **argv) {
 
     cout << "end";
     // Test();
+}
+int main (int argc, char **argv) {
+
+    // interpret("(fn f => 1)");
+    // Assert::That(interpret("fn sq x => x * x"), Equals(0));
+    // cout << interpret ("sq (4/2)");
+
+    string input = " 4 5 6";
+    vector<string> expr = tokenize (input);
+    vector<string>::iterator it = expr.begin();
+
+    vector<string> args = getargs (it, expr);
+    cout << args.size();
+    // display(args);
 
     cout << "end";
 }
