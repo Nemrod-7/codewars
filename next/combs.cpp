@@ -221,16 +221,12 @@ int main() {
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    vector<int> mask = {8,8,8,8,8,8,8,8,8};
+    vector<int> mask = {8,8,8};
+    // 1_2_3_4_5_6_7_8_9_0 
 
-    int size = mask.size();
-    vector<vector<int>> subs (size);
+    filter (mask);
 
-    for (int i = 0; i < size; i++) {
-        for (int j = 1; j <= mask[i]; j++) {
-            subs[i].push_back (j);
-        }
-    }
+
 
     //filter (subs);
     /*

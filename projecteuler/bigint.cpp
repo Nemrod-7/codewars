@@ -243,7 +243,7 @@ class Bigint {
         }
 };
 
-string square (const string &src) {
+string sqroot (const string &src) {
 
     string num = src;
     uint64_t root = 0;
@@ -272,7 +272,6 @@ string square (const string &src) {
 
     if (carry < 0) root -= 1;
     //cout << carry << endl;
-
 
     return to_string (root);
 }
@@ -450,26 +449,16 @@ int main () {
 
     const int lim = 60;
 
-    Bigint res, sum;
-    vector<Bigint> fib (lim);
+    string minr = "1020304050607080900", maxr = "1929394959697989990";
+    Bigint low = sqroot (minr), high = sqroot (maxr);
 
-    Bigint an;
-  	fib[0] = "1";
-    fib[1] = "1";
+    // cout << "-[" << high << "]-\n-[" << low << "]-\n";
+    
+    //cout << high - low;
 
-  	for (int i = 2; i < lim; i++) {
-  			fib[i] = fib[i-2] + fib[i-1];
-  	}
+    Bigint nu ( "1388659302");
 
-    for (int i = 10; i < 11; i++) {
-        // string n = to_string (i);
-        // an = fib[i * 6 + 2] / "2";
-        cout << i * 6 + 2 << " ";
-
-    }
-    //res = power ("2", 7830457) + "1";
-
-
+    cout << nu * nu;
     clock.stop();
     clock.get_duration();
 

@@ -344,15 +344,11 @@ int main () {
     vector<vector<int>> vg = {{4,4,1},{9,36,4},{12,12,3},{20,20,5},{28,28,7},{44,44,11},{52,52,13}};
     double a = 9.0, b = 36.0;
     int n = 100; // 3072
-
-    for (int i = 1;  4 * i <= n; i += 2) {
-      int p1 =  i;
-      int p2 = p1 + 1;
-      // cout << p1 * 4 << " " << p1 * 4 << " " << p1  << "\n";
-      cout << p2 * 4  << " " << p2 * 4  << " " << p2  << "\n";
-    }
-
-
+    // probelm 206      Concealed Square
+    // 1_2_3_4_5_6_7_8_9_0
+    string number = "1020304050607080900";
+    
+    //cout << number.size();
     // problem510 (100);
 
     chrono.stop();
