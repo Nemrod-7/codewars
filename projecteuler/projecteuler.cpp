@@ -347,7 +347,7 @@ int main () {
     // probelm 206      Concealed Square
     // 1_2_3_4_5_6_7_8_9_0
     string number = "1020304050607080900";
-    
+
     //cout << number.size();
     // problem510 (100);
 

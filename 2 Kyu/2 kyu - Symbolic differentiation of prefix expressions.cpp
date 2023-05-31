@@ -167,7 +167,6 @@ void Assert (string error, string expect, string input) {
 void Test () {
 
   /*
-
   std::string result = diff("(tan x)");
         Assert::That(result, Equals("(+ 1 (^ (tan x) 2))") || Equals("(^ (cos x) -2)") || Equals("(/ 1 (^ (cos x) 2))"));
 
@@ -179,9 +178,10 @@ int main () {
     ostringstream os;
     double val = 4;
 
-    string expression = "(* 2 (^ x 3))";
+    string expression = "(^ x 3)";
+    string result = diff (expression);
+    cout << result << "\n";
 
-    cout << diff (expression);
 
     /*
     Assert ("exp^(* 1 x) should return exp^x", "(exp x)", "(exp (* 1 x))");

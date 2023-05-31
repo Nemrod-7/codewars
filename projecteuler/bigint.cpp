@@ -443,22 +443,57 @@ Bigint sigma (Bigint num) { // sum of proper divisors
     return sum - num;
 }
 
+bool unique (const string &num) {
+    int hist[11] = {0};
+    hist[0] = 1;
+
+    for (auto &ch : num) {
+        int dig = ch - '0';
+        if (hist[dig] != 0) return false;
+        hist[dig]++;
+    }
+    return true;
+}
 int main () {
 
     Timer clock;
 
     const int lim = 60;
-
-    string minr = "1020304050607080900", maxr = "1929394959697989990";
-    Bigint low = sqroot (minr), high = sqroot (maxr);
-
-    // cout << "-[" << high << "]-\n-[" << low << "]-\n";
     
-    //cout << high - low;
+    const double phi = (1 + sqrt(5)) / 2.0;
+    vector<float> seq;
 
-    Bigint nu ( "1388659302");
+    vector<Bigint> fib (2);
+    fib[0] = "1", fib[1] = "1";
 
-    cout << nu * nu;
+    for (int i = 2; i < 35666; i++) {
+        string  number = fib[i-2] + fib[i-1];
+        fib.push_back(number);
+        int size = number.size();
+
+        if (size > 10) {
+
+            string last = number.substr(size-9);
+            string first = number.substr(0,9);
+
+            if (unique (last) /* && unique(first) */) {
+                cout << i  << " ";// " => " << number << "\n";
+                seq.push_back(i);
+            }
+        }
+    }
+    cout << "\n";
+    for (int i = 1; i < seq.size(); i++) {
+        cout << seq[i] - seq[i-1];
+        cout << " ";
+    }
+
+/*
+    int n = 541;
+    int64_t xn = (pow (phi,n) - pow(1 - phi, n)) / sqrt(5);
+    cout << xn;
+*/
+    // cout << nu * nu;
     clock.stop();
     clock.get_duration();
 
