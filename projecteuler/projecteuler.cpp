@@ -339,16 +339,40 @@ int main () {
     Timer chrono;
 
     const int64_t mod = 1000000007;
-    const int64_t limit = 20;
+    const int64_t lim = 100000000;
 
-    vector<vector<int>> vg = {{4,4,1},{9,36,4},{12,12,3},{20,20,5},{28,28,7},{44,44,11},{52,52,13}};
-    double a = 9.0, b = 36.0;
-    int n = 100; // 3072
-    // probelm 206      Concealed Square
-    // 1_2_3_4_5_6_7_8_9_0
-    string number = "1020304050607080900";
+    // 1,2,3,5,6,10,15,30
+    // d + n / d
+    int64_t sum = 0;
 
-    //cout << number.size();
+    for (int i = 1; i < 10000; i++) {
+        bool valid = true;
+
+        if (is_prime(i + 1)) {
+
+            for (int j = 1; j <= i; j++) {
+                if (i % j == 0) {
+                    int num = j + i / j;
+
+                    if (!is_prime (num)) {
+                        valid = false;
+                        break;
+                    }
+                }
+            }
+
+            if (valid == true) {
+                cout << i << " ";
+                sum += i;
+            }
+        }
+    }
+
+    cout << sum << ' ';
+
+
+
+
     // problem510 (100);
 
     chrono.stop();

@@ -459,7 +459,7 @@ int main () {
     Timer clock;
 
     const int lim = 60;
-    
+
     const double phi = (1 + sqrt(5)) / 2.0;
     vector<float> seq;
 
