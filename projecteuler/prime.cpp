@@ -1,54 +1,47 @@
 #include <iostream>
 #include <vector>
+#include <cmath>
 
 using namespace std;
 
+class seq {
+    private :
+    public :
+        vector<int64_t> rnd;
+        seq () {
+            for (int i = 0; i < 56; i++) {
+                int64_t num = 100003 - 200003 * i + 300007 * pow (i,3);
+                rnd.push_back(num);
+            }
+        }
+        int64_t gen (int k) {
+            int64_t num;
+            if (k < 56) {
+                num = rnd[k];
+            } else {
+                num = gen (k-24) + gen (k-55);
+            }
+            return num % 1000000;
+        }
+};
+
 int main () {
 
-    int64_t lim = 100000000;
-    //lim = 10000;
-    // problem 357 Prime Generating Integers
-    int64_t sum = 1;
-    std::vector<bool> sieve (lim + 1, true);
-    std::vector<int64_t> prime {2};
+    vector<pair<int64_t,int64_t>> graph;
 
-    for (int64_t p = 4; p <= lim; p += 2) {
-        sieve[p] = false;
+    int64_t lim = 10000;
+
+    seq now;
+
+    for (int i = 1; i < 10000;i++) {
+        int64_t a = now.gen(2 * i - 1), b = now.gen(2 * i);
+
+      if (a == 200007 || b == 200007) {
+        cout << i << " => " << a << " " << b << "\n";
+
+      }
     }
-
-    for (int64_t p = 3; p * p <= lim ; p += 2) {
-        if (sieve[p] == true) {
-            for (int64_t i = p * p; i <= lim; i += 2 * p) {
-                sieve[i] = false;
-            }
-        }
-    }
-
-
-    for (int64_t i = 3; i <= lim; i += 2) {
-        if (sieve[i] == true) {
-            bool valid = true;
-            int num = i - 1;
-
-            for (int64_t j = 2; j * j <= num; j++) {
-                if (num % j == 0) {
-                    if (sieve[j + num / j] == false) {
-                        valid = false;
-                        //cout << j << " ";
-                        break;
-                    }
-                }
-            }
-
-            if (valid == true) {
-                sum += num;
-                //cout << num << " ";
-            }
-        }
-    }
-
-    cout << sum;
-
+    //cout << cnt;
     cout << "\n";
 
 }

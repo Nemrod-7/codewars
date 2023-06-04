@@ -45,7 +45,7 @@ class Bigint {
                   a.replace (pos, tmp.size(), tmp);
             }
 
-            return rem;
+        return rem;
         }
         bool ismaller (string a, string b) {
             if (b.size() > a.size()) return true;
@@ -458,42 +458,46 @@ int main () {
 
     Timer clock;
 
-    const int lim = 60;
+    const int64_t lim = 100000;
 
-    const double phi = (1 + sqrt(5)) / 2.0;
-    vector<float> seq;
+//    Problem 123 Prime square remainder
 
-    vector<Bigint> fib (2);
-    fib[0] = "1", fib[1] = "1";
+    int64_t sum = 0, cnt = 0;
 
-    for (int i = 2; i < 35666; i++) {
-        string  number = fib[i-2] + fib[i-1];
-        fib.push_back(number);
-        int size = number.size();
 
-        if (size > 10) {
+    std::vector<bool> sieve (lim + 1, true);
+    std::vector<int> p {1,2};
 
-            string last = number.substr(size-9);
-            string first = number.substr(0,9);
+    for (int64_t i = 4; i <= lim; i += 2) {
+        sieve[i] = false;
+    }
 
-            if (unique (last) /* && unique(first) */) {
-                cout << i  << " ";// " => " << number << "\n";
-                seq.push_back(i);
+    for (int64_t i = 3; i * i <= lim ; i += 2) {
+        if (sieve[i] == true) {
+            for (int64_t j = i * i; j <= lim; j += 2 * i) {
+                sieve[j] = false;
             }
         }
     }
-    cout << "\n";
-    for (int i = 1; i < seq.size(); i++) {
-        cout << seq[i] - seq[i-1];
-        cout << " ";
+
+    for (int i = 3; i <= lim; i += 2) {
+        if (sieve[i]) {
+            p.push_back(i);
+        }
+    }
+    
+
+    for (int n = 0; n < p.size(); n++) {
+        int64_t sq = p[n] * p[n];
+        Bigint a (to_string(p[n] - 1)), b (to_string(p[n] + 1));
+
+        Bigint c = power(a, n); // + power (b, n);
+//cout << sq << " ";
+       // int64_t a = pow (p[n] - 1, n), b = pow (p[n] + 1, n);
+       // int64_t res = (a + b) % sq;
+       // cout << a << "+" << b << "=" << a + b << " :: " << res << "\n";
     }
 
-/*
-    int n = 541;
-    int64_t xn = (pow (phi,n) - pow(1 - phi, n)) / sqrt(5);
-    cout << xn;
-*/
-    // cout << nu * nu;
     clock.stop();
     clock.get_duration();
 
