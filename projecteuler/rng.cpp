@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <map>
 #include <set>
@@ -15,7 +16,7 @@ class fibgen {
 
     public :
       fibgen() {
-          for (int i = 0; i < 56; i++) {
+          for (int64_t i = 0; i < 56; i++) {
               int64_t i3 = i * i * i;
               rn = 100003 - 200003 * i + 300007 * i3;
               seed.push_back (rn % mod);
@@ -26,11 +27,11 @@ class fibgen {
           }
 
       }
-      int64_t operator [] (int k) {
+      int64_t operator [] (int64_t k) {
           int64_t size = seed.size();
 
           if (k >= size) {
-              for (int i = size; i <= k; i++) {
+              for (int64_t i = size; i <= k; i++) {
                   rn = seed[i-24] + seed[i-55];
                   seed.push_back (rn % mod);
               }
@@ -56,25 +57,39 @@ int main () {
 
     fibgen rn;
     int64_t ref = 524287;
-    vector<set<int>> graph;
-    //map<int64_t,set<int64_t>> graph;
-    //int64_t maxv = 0;
-    //
-    //for (int i = 0; i < 4592917; i++) {
+    map<int64_t,set<int64_t>> graph;
+    int64_t maxv = 0;
+    // fstream os ("network.txt", ios::out);
+    // int cnt = 0;
 
+    // for (int i = 1; i < 4592917; i++) {
+    //
     //    int64_t b = rn[2*i], a = rn[2*i-1];
-    //    maxv = max (maxv, max (a,b)); 
+    //    maxv = max (maxv, max (a,b));
     //    if (a != b) {
     //        graph[a].insert(b);
     //        graph[b].insert(a);
     //        // maxv = max (maxv, max (graph[a].size(), graph[b].size()));
+    //
+    //        if (a == ref || b == ref) {
+    //          cnt++;
+    //          break;
+    //        }
     //    }
-    //}
-
-    //auto it = graph.begin();
-
-
-    //cout << maxv;
+    // }
+    //
+    // for (auto &[node, edges] : graph) {
+    //     os << node << " ";
+    //     if (node > 999999) {
+    //       cout << node << "\n";
+    //     }
+    //     for (auto &e : edges) {
+    //         os << e << " ";
+    //     }
+    //     os << "\n";
+    // }
+    //
+    // os.close();
 
     //for (int i = 0; i < graph.size(); i++) {
     //    for (auto &index : graph[i]) {
@@ -83,11 +98,11 @@ int main () {
     //}
     ////int cycle = 0;
     //cout << graph[ref].size();
-    ////cout << graph[ref].size();  
+    ////cout << graph[ref].size();
 
     //vector<int64_t> s1 {ref};
     //set<int64_t> hist;
-  
+
 
     //while (!s1.empty()) {
 
@@ -108,7 +123,7 @@ int main () {
     //}
     //
     //cout << hist.size();
-    
+
     end = chrono::steady_clock::now (), elapsed = end - alpha;
     std::cout << "\nDuration " <<fixed<< elapsed.count() << " ms" << std::endl;
 }
