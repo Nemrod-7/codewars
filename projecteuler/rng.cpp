@@ -10,20 +10,23 @@ using namespace std;
 
 class fibgen {
     private :
-      const int64_t mod = 1000000;
+      const int64_t lim = 10000000, mod = 1000000;
       int64_t rn;
       vector<int64_t> seed;
 
     public :
       fibgen() {
-          for (int64_t i = 0; i < 56; i++) {
-              int64_t i3 = i * i * i;
-              rn = 100003 - 200003 * i + 300007 * i3;
-              seed.push_back (rn % mod);
+          seed.resize (lim);
+          int64_t *rng = seed.data();
+
+          for (int64_t k = 0; k < 56; k++) {
+             rn = 100003 - 200003 * k + 300007 * k*k*k;
+             rng[k] = rn % mod;
           }
-          for (int i = 56; i < 100000; i++) {
-              rn = seed[i-24] + seed[i-55];
-              seed.push_back (rn % mod);
+
+          for (int64_t k = 56; k < lim; k++) {
+             rn = rng[k-24] + rng[k-55];
+             rng[k] = rn % mod;
           }
 
       }
@@ -41,88 +44,64 @@ class fibgen {
       }
 };
 
-int64_t rng (int64_t k) {
-    if (k < 56) {
-        int64_t i3 = k * k * k;
-        return (100003 - 200003 * k + 300007 * i3) % 1000000;
-    } else {
-        return (rng(k-24) + rng(k-55)) % 1000000;
-    }
-}
 
 int main () {
 
     chrono::steady_clock::time_point alpha = chrono::steady_clock::now (), end;
     chrono::duration<double> elapsed;
 
+
     fibgen rn;
     int64_t ref = 524287;
     map<int64_t,set<int64_t>> graph;
     int64_t maxv = 0;
-    // fstream os ("network.txt", ios::out);
-    // int cnt = 0;
+    int cnt = 0;
+    //fstream os ("network.txt", ios::out);
 
-    // for (int i = 1; i < 4592917; i++) {
-    //
-    //    int64_t b = rn[2*i], a = rn[2*i-1];
-    //    maxv = max (maxv, max (a,b));
-    //    if (a != b) {
-    //        graph[a].insert(b);
-    //        graph[b].insert(a);
-    //        // maxv = max (maxv, max (graph[a].size(), graph[b].size()));
-    //
-    //        if (a == ref || b == ref) {
-    //          cnt++;
-    //          break;
-    //        }
-    //    }
-    // }
-    //
-    // for (auto &[node, edges] : graph) {
-    //     os << node << " ";
-    //     if (node > 999999) {
-    //       cout << node << "\n";
-    //     }
-    //     for (auto &e : edges) {
-    //         os << e << " ";
-    //     }
-    //     os << "\n";
-    // }
-    //
-    // os.close();
+    // cout << rn[3681161] << "\n"; // 910544
 
-    //for (int i = 0; i < graph.size(); i++) {
-    //    for (auto &index : graph[i]) {
+    for (int i = 1; i < 4000000; i++) {
+       int64_t b = rn[2*i], a = rn[2*i-1];
 
-    //    }
-    //}
-    ////int cycle = 0;
+       if (a != b) {
+           graph[a].insert(b);
+           graph[b].insert(a);
+           // maxv = max (maxv, max (graph[a].size(), graph[b].size()));
+           if (a == ref || b == ref) {
+             cnt++;
+             cout << a << " ";
+          //   break;
+           }
+       }
+    }
+
+    int cycle = 0;
+    cout << graph[ref].size();
     //cout << graph[ref].size();
-    ////cout << graph[ref].size();
 
-    //vector<int64_t> s1 {ref};
-    //set<int64_t> hist;
+    vector<int64_t> s1 {ref};
+    set<int64_t> hist;
 
 
-    //while (!s1.empty()) {
+    while (!s1.empty()) {
 
-    //    int64_t u = s1.back();
-    //    s1.pop_back();
-    //    hist.insert(u);
+       int64_t u = s1.back();
+       s1.pop_back();
+       hist.insert(u);
 
-    //    cycle++;
+       cycle++;
 
-    //    if (cycle == 16) {
-    //        break;
-    //    }
+       if (cycle == 16) {
+           break;
+       }
 
-    //    for (auto index : graph[u]) {
-    //        s1.push_back(index);
-    //        //cout << index << " ";
-    //    }
-    //}
-    //
-    //cout << hist.size();
+       for (auto index : graph[u]) {
+           s1.push_back(index);
+           //cout << index << " ";
+       }
+    }
+
+    cout << hist.size();
 
     end = chrono::steady_clock::now (), elapsed = end - alpha;
     std::cout << "\nDuration " <<fixed<< elapsed.count() << " ms" << std::endl;
