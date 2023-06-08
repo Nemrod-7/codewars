@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <deque>
 #include <map>
 #include <set>
 #include <limits>
@@ -28,8 +29,8 @@ class fibgen {
              rn = rng[k-24] + rng[k-55];
              rng[k] = rn % mod;
           }
-
       }
+
       int64_t operator [] (int64_t k) {
           int64_t size = seed.size();
 
@@ -53,55 +54,52 @@ int main () {
 
     fibgen rn;
     int64_t ref = 524287;
-    map<int64_t,set<int64_t>> graph;
+    vector<set<int>> graph(1000000);
     int64_t maxv = 0;
-    int cnt = 0;
+    int k = 1, cnt = 0;
     //fstream os ("network.txt", ios::out);
-
     // cout << rn[3681161] << "\n"; // 910544
 
-    for (int i = 1; i < 4000000; i++) {
-       int64_t b = rn[2*i], a = rn[2*i-1];
+    while (graph[524287].size() < 2) {
+       int64_t b = rn[2*k], a = rn[2*k-1];
 
        if (a != b) {
            graph[a].insert(b);
            graph[b].insert(a);
            // maxv = max (maxv, max (graph[a].size(), graph[b].size()));
-           if (a == ref || b == ref) {
-             cnt++;
-             cout << a << " ";
-          //   break;
-           }
+
+
        }
+       k++;
     }
 
+    /*
+    */
     int cycle = 0;
-    cout << graph[ref].size();
-    //cout << graph[ref].size();
-
-    vector<int64_t> s1 {ref};
-    set<int64_t> hist;
-
-
-    while (!s1.empty()) {
-
-       int64_t u = s1.back();
-       s1.pop_back();
-       hist.insert(u);
-
-       cycle++;
-
-       if (cycle == 16) {
-           break;
-       }
-
-       for (auto index : graph[u]) {
-           s1.push_back(index);
-           //cout << index << " ";
-       }
-    }
-
-    cout << hist.size();
+    //
+    // vector<int64_t> s1 {ref};
+    // set<int64_t> hist;
+    //
+    // while (!s1.empty()) {
+    //
+    //    int64_t u = s1.back();
+    //    s1.pop_back();
+    //    hist.insert(u);
+    //
+    //    cycle++;
+    //
+    //    if (cycle == 150) {
+    //        // break;
+    //    }
+    //
+    //    for (auto index : graph[u]) {
+    //       if (hist.find(index) == hist.end()) {
+    //           s1.push_back(index);
+    //       }
+    //    }
+    // }
+    //
+    // cout << cycle << " " << hist.size();
 
     end = chrono::steady_clock::now (), elapsed = end - alpha;
     std::cout << "\nDuration " <<fixed<< elapsed.count() << " ms" << std::endl;
