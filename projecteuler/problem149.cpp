@@ -14,7 +14,6 @@ class fibgen {
         fibgen () {
             seed.resize(4000000);
             int64_t *rng = seed.data();
-            //vector<vector<int64_t>> board (2000,vector<int64_t>(2000));
 
             for (int64_t k = 0; k < 56; k++) {
                 rng[k] = (100003 - 200003 * k + 300007 * k*k*k) % mod - 500000;
@@ -60,11 +59,7 @@ int main () {
         board[i/2000][i%2000] = rng[i];
     }
 
-    board = {
-        {-2, 5, 3, 2},
-        { 9,-6, 5, 1},
-        { 3, 2, 7, 3},
-        {-1, 8,-4, 8}};
+    // board = { {-2, 5, 3, 2}, { 9,-6, 5, 1}, { 3, 2, 7, 3}, {-1, 8,-4, 8}};
 
     int64_t maxv = 0;
 
@@ -92,7 +87,7 @@ int main () {
         for (int64_t j = 0; j < size; j++) {
             const int64_t x = star1 + j, lf = star2 + j, rf = minx-j;
             diagl[j] = board[x][rf], diagr[j] = board[x][lf];
-            cout  << diagr[j] << " "  ;
+            // cout  << diagr[j] << " "  ;
         }
         maxv = max (maxv, max (kadane(diagl), kadane(diagr)));
         // cout << "\n";
