@@ -5,69 +5,69 @@
 
 using namespace std;
 
-void showgrid (vector<vector<int>> &grid) {
+void showgrid (const int grid[]) {
 
-  for (int i = 0; i < grid.size(); i++) {
-      for (int j = 0; j < grid.size(); j++) {
-          cout << grid[i][j];
+  for (int i = 0; i < 4; i++) {
+      for (int j = 0; j < 4; j++) {
+          cout << grid[i * 4 + j];
       }
       cout << "\n";
   }
   cout << "\n";
 }
-bool is_valid (const vector<vector<int>> &grid, int ref) {
-    const int size = grid.size();
+bool is_valid (const int grid[], int ref) {
+    const int size = 4;
     int diag = 0, aiag = 0;
 
     for (int i = 0; i < size; i++) {
-        diag += grid[i][i];
-        aiag += grid[i][size-i-1];
+        diag += grid[i * size + i];
+        aiag += grid[i * size + (size-i-1)];
     }
 
     if (diag != ref || aiag != ref) return false;
 
-    for (int i = 0; i < size; i++) {
-        int row = 0, col = 0;
-        for (int j = 0; j < size; j++) {
-            row += grid[i][j], col += grid[j][i];
-        }
-        if (row != ref || col != ref) return false;
-    }
-
     return true;
 }
-bool partial2 (vector<vector<int>> &grid, int y, int sum) {
+bool partial2  (const int grid[], int y, int sum) {
+  int size = 4, diag = 0, col;
 
-    int diag = 0;
-    for (int i = 0; i <= y; i++) {
-        diag += grid[i][i];
-        if (diag > sum) return false;
-    }
+  for (int i = 0; i <= y; i++) {
+      diag += grid[i * size + i];
+      if (diag > sum) return false;
+  }
+  for (int x = 0; x < size; x++) {
+      col = 0;
 
-    return true;
+      for (int i = 0; i <= y; i++) {
+          col += grid[i * size + x];
+      }
+      if (col > sum) return false;
+  }
+
+  return true;
 }
-bool backtrack2 (vector<vector<int>> &grid, const vector<int> &base, int y, int sum) {
 
-  if (y == grid.size()) {
-      if (is_valid(grid, sum) == true) {
-          showgrid(grid);
+bool backtrack (int grid[], const vector<int> &base, int y, int sum) {
+  const int size = 4;
+
+  if (y == size) {
+      if (is_valid (grid,sum)) {
+          showgrid (grid);
           return true;
       } else {
           return false;
       }
   }
 
-  for (int comb : base) {
-      int num = comb, x = 0;
+  for (int num : base) {
+      int  x = 0;
 
       do {
-         grid[x++][y] = num % 10;
+          grid[y * size + x++] = num % 10;
       } while (num /= 10);
 
       if (partial2 (grid, y, sum) == true)
-
-          backtrack2 (grid, base, y + 1, sum);
-
+          backtrack (grid, base, y + 1, sum);
   }
 
   return false;
@@ -80,10 +80,10 @@ int main () {
     // Problem 166 Criss Cross
 
     const int size = 4;
-    int ss = 6;
-    vector<vector<int>> grid (size, vector<int> (size));
+    int ss = 8;
     map<int,vector<int>> base;
 
+    int grid[size * size];
 
     for (int i = 0; i < 10000; i++) {
         int num = i, sum = 0;
@@ -96,13 +96,10 @@ int main () {
     }
 
     for (auto [num, comb] : base) {
-        // cout << num << " => " << comb.size() << "\n";
+        cout << num << " => " << comb.size() << "\n";
     }
 
-    backtrack2 (grid,base[ss],0, ss);
-
-    /*
-    */
+    // backtrack (grid, base[ss],0, ss);
 
 
     end = chrono::steady_clock::now (), elapsed = end - alpha;
