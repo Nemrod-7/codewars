@@ -28,7 +28,7 @@ bool is_valid (const int grid[], int ref) {
 
     return true;
 }
-bool partial2  (const int grid[], int y, int sum) {
+bool partial  (const int grid[], int y, int sum) {
   int size = 4, diag = 0, col;
 
   for (int i = 0; i <= y; i++) {
@@ -66,8 +66,9 @@ bool backtrack (int grid[], const vector<int> &base, int y, int sum) {
           grid[y * size + x++] = num % 10;
       } while (num /= 10);
 
-      if (partial2 (grid, y, sum) == true)
+      if (partial (grid, y, sum) == true) {
           backtrack (grid, base, y + 1, sum);
+      }
   }
 
   return false;
@@ -80,9 +81,10 @@ int main () {
     // Problem 166 Criss Cross
 
     const int size = 4;
-    int ss = 8;
+    int lim = 8;
     map<int,vector<int>> base;
 
+    string board (size * size,0);
     int grid[size * size];
 
     for (int i = 0; i < 10000; i++) {
@@ -95,11 +97,14 @@ int main () {
         base[sum].push_back(i);
     }
 
+    for (auto num : base[lim]) {
+        cout << num << " ";
+    }
     for (auto [num, comb] : base) {
-        cout << num << " => " << comb.size() << "\n";
+        // cout << num << " => " << comb.size() << "\n";
     }
 
-    // backtrack (grid, base[ss],0, ss);
+    // backtrack (grid, base[lim],0, lim);
 
 
     end = chrono::steady_clock::now (), elapsed = end - alpha;
