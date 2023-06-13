@@ -39,8 +39,6 @@ bool is_valid (const int grid[], int sum) {
     return true;
 }
 
-
-
 bool partial  (const int grid[], int y, int sum) {
   int diag = 0, col;
 
@@ -144,16 +142,18 @@ int main () {
     // Problem 166 Criss Cross
 
     int grid[N * N] = {0};
-    int sum = 6, cnt = 0;
+    int sum = 32, total = 0;
 
-
-    for (int i = 0; i < 4;i++){
+    for (int i = 0; i < 37;i++){
       int cnt = 0;
       cout << i << " => " ;
       backtrack2 (grid,0,0,i,cnt);
-      cout << cnt << "\n";
+      total += cnt;
+      cout << cnt;
+      cout << "\n";
     }
-    // cout << cnt;
+
+    cout << total;
     // showgrid(grid);
     /*
 
