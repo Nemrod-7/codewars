@@ -63,27 +63,22 @@ bool is_prime (int64_t num) {
 
     return true;
 }
-vector<int64_t> sieve (int64_t num) {
+vector<int64_t> sieve (int64_t lim) {
+    int64_t half = (lim / 3) + 1;
+    vector<int64_t> vs {2,3};
+    bool *arr = new bool[half]();
 
-    int64_t half = (num >> 1) + 1;
-    std::vector<bool> primes (half + 1);
-    std::vector<int64_t> sieve {2};
-
-    for (int64_t p = 3; p * p <= num ; p += 2) {
-        if (primes[p/2] == false) {
-            for (int64_t i = p * p; i <= num; i += 2 * p) {
-                primes[i/2] = true;
+    for (int64_t i = 5, step = 2; i <= lim; i += step, step = 6 - step) {
+        if (arr[i / 3] == false) {
+            vs.push_back(i);
+            for (int64_t j = i * i, v = step; j <= lim; j += v * i, v = 6 - v) {
+                arr[j / 3] = true;
             }
         }
     }
 
-    for (int64_t i = 3; i <= num; i += 2) {
-        if (primes[i/2] == false) {
-            sieve.push_back(i);
-        }
-    }
-
-    return sieve;
+    delete[] arr;
+    return vs;
 }
 
 int64_t tau (int64_t n) { // count number of divisors
@@ -344,8 +339,8 @@ int main () {
     const int64_t mod = 1000000000;
 
     //int64_t sum = 0, cnt = 0;
-
-
+    int64_t num = 1e8;
+    sieve (num);
     //std::vector<bool> sieve (lim + 1, true);
     //std::vector<int> p {1,2};
 
@@ -367,24 +362,24 @@ int main () {
     //    }
     //}
 
-    for (int i = 3; i < 30; i++) {
-        int64_t sq = i * i;
-        int64_t maxv = 0;
-        int64_t nu, pw;
-        for (int j = 0; j < 25; j++) {
-            int64_t a = modpow (i - 1, j, mod), b = modpow (i + 1, j, mod);
-            int64_t rem = (a + b) % sq;
-
-            if (rem > maxv) {
-                //cout << a << " "<< b << " => " << a+b << " % " << sq << " :: " << rem << "\n";
-                nu = i, pw = j;
-                maxv = rem;
-            }
-            //cout << i << " => " << rem << "\n";
-        }
-        cout << nu << " "<< pw << " => " << maxv <<  "\n";
-    }
-
+//    for (int i = 3; i < 30; i++) {
+//        int64_t sq = i * i;
+//        int64_t maxv = 0;
+//        int64_t nu, pw;
+//        for (int j = 0; j < 25; j++) {
+//            int64_t a = modpow (i - 1, j, mod), b = modpow (i + 1, j, mod);
+//            int64_t rem = (a + b) % sq;
+//
+//            if (rem > maxv) {
+//                //cout << a << " "<< b << " => " << a+b << " % " << sq << " :: " << rem << "\n";
+//                nu = i, pw = j;
+//                maxv = rem;
+//            }
+//            //cout << i << " => " << rem << "\n";
+//        }
+//        cout << nu << " "<< pw << " => " << maxv <<  "\n";
+//    }
+//
 
 
 
