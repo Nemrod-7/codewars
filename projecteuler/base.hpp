@@ -51,6 +51,34 @@ class Timer {
         }
 };
 
+string format (int64_t x) { // format an number with separator
+    string num = to_string (x), os;
+    int size = num.size(), index = 0;
+
+    while (size-->0) {
+        os += num[index++];
+        if (size % 3 == 0) os += ' ';
+    }
+    return os;
+}
+string showsize (uint64_t size) { // human-readable size
+    const vector<string> sizes = {"TiB", "GiB", "MiB", "KiB", "B" };
+    const int64_t KB = 1024;
+    const int64_t MB = KB * 1024;
+    const int64_t GB = MB * 1024 ;
+    const int64_t TB = GB * 1024;
+    uint64_t  maxv = TB;
+    stringstream os;
+
+    for (int i = 0; i < 5; i++, maxv /= 1024) {
+        if (size < maxv) continue;
+        os << fixed << setprecision(2) << size / static_cast<float> (maxv) << " " << sizes[i];
+        return os.str();
+    }
+
+    return "";
+}
+
 char getsep (string name) {
     int maxv = 0;
     char sep;

@@ -45,7 +45,6 @@ class fibgen {
       }
 };
 
-
 int main () {
 
     chrono::steady_clock::time_point alpha = chrono::steady_clock::now (), end;
@@ -59,7 +58,7 @@ int main () {
     int k = 1, cnt = 0;
     //fstream os ("network.txt", ios::out);
     // cout << rn[3681161] << "\n"; // 910544
-
+    /*
     while (graph[524287].size() < 2) {
        int64_t b = rn[2*k], a = rn[2*k-1];
 
@@ -67,11 +66,26 @@ int main () {
            graph[a].insert(b);
            graph[b].insert(a);
            // maxv = max (maxv, max (graph[a].size(), graph[b].size()));
-
-
        }
        k++;
     }
+    */
+
+
+    int i = 1;
+
+    int x0 = rn[6*i-5] % 10000;
+    int y0 = rn[6*i-4] % 10000;
+    int z0 = rn[6*i-3] % 10000;
+
+    int dx = 1 + rn[6*i-2] % 399;
+    int dy = 1 + rn[6*i-1] % 399;
+    int dz = 1 + rn[6*i-0] % 399;
+
+    cout << x0 << " " << y0 << " " << z0 << "\n";
+    cout << dx << " " << dy << " " << dz << "\n";
+
+
 
     /*
     */

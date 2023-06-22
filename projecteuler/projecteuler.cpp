@@ -57,30 +57,34 @@ bool is_prime (int64_t num) {
     if (num < 4) return true;
     if (num % 2 == 0 || num % 3 == 0 ) return false;
 
-    for (int64_t i = 5; i * i  <= num; i += 6)
+    for (int64_t i = 5; i * i <= num; i += 6)
         if (num % i == 0 || num % (i + 2) == 0)
             return false;
 
     return true;
 }
-vector<int64_t> sieve (int64_t lim) {
-    int64_t half = (lim / 3) + 1;
-    vector<int64_t> vs {2,3};
-    bool *arr = new bool[half]();
 
-    for (int64_t i = 5, step = 2; i <= lim; i += step, step = 6 - step) {
-        if (arr[i / 3] == false) {
+vector<int64_t> sieve (int64_t limit) { // SOE with wheel factorization and bitmask operation ex limit == 1e8 : memory usage ~3.97 MB / ~0.97
+    int64_t lim2 = ((limit / 3) >> 6) ; // divide limit by 3 du to wheel factorization and by 64 for bitmask operation
+    int64_t *sieve = new int64_t[lim2 + 1]();
+    vector<int64_t> vs {2,3};
+
+    for (int64_t i = 5, t = 2 ; i <= limit; i += t, t = 6 - t) { // wheel factorization : 2,4
+        int64_t p = 0xAAAAAAABULL * i >> 33;           // fast division by 3
+        int64_t mask = sieve[p >> 6] >> (p &63) &1ULL; // (x >> 6) => fast division by 64 / (x & 63) => fast modulus 64
+
+        if (mask == 0) {
             vs.push_back(i);
-            for (int64_t j = i * i, v = step; j <= lim; j += v * i, v = 6 - v) {
-                arr[j / 3] = true;
+            for (int64_t j = i * i, v = t; j <= limit; j += v * i, v = 6 - v) {
+                int64_t p2 = 0xAAAAAAABULL * j >> 33;
+                sieve[p2 >> 6] |= 1ULL << (p2 &63);
             }
         }
     }
 
-    delete[] arr;
+    delete[] sieve;
     return vs;
 }
-
 int64_t tau (int64_t n) { // count number of divisors
     int64_t total = 1;
 
@@ -206,7 +210,8 @@ string collatz (int64_t n) {
 
     while (n != 1) {
         os += to_string (n) + " -> ";
-        n = (n % 2 == 0) ? n * 0.5 : 3 * n + 1; }
+        n = (n % 2 == 0) ? n * 0.5 : 3 * n + 1;
+    }
     return os + "1";
 }
 void collatz2 (int64_t a1) {
