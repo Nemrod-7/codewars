@@ -43,7 +43,7 @@ string showsize (uint64_t size) { // human-readable size
 
 vector<int64_t> primes4 (int64_t lim) { // SOE with wheel factorization => ex limit == 1e8 : memory usage ~31.71 MB / execution time ~0.80ms
 
-    int64_t half = (lim / 3) + 1;
+    int64_t half = (lim / 2) + 1;
     vector<int64_t> vs {2,3};
     bool *sieve = new bool[half]();
 
@@ -64,7 +64,7 @@ list<int64_t> primes5 (int64_t limit) { // SOE with wheel factorization and bitm
     int64_t *sieve = new int64_t[hal + 1]();
     list<int64_t> vs {2,3};
 
-    for (int64_t i = 5, t = 2 ; i <= limit; i += t, t = 6 - t) { // wheel factorization : 2,4
+    for (int64_t i = 5, t = 2 ; i <= limit; i += t, t = 6 - t) { // wheel factorization : 2,4A
         int64_t p = 0xAAAAAAABULL * i >> 33;           // fast division by 3
         int64_t mask = sieve[p >> 6] >> (p &63) &1ULL; // x >> 6 => fast division by 64 / x &63 => fast modulus 64
 
@@ -105,49 +105,6 @@ list<int64_t> primes7 (int64_t limit) { // SOE with 6 * i -+ 1 wheel ex limit ==
 
     return vs;
 }
-vector<int64_t> primes6 (int64_t n) { // simple segment sieve
-    int64_t range = floor(sqrt(n))+1;
-    vector<int64_t> prime = primes4(range);
-    vector<int64_t> vs = prime;
-    bool sieve[range+1];
-
-    // Divide the range [0..n-1] in different segments We have chosen segment size as sqrt(n).
-    int64_t low = range, high = 2 * range;
-
-    while (low < n) {
-        if (high >= n)
-            high = n;
-        // To mark primes in current range. A value in mark[i] will finally be false if 'i-low' is Not a prime, else true.
-        fill_n (sieve, range+1, true);
-        // Use the found primes by the reference sieve to find primes in current range
-        for (int64_t i = 0; i < prime.size(); i++) {
-            int p = prime[i];
-            // Find the minimum number in [low..high] that is a multiple of prime[i] (divisible by prime[i]) For example, if low is 31 and prime[i] is 3, we start with 33.
-            int64_t loLim = floor (low / p) * p;
-
-            if (loLim < low) {
-                loLim += p;
-            }
-
-            /* Mark multiples of prime[i] in [low..high]: We are marking j - low for j, i.e. each number
-               in range [low, high] is mapped to [0, high-low] so if range is [50, 100] marking 50 corresponds
-               to marking 0, marking 51 corresponds to 1 and so on. In this way we need to allocate space only for range */
-            for (int64_t j = loLim; j < high; j += p)
-                sieve[j - low] = false;
-        }
-
-         for (int64_t i = low; i < high; i++) {
-             if (sieve[i - low] == true) {
-                 vs.push_back(i);
-             }
-         }
-
-        low = low + range;
-        high = high + range;
-    }
-
-    return vs;
-}
 vector<int64_t> primes8 (int64_t limit) { // segmented SOE ex : limit == 1e8 : memory usage 41,77 KB / execution time ~ 1.10 ms
 
     const int64_t L1D_CACHE_SIZE = 32768; // Set your CPU's L1 data cache size in bytes
@@ -157,44 +114,42 @@ vector<int64_t> primes8 (int64_t limit) { // segmented SOE ex : limit == 1e8 : m
     int64_t i = 5, n = 5;
     int64_t t = 2, u = 2;
     //cout << showsize (sizeof(bool) * (mem + sqr)) << "\n";
-    bool *sieve = new bool[mem];
-    bool *is_prime = new bool[sqr +1]();
-    std::vector<int64_t> primes, multiples;
+    bool *cache = new bool[mem];
+    bool *sieve = new bool[sqr + 1]();
+    std::vector<int64_t> primes, mul;
     std::vector<int64_t> vs {2,3};
 
     for (int64_t low = 0; low <= limit; low += mem) {
-
         int64_t high = std::min(low + mem - 1, limit);
-        std::fill_n (sieve, mem , true);
-        // generate sieving primes using simple sieve of Eratosthenes
+        std::fill_n (cache, mem , true);
+        // generate sieving primes using simple SOE
         for (; i * i <= high; i += t, t = 6 - t) {
-            if (is_prime[i] == false) {
+            if (sieve[i] == false) {
                 primes.push_back(i);
-                multiples.push_back(i * i - low);
+                mul.push_back(i * i - low);
                 for (int64_t j = i * i, v = t; j <= sqr; j += i * v, v = 6 - v) {
-                    is_prime[j] = true;
+                    sieve[j] = true;
                 }
             }
         }
 
-        // sieve the current segment
+        // cache the current segment
         for (std::size_t p = 0; p < primes.size(); p++) {
-            int64_t j = multiples[p];
+            int64_t j = mul[p];
             for (int64_t k = primes[p] * 2; j < mem; j += k) {
-                sieve[j] = false;
+                cache[j] = false;
             }
-            multiples[p] = j - mem;
+            mul[p] = j - mem;
         }
 
         for (; n <= high; n += u, u = 6 - u) {
-            if (sieve[n - low]) {
+            if (cache[n - low]) {
                 vs.push_back (n);
             }
         }
     }
-    
-    //cout << primes.size() << " " << multiples.size() << "\n";
-    delete[] sieve, delete[] is_prime;
+    //cout << primes.size() << " " << mul.size() << "\n";
+    delete[] cache, delete[] sieve;
     return vs;
 }
 
@@ -210,20 +165,23 @@ int main () {
         467, 479, 487, 491, 499, 503, 509, 521, 523, 541, 547, 557, 563, 569, 571, 577, 587, 593, 599, 601, 607, 613, 617, 619, 631, 641, 643, 647, 653, 659,
         661, 673, 677, 683, 691, 701, 709, 719
     };
+    vector<int64_t> wheel = {2,4,2,4,6,2,6,4,2,4,6,6,2,6,4,2,6,4,6,8,4,2,4,2,4,8,6,4,6,2,4,6,2,6,6,4,2,4,6,2,6,4,2,4,2,10,2,10};
 
-    uint64_t limit = 1e8; // prime2 317.89MB, prime5 39.73MB
-    const int64_t cs = 0xAAAAAAABULL;
-    // cout << ceil (1.25506 * 100 / (log(100))) << " ";
-    // cout << (sizeof (bool) * limit / 3) / 1024 << "\n" << (sizeof (int64_t) * limit / 192) / 1024;
-    
-     auto seq1 = primes8 (limit);
-     cout << format (seq1.size());
+    //const int64_t cs = 0xAAAAAAABULL;
+    // 31622;
 
-    // auto seq1 = primes5 (100);
-    //
-     //for (auto p : seq1) {
-     //     cout << p << " ";
-     //}
+    int k = 1;
+    for (int i = 0; i < 9; i++) {
+    }
+    //cout << (k << 2) << ' ';
+
+
+
+    uint64_t limit = 1e2; // prime2 317.89MB, prime5 39.73MB
+
+    // auto seq1 = primes5 (limit);
+    // cout << format (seq1.size());
+     cout << showsize(sizeof(bool) * 31622 / 2) << " " << showsize(sizeof(int64_t) * 31622 / (2 * 64));
 
 
 
