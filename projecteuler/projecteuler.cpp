@@ -18,8 +18,6 @@ class check {
       static void overflow (int64_t a, int64_t b) {
           int64_t limit = numeric_limits<int64_t>::max() / b;
           if (a > limit) throw overflow_error ("integer overflow\n");
-
-
       }
 };
 
@@ -63,25 +61,31 @@ bool is_prime (int64_t num) {
 
     return true;
 }
+vector<uint32_t> sieve (int64_t limit) { // SOE with wheel factorization => ex limit == 1e8 : memory usage ~31.71 MB / execution time ~0.80ms
+    const uint64_t hal = ((limit / 3) >> 6) ; // divide limit by 192
+    uint64_t *sieve = new uint64_t[hal + 1]();
+    vector<uint32_t> vs {2,3};
 
-vector<int64_t> sieve (int64_t limit) { // SOE with wheel factorization and bitmask operation ex limit == 1e8 : memory usage ~3.97 MB / ~0.97
-    int64_t lim2 = ((limit / 3) >> 6) ; // divide limit by 3 du to wheel factorization and by 64 for bitmask operation
-    int64_t *sieve = new int64_t[lim2 + 1]();
-    vector<int64_t> vs {2,3};
-
-    for (int64_t i = 5, t = 2 ; i <= limit; i += t, t = 6 - t) { // wheel factorization : 2,4
-        int64_t p = 0xAAAAAAABULL * i >> 33;           // fast division by 3
-        int64_t mask = sieve[p >> 6] >> (p &63) &1ULL; // (x >> 6) => fast division by 64 / (x & 63) => fast modulus 64
+    for (uint64_t i = 5, t = 2 ; i * i <= limit; i += t, t = 6 - t) { // wheel factorization : 2,4A
+        uint64_t p = 0xAAAAAAABULL * i >> 33;           // fast division by 3
+        uint64_t mask = sieve[p >> 6] >> (p &63) &1ULL; // x >> 6 => fast division by 64 / x &63 => fast modulus 64
 
         if (mask == 0) {
-            vs.push_back(i);
-            for (int64_t j = i * i, v = t; j <= limit; j += v * i, v = 6 - v) {
-                int64_t p2 = 0xAAAAAAABULL * j >> 33;
+            for (uint64_t j = i * i, v = t; j <= limit; j += v * i, v = 6 - v) {
+                uint64_t p2 = 0xAAAAAAABULL * j >> 33;
                 sieve[p2 >> 6] |= 1ULL << (p2 &63);
             }
         }
     }
 
+    for (uint32_t i = 5, t = 2; i <= limit; i += t, t = 6 - t) {
+        uint32_t p = 0xAAAAAAABULL * i >> 33;
+
+        if ((sieve[p >> 6] >> (p &63) &1ULL) == false) {
+            vs.push_back(i);
+        } 
+    }
+    
     delete[] sieve;
     return vs;
 }
@@ -103,27 +107,27 @@ int64_t tau (int64_t n) { // count number of divisors
 }
 int64_t sigma (int64_t num) { // sum of proper divisors
 
-  int64_t n = num, sum = 1;
-  int64_t p = 2;
+    int64_t n = num, sum = 1;
+    int64_t p = 2;
 
-  while (p * p <= n && n > 1) {
-    if (n % p == 0) {
-      int64_t j = p * p;
-      n /= p;
+    while (p * p <= n && n > 1) {
+        if (n % p == 0) {
+            int64_t j = p * p;
+            n /= p;
 
-      while (n % p == 0) {
-        j *= p;
-        n /= p;
-      }
+            while (n % p == 0) {
+                j *= p;
+                n /= p;
+            }
 
-      sum = sum * (j - 1) / (p - 1);
+            sum = sum * (j - 1) / (p - 1);
+        }
+        p += (p == 2) ? 1 : 2;
     }
-    p += (p == 2) ? 1 : 2;
-  }
 
-  if (n > 1) sum *= (n + 1);
+    if (n > 1) sum *= (n + 1);
 
-  return sum - num;
+    return sum - num;
 }
 int64_t phi (int64_t num) { // totient funtion
 
@@ -182,14 +186,14 @@ int64_t modpow (int64_t base, int64_t exp, int64_t mod) {
     int64_t res = 1;
 
     while (exp > 0) {
-       if ((exp & 1) > 0) res = (res * base) % mod;
-       exp >>= 1;
-       if (exp > 0)
-         base = (base * base) % mod;
+        if ((exp & 1) > 0) res = (res * base) % mod;
+        exp >>= 1;
+        if (exp > 0)
+            base = (base * base) % mod;
     }
 
     return res;
-  }
+}
 int64_t digsum (int64_t num) {
     int64_t sum = 0;
     while (num) {
@@ -197,7 +201,7 @@ int64_t digsum (int64_t num) {
         num /= 10;
     }
     return sum;
-  }
+}
 
 int64_t fibonacci (int64_t n) {
     if (n == 0) return 0;
@@ -215,21 +219,21 @@ string collatz (int64_t n) {
     return os + "1";
 }
 void collatz2 (int64_t a1) {
-  const char alpha[3] = {'D','U','d'};
-  string seq;
-  cout << a1 << " => ";
-  while (a1 > 1) {
-      int mod = a1 % 3;
+    const char alpha[3] = {'D','U','d'};
+    string seq;
+    cout << a1 << " => ";
+    while (a1 > 1) {
+        int mod = a1 % 3;
 
-      switch (mod) {
-        case 0 : a1 = a1 / 3; break;
-        case 1 : a1 = (4 * a1 + 2) / 3; break;
-        case 2 : a1 = (2 * a1 - 1) / 3; break;
-        default: break;
-      }
-      seq += alpha[mod];
-      cout << alpha[mod];
-  }
+        switch (mod) {
+            case 0 : a1 = a1 / 3; break;
+            case 1 : a1 = (4 * a1 + 2) / 3; break;
+            case 2 : a1 = (2 * a1 - 1) / 3; break;
+            default: break;
+        }
+        seq += alpha[mod];
+        cout << alpha[mod];
+    }
 }
 
 bool isPentagonal (int64_t N) {
@@ -251,17 +255,17 @@ bool check_goldbach (int64_t num, const vector<int64_t> &prime) {
 }
 void farey (int n) {
 
-  typedef struct { int d, n; } frac;
-	frac f1 = {0, 1}, f2 = {1, n}, tmp;
-	int k;
-	printf("%d/%d ", 1, n);
-	while (f2.n > 1) {
-			k = (n + f1.n) / f2.n;
-			tmp = f1;
-			f1 = f2;
-			f2 = (frac) { f2.d * k - tmp.d, f2.n * k - tmp.n };
-			std::cout << f2.d << "/" << f2.n << " ";
-	}
+    typedef struct { int d, n; } frac;
+    frac f1 = {0, 1}, f2 = {1, n}, tmp;
+    int k;
+    printf("%d/%d ", 1, n);
+    while (f2.n > 1) {
+        k = (n + f1.n) / f2.n;
+        tmp = f1;
+        f1 = f2;
+        f2 = (frac) { f2.d * k - tmp.d, f2.n * k - tmp.n };
+        std::cout << f2.d << "/" << f2.n << " ";
+    }
 }
 int64_t cntdiv (int64_t num) {
     int np = 0;
@@ -299,21 +303,21 @@ bool palindrome (int64_t num) {
 }
 
 int64_t radical (int64_t n) {
-  // A007947 -> r(n) -> Π p|n
-  if (is_prime (n)) return n;
+    // A007947 -> r(n) -> Π p|n
+    if (is_prime (n)) return n;
 
-  int64_t res = (n % 2 == 0) ? 2 : 1;
-  while (n % 2 == 0) n /= 2;
+    int64_t res = (n % 2 == 0) ? 2 : 1;
+    while (n % 2 == 0) n /= 2;
 
-  for (int64_t i = 3; i * i <= n; i += 2) {
-    if (n % i == 0) {
-      res *= i;
-      while (n % i == 0) n /= i;
+    for (int64_t i = 3; i * i <= n; i += 2) {
+        if (n % i == 0) {
+            res *= i;
+            while (n % i == 0) n /= i;
+        }
     }
-  }
 
-  if (n != 1) res *= n;
-  return res;
+    if (n != 1) res *= n;
+    return res;
 }
 double resilience (int64_t d) {
     return phi (d) / static_cast<double> (d-1);
@@ -339,7 +343,7 @@ int main () {
     Timer chrono;
 
     //    Problem 123 Prime square remainder
-// problem 120 Square Remainder
+    // problem 120 Square Remainder
     const int64_t lim = 100000;
     const int64_t mod = 1000000000;
 
@@ -367,24 +371,24 @@ int main () {
     //    }
     //}
 
-//    for (int i = 3; i < 30; i++) {
-//        int64_t sq = i * i;
-//        int64_t maxv = 0;
-//        int64_t nu, pw;
-//        for (int j = 0; j < 25; j++) {
-//            int64_t a = modpow (i - 1, j, mod), b = modpow (i + 1, j, mod);
-//            int64_t rem = (a + b) % sq;
-//
-//            if (rem > maxv) {
-//                //cout << a << " "<< b << " => " << a+b << " % " << sq << " :: " << rem << "\n";
-//                nu = i, pw = j;
-//                maxv = rem;
-//            }
-//            //cout << i << " => " << rem << "\n";
-//        }
-//        cout << nu << " "<< pw << " => " << maxv <<  "\n";
-//    }
-//
+    //    for (int i = 3; i < 30; i++) {
+    //        int64_t sq = i * i;
+    //        int64_t maxv = 0;
+    //        int64_t nu, pw;
+    //        for (int j = 0; j < 25; j++) {
+    //            int64_t a = modpow (i - 1, j, mod), b = modpow (i + 1, j, mod);
+    //            int64_t rem = (a + b) % sq;
+    //
+    //            if (rem > maxv) {
+    //                //cout << a << " "<< b << " => " << a+b << " % " << sq << " :: " << rem << "\n";
+    //                nu = i, pw = j;
+    //                maxv = rem;
+    //            }
+    //            //cout << i << " => " << rem << "\n";
+    //        }
+    //        cout << nu << " "<< pw << " => " << maxv <<  "\n";
+    //    }
+    //
 
 
 
