@@ -83,9 +83,9 @@ vector<uint32_t> sieve (int64_t limit) { // SOE with wheel factorization => ex l
 
         if ((sieve[p >> 6] >> (p &63) &1ULL) == false) {
             vs.push_back(i);
-        } 
+        }
     }
-    
+
     delete[] sieve;
     return vs;
 }
@@ -337,58 +337,11 @@ int64_t sumdigsum (int64_t n) {
 
     return 0;
 }
-
 int main () {
-
     Timer chrono;
 
-    //    Problem 123 Prime square remainder
+    // Problem 123 Prime square remainder
     // problem 120 Square Remainder
-    const int64_t lim = 100000;
-    const int64_t mod = 1000000000;
-
-    //int64_t sum = 0, cnt = 0;
-    int64_t num = 1e8;
-    sieve (num);
-    //std::vector<bool> sieve (lim + 1, true);
-    //std::vector<int> p {1,2};
-
-    //for (int64_t i = 4; i <= lim; i += 2) {
-    //    sieve[i] = false;
-    //}
-
-    //for (int64_t i = 3; i * i <= lim ; i += 2) {
-    //    if (sieve[i] == true) {
-    //        for (int64_t j = i * i; j <= lim; j += 2 * i) {
-    //            sieve[j] = false;
-    //        }
-    //    }
-    //}
-
-    //for (int i = 3; i <= lim; i += 2) {
-    //    if (sieve[i]) {
-    //        p.push_back(i);
-    //    }
-    //}
-
-    //    for (int i = 3; i < 30; i++) {
-    //        int64_t sq = i * i;
-    //        int64_t maxv = 0;
-    //        int64_t nu, pw;
-    //        for (int j = 0; j < 25; j++) {
-    //            int64_t a = modpow (i - 1, j, mod), b = modpow (i + 1, j, mod);
-    //            int64_t rem = (a + b) % sq;
-    //
-    //            if (rem > maxv) {
-    //                //cout << a << " "<< b << " => " << a+b << " % " << sq << " :: " << rem << "\n";
-    //                nu = i, pw = j;
-    //                maxv = rem;
-    //            }
-    //            //cout << i << " => " << rem << "\n";
-    //        }
-    //        cout << nu << " "<< pw << " => " << maxv <<  "\n";
-    //    }
-    //
 
 
 
