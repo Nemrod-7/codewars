@@ -50,6 +50,13 @@ class Timer {
             return false;
         }
 };
+class check {
+    public :
+        static void overflow (int64_t a, int64_t b) {
+            int64_t limit = numeric_limits<int64_t>::max() / b;
+            if (a > limit) throw overflow_error ("integer overflow\n");
+        }
+};
 
 string format (int64_t x) { // format an number with separator
     string num = to_string (x), os;
@@ -77,6 +84,12 @@ string showsize (uint64_t size) { // human-readable size
     }
 
     return "";
+}
+template<class T> void showvec (const vector<T> &v) {
+    for (auto it : v) {
+        cout << it << " ";
+    }
+    cout << "\n";
 }
 
 char getsep (string name) {

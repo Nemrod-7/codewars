@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 using namespace std;
 const vector<pair<int,int>> direct = {{0,-1},{1,0},{0,1},{-1,0}}; // north,east,south,west
@@ -16,84 +17,104 @@ void showgraph (vector<wstring> pipe) {
 
 bool is_inside (const vector<wstring> &pipe, int x, int y) { return x >= 0 && y >= 0 && y < pipe.size() && x < pipe[y].size(); }
 
-vector<int> search (const vector<wstring> &pipe, vector<int> next, int x, int y) {
-  vector<int> cell;
+bool evaluate (const vector<wstring> &pipe, int x, int y) {
 
-  for (int i = 0; i < next.size(); i++) {
-      int nx = x + direct[next[i]].first, ny = y + direct[next[i]].second;
-       if (is_inside (pipe, nx, ny)) {
-         cell.push_back(static_cast<int> (pipe[ny][nx]));
-      }
-  }
+    const vector<vector<wchar_t>> accept= {{L'╋',L'┃',L'┫',L'┣',L'┏',L'┓',L'┳'}, {L'╋',L'━',L'┓',L'┛',L'┫',L'┳',L'┻'} , {L'╋',L'┃',L'┫',L'┣',L'┗',L'┛',L'┻'} , {L'╋',L'━',L'┏',L'┗',L'┣',L'┳',L'┻'}}; 
+    wchar_t cell = pipe[y][x];
+    vector<int> next;
 
-  return cell;
+    switch (cell) {
+        case L'━': next = {1,3}; break;
+        case L'┏': next = {1,2}; break;
+        case L'┃': next = {0,2}; break;
+        case L'┗': next = {0,1}; break;
+        case L'┓': next = {2,3}; break;
+        case L'┛': next = {0,3}; break;
+        case L'┳': next = {1,2,3}; break;
+        case L'┣': next = {0,1,2}; break;
+        case L'┫': next = {0,2,3}; break;
+        case L'┻': next = {0,1,3}; break;
+        case L'╋': next = {0,1,2,3}; break;
+        default: break;
+    }
+
+    if (next.size()) {
+        wcout << "[" << pipe[y][x] << "] => ";
+        for (int i = 0; i < next.size(); i++) {
+            int dx = direct[next[i]].first, dy = direct[next[i]].second;
+            int nx = x + dx, ny = y + dy;
+
+            if (is_inside (pipe, nx, ny)) {
+                if (pipe[ny][nx] == '.') {
+                    wcout << " leak [" << pipe[ny][nx] << "]";
+                    return false;
+                } else if (pipe[ny][nx] == ' ') {
+                    int ox = x + dx * 2, oy = y + dy * 2;
+                    //wcout << "[" << pipe[oy][ox] << "]";
+                } else {
+                    if (find (accept[i].begin(), accept[i].end(), pipe[ny][nx]) != accept[i].end()) {
+                        wcout << "[" << pipe[ny][nx] << "]";
+                    }
+                }
+            }
+        }
+        wcout << "\n";
+    }
+    return false;
+
 }
-
 bool leak (const vector<wstring> &pipe) {
 
-  showgraph (pipe);
-  const vector<pair<int,int>> direct = {{0,-1},{1,0},{0,1},{-1,0}}; // north,east,south,west
+    showgraph (pipe);
+    const vector<pair<int,int>> direct = {{0,-1},{1,0},{0,1},{-1,0}}; // north,east,south,west
+    const vector<vector<wchar_t>> accept= {{L'╋',L'┃',L'┫',L'┣',L'┏',L'┓',L'┳'}, {L'╋',L'━',L'┓',L'┛',L'┫',L'┳',L'┻'} , {L'╋',L'┃',L'┫',L'┣',L'┗',L'┛',L'┻'} , {L'╋',L'━',L'┏',L'┗',L'┣',L'┳',L'┻'}}; 
 
-  for (int y = 0; y < pipe.size(); y++) {
-      for (int x = 0; x < pipe[y].size(); x++) {
-          wchar_t cell = pipe[y][x];
-          vector<int> next;
-          switch (cell) {
-              case 9473:
-              next = search (pipe, {1,3}, x, y);
+    for (int y = 0; y < pipe.size(); y++) {
+        for (int x = 0; x < pipe[y].size(); x++) {
+            wchar_t cell = pipe[y][x];
+            vector<int> next;
 
-              for (int p : next) {
-                // wcout << "[" << (wchar_t) p << "]";
-                  // if (p == 32 ) return false;
-              }
-              
-              break; //  ━ - 9473 - BOX DRAWINGS HEAVY HORIZONTAL
-              case 9475:
-              next = search (pipe, {0,2}, x, y);
+            switch (cell) {
+                case L'━': next = {1,3}; break;
+                case L'┏': next = {1,2}; break;
+                case L'┃': next = {0,2}; break;
+                case L'┗': next = {0,1}; break;
+                case L'┓': next = {2,3}; break;
+                case L'┛': next = {0,3}; break;
+                case L'┳': next = {1,2,3}; break;
+                case L'┣': next = {0,1,2}; break;
+                case L'┫': next = {0,2,3}; break;
+                case L'┻': next = {0,1,3}; break;
+                case L'╋': next = {0,1,2,3}; break;
+                default: break;
+            }
 
-              break; //  ┃ - 9475 - BOX DRAWINGS HEAVY VERTICAL
-              case 9487:
-              next = search (pipe, {1,2}, x, y);
+            if (next.size() > 9000) {
+                wcout << "[" << pipe[y][x] << "] => ";
+                for (int i = 0; i < next.size(); i++) {
+                    int dx = direct[next[i]].first, dy = direct[next[i]].second;
+                    int nx = x + dx, ny = y + dy;
 
-              break; //  ┏ - 9487 - BOX DRAWINGS HEAVY DOWN AND RIGHT
-              case 9491:
-              next = search (pipe, {2,3}, x, y);
+                    if (is_inside (pipe, nx, ny)) {
+                        if (pipe[ny][nx] == '.') {
+                            wcout << " leak [" << pipe[ny][nx] << "]";
+                            return false;
+                        } else if (pipe[ny][nx] == ' ') {
+                            int ox = x + dx * 2, oy = y + dy * 2;
+                            //wcout << "[" << pipe[oy][ox] << "]";
+                        } else {
+                            if (find (accept[i].begin(), accept[i].end(), pipe[ny][nx]) != accept[i].end()) {
+                                wcout << "[" << pipe[ny][nx] << "]";
+                            }
+                        }
+                    }
+                }
+                wcout << "\n";
+            }
+        }
+    }
 
-              break; //  ┓ - 9491 - BOX DRAWINGS HEAVY DOWN AND LEFT
-              case 9495:
-              next = search (pipe, {0,1}, x, y);
-
-              break; //  ┗ - 9495 - BOX DRAWINGS HEAVY UP AND RIGHT
-              case 9499:
-              next = search (pipe, {0,3}, x, y);
-
-              break; //  ┛ - 9499 - BOX DRAWINGS HEAVY UP AND LEFT
-              case 9507:
-              next = search (pipe, {0,1,2}, x, y);
-
-              break; //  ┣ - 9507 - BOX DRAWINGS HEAVY VERTICAL AND RIGHT
-              case 9515:
-              next = search (pipe, {0,2,3}, x, y);
-
-              break; //  ┫ - 9515 - BOX DRAWINGS HEAVY VERTICAL AND LEFT
-              case 9523:
-              next = search (pipe, {1,2,3}, x, y);
-
-              break; //  ┳ - 9523 - BOX DRAWINGS HEAVY DOWN AND HORIZONTAL
-              case 9531:
-              next = search (pipe, {0,1,3}, x, y);
-
-              break; //  ┻ - 9531 - BOX DRAWINGS HEAVY UP AND HORIZONTAL
-              case 9547:
-              next = search (pipe, {0,1,2,3}, x, y);
-
-              break; //  ╋ - 9547 - BOX DRAWINGS HEAVY VERTICAL AND HORIZONTAL
-              default: break;
-          }
-      }
-  }
-
-  return true;
+    return true;
 }
 
 int main() {
@@ -102,9 +123,31 @@ int main() {
 
     vector<wstring> pipe = {L"     +", L"   + ╋━━┓", L"     ┃..┃", L"   + ┛..┣ +", L"        +"};
     // pipe = {L"...┏", L"...┃", L"┛..┣"}; // thsi is leaking
+    // pipe = {L"...┏", L"...┃", L"┓..┣"}; // this is not leaking
+    // pipe = {L"....", L".┛┛.", L"...." };
 
-    leak (pipe);
+    pipe = {L"╋━━┓", L"┃..┃", L"┛..┣" };
 
+    for (int y = 0; y < pipe.size(); y++) {
+        wchar_t x = pipe[y].size() - 1;
+        evaluate (pipe, 0, y), evaluate (pipe, x, y);
+    }
+
+
+    int las = pipe.size()-1;
+
+    for (int x = 0; x < pipe[0].size(); x++) {
+        wcout << pipe[0][x];
+    }
+
+
+    for (int x = 0; x < pipe[las].size(); x++) {
+        wcout << pipe[las][x];
+    }
+
+
+
+    //leak (pipe);
     wcout << L"\nend\n";
 
 }
@@ -112,6 +155,16 @@ int main() {
 void Test () {
 
     // pipe = {"┫.....", "┫.....", "┃.....", "┫┏━━┓.", "┣┫..┗━", "┣┫....", "┣┫...."};
-    // pipe = {L"...┏", L"...┃", L"┓..┣"}; // this is not leaking
+}
+vector<int> search (const vector<wstring> &pipe, vector<int> next, int x, int y) {
+    vector<int> cell;
 
+    for (int i = 0; i < next.size(); i++) {
+        int nx = x + direct[next[i]].first, ny = y + direct[next[i]].second;
+        if (is_inside (pipe, nx, ny)) {
+            cell.push_back(static_cast<int> (pipe[ny][nx]));
+        }
+    }
+
+    return cell;
 }
