@@ -1,37 +1,36 @@
 #include "base.hpp"
-#include "ntheory.hpp"
 
 #include <thread>
 #include <atomic>
 // NEQ5xBztxeg43aP
 using namespace std;
 
-// -std=c++17 -Wall -Wextra -O0 -pthread
+// -std=c++17 -Wall -Wextra -O0 -pthread  -match=native
 
-void search (const vector<uint32_t> &prime, int start, int end, int &res) {
+void search (const vector<uint64_t> &prime, const bool *sieve, int low, int high, atomic<int64_t> &res) {
     const int limit = prime.back() + 2;
     const int size = prime.size();
-    cout << limit << " ";
-    for (int i = start; i < end; i++) {
-        uint32_t a = prime[i] + 1;
+    const uint64_t *p = prime.data();
+
+    for (int i = low; i < high; i++) {
+        uint64_t a = p[i] + 1;
 
         for (int j = i + 1; j < size; j++) {
-            uint32_t b = prime[j] + 1;
-            double c = b * b / (double)a;
+          uint64_t b = p[j] + 1;
+          uint64_t b2 = b * b;
+          uint64_t c = b2 / a;
 
-            if (c >= limit) break;
+          if (c > limit) break;
+          if (b2 % a != 0) continue;
 
-            for (int k = j + 1; k < size && prime[k] < c ; k++) {
-                if (prime[k] == c-1) {
-                    res += a + b + prime[k] - 2;
-                    // cout << "(" << a -1 << " " << b - 1 << " " << prime[k] << ")" ;
-                }
-            }
+          if (sieve[c - 1] == false) {
+            // cout << "(" << a -1 << " " << b - 1 << " " << c - 1 << ")" ;
+           res += a + b + c - 3;
+          }
         }
-        // cout << "\n";
     }
-}
 
+}
 
 int main () {
 
@@ -42,26 +41,51 @@ int main () {
     // problem510 (100);
 
     // problem 518
-    int64_t limit = 1e2;
-    int nc = 4;
-    // (2, 5, 11), (2, 11, 47), (5, 11, 23), (5, 17, 53), (7, 11, 17), (7, 23, 71), (11, 23, 47), (17, 23, 31), (17, 41, 97), (31, 47, 71), (71, 83, 97) => 1035
-    const auto prime = sieve (limit);
-    const int mem = prime.size() / nc;
-    int sum = 0;
-    vector<int> res (nc);
-    // vector<thread> th (nc);
+    // vector<vector<int>> seq = {{2, 5, 11}, {2, 11, 47}, {5, 11, 23}, {5, 17, 53}, {7, 11, 17}, {7, 23, 71}, {11, 23, 47}, {17, 23, 31}, {17, 41, 97}, {31, 47, 71}, {71, 83, 97}}; // => 1035
+    const int64_t limit = 1e2;
+    bool *sieve = new bool[limit]();
+    vector<uint64_t> prime {2,3};
 
-    for (int i = 0; i < nc; i++) {
-        int low = i * mem, high = low + mem ;
-        cout << low << " " << high << "\n";
-        search (prime, low, high, res[i]);
-        sum += res[i];
-        cout <<  '\n';
+    for (uint64_t i = 4; i < limit; i += 2) {
+        sieve[i] = true;
     }
 
-    cout << " => " << sum;
-    //showvec(prime);
+    for (uint64_t i = 3; i * i < limit; i += 2) {
+        if (sieve[i] == false) {
+            for (uint64_t j = i * i; j < limit; j += i) {
+                sieve[j] = true;
+            }
+        }
+    }
 
+    for (uint64_t i = 5, t = 2; i < limit; i += t, t = 6 - t) {
+        if (sieve[i] == false) {
+            prime.push_back(i);
+        }
+    }
+
+    const int nthread = thread::hardware_concurrency();
+    const int64_t mem = prime.size() / nthread;
+    thread pool[nthread];
+    atomic<int64_t> sum = {0};
+
+    for (int i = 0; i < nthread; i++) {
+        int low = i * mem, high = low + mem ;
+        pool[i] = thread (search, ref (prime), ref (sieve), low, high, ref(sum));
+    }
+
+    try {
+        for (int i = 0; i < nthread; i++) {
+            pool[i].join();
+        }
+
+        cout << " => " << sum;
+    } catch (std::exception &e) {
+        cout << " error : " << e.what();
+    }
+
+    //showvec(prime);
+    delete[] sieve;
 
     chrono.stop();
     chrono.get_duration();
