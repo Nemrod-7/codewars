@@ -5,7 +5,7 @@
 // NEQ5xBztxeg43aP
 using namespace std;
 
-// -std=c++17 -Wall -Wextra -O0 -pthread  -match=native
+// -std=c++17 -Wall -Wextra -O2 -pthread  -march=native
 
 void search (const vector<uint64_t> &prime, const bool *sieve, int low, int high, atomic<int64_t> &res) {
     const int limit = prime.back() + 2;
@@ -16,20 +16,19 @@ void search (const vector<uint64_t> &prime, const bool *sieve, int low, int high
         uint64_t a = p[i] + 1;
 
         for (int j = i + 1; j < size; j++) {
-          uint64_t b = p[j] + 1;
-          uint64_t b2 = b * b;
-          uint64_t c = b2 / a;
+            uint64_t b = p[j] + 1;
+            uint64_t b2 = b * b;
+            uint64_t c = b2 / a;
 
-          if (c > limit) break;
-          if (b2 % a != 0) continue;
+            if (c > limit) break;
+            if (b2 % a != 0) continue;
 
-          if (sieve[c - 1] == false) {
-            // cout << "(" << a -1 << " " << b - 1 << " " << c - 1 << ")" ;
-           res += a + b + c - 3;
-          }
+            if (sieve[c - 1] == false) {
+                // cout << "(" << a -1 << " " << b - 1 << " " << c - 1 << ")" ;
+                res += a + b + c - 3;
+            }
         }
     }
-
 }
 
 int main () {
@@ -42,7 +41,7 @@ int main () {
 
     // problem 518
     // vector<vector<int>> seq = {{2, 5, 11}, {2, 11, 47}, {5, 11, 23}, {5, 17, 53}, {7, 11, 17}, {7, 23, 71}, {11, 23, 47}, {17, 23, 31}, {17, 41, 97}, {31, 47, 71}, {71, 83, 97}}; // => 1035
-    const int64_t limit = 1e2;
+    const int64_t limit = 1e6;
     bool *sieve = new bool[limit]();
     vector<uint64_t> prime {2,3};
 
@@ -74,17 +73,11 @@ int main () {
         pool[i] = thread (search, ref (prime), ref (sieve), low, high, ref(sum));
     }
 
-    try {
-        for (int i = 0; i < nthread; i++) {
-            pool[i].join();
-        }
+    for (int i = 0; i < nthread; i++)
+        pool[i].join();
 
-        cout << " => " << sum;
-    } catch (std::exception &e) {
-        cout << " error : " << e.what();
-    }
+    cout << " => " << sum;
 
-    //showvec(prime);
     delete[] sieve;
 
     chrono.stop();

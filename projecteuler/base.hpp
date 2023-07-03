@@ -9,6 +9,65 @@
 
 using namespace std;
 
+string format (int64_t x) { // display number in human readable format
+    string num = to_string (x), os;
+    int size = num.size(), index = 0;
+
+    while (size-->0) {
+        os += num[index++];
+        if (size % 3 == 0) os += ' ';
+    }
+    return os;
+}
+string hformat (double duration) { // display time in human readable format
+
+    if (duration == 0.0) return "now";
+    const vector<pair<int,string>> base {{31536000,"year"},{86400,"day"}, {3600,"hour"},{60,"mn"}, {1,"s"}};
+
+    int count = 0;
+    vector<int> period;
+    ostringstream os;
+
+    for (auto it : base) {
+        period.push_back (duration / it.first);
+
+        if (period.back() != 0)
+            count++;
+
+        duration -= (period.back() * it.first);
+    }
+
+    for (int i = 0; i < 5; ++i) {
+        if (period[i] != 0) {
+            count--;
+            os << period[i] << " " << base[i].second;
+            // if (period[i] > 1) os << "s";
+            if (count > 1) os << ", ";
+            if (count == 1) os << " ";
+        }
+    }
+
+    if (duration > 0.0) os << " " << fixed << int(duration * 60 * 1e5) / 1e5 << " ms";
+    return os.str();
+}
+string showsize (uint64_t size) { // human-readable size
+    const vector<string> sizes = {"TiB", "GiB", "MiB", "KiB", "B" };
+    const int64_t KB = 1024;
+    const int64_t MB = KB * 1024;
+    const int64_t GB = MB * 1024 ;
+    const int64_t TB = GB * 1024;
+    uint64_t  maxv = TB;
+    stringstream os;
+
+    for (int i = 0; i < 5; i++, maxv /= 1024) {
+        if (size < maxv) continue;
+        os << fixed << setprecision(2) << size / static_cast<float> (maxv) << " " << sizes[i];
+        return os.str();
+    }
+
+    return "";
+}
+
 class Timer {
     //using time = chrono::steady_clock;
     private :
@@ -29,9 +88,7 @@ class Timer {
         void start () { alpha = chrono::steady_clock::now ();}
         void stop () { update();}
         void get_duration () {
-            std::cout << "\nDuration "
-                      <<fixed<< elapsed.count()
-                      << " ms" << std::endl;
+            std::cout << "\nExecution time : " << hformat (elapsed.count());
         }
         bool running (double total) {
             update();
@@ -58,33 +115,6 @@ class check {
         }
 };
 
-string format (int64_t x) { // format an number with separator
-    string num = to_string (x), os;
-    int size = num.size(), index = 0;
-
-    while (size-->0) {
-        os += num[index++];
-        if (size % 3 == 0) os += ' ';
-    }
-    return os;
-}
-string showsize (uint64_t size) { // human-readable size
-    const vector<string> sizes = {"TiB", "GiB", "MiB", "KiB", "B" };
-    const int64_t KB = 1024;
-    const int64_t MB = KB * 1024;
-    const int64_t GB = MB * 1024 ;
-    const int64_t TB = GB * 1024;
-    uint64_t  maxv = TB;
-    stringstream os;
-
-    for (int i = 0; i < 5; i++, maxv /= 1024) {
-        if (size < maxv) continue;
-        os << fixed << setprecision(2) << size / static_cast<float> (maxv) << " " << sizes[i];
-        return os.str();
-    }
-
-    return "";
-}
 template<class T> void showvec (const vector<T> &v) {
     for (auto it : v) {
         cout << it << " ";

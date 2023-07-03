@@ -197,33 +197,26 @@ int main () {
     // grid[4] = 5, grid[6] = 4, grid[7] = 3;
     // grid[9] = 7, grid[10] = 1, grid[11] = 4;
     // grid[12]=1, grid[13] = 2, grid[14]=4, grid[15]=5;
+
+    //
     vector<int> seq = {1,8,48,200,675,1904,4736,10608,21925,42328,76976,131320,209127,309968,427440,549184,658457,736744,766736};
 
-    // showgrid(grid);
-    // for (int y = 0; y < N; y++) {
-    //     for (int x = 0; x < N; x++) {
-    //           int lim = min (9, sum - max (row[y],col[x]));
-    //           cout << lim << " ";
-    //           col[x] += grid[y*N+x];
-    //           row[y] += grid[y*N+x];
-    //     }
-    //     cout << "\n";
-    // }
-    // cout << "\n";
-
-    for (int i = 18; i < 19; i++){
-      int cnt = 0;
-      cout << setw(2) << i << " => " ;
-      // backtrack1(grid, base[i], 0, i, cnt);
-      backtrack2 (grid, 0, 0, i, cnt);
-      // backtrack3 (grid, row, col, 0, 0, i, cnt);
-
-      total += cnt;
-      cout << cnt;
-      cout << "\n";
+    for (int i = 0; i < seq.size(); i++) {
+        total += seq[i] * 2;
+        // cout << i << " => " << seq[i] << "\n";
     }
-
     cout << total;
+    // for (int i = 32; i < 37; i++){
+    //   int cnt = 0;
+    //   cout << setw(2) << i << " => " ;
+    //   // backtrack1(grid, base[i], 0, i, cnt);
+    //   backtrack2 (grid, 0, 0, i, cnt);
+    //   // backtrack3 (grid, row, col, 0, 0, i, cnt);
+    //
+    //   total += cnt;
+    //   cout << cnt;
+    //   cout << "\n";
+    // }
 
 
     end = chrono::steady_clock::now (), elapsed = end - alpha;

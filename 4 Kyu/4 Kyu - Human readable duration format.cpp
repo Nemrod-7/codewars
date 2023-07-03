@@ -9,41 +9,21 @@ using namespace std;
 
 class Assert {
     public :
-        static void That (auto actual, auto expression) {
+        template<class T> static void That (const T &actual, const T &expression) {
             if (actual != expression)
                 std::cout<<"actual : "<<actual<<" expected : "<<expression<<std::endl;
         }
 };
-
-string format_duration(int duration) ;
 void Test();
 
-void ttt (auto entry) {
+string format_duration(double duration) {
 
-    cout << entry;
-}
+    if (duration == 0.0) return "now";
+    const vector<pair<int,string>> base {{31536000,"year"},{86400,"day"}, {3600,"hour"},{60,"minute"}, {1,"second"}};
 
-int main() {
-    auto start = chrono::high_resolution_clock::now();
-
-    Test();
-
-    auto end = chrono::high_resolution_clock::now();
-    std::chrono::duration<double> elapsed = end - start;
-    cout << "Process took " << elapsed.count()  << " ms" << endl;
-}
-
-
-string format_duration(int duration) {
-
-    if (duration == 0) return "now";
-
-    vector<pair<int,string>> base{{31536000,"year"},{86400,"day"},
-      {3600,"hour"},{60,"minute"}, {1,"second"}};
-
+    int count = 0;
     vector<int> period;
     ostringstream os;
-    int count = 0;
 
     for (auto it : base) {
         period.push_back (duration / it.first);
@@ -63,12 +43,31 @@ string format_duration(int duration) {
             if (count == 1) os << " and ";
         }
     }
-
+    cout << duration << "\n";
     return os.str();
 }
 
+int main() {
+    auto start = chrono::high_resolution_clock::now();
 
-auto Equals (auto entry) { return entry;}
+    double time = 345.62;
+
+    int duration = time;
+    double misc = time - duration;
+    cout << format_duration(345.62);
+
+    if (misc > 0.0) {
+      // cout << misc << " ms ";
+    }
+
+    // Test();
+
+    auto end = chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+    cout << "\nProcess took " << elapsed.count()  << " ms" << endl;
+}
+
+string Equals (string entry) { return entry;}
 
 void Test () {
   Assert::That(format_duration(0), Equals("now"));
