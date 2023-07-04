@@ -2,7 +2,8 @@
 
 #include <thread>
 #include <atomic>
-// NEQ5xBztxeg43aP
+// stackoverflow d~a6fK~*>Z$~2Zy
+// projecteuler NEQ5xBztxeg43aP
 using namespace std;
 
 // -std=c++17 -Wall -Wextra -O2 -pthread  -march=native
