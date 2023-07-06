@@ -52,7 +52,7 @@ void bottom (vector<int> row) {
 }
 
 string progress (const int &i, const int &j) {
-    return j < i ? "#" : " ";
+    return j < i ? "█" : " ";
 }
 string waiting (const int &i, const int &j) {
     wstring bar = L"▉▊▋▌▍▎▏▎▍▌▋▊▉";
@@ -109,11 +109,12 @@ int main () {
     setlocale (LC_ALL, "en_US.UTF-8");
     initdim();
 
-    wstring bar = L"▉▊▋▌▍▎▏▎▍▌▋▊▉";
+    wstring bar = L"▉▊▋▌▍▎▏▎▍▌▋▊▉▉";
     int width = w.ws_col;
 
-     vector<Bar> win ={Bar(5, 1, progress), Bar(20, 1, waiting)};
-     for (int i = 0; i < 51; i++) {
+     vector<Bar> win ={Bar(width - 9, 1, progress), Bar(5, 1, waiting)};
+
+     for (int i = 0; i < width; i++) {
            cout << "\033c\033[36m";
 
            for (auto curr : win) {

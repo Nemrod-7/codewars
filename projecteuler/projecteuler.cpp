@@ -6,7 +6,7 @@
 // projecteuler NEQ5xBztxeg43aP
 using namespace std;
 
-// -std=c++17 -Wall -Wextra -O2 -pthread  -march=native
+// -std=c++17 -Wall -Wextra -O2 -pthread -march=native
 
 void search (const vector<uint64_t> &prime, const bool *sieve, int low, int high, atomic<int64_t> &res) {
     const int limit = prime.back() + 2;

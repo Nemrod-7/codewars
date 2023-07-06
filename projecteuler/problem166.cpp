@@ -191,13 +191,11 @@ int main () {
     int mask[N * N] = {0};
     int col[N] = {0}, row[N] = {0};
     // vector<int> col(N), row(N);
-
     // // fill_n(mask, N*N, sum);
     // grid[0] = 6, grid[1] = 3, grid[2] = 3;
     // grid[4] = 5, grid[6] = 4, grid[7] = 3;
     // grid[9] = 7, grid[10] = 1, grid[11] = 4;
     // grid[12]=1, grid[13] = 2, grid[14]=4, grid[15]=5;
-
     //
     vector<int> seq = {1,8,48,200,675,1904,4736,10608,21925,42328,76976,131320,209127,309968,427440,549184,658457,736744,766736};
 
@@ -206,6 +204,7 @@ int main () {
         // cout << i << " => " << seq[i] << "\n";
     }
     cout << total;
+
     // for (int i = 32; i < 37; i++){
     //   int cnt = 0;
     //   cout << setw(2) << i << " => " ;

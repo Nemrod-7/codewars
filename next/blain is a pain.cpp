@@ -15,7 +15,7 @@ int main () {
 
 const std::string example_track =
          "                                /------------\\\n"
-         "/-------------\\                /             |\n"
+         "╭-──────────--╮                /             |\n"
          "|             |               /              S\n"
          "|             |              /               |\n"
          "|        /----+--------------+------\\        |   \n"
@@ -37,6 +37,6 @@ const std::string example_track =
          "              |                            |               \n"
          "              \\----------------------------/ \n";
 
-     train_crash(example_track, "Aaaa", 147, "Bbbbbbbbbbb", 288, 1000);
+     // train_crash(example_track, "Aaaa", 147, "Bbbbbbbbbbb", 288, 1000);
 
 }
