@@ -30,8 +30,8 @@ void check (int n, vector<vector<int>> ve) {
     }
 }
 
-std::vector<std::string> tokenize (const std::string &expr) {
-    std::regex re ("\\[[0-9]+\\]");
+std::vector<std::string> tokenize (const std::string &expr, const std::string &recon) {
+    std::regex re (recon);
     std::sregex_token_iterator it (expr.begin(), expr.end(), re);
     return std::vector<std::string> (it, std::sregex_token_iterator());
 }
@@ -40,13 +40,27 @@ int main () {
 
     string txt, buffer;
     ifstream iss ("test1");
+    vector<vector<int>> base;
+    int n;
+
+    iss >> n;
 
     while (iss >> buffer)
         txt += buffer;
 
-      auto vec = tokenize(txt);
+    vector<string> lines = tokenize (txt, "\\[([0-9]+,?)+\\]");
 
-      cout << vec.size();
+    for (auto &ve : lines) {
+        vector<string> tup = tokenize (ve, "[0-9]+");
+        vector<int> line;
+        for (auto &cell : tup) {
+          line.push_back (stoi(cell));
+        }
+        base.push_back(line);
+    }
+
+
+    cout << n;
 
     cout << "exit\n";
 
