@@ -2,6 +2,7 @@
 #include <queue>
 #include <map>
 #include <numeric>
+#include <limits>
 #include <chrono>
 
 using namespace std;
@@ -66,23 +67,33 @@ bool check (int n, const vector<vector<int>> &swit) {
 
     return true;
 }
-bool light_switch1 (int n, const vector<vector<int>> &swit) {
+vector<uint64_t> mark (int n) {
+    int size = (n >> 6) + 1;
+    vector<uint64_t> cell (size);
 
-    queue<vector<int64_t>> q1;
-    map<vector<int64_t>,bool> visit;
-    vector<int64_t> exit ((n >> 6) + 1);
+    for (uint64_t i = 0; i < n; i++) {
+        cell[i >> 6] |= 1ULL << (i &63);
+    }
+    return cell;
+}
+
+bool light_switch1 (int n, const vector<vector<int>> &swit) { // 0.12
+
+    queue<vector<uint64_t>> q1;
+    map<vector<uint64_t>,bool> visit;
+    vector<uint64_t> exit = mark (n);
 
     q1.push({0});
 
     while (!q1.empty()) {
-        vector<int64_t> state = q1.front();
+        vector<uint64_t> state = q1.front();
         q1.pop();
 
         if (state == exit)
             return true;
 
         for (auto &comb : swit) {
-            vector<int64_t> next = state;
+            vector<uint64_t> next = state;
             for (auto &num : comb) {
                 next[num >> 6] ^= 1ULL << (num &63);
             }
@@ -96,11 +107,11 @@ bool light_switch1 (int n, const vector<vector<int>> &swit) {
 
     return false;
 }
-bool light_switch2 (int n, const vector<vector<int>> &swit) {
+bool light_switch2 (int n, const vector<vector<int>> &swit) { // 0.16
 
     priority_queue<vertex> q1;
     map<vector<uint64_t>,bool> visit;
-    vector<uint64_t> exit ((n >> 6) + 1, -1);
+    vector<uint64_t> exit = mark (n);
     vector<uint64_t> start ((n >> 6) + 1);
 
     q1.push({0, start});
@@ -151,12 +162,12 @@ vector<vector<uint64_t>> construct (int n, vector<vector<int>> swit) {
 
     return mask;
 }
-bool light_switch3 (int n, const vector<vector<int>> &swit) {
+bool light_switch3 (int n, const vector<vector<int>> &swit) { // 0.16
 
     const int size = (n >> 6) + 1;
     priority_queue<vertex> q1;
     map<vector<uint64_t>,bool> visit;
-    const vector<uint64_t> exit ((n >> 6) + 1, -1);
+    const vector<uint64_t> exit = mark (n);
     const vector<uint64_t> start ((n >> 6) + 1);
     const vector<vector<uint64_t>> mask = construct (n, swit);
     int cycle = 0;
@@ -168,11 +179,8 @@ bool light_switch3 (int n, const vector<vector<int>> &swit) {
         q1.pop();
 
         cycle++;
-        showbit (curr,n);
+        // showbit (curr,n);
 
-        if (cycle == 2) {
-            break;
-        }
         if (curr == exit) {
             cout << cycle << " cycle\n";
             return true;
@@ -196,13 +204,47 @@ bool light_switch3 (int n, const vector<vector<int>> &swit) {
     return false;
 }
 
+uint64_t maxSubsetXOR (vector<uint64_t> set) { // Function to return maximum XOR subset in set
+    // Initialize index of chosen elements
+    int64_t index = 0, res = 0;
+    const int64_t n = set.size();
+
+    for (int64_t i = 63; i >= 0; i--) {
+        // Initialize index of maximum element and the maximum element
+        int64_t maxInd = index, maxEle = numeric_limits<int64_t>::min();
+
+        for (int64_t j = index; j < n; j++) {
+            // If i'th bit of set[j] is set and set[j] is greater than max so far.
+            if ( (set[j] & (1 << i)) != 0 && set[j] > maxEle )
+                maxEle = set[j], maxInd = j;
+        }
+        // If there was no element with i'th bit set, move to smaller i
+        if (maxEle == numeric_limits<int64_t>::min()) continue;
+        // Put maximum element with i'th bit set at index 'index'
+        swap(set[index], set[maxInd]);
+        maxInd = index; // Update maxInd and increment index
+        // Do XOR of set[maxIndex] with all numbers having i'th bit as set.
+        for (int64_t j = 0; j < n; j++) {
+            // XOR set[maxInd] those numbers which have the i'th bit set
+            if (j != maxInd && (set[j] & (1 << i)) != 0)
+                set[j] = set[j] ^ set[maxInd];
+        }
+        // Increment index of chosen elements
+        index++;
+    }
+
+    // Final result is XOR of all elements
+    for (uint64_t i = 0; i < n; i++)
+        res ^= set[i];
+    return res;
+}
+
 int main () {
 
     chrono::steady_clock::time_point start = chrono::steady_clock::now(), end;
     chrono::duration<double> elapsed;
 
     /*
-
        [0, 1, 2],    // switch 0
        [1, 2],       // switch 1
        [1, 2, 3, 4], // switch 2
@@ -216,30 +258,45 @@ int main () {
        */
 
     // auto [n, swit] = test1();
-    int n = 5;
+    int res, n = 5;
+                                //   3       3        5        5
     vector<vector<int>> sw = {{0,1,2}, {1,2}, {1,2,3,4}, {1,4}};
-    // light_switch3 (n, sw);
+    vector<vector<uint64_t>> bset = construct(n, sw);
 
-    int size = (n >> 6) + 1;
-    vector<vector<uint64_t>> mask = construct(n, sw);
-    int64_t num = 0;
+    cout << ((1ULL << n) - 1) << '\n';
 
-    num ^= mask[2][0]; // 01111
-    num ^= mask[0][0]; // 10011
-    num ^= mask[1][0]; // 11111
-
-    cout << size << '\n';
-
-    for (int i = 0; i < mask.size(); i++) {
-        vector<uint64_t> curr = mask[i];
-        for (int j = i + 1; j < mask.size(); j++) {
-            vector<uint64_t> next = mask[j];
-            vector<uint64_t> x = next;
-            for (int k = 0; k < size; k++) {
-                x[k] = curr[k] ^ next[k];
-            }
-        }
+    for (int i = 0; i < sw.size(); i++) {
+        cout << " :: " << maxSubsetXOR (bset[i]) << " ";
+        cout << "\n";
     }
+    //res = light_switch3 (31,{{0,2,4,5,6,9,10},{1,3,5,6,7,8,11},{1,2,3,4,6,7,8,11},
+    //{2,4,9},{7,8,9,10},{1,4,8,11},
+    //{6,9},{8,9,10},{2,3,5,7,10,11},
+    //{12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30},
+    //{12,13,14,15,16,17,18,19},{21,22,23,24,25,26,27,28,29},
+    //{4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30},
+    //{6,7},{17,18,19,20,21,22,23,24,25,26,27,28}}); // true
+    //cout << "result: " << res;
+
+
+    // int size = (n >> 6) + 1;
+    // int m = mask.size();
+    // int64_t num = 0;
+    //
+    // num ^= mask[2][0]; // 01111
+    // num ^= mask[0][0]; // 10011
+    // num ^= mask[1][0]; // 11111
+    //
+    // for (int i = 0; i < mask.size(); i++) {
+    //     vector<uint64_t> curr = mask[i];
+    //     for (int j = i + 1; j < mask.size(); j++) {
+    //         vector<uint64_t> next = mask[j];
+    //         vector<uint64_t> x = next;
+    //         for (int k = 0; k < size; k++) {
+    //             x[k] = curr[k] ^ next[k];
+    //         }
+    //     }
+    // }
 
 
     end = chrono::steady_clock::now(), elapsed = end - start;

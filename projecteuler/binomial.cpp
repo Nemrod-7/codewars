@@ -6,15 +6,6 @@
 using namespace std;
 using i64 = int64_t;
 
-class check {
-  public :
-      static void overflow (uint64_t a, double b) {
-          uint64_t limit = numeric_limits<uint64_t>::max() / b;
-          //if (b > 1) limit /= b;
-          if (a > limit) throw overflow_error ("integer overflow\n");
-
-      }
-};
 
 uint64_t factorial (int n) {
   uint64_t mult = 1;
@@ -118,7 +109,7 @@ vector<vector<uint64_t>> mk_triangle (int lim) {
 
     return tri;
 }
-void display_tri (vector<vector<uint64_t>> &tri) {
+void display_tri (const vector<vector<uint64_t>> &tri) {
 
     for (auto &n : tri) {
         cout << string ((tri.size() - n.size()) * 2, ' ');
@@ -242,14 +233,7 @@ int main () {
     int k = 7;
     int tile[3] = {2,3,4};
 
-
-    int blk = k-3;
-    for (int i = 3; i <= 3; i++) {
-        for (int j = 1; j <= k; j++) {
-            cout << (3 - i + 1) * (k - j + 1) << " ";
-        }
-    }
-    // cout << k << " " << blk << " => " << k / 3;
+    display_tri (mk_triangle (6));
 
     // cout << factorial (1);
     /*

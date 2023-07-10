@@ -196,27 +196,30 @@ int main () {
     // grid[4] = 5, grid[6] = 4, grid[7] = 3;
     // grid[9] = 7, grid[10] = 1, grid[11] = 4;
     // grid[12]=1, grid[13] = 2, grid[14]=4, grid[15]=5;
-    //
+
+    //                 0 1 2   3   4   5    6      7    8    9     10     11     12    13      15     16    17     18      19
     vector<int> seq = {1,8,48,200,675,1904,4736,10608,21925,42328,76976,131320,209127,309968,427440,549184,658457,736744,766736};
+
+
+
+    for (int i = 20; i < 21; i++){
+      int cnt = 0;
+      cout << setw(2) << i << " => " ;
+      // backtrack1(grid, base[i], 0, i, cnt);
+      backtrack2 (grid, 0, 0, i, cnt);
+      // backtrack3 (grid, row, col, 0, 0, i, cnt);
+
+      total += cnt;
+      cout << cnt;
+      cout << "\n";
+    }
+
 
     for (int i = 0; i < seq.size(); i++) {
         total += seq[i] * 2;
         // cout << i << " => " << seq[i] << "\n";
     }
     cout << total;
-
-    // for (int i = 32; i < 37; i++){
-    //   int cnt = 0;
-    //   cout << setw(2) << i << " => " ;
-    //   // backtrack1(grid, base[i], 0, i, cnt);
-    //   backtrack2 (grid, 0, 0, i, cnt);
-    //   // backtrack3 (grid, row, col, 0, 0, i, cnt);
-    //
-    //   total += cnt;
-    //   cout << cnt;
-    //   cout << "\n";
-    // }
-
 
     end = chrono::steady_clock::now (), elapsed = end - alpha;
     std::cout << "\nDuration " <<fixed<< elapsed.count() << " ms" << std::endl;

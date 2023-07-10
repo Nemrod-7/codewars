@@ -88,19 +88,7 @@ int main () {
 
       // auto base = combinations::integral (7, "0123456789");
 
-      for (int64_t i = 15000; i < 15050; i++) {
-          int64_t sq = i * i;
 
-          if (sq % 10 == 0) {
-              cout << i << " => " << sq << '\n';
-          }
-      }
       /*
-      for (auto &comb : base) {
-          for (auto &it : comb) {
-              std::cout << (char) it << " ";
-          }
-          std::cout << '\n';
-      }
     */
 }
