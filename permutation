@@ -1,0 +1,24 @@
+
+
+string = 1234, result = 2314
+k = 7
+n = 4
+------------------------------------------
+selection = (k - 1) / factorial (n - 1)
+selection = (7 - 1) / factorial (4 - 1)
+selection = 6 / 6
+selection = 1
+
+=> alpha[1] == '2'
+----------------reverse-------------------
+result[0] == '2'
+search position = 1
+
+1 = (k - 1) / 6
+6 = k - 1
+7 = k
+
+
+
+
+

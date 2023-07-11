@@ -233,9 +233,10 @@ int main () {
     int k = 7;
     int tile[3] = {2,3,4};
 
-    display_tri (mk_triangle (6));
+//    display_tri (mk_triangle (6));
 
-    // cout << factorial (1);
+
+     cout << factorial (3);
     /*
 
     vector<vector<uint64_t>> tri (lim+1, vector<uint64_t> (lim+1));
