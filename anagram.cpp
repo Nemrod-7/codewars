@@ -109,10 +109,10 @@ BOOKKEEPER = 10743
   // kth_permutation (24572, "QUESTION");
   int cnt = factorial (n - 1);
 
-  char ch = word[i];
+  ch = word[i];
   sel = alpha.find(ch);
 
-  cout << (cnt / sel) + 2;
+  cout << (cnt / sel) + 1;
 
   end = chrono::steady_clock::now(), elapsed = end - start;
   std::cout << "\nDuration : " << fixed << elapsed.count() << " ms\n";
