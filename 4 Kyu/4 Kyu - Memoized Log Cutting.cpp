@@ -64,10 +64,6 @@ int cut_log (const std::vector<int> &pr, int lim) {
     return mem[lim];
 }
 
-int largest_visible_area (int k, std::vector<std::pair<int, int>> cylinder) {
-
-    return 0;
-};
 int main () {
 
   auto start = chrono::high_resolution_clock::now();

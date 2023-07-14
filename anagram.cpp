@@ -5,115 +5,118 @@
 
 using namespace std;
 
-uint64_t factorial (int n) {
-  uint64_t mult = 1;
-  for (int i = 1; i <= n ; ++i)
-      mult *= i;
+int64_t fact[21];
 
-  return mult;
-}
-int getindex (const string &word) {
-    string name = word;
-    sort(name.begin(), name.end());
+void getperm (string str) {
 
-    int index = 1;
+    sort (str.begin(), str.end());
 
     do {
-        if (name == word) {
-            // return index;
-        }
-        cout << name << " :: " << index <<  "\n";
-        index++;
-    } while (next_permutation (name.begin(), name.end()));
-
-    return -1;
+        cout << str << "\n";
+    } while (next_permutation (str.begin(), str.end()));
 }
+string kth_permutation2 (int k, string alpha) {
+    const int n = alpha.size();
+    string os;
+    uint64_t xsum, sum;
+    uint64_t freq[26] = {0};
+    fact[0] = 1;
 
-int permute (string &str) {
-
-  do {
-      // cout << str << '\n';
-
-      int len = str.size();
-      int key = len - 1, newkey = len - 1;
-      /* The key value is the first value from the end which is smaller than the value to its immediate right        */
-      while ((key > 0) && (str[key] <= str[key - 1]) ) {
-          key--;
-      }
-      key--;
-      /* If key < 0 the data is in reverse sorted order, which is the last permutation.                          */
-      if (key < 0) break;
-      /* str[key+1] is greater than str[key] because of how key was found. If no other is greater, str[key+1] is used   */
-      newkey = len - 1;
-      while( (newkey > key) && (str[newkey] <= str[key])) {
-          newkey--;
-      }
-      swap (str[key], str[newkey]);
-      /* variables len and key are used to walk through the tail,
-      exchanging pairs from both ends of the tail.  len and
-      key are reused to save memory                           */
-      len--, key++;
-      /* The tail must end in sorted order to produce the next permutation.                                       */
-      while (len>key) {
-          swap(str[len], str[key]);
-          key++;
-          len--;
-      }
-
-  } while (true);
-
-   return 1;
-}
-
-void kth_permutation (int k, string str) {
-    int n = str.size(), sel;
-    sort(str.begin(), str.end());
-
-    while (str.size()) {
-        sel = (k - 1) / factorial (n - 1);
-        cout << str[sel];
-        k -= (sel * factorial (n-1));
-        n --;
-        str.erase(sel,1);
+    for (auto &ch : alpha) {
+        freq[ch - 'A']++;
     }
+    // Iterate till sum equals n
+    while (sum != k) {
+        sum = 0;
+        // Check for characters present in freq[]
+        for (int i = 0; i < 26; i++) {
+            if (freq[i] == 0) continue;
+            freq[i]--; // Remove character
+                       // Calculate sum after fixing a particular char
+            xsum = fact[n - os.size() - 1];
+            for (int j = 0; j < 26; j++) {
+                xsum /= fact[freq[j]];
+            }
+            sum += xsum;
+            // if sum > n fix that char as present char and update sum and required nth after fixing char at that position
+            if (sum >= k) {
+                os += (i + 'a');
+                k -= (sum - xsum);
+                cout << xsum << " " << k << "\n";
+                break;
+            }
+            // if sum < n, add character back
+            if (sum < k) freq[i]++;
+        }
+    }
+    // if sum == n means this char will provide its greatest permutation as nth permutation
+    for (int i = 25; i >= 0; i--) {
+        if (freq[i] == 0) continue;
+        os += (i + 'A');
+        freq[i++]--;
+    }
+
+    return os;
+}
+
+int64_t list_position (string result) {
+    string alpha ;
+    int ch, n = result.size();
+    int64_t k = 1, freq[26] = {0};
+
+    for (int i = 0; i < n; i++) {
+        ch = result[n - i - 1];
+        freq[ch - 'A']++;
+        alpha += ch;
+        sort(alpha.begin(), alpha.end());
+
+        int64_t maxs =  fact[i];
+
+        for (int j = 0; j < 26; j++) {
+            maxs /= fact[freq[j]];
+        }
+
+        cout << maxs << " :: ";
+        for (int j = 0; j < alpha.size(); j++) {
+            if (alpha[j] == ch) {
+                cout << j << ' ';
+            }
+        }
+
+        cout << "\n";
+        k += alpha.find(ch) * maxs;
+        // cout << maxs << " :: ";
+    }
+    cout << result << " => " << k << "\n";
+    return k;
 }
 
 int main () {
 
-  chrono::steady_clock::time_point start = chrono::steady_clock::now(), end;
-  chrono::duration<double> elapsed;
+    chrono::steady_clock::time_point start = chrono::steady_clock::now(), end;
+    chrono::duration<double> elapsed;
 
-/*
-ABAB = 2
-AAAB = 1
-BAAA = 4
-QUESTION = 24572
-BOOKKEEPER = 10743
-*/
-  string word = "2134";
+    fact[0] = 1;
 
-  word = "312";
-  // "IMMUNOELECTROPHORETICALLY";
-  // STATIONARILY / ANTIROYALIST
+    for (int64_t i = 1; i < 21; i++) {
+        fact[i] = fact[i-1] * i;
+    }
 
-  uint64_t last = factorial(word.size());
-  string alpha = word, rever = word;
+    //    getperm ("YMYM");
+    //list_position ("AAAB"); // 1
+    //list_position ("ABAB"); // 2
+    //list_position ("BAAA"); // 4
+    //list_position ("YMYM"); // 5
+    //list_position ("QUESTION"); // 24572
+    //list_position ("BOOKKEEPER"); // 10743
 
-  sort(alpha.begin(), alpha.end());
-  reverse(rever.begin(), rever.end());
+    "MMY";
 
-  string temp = alpha;
-  // cout << word << " " << alpha << "\n";
-  int i = 0, sel;
-  int n = word.size();
-  // kth_permutation (24572, "QUESTION");
-  int cnt = factorial (n - 1);
+    //  n! / (n1! . n2! . n...!);
 
-  ch = word[i];
-  sel = alpha.find(ch);
+    // string result = kth_permutation (0, word);
+    // cout << word << " " << k << " " << result << '\n';
 
-  cout << (cnt / sel) + 1;
-
-  end = chrono::steady_clock::now(), elapsed = end - start;
-  std::cout << "\nDuration : " << fixed << elapsed.count() << " ms\n";
+    end = chrono::steady_clock::now(), elapsed = end - start;
+    std::cout << "\nDuration : " << fixed << elapsed.count() << " ms\n";
 }

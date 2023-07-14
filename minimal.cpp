@@ -40,7 +40,7 @@ struct Circle {
 
 double degree (double rad) { return rad * 180.0 / M_PI; }
 double rnd (const double x) { return round (x * 1e8) / 1e8; }
-double distance (const Point &a, const Point &b) { return hypot (a.x - b.x, a.y - b.y); }
+double magnitude (const Point &a, const Point &b) { return hypot (a.x - b.x, a.y - b.y); }
 
 void problem510 (int n) {
 
@@ -64,9 +64,9 @@ int main () {
 
     double perimeter = 2.0 * M_PI * r1;
 
-    const double hyp = r1, opp = distance (a,b) * 0.5;
+    const double hyp = r1, opp = magnitude (a,b) * 0.5;
 
-    const double theta = asin (opp/hyp) * 2.0; 
+    const double theta = asin (opp/hyp) * 2.0;
     const double arc = r1 * theta;
 
     const double inv = r1 * (2 * M_PI - theta);
