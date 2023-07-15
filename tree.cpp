@@ -1,37 +1,112 @@
-#include <iostream>
-#include <vector>
+/**
+ * Loosely emulates the "digital rain" effect from The Matrix.
+ *
+ * @author Dan Ruscoe <dan@ruscoe.org>
+ */
+#include <unistd.h>
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <ncurses.h>
 
-using namespace std;
+/* Time between row updates in microseconds.
+   Controls the speed of the digital rain effect.
+*/
+#define ROW_DELAY 40000
 
-const double pi = 1;
+/**
+ * Gets a random integer within a given range.
+ *
+ * @param int min The low-end of the range.
+ * @param int max The high-end of the range.
+ *
+ * @return int The random integer.
+ */
+int get_rand_in_range(int min, int max)
+{
+  return (rand() % ((max + 1) - min) + min);
+}
 
-int largest_visible_area (int k, std::vector<std::pair<int, int>> cylinder) {
+int main(void)
+{
+  /* Basic seed for random numbers. */
+  srand(time(NULL));
 
-    int size = cylinder.size();
+  /* Characters to randomly appear in the rain sequence. */
+  char chars[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
 
-    for (int i = 0; i < size; i++) {
-        auto [r1,m1] = cylinder[i];
-        for (int j = i + 1; j < size; j++) {
-            auto [r2,m2] = cylinder[j];
+  int total_chars = sizeof(chars);
 
-            int summ = m1 + m2;
+  /* Set up ncurses screen and colors. */
+  initscr();
+  noecho();
+  curs_set(FALSE);
 
-            std::cout << summ << " " << r1 << " " << r2 << "\n";
-        }
+  start_color();
+  init_pair(1, COLOR_GREEN, COLOR_BLACK);
+  attron(COLOR_PAIR(1));
+
+  int max_x = 0, max_y = 0;
+
+  getmaxyx(stdscr, max_y, max_x);
+
+  /* Create arrays of columns based on screen width. */
+
+  /* Array containing the current row of each column. */
+  int columns_row[max_x];
+
+  /* Array containing the active status of each column.
+     A column draws characters on a row when active.
+  */
+  int columns_active[max_x];
+
+  int i;
+
+  /* Set top row as current row for all columns. */
+  for (i = 0; i < max_x; i++) {
+    columns_row[i] = -1;
+    columns_active[i] = 0;
+  }
+
+  while (1) {
+    for (i = 0; i < max_x; i++) {
+      if (columns_row[i] == -1) {
+        /* If a column is at the top row, pick a
+           random starting row and active status.
+        */
+        columns_row[i] = get_rand_in_range(0, max_y);
+        columns_active[i] = get_rand_in_range(0, 1);
+      }
     }
 
-    return 0;
-};
+    /* Loop through columns and draw characters on rows. */
+    for (i = 0; i < max_x; i++) {
+      if (columns_active[i] == 1) {
+        /* Draw a random character at this column's current row. */
+        int char_index = get_rand_in_range(0, total_chars);
+        mvprintw(columns_row[i], i, "%c", chars[char_index]);
+      } else {
+        /* Draw an empty character if the column is inactive. */
+        mvprintw(columns_row[i], i, " ");
+      }
 
+      columns_row[i]++;
 
-int main () {
+      /* When a column reaches the bottom row, reset to top. */
+      if (columns_row[i] >= max_y) {
+        columns_row[i] = -1;
+      }
 
+      /* Randomly alternate the column's active status. */
+      if (get_rand_in_range(0, 1000) == 0) {
+        columns_active[i] = (columns_active[i] == 0) ? 1 : 0;
+      }
+    }
 
-    //    The visible area can be expressed as the sum of:
-    //        all mantle areas (the area of the curved surface)
-    //        all top base areas minus the area covered by the cylinders placed above them.
+    usleep(ROW_DELAY);
+    refresh();
+  }
 
-    int result1 = largest_visible_area (2, {{2,16}, {2,14}, {3,27}}); // 52
-                                                                      //int result2 = largest_visible_area (3, {{1,80}, {3,100}, {2, 80}, {3, 90}, {2, 80}}); // 269
-
+  endwin();
+  return 0;
 }

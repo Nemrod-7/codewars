@@ -30,16 +30,6 @@ std::string u8 (const wchar_t wc) {
     return std::string (buffer);
 }
 
-void header (vector<int> row) {
-    for (int width : row) { // make head
-        cout <<  "┌";
-        for (int j = 0; j < width; j++) {
-            cout << "─";
-        }
-        cout << "┐";
-    }
-    cout << "\n";
-}
 void bottom (vector<int> row) {
   for (int width : row) { // make bottom
       cout <<  "└";
@@ -69,14 +59,13 @@ class Bar {
         }
 };
 
-
 string mkup (const Bar &curr) {
     string os;
-        os += "┌";
-        for (int j = 0; j < curr.width; j++) {
-            os +="─";
-        }
-        os +="┐";
+    os += "┌";
+    for (int j = 0; j < curr.width; j++) {
+        os +="─";
+    }
+    os +="┐";
 
 
     return os;
@@ -103,36 +92,44 @@ string inner (const Bar &curr, int i) {
     os += "│";
     return os;
 }
+void animate () {
+  int width = w.ws_col;
+
+       vector<Bar> win ={Bar(width - 9, 1, progress), Bar(5, 1, waiting)};
+
+       for (int i = 0; i < width; i++) {
+             cout << "\033c\033[36m";
+
+             for (auto curr : win) {
+                cout << mkup (curr);
+             }
+             cout << "\n";
+
+             for (auto curr : win) {
+                cout << inner (curr, i);
+             }
+             cout << "\n";
+
+             for (auto curr : win) {
+               cout << mkbot (curr);
+             }
+             cout << "\n";
+             std::this_thread::sleep_for(std::chrono::milliseconds(70));
+       }
+}
+
 
 int main () {
 
     setlocale (LC_ALL, "en_US.UTF-8");
     initdim();
 
+    const std::string reset = "\033[0m", bright = "\033[1m", fainted = "\033[2m", italic = "\033[3m", underline = "\033[4m", blink = "\033[5m", reverse = "\033[7m";
     wstring bar = L"▉▊▋▌▍▎▏▎▍▌▋▊▉▉";
     int width = w.ws_col;
 
-     vector<Bar> win ={Bar(width - 9, 1, progress), Bar(5, 1, waiting)};
+    std::string head = "┌─────────────────────────────────┐\n";
 
-     for (int i = 0; i < width; i++) {
-           cout << "\033c\033[36m";
-
-           for (auto curr : win) {
-              cout << mkup (curr);
-           }
-           cout << "\n";
-
-           for (auto curr : win) {
-              cout << inner (curr, i);
-           }
-           cout << "\n";
-
-           for (auto curr : win) {
-             cout << mkbot (curr);
-           }
-           cout << "\n";
-           std::this_thread::sleep_for(std::chrono::milliseconds(70));
-     }
 
      cout << "exit";
 }
