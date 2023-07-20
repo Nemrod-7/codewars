@@ -1,16 +1,18 @@
 #include <iostream>
-#include <queue>
+#include <iomanip>
 
 using namespace std;
 
 int main () {
 
-    int hsize = 5;
-    deque<string> hist;
+    string input;
 
-    hist.push_back("this is");
-    hist.push_back("a string");
+    cin >> input;
 
 
-    cout << "\nen\n";
+
+    cout << "["<<input<<"]";
+
+
+    cout << "\nend\n";
 }

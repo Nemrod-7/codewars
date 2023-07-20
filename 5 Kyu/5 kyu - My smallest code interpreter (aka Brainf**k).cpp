@@ -4,13 +4,12 @@
 const int overflow = 255;
 
 unsigned loop (const std::string &code, unsigned pos) {
-    int balance = 0, index = pos;
+    int code = 0, index = pos;
     const bool fwrd = code[index] == '[' ? true : false;
 
     while (code[index]) {
-        if (code[index] == '[') balance++;
-        if (code[index] == ']') balance--;
-        if (balance == 0) return index;
+        code += (code[index] == '[') - (code[index] == ']');
+        if (code == 0) return index;
 
         fwrd == true ? index++ : index--;
     }

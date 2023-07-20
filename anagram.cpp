@@ -1,31 +1,52 @@
 #include <iostream>
-// #include <vector>
+#include <iomanip>
+#include <map>
 #include <algorithm>
 #include <chrono>
 
 using namespace std;
 
-int64_t fact[21];
+int factorial (int n) {
+    int mul = 1;
+
+    for (int i = 1; i <= n; i++) {
+        mul *= i;
+    }
+    return mul;
+}
 
 void getperm (string str) {
 
     sort (str.begin(), str.end());
-
+    int i = 1;
     do {
-        cout << str << "\n";
+        cout << i << " => " << str << "\n";
+        i++;
     } while (next_permutation (str.begin(), str.end()));
+}
+int countperm (string str) {
+  int n = str.size(), np = factorial(n);
+  int hist[26] = {0};
+
+  for (int i = 0; i < n; i++) {
+      hist[str[i] - 'A']++;
+  }
+
+  for (int i = 0; i < 26; i++) {
+      np /= factorial (hist[i]);
+  }
+  return np;
 }
 string kth_permutation2 (int k, string alpha) {
     const int n = alpha.size();
     string os;
     uint64_t xsum, sum;
     uint64_t freq[26] = {0};
-    fact[0] = 1;
 
     for (auto &ch : alpha) {
         freq[ch - 'A']++;
     }
-    // Iterate till sum equals n
+    // Iterate till sum equals
     while (sum != k) {
         sum = 0;
         // Check for characters present in freq[]
@@ -33,9 +54,9 @@ string kth_permutation2 (int k, string alpha) {
             if (freq[i] == 0) continue;
             freq[i]--; // Remove character
                        // Calculate sum after fixing a particular char
-            xsum = fact[n - os.size() - 1];
+            xsum = factorial (n - os.size() - 1);
             for (int j = 0; j < 26; j++) {
-                xsum /= fact[freq[j]];
+                xsum /= factorial (freq[j]);
             }
             sum += xsum;
             // if sum > n fix that char as present char and update sum and required nth after fixing char at that position
@@ -59,60 +80,55 @@ string kth_permutation2 (int k, string alpha) {
     return os;
 }
 
-int64_t list_position (string result) {
-    string alpha ;
-    int ch, n = result.size();
-    int64_t k = 1, freq[26] = {0};
+int64_t list_position (string str) {
+
+    int n = str.size();
+    int64_t k = 1;
 
     for (int i = 0; i < n; i++) {
-        ch = result[n - i - 1];
-        freq[ch - 'A']++;
-        alpha += ch;
-        sort(alpha.begin(), alpha.end());
-
-        int64_t maxs =  fact[i];
-
-        for (int j = 0; j < 26; j++) {
-            maxs /= fact[freq[j]];
-        }
-
-        cout << maxs << " :: ";
-        for (int j = 0; j < alpha.size(); j++) {
-            if (alpha[j] == ch) {
-                cout << j << ' ';
+        int infer = 0;
+        for (int j = i + 1; j < n; j++) {
+            if (str[j] < str[i]) {
+                infer++;
             }
         }
 
-        cout << "\n";
-        k += alpha.find(ch) * maxs;
-        // cout << maxs << " :: ";
+        int freq[26] = {0};
+        for (int j = i; j < n; j++) {
+            freq[str[j] - 'A']++;
+        }
+
+        int64_t maxs =  factorial (n - i - 1) * infer;
+
+        for (int j = 0; j < 26; j++) {
+            maxs /= factorial (freq[j]);
+        }
+
+        k += maxs ;
     }
-    cout << result << " => " << k << "\n";
+    cout << "\n" << str << " => " << k << "\n\n";
     return k;
 }
+
 
 int main () {
 
     chrono::steady_clock::time_point start = chrono::steady_clock::now(), end;
     chrono::duration<double> elapsed;
 
-    fact[0] = 1;
+    // nperm = n! / (n1! . n2! . n...!)
+    string str = "STRING";
+    int n = str.size();
+    string alpha;
 
-    for (int64_t i = 1; i < 21; i++) {
-        fact[i] = fact[i-1] * i;
-    }
-
-    //    getperm ("YMYM");
-    //list_position ("AAAB"); // 1
-    //list_position ("ABAB"); // 2
-    //list_position ("BAAA"); // 4
-    //list_position ("YMYM"); // 5
-    //list_position ("QUESTION"); // 24572
-    //list_position ("BOOKKEEPER"); // 10743
-
-    "MMY";
-
-    //  n! / (n1! . n2! . n...!);
+    list_position ("YMYM");
+  
+    // list_position ("AAAB"); // 1
+    // list_position ("ABAB"); // 2
+    // list_position ("BAAA"); // 4
+    // list_position ("YMYM"); // 5
+    // list_position ("QUESTION"); // 24572
+    // list_position ("BOOKKEEPER"); // 10743
 
     // string result = kth_permutation (0, word);
     // cout << word << " " << k << " " << result << '\n';
