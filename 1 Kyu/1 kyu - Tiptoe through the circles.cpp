@@ -55,11 +55,10 @@ double clamp (double x, double mini, double maxi) { // limit a position to an ar
   if (x > maxi) x = maxi;
   return x;
 }
-double degree (double radian) { return radian * 180.0 / M_PI; }
 
 vector<Point> tangent (const Point &p1, const Circle &c) { // tangent points of a cricle
     const auto &[c1,rad] = c;
-    const double theta = acos (rad / distance (p1,c1));
+    const double theta = acos (rad / magnitude (p1,c1));
     const double direc = atan2 (p1.y - c1.y, p1.x - c1.x); // direction angle of point P from C
 
     const double d1 = direc + theta, d2 = direc - theta;
@@ -89,7 +88,7 @@ vector<Point> interception (const Point &p1, const Point &p2, const Circle &c) {
 vector<Point> circles_intersection (const Circle &c1, const Circle &c2) { // intersection points of 2 circles
     const auto &[p1,r1] = c1;
     const auto &[p2,r2] = c2;
-    const double dist = distance (p1, p2);
+    const double dist = magnitude (p1, p2);
 
     if (dist <= r1 + r2 && dist >= fabs (r2 - r1)) {
         const double ex = (p2.x - p1.x) / dist;
@@ -119,14 +118,14 @@ vector<Point> hcenter (const Circle &c1, const Circle &c2) { // homothetic cente
 }
 
 bool collision (const Point &p1, const Point &p2, const vector<Circle> &graph) {
-    const double dist = distance (p1,p2);
+    const double dist = magnitude (p1,p2);
 
 		for (const Circle &c1 : graph) {
         if (inside_circle (p1, c1) || inside_circle (p2, c1)) {
            return true;
         }
         for (auto ip : interception (p1, p2, c1)) {
-            if ((distance (p1, ip) + distance (ip, p2) - dist) <= epsilon) {
+            if ((magnitude (p1, ip) + magnitude (ip, p2) - dist) <= epsilon) {
                 return true;
             }
         }
@@ -183,8 +182,8 @@ int identify (const Point &p1, const vector<Circle> &graph) {
 
     for (int i = 0; i < graph.size(); i++) {
         auto [p2,rad] = graph[i];
-        //cout << distance (graph[i].ctr, p) << " " << graph[i].r << "\n";
-        if (abs (distance (p1, p2) - rad) < epsilon) {
+        //cout << magnitude (graph[i].ctr, p) << " " << graph[i].r << "\n";
+        if (abs (magnitude (p1, p2) - rad) < epsilon) {
             return i;
         }
     }
@@ -235,7 +234,7 @@ void astar3 (Point start, Point exit, vector<Circle> graph) {
     priority_queue<vertex,vector<vertex>,comp> q1;
 
     for (auto p : find_tangent (start,graph)) {
-        q1.push (vertex {distance (start,p), {start,p}});
+        q1.push (vertex {magnitude (start,p), {start,p}});
         // printf ("{%f %f}", p.x, p.y);
     }
 
@@ -261,7 +260,7 @@ void astar3 (Point start, Point exit, vector<Circle> graph) {
         double minv = numeric_limits<double>::max();
 
         for (auto p2 : inter[id]) {                                      // search nearest intersection
-            double theta = asin (distance (p1,p2) * 0.5 / c1.r) * 2.0; // in radian
+            double theta = asin (magnitude (p1,p2) * 0.5 / c1.r) * 2.0; // in radian
             minv = min (minv, theta);
         }
 
@@ -271,12 +270,12 @@ void astar3 (Point start, Point exit, vector<Circle> graph) {
                 swap (nxe[0],nxe[1]);
             // printf ("{%f %f}", nxe[0].x, nxe[0].y);
             Point p2 = nxe[0];
-            double theta = asin (distance (p1,p2) * 0.5 / c1.r) * 2.0; // in radian
+            double theta = asin (magnitude (p1,p2) * 0.5 / c1.r) * 2.0; // in radian
 
             if (theta < minv) {
                 double arc = c1.r * theta;
-                double alt = arc + distance (p2,nxe[1]);
-                // 2 * M_PI * c1.r * theta / 360.0;  // double arc =  c1.r * 2.0 * asin (distance (p1,p2) * 0.5 / c1.r); // arc length
+                double alt = arc + magnitude (p2,nxe[1]);
+                // 2 * M_PI * c1.r * theta / 360.0;  // double arc =  c1.r * 2.0 * asin (magnitude (p1,p2) * 0.5 / c1.r); // arc length
                 vector<Point> route = path;
                 for (auto p : nxe) {
                     route.push_back(p);
@@ -310,7 +309,7 @@ int main () {
     for (int i = 0; i < size; i++) {
         if (i != id) {
             auto [c2,r2] = graph[i];
-            double dist = distance (c1,c2);
+            double dist = magnitude (c1,c2);
 
             if (r1 + r2 > dist) {
 
@@ -318,7 +317,7 @@ int main () {
         }
     }
     /*
-    const double hyp = r1, opp = distance (a,b) * 0.5;
+    const double hyp = r1, opp = magnitude (a,b) * 0.5;
 
     const double theta = asin (opp/hyp) * 2.0;
     const double arc = r1 * theta;
@@ -335,7 +334,7 @@ int main () {
 
 
     // double u = ​(B − A) * (B − A)​ / ​(C − A) * (B − A)​/​
-    // double u = ((p3.x - p1.x) * (p2.x - p1.x) + (p3.y - p1.y) * (p2.y - p1.y)) / distance (p1, p2);
+    // double u = ((p3.x - p1.x) * (p2.x - p1.x) + (p3.y - p1.y) * (p2.y - p1.y)) / magnitude (p1, p2);
     // double E = A + clamp (u, 0.0, 1.0) * (B - A);
     // E.x = p1.x + clamp (u, 0, 1) * (p2.x - p1.x);
     // E.y = p1.y + clamp (u, 0, 1) * (p2.y - p1.y);

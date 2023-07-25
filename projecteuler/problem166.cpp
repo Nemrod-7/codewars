@@ -206,7 +206,7 @@ int main () {
       int cnt = 0;
       cout << setw(2) << i << " => " ;
       // backtrack1(grid, base[i], 0, i, cnt);
-      backtrack2 (grid, 0, 0, i, cnt);
+      //backtrack2 (grid, 0, 0, i, cnt);
       // backtrack3 (grid, row, col, 0, 0, i, cnt);
 
       total += cnt;

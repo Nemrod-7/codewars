@@ -24,13 +24,14 @@ bool operator != (const Point &a, const Point &b) { return a.x != b.x || a.y != 
 bool operator < (const Point &a, const Point &b) { return make_pair (a.x,a.y) < make_pair (b.x,b.y); }
 
 double rnd (const double x) { return round (x * 1e8) / 1e8; }
-double distance (const Point &a, const Point &b) { /* magnitude of point AB */ return rnd (hypot (a.x - b.x, a.y - b.y)); }
-bool inside_circle (const Point &p, const Circle &c) { return distance (c.ctr, p) < c.r; }
-
 double sq (const double x) { return x * x; }
 double radian (const double deg) { return deg * M_PI / 180.0; }
+double degree (double radian) { return radian * 180.0 / M_PI; }
+double magnitude (const Point &a, const Point &b) { /* magnitude of point AB */ return rnd (hypot (a.x - b.x, a.y - b.y)); }
 double slope (const Point &a, const Point &b) { return (b.y - a.y) / (b.x - a.x); }
 double intercept (const Point &a, const double m) { return a.y - (m * a.x); }
+bool inside_circle (const Point &p, const Circle &c) { return magnitude (c.ctr, p) < c.r; }
+
 double quadratic (const double a, const double b, const double c) {
 
     const double delta = b * b - 4 * a * c;

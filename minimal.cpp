@@ -19,6 +19,7 @@ struct Circle {
     Circle(double cx, double cy, double r) : ctr(cx,cy), r(r) {}
 };
 
+const double pi = M_PI;
 /*
 
    trigonometry spreadsheet => theta is angle between hypothenus and adjacent size
@@ -38,23 +39,10 @@ struct Circle {
 
 */
 
-double degree (double rad) { return rad * 180.0 / M_PI; }
+double degree (double rad) { return rad * 180.0 / pi; }
 double rnd (const double x) { return round (x * 1e8) / 1e8; }
 double magnitude (const Point &a, const Point &b) { return hypot (a.x - b.x, a.y - b.y); }
 
-void problem510 (int n) {
-
-    for (double i = 0; i <= n; i++) {
-        double c1 = 1 / sqrt (i);
-        for (int j = i; j <= n; j++) {
-            double c2 = 1 / sqrt (j);
-            double c3 = c1 + c2;
-
-            cout << i << " " << j << " :: " << c3 << "\n";
-        }
-    }
-
-}
 int main () {
 
     Circle c1 ({0.0, 0.0}, 1.5);
@@ -62,21 +50,16 @@ int main () {
 
     Point a (0.0 , 1.5), b = {1.5, 0.0};
 
-    double perimeter = 2.0 * M_PI * r1;
+    double perimeter = 2.0 * pi * r1;
 
     const double hyp = r1, opp = magnitude (a,b) * 0.5;
 
     const double theta = asin (opp/hyp) * 2.0;
     const double arc = r1 * theta;
 
-    const double inv = r1 * (2 * M_PI - theta);
+    const double inv = r1 * (2 * pi - theta);
 
     double x2 = p1.x - (a.x - p1.x), y2 = p1.y - (a.y - p1.y); // inverse point
 
-
-
-    int n = 5;
-
-    problem510(n);
 
 }
