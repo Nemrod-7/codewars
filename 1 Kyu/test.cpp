@@ -1,19 +1,17 @@
 #include <iostream>
 #include "graph.hpp"
-#include "plot.hpp"
+// #include "plot.hpp"
 // using namespace std;
 const double ratio = 3.0 / 4.0;
 const double alpha = atan (ratio);
 
-double degree (double rad) { return rad * 180.0 / M_PI; }
-
 Point barycentre (const Point &p1, const Point &p2, const Point &p3) {
-  double x = (p1.x + p2.x + p3.x) / 3;
-  double y = (p1.y + p2.y + p3.y) / 3;
-  return {x, y};
+    double x = (p1.x + p2.x + p3.x) / 3;
+    double y = (p1.y + p2.y + p3.y) / 3;
+    return {x, y};
 }
 double distfromline (Point a, Point b, Point c) { // return distance of point C from line AB
-    double hyp = distance (a,c), line = distance (a,b);
+    double hyp = magnitude (a,c), line = magnitude (a,b);
     if (line == 0.0) return hyp;
     /*
     double da = a.y - b.y;
@@ -22,20 +20,6 @@ double distfromline (Point a, Point b, Point c) { // return distance of point C 
     // |da * c.x + db * c.y + dc| / sqrt (da^2 + db^2);
     */
     return abs ((b.x - a.x) * (a.y - c.y) - (a.x - c.x) * (b.y - a.y)) / line;
-}
-
-void mkcircle (Point p1, Point p2) {
-
-  const double rad = 0.5;
-  // double m = slope (p1,p2);
-  // double cosine = 1.0 / sqrt (1.0 + sq (m)), sine = m / sqrt (1.0 + sq (m));
-
-  for (double deg = 0; deg < 90; deg++) {
-      double alpha = radian(deg);
-  //    Point p2 = {p1.x + rad * cos (alpha), p1.y + rad * sin (alpha)};
-  //    node.push_back(p2);
-  }
-
 }
 
 void pythagorasTree (Point a, Point b, int cycle) {
@@ -56,36 +40,40 @@ void pythagorasTree (Point a, Point b, int cycle) {
       pythagorasTree (c, i1, cycle - 1);
   }
 }
+Point inversepoint (const Point &p1, const Point &p2) { // inverse point : p3 = p1 - p2
+    return {p1.x - (p2.x - p1.x), p1.y - (p2.y - p1.y)};
+}
 
 int main () {
 
-
-    /*
-
-    trigonometry spreadsheet => theta is angle between hypothenus and adjacent size
-    Soh cah toa
-
-    theta = asin (opp / hyp);
-    theta = acos (adj / hyp);
-    theta = atan (opp / adj);
-
-
-    Quadrant    Angle              sin   cos   tan
-  -------------------------------------------------
-    I           0    < α < π/2      +     +     +
-    II          π/2  < α < π        +     -     -
-    III         π    < α < 3π/2     -     -     +
-    IV          3π/2 < α < 2π       -     +     -
-
-    */
-
+    // vector<Point> border {{-5,-5},{-5,5},{5,5},{5,-5},{-5,-5}};
     cout << fixed << setprecision(3);
 
-    vector<Point> border {{-5,-5},{-5,5},{5,5},{5,-5},{-5,-5}};
+    Circle c1 ({0.0, 0.0}, 1.5);
+    auto [p1,r1] = c1;
 
-    cout << 180.0 / 360.0;
+    Point a (0.0 , 1.5), b = {1.5, 0.0}; // two points on the circle
+
+    double perimeter = 2.0 * M_PI * r1;
+
+    const double hyp = r1, opp = magnitude (a,b) * 0.5;
+
+    const double theta = asin (opp / hyp) * 2.0;
+    const double arc = r1 * theta;
+
+    const double inv = r1 * (2 * M_PI - theta);
+
+
+    cout << perimeter << " " << arc + inv;
+    // double m = slope (p1,p2);
+    // double cosine = 1.0 / sqrt (1.0 + sq (m)), sine = m / sqrt (1.0 + sq (m));
+    // Draw::range(5,5);
+    // Draw::circle (c1);
+    //
+    // Draw::dots({a,b});
+    // Draw::dots({{x2,y2}});
+    // // Draw::dots(ve);
     // Draw::img();
-
 
     cout << "\nend\n";
 }

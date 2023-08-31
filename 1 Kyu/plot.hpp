@@ -6,7 +6,6 @@ using namespace sciplot;
 
 class Draw {
     private :
-
         inline static Plot2D draw;
         static double maxp (const Point &p) { return max (abs (p.x), abs (p.y)); }
         static int nearest_point (const vector<Point> &curr, const Point &a) {
@@ -15,7 +14,7 @@ class Draw {
             int near;
 
             for (int i = 0; i < curr.size(); i++) {
-                dist = distance (a, curr[i]);
+                dist = magnitude (a, curr[i]);
 
                 if (a != curr[i] && dist < minv) {
                     near = i;
@@ -40,6 +39,10 @@ class Draw {
             canvas.size(800, 800);
             canvas.show();
         }
+        static void range (double x, double y) {
+            draw.xrange(-x, x);
+            draw.yrange(-y, y);
+        }
         static void rect (const vector<Point> &graph) {
             line ({graph[0], graph[1]});
             line ({graph[0], graph[2]});
@@ -63,7 +66,18 @@ class Draw {
             }
             draw.drawCurve (x, y);
         }
-
+        static void circle (const Circle & c1) {
+            const double angle = 5; // in degree
+            const Point ctr = c1.ctr;
+            const double rad = c1.r;
+            vector<double> x,y;
+            for (double deg = 0; deg < 360; deg += angle) {
+                const double theta = radian (deg);
+                double x2 = ctr.x + rad * cos(theta), y2 = ctr.y + rad * sin(theta);
+                x.push_back (x2), y.push_back (y2);
+            }
+            draw.drawCurveFilled(x, y).fillColor("yellow");
+        }
         static void graph (Point start, Point exit, vector<Circle> graph) {
           double  maxv = max (maxp (start), maxp (exit));
 

@@ -10,19 +10,14 @@ fn display (maze:&Vec<char>, size:usize) {
 fn is_inside (pos:i32, len:usize) -> bool { pos >= 0 && pos < len as i32 }
 fn is_free (pos:i32, maze:&Vec<char>) -> bool { maze[pos as usize] == '.' }
 fn path_finder(maze: &str) -> Option<u32> {
-
-    //print! ("{maze}\n");
     let mut maze:Vec<char> = maze.chars().collect();
     let size = maze.iter().position (|&x| x == '\n').unwrap() + 1;
     let exit = maze.len() - 1;
     let compass = [-1,1, 0-size as i32, size as i32];
 
     let mut Q = vec![(0,0)];
-    //print! ("\nfire {index} => {cell}\n");
-
 
     while let Some ((index, alt)) = Q.pop() {
-        //let cell = maze[index];
 
         if index == exit {
             return Some(alt);
