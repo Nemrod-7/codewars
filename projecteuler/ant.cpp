@@ -64,7 +64,7 @@ int ant_animation () {
 
         if (cycle % 104 == 0) {
             int cnt = count (grid);
-            
+
             if (seq.size()) {
                 int df = cnt - seq.back();
 
@@ -76,9 +76,9 @@ int ant_animation () {
 
 
 
-        //cout << "\033c";
-        //display (grid, p);
-        //std::this_thread::sleep_for(std::chrono::milliseconds(40));
+        // cout << "\033c";
+        // display (grid, p);
+        // std::this_thread::sleep_for(std::chrono::milliseconds(40));
     }
     return count (grid);
 }

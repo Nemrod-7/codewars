@@ -9,7 +9,7 @@
 using namespace std;
 
 static inline uint64_t divby3 (uint64_t x) { // fast division by 3
-  return (0xAAAAAAABULL * x) >> 33;
+    return (0xAAAAAAABULL * x) >> 33;
 }
 void mark (uint64_t prime[], int x) { prime[x >> 6] |= (1 << ((x >> 1) & 31)); }
 uint64_t int_sqrt (uint64_t s) {
@@ -51,7 +51,24 @@ string showsize (uint64_t size) { // human-readable size
     return "";
 }
 
-vector<uint64_t> primes2 (uint64_t limit) {
+vector<uint64_t> primes1 (uint64_t num) { // simple sieve
+    uint64_t half = (num >> 1) + 1;
+    std::vector<uint64_t> vs {2};
+    bool *sieve = new bool [half]();
+
+    for (uint64_t p = 3; p  <= num ; p += 2) {
+        if (sieve[p >> 1] == false) {
+            vs.push_back(p);
+            for (uint64_t i = p * p; i <= num; i += 2 * p) {
+                sieve[i >> 1] = true;
+            }
+        }
+    }
+
+    delete[] sieve;
+    return vs;
+}
+vector<uint64_t> primes2 (uint64_t limit) { // in progress
     uint64_t size = (limit - 2) >> 1;
     uint64_t lnx = 2 * size + 3;
     bool *sieve = new bool[size]();
@@ -69,6 +86,52 @@ vector<uint64_t> primes2 (uint64_t limit) {
         }
     }
 cout << format (cnt) << "\n";
+    delete[] sieve;
+    return vs;
+}
+vector<uint64_t> primes4 (uint64_t limit) { // SOE with wheel factorization => ex limit == 1e8 : memory usage ~31.71 MB / execution time ~0.80ms
+
+    uint64_t half = (limit / 2) + 1;
+    vector<uint64_t> vs {2,3};
+    bool *sieve = new bool[half]();
+
+    for (uint64_t i = 5, step = 2; i <= limit; i += step, step = 6 - step) {
+        if (sieve[i / 3] == false) {
+            vs.push_back(i);
+            for (uint64_t j = i * i, v = step; j <= limit; j += v * i, v = 6 - v) {
+                sieve[j / 3] = true;
+            }
+        }
+    }
+
+    delete[] sieve;
+    return vs;
+}
+vector<uint32_t> primes5 (uint64_t limit) { // SOE with wheel factorization => ex limit == 1e8 : memory usage ~3.97 MB / execution time ~0.80ms
+    const uint64_t hal = ((limit / 3) >> 6) ; // divide limit by 192
+    uint64_t *sieve = new uint64_t[hal + 1]();
+    vector<uint32_t> vs {2,3};
+
+    for (uint64_t i = 5, t = 2 ; i * i <= limit; i += t, t = 6 - t) { // wheel factorization : 2,4A
+        uint64_t p = 0xAAAAAAABULL * i >> 33;           // fast division by 3
+        uint64_t mask = sieve[p >> 6] >> (p &63) &1ULL; // x >> 6 => fast division by 64 / x &63 => fast modulus 64
+
+        if (mask == 0) {
+            for (uint64_t j = i * i, v = t; j <= limit; j += v * i, v = 6 - v) {
+                uint64_t p2 = 0xAAAAAAABULL * j >> 33;
+                sieve[p2 >> 6] |= 1ULL << (p2 &63);
+            }
+        }
+    }
+
+    for (uint32_t i = 5, t = 2; i <= limit; i += t, t = 6 - t) {
+        uint32_t p = 0xAAAAAAABULL * i >> 33;
+
+        if ((sieve[p >> 6] >> (p &63) &1ULL) == false) {
+            vs.push_back(i);
+        }
+    }
+
     delete[] sieve;
     return vs;
 }
@@ -207,6 +270,54 @@ vector<uint64_t> primes8 (uint64_t limit) { // segmented SOE with advance wheel 
     return vs;
 }
 
+void square (int limit) {
+  const uint64_t mod = 1000000007;
+
+
+  uint64_t half = (limit >> 1) + 1;
+  std::vector<uint64_t> vs;
+  bool *sieve = new bool [limit + 1]();
+  sieve[0] = sieve[1] = true;
+
+  for (uint64_t p = 2; p * p <= limit ; p++) {
+      if (sieve[p] == false) {
+          for (uint64_t i = p * p; i <= limit; i +=  p) {
+              sieve[i] = true;
+          }
+      }
+  }
+  uint64_t sum = 0;
+  vector<uint64_t> sqr;
+
+  for (int i = 1; i <= limit; i++) {
+      if (sieve[i] == false) {
+          sum += 1;
+          sqr.push_back(i*i);
+
+      } else {
+          uint64_t mxd = 1;
+
+          for (int j = 1; j * j <= i; j++) {
+              if (i % (j * j) == 0) {
+                  mxd = j;
+              }
+          }
+
+          // for (int j = 0; j < sqr.size() && sqr[j] <= i; j++) {
+          //     if (i % sqr[j] == 0) {
+                  // mxd = sqr[j];
+          //     }
+          // }
+
+          cout << i << " :: " << mxd << "\n";
+          sum += mxd;
+      }
+  }
+
+  cout << "S: " << sum;
+
+  delete[] sieve;
+}
 
 int main () {
 
@@ -222,117 +333,23 @@ int main () {
     };
 
     uint64_t wheel[48] = {2,4,2,4,6,2,6,4,2,4,6,6,2,6,4,2,6,4,6,8,4,2,4,2,4,8,6,4,6,2,4,6,2,6,6,4,2,4,6,2,6,4,2,4,2,10,2,10};
-    // reserve ceil(1.25506 * n / log(n));
 
-    uint32_t limit = 1000000000; // prime2 317.89MB, prime5 39.73MB
-    const uint64_t cs = 0xAAAAAAAB;
-    // cout << pr.size();
+    const double π = 3.1415926535897932384626;
+    uint64_t limit = 1e9; // 1e14
+    uint64_t sum = 0;
+    vector<uint64_t> sqr;
+    // Problem 745 : A008833 		Largest square dividing n
 
-    uint64_t lim = 50000000;
-    // primes7 (1e8);
+    square(100);
 
-
-    //cout << format (100000001) << "\n";
-    //primes8(1e9);
-
-    //
-    //    int32_t i32 = numeric_limits<int32_t>::max();
-    //    uint32_t u32 = numeric_limits<uint32_t>::max();
-    //    int64_t i64 = numeric_limits<int64_t>::max();
-    //    uint64_t u64 = numeric_limits<uint64_t>::max();
-    //
-    //    cout << i32 << " " << sqrt(i32) << "\n";
-    //    cout << u32 << " " << sqrt(u32) << "\n";
-    //
-    //    cout << i64 << " " << (int64_t) sqrt(i64) << "\n";
-    //    cout << u64 << " " << (uint64_t) sqrt(u64) << "\n";
-    //
     end = chrono::steady_clock::now (), elapsed = end - alpha;
     std::cout << "\nDuration " <<fixed<< elapsed.count()  << " ms" << std::endl;
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////
-vector<uint64_t> primes1 (uint64_t num) { // simple sieve
-    uint64_t half = (num >> 1) + 1;
-    std::vector<uint64_t> vs {2};
-    bool *sieve = new bool [half]();
 
-    for (uint64_t p = 3; p  <= num ; p += 2) {
-        if (sieve[p >> 1] == false) {
-            vs.push_back(p);
-            for (uint64_t i = p * p; i <= num; i += 2 * p) {
-                sieve[i >> 1] = true;
-            }
-        }
-    }
 
-    delete[] sieve;
-    return vs;
-}
-vector<uint64_t> primes4 (uint64_t lim) { // SOE with wheel factorization => ex limit == 1e8 : memory usage ~31.71 MB / execution time ~0.80ms
 
-    uint64_t half = (lim / 2) + 1;
-    vector<uint64_t> vs {2,3};
-    bool *sieve = new bool[half]();
-
-    for (uint64_t i = 5, step = 2; i <= lim; i += step, step = 6 - step) {
-        if (sieve[i / 3] == false) {
-            vs.push_back(i);
-            for (uint64_t j = i * i, v = step; j <= lim; j += v * i, v = 6 - v) {
-                sieve[j / 3] = true;
-            }
-        }
-    }
-
-    delete[] sieve;
-    return vs;
-}
-list<uint32_t> primes5 (int64_t limit) { // SOE with wheel factorization => ex limit == 1e8 : memory usage ~3.97 MB / execution time ~0.80ms
-    const uint64_t hal = ((limit / 3) >> 6) ; // divide limit by 192
-    uint64_t *sieve = new uint64_t[hal + 1]();
-    list<uint32_t> vs {2,3};
-
-    for (uint64_t i = 5, t = 2 ; i * i <= limit; i += t, t = 6 - t) { // wheel factorization : 2,4A
-        uint64_t p = 0xAAAAAAABULL * i >> 33;           // fast division by 3
-        uint64_t mask = sieve[p >> 6] >> (p &63) &1ULL; // x >> 6 => fast division by 64 / x &63 => fast modulus 64
-
-        if (mask == 0) {
-            for (uint64_t j = i * i, v = t; j <= limit; j += v * i, v = 6 - v) {
-                uint64_t p2 = 0xAAAAAAABULL * j >> 33;
-                sieve[p2 >> 6] |= 1ULL << (p2 &63);
-            }
-        }
-    }
-
-    for (uint32_t i = 5, t = 2; i <= limit; i += t, t = 6 - t) {
-        uint32_t p = 0xAAAAAAABULL * i >> 33;
-
-        if ((sieve[p >> 6] >> (p &63) &1ULL) == false) {
-            vs.push_back(i);
-        }
-    }
-
-    delete[] sieve;
-    return vs;
-}
-/*
-public static List<Integer> eratosthenes_optimized5(int n) {
-    if (n < 2) { return new ArrayList<Integer>(); }
-    char[] is_composite = new char[(n - 2 >> 5) + 1];
-    final int limit_i = n - 2 >> 1, limit_j = 2 * limit_i + 3;
-    // boolean[] is_composite = new boolean[n - 2 >> 1];
-    List<Integer> results = new ArrayList<>((int) Math.ceil(1.25506 * n / Math.log(n)));
-    results.add(2);
-    for (int i = 0; i < limit_i; ++i) {
-        if ((is_composite[i >> 4] & 1 << (i & 0xF)) == 0) {
-            results.add(2 * i + 3);
-            for (long j = 4L * i * i + 12L * i + 9; j < limit_j; j += 4 * i + 6) {
-                is_composite[(int) (j - 3L >> 5)] |= 1 << (j - 3L >> 1 & 0xF);
-            }
-        }
-    }
-  */
-
-vector<uint64_t> primes3 (uint64_t lim) {
+vector<uint64_t> primes3 (uint64_t lim) { // proto
     const uint64_t limit_i = (lim - 2) >> 1;
     const uint64_t limit_j = 2 * limit_i + 3;
     const uint64_t mem = ((lim - 2) >> 5) + 1;

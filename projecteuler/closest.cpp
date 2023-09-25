@@ -115,7 +115,7 @@ vector<point> closetp (vector<point> graph) {
 
     return stripdist (strip, close);
 }
-vector<point> closest_pair (vector<point> graph) {
+vector<point> closest_pair (vector<point> graph) { // problem 816 ?
 
     sort (graph.begin(), graph.end(), horiz);
     return closetp (graph);
