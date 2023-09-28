@@ -263,3 +263,19 @@ double resilience (int64_t d) {
     return phi (d) / static_cast<double> (d-1);
 }
 
+vector<vector<uint64_t>> triplet (uint64_t limit) {
+  uint64_t a, b, c = 0;
+  vector<vector<uint64_t>> tri;
+
+  for (uint64_t m = 2; c < limit; m++) {
+      for (uint64_t n = 1; n < m ; n++) {
+          a = m * m - n * n;
+          b = 2 * m * n;
+          c = m * m + n * n;
+          // cout << b << " " << b << " " << c << "\n" ;
+          tri.push_back({a,b,c});
+      }
+  }
+
+  return tri;
+}
