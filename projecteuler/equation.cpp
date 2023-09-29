@@ -14,7 +14,7 @@ bool is_square (double x) {
     int sq = sqrt(x);
     return (sq * sq) == (int) x;
 }
-pair<int, int> getFraction (const vector<int> &a) {
+pair<int,int> getFraction (const vector<int> &a) {
   int size = a.size();
   int num = a[size-1], den = 1;
 

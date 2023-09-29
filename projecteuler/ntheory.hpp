@@ -3,7 +3,10 @@
 #include <cmath>
 #include <cstdint>
 
-int gcd (int a, int b) { return b == 0 ? a : gcd (b, a % b); }
+uint64_t gcd (uint64_t a, uint64_t b) {
+    while (b) b ^= a ^= b ^= a %= b;
+    return a;
+}
 int lcm (int a, int b) { return a * gcd (a,b) / b; }
 
 bool issquare (int64_t num) {
@@ -259,22 +262,28 @@ int64_t radical (int64_t n) {
     if (n != 1) res *= n;
     return res;
 }
-double resilience (int64_t d) {
-    return phi (d) / static_cast<double> (d-1);
-}
+double resilience (int64_t d) { return phi (d) / static_cast<double> (d-1); }
 
-vector<vector<uint64_t>> triplet (uint64_t limit) {
-  uint64_t a, b, c = 0;
-  vector<vector<uint64_t>> tri;
+std::vector<std::vector<uint64_t>> triplet (uint64_t limit) {
+  uint64_t n = 1, m = 2;
+  uint64_t a, b, c;
+  std::vector<std::vector<uint64_t>> tri;
 
-  for (uint64_t m = 2; c < limit; m++) {
-      for (uint64_t n = 1; n < m ; n++) {
-          a = m * m - n * n;
-          b = 2 * m * n;
-          c = m * m + n * n;
-          // cout << b << " " << b << " " << c << "\n" ;
-          tri.push_back({a,b,c});
+  while ((m * m + 1) < limit) {
+      if (n >= m) n = m % 2, m = m + 1;
+      c = m * m + n * n;
+
+      if (c >= limit) {
+          n = m;
+      } else {
+          if (gcd(m,n) == 1) {
+            a = m * m - n * n;
+            b = 2 * m * n;
+            // cout << a << " " << b << " " << c << "\n" ;
+            tri.push_back({a,b,c});
+          }
       }
+      n += 2;
   }
 
   return tri;

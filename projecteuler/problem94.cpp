@@ -5,51 +5,21 @@
 
 #include <algorithm>
 #include <chrono>
+#include<bits/stdc++.h>
 
 using namespace std;
 // int gcd (int a, int b) { return b == 0 ? a : gcd (b, a % b); }
 uint64_t gcd (uint64_t a, uint64_t b) {
-    while(b) b ^= a ^= b ^= a %= b;
+    while (b) b ^= a ^= b ^= a %= b;
     return a;
 }
 
-void problem94 () {
-  uint64_t limit = 1000000000;
-  uint64_t side[2];
-
-  uint64_t mlim = limit / 3 + 2;
-  uint64_t sum = 0;
-  uint64_t a, b = 0, c = 0;
-
-  for (uint64_t m = 2; c < mlim; m++) {
-      for (uint64_t n = 1; n < m ; n++) {
-          side[0] = 2 * (m*m - n*n);
-          side[1] = 4 * m * n;
-          c = m * m + n * n;
-
-          for (int k = 0; k < 2; k++) {
-            if (c == side[k] - 1 || c == side[k] + 1) {
-              unsigned b = side[k];
-              uint64_t area = b / 2.0 * sqrt (c * c - (b * b) / 4.0);
-
-              sum += (2 * b + c);
-              cout << m << " " << n;
-              // cout << b << " " << c << " :: " << c * c ;
-              cout << endl;
-            }
-          }
-      }
-  }
-
-  // 518408346
-  cout << sum;
-}
 void trilet (uint64_t limit) {
   uint64_t a, b, c = 0;
 
-  for (uint64_t m = 2; c < limit; m++) {
+  for (uint64_t m = 2; (m * m + 1) < limit; m++) {
       for (uint64_t n = 1; n < m ; n++) {
-          if ((m + n) % 2 == 0 || gcd(m,n) != 1) continue;
+          if ((m + n) % 2 == 0 || gcd (m,n) != 1) continue; // primitive right triangle : cannot be scaled to another smaller right triangle
 
           a = m * m - n * n;
           b = 2 * m * n;
@@ -62,36 +32,33 @@ void trilet (uint64_t limit) {
 }
 vector<vector<uint64_t>> gentriple (uint64_t limit) { // primitive triplet generation
   uint64_t n = 1, m = 2;
-  uint64_t a, b, c = 1;
+  uint64_t a, b, c;
   vector<vector<uint64_t>> tri;
 
   while ((m * m + 1) < limit) {
+      // for (n = 1 + m % 2 ; n < m && n * n + m * m <= N ; n += 2) {}
       if (n >= m) n = m % 2, m = m + 1;
+
       c = m * m + n * n;
 
       if (c >= limit) {
           n = m;
-          continue;
+      } else {
+          if (gcd(m,n) == 1) {
+            // a = m * m - n * n;
+            // b = 2 * m * n;
+            // cout << a << " " << b << " " << c << "\n" ;
+          }
       }
-
-      if (gcd(m,n) == 1) {
-          a = m * m - n * n;
-          b = 2 * m * n;
-
-          if (a > b) swap(a,b);
-
-          tri.push_back({a,b,c});
-          // cout << a << " " << b << " " << c << "\n" ;
-      }
-
       n += 2;
   }
+
   return tri;
 }
 
 int main () {
 
-  chrono::steady_clock::time_point alpha = chrono::steady_clock::now (), end;
+    chrono::steady_clock::time_point alpha = chrono::steady_clock::now (), end;
 
   /*
            ^
@@ -102,41 +69,71 @@ int main () {
       /____|____\
         b/2  b/2
 
-    // pythagorean triplet with j > i
-    // int a = m*m - n*n, b = 2 * n * m, c = m*m + n*n;
+    pythagorean triplet with m > n, a = m * m - n * n, b = 2 * n * m, c = m * m + n * n;
 
-  */
-    uint64_t limit = 100000000;
+    Problem 540 : Counting Primitive Pythagorean Triples
+    Pythagorean triple  consists of three positive integers a, b and c satisfying a^2 + b^2 = c^2.
+    The triple is called primitive if a, b and c are relatively prime.
+    Let P(n) be the number of primitive Pythagorean triples with a <= b <= c <= n.
 
-    uint64_t per = 0, cnt = 0;
+    For example P(20) = 3, since there are three triples: (3,4,5), (5,12,13) and (8,15,17).
+
+    You are given that P(10^6) = 159139.
+    Find P(3141592653589793)
+
+    1^1 => 1
+    1^2 => 16
+    1^3 => 158
+    1^4 => 1593
+    1^5 => 15919
+    1^6 => 159139
+    1^7 => 1591579
+    1^8 => 15915492
+    1^9 => 159154994
+
+    1 16 158 1593 15919 159139 1591579 15915492
+    */
+
+    vector<int> fun = {1,16,158,1593,15919,159139,1591579,15915492};
+    int64_t limit = 100000000;
+    limit = 1e8;
+    // sqrt(limit - m * m);
+    const double pi = 3.14159265358979323846;
+
     uint64_t n = 1, m = 2;
-    uint64_t a, b, c = 1;
-
-    for (m = 2; per < limit; m++) {
-        for (n = 1; n < m ; n++) {
-            if ((m + n) % 2 == 0 || gcd(m,n) != 1) continue;
-
-            a = m * m - n * n;
-            b = 2 * m * n;
-            c = m * m + n * n;
-
-            per = a + b + c;
-            if (a == b) continue;
-            if (a > b) swap (a,b);
+    uint64_t a, b, c;
+    uint64_t cnt = 0;
 
 
-            if (c % (b - a) == 0) {
-                  // cout << cnt << " " << flush;
-                cnt++;
+    for (uint64_t m = 2; (m * m + 1) < limit; m++) {
+        uint64_t nd = min((uint64_t) sqrt(limit - m * m) + 1, m);
+        for (uint64_t n = 1 + m % 2; n < nd ; n += 2) {
+            // if (gcd (m,n) != 1) continue;
+            // c = m * m + n * n;
+            // if (c >= limit) break;
 
-                cout << a << " " << b << " " << c << "\n" ;
-            }
-
-            // cout << a << " " << b << " " << c << "\n" ;
+            cnt++;
         }
     }
 
-    cout << "\ncount => " << cnt;
+    // while ((m * m + 1) < limit) {
+    //     if (n >= m) n = m % 2, m++;
+    //     c = m * m + n * n;
+    //
+    //     if (c >= limit) {
+    //         n = m;
+    //     } else {
+    //         if (gcd (m,n) == 1) {
+    //             // a = m * m - n * n;
+    //             // b = 2 * m * n;
+    //             // cout << a << " " << b << " " << c << "\n" ;
+    //             cnt++;
+    //         }
+    //         n += 2;
+    //     }
+    // }
+
+    cout << "count => " << cnt;
 
     end = chrono::steady_clock::now ();
     std::chrono::duration<double> elapsed = end - alpha;
