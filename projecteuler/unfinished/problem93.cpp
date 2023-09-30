@@ -5,7 +5,6 @@
 
 using namespace std;
 
-
 void recurse (vector<int> set) {
     vector<char> op = {'+','-','*','/'};
 

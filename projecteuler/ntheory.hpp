@@ -163,8 +163,8 @@ std::string collatz (int64_t n) {
 }
 void collatz2 (int64_t a1) {
     const char alpha[3] = {'D','U','d'};
-    string seq;
-    cout << a1 << " => ";
+    std::string seq;
+    // std::cout << a1 << " => ";
     while (a1 > 1) {
         int mod = a1 % 3;
 
@@ -175,7 +175,7 @@ void collatz2 (int64_t a1) {
             default: break;
         }
         seq += alpha[mod];
-        cout << alpha[mod];
+        // std::cout << alpha[mod];
     }
 }
 
@@ -207,7 +207,7 @@ void farey (int n) {
         tmp = f1;
         f1 = f2;
         f2 = (frac) { f2.d * k - tmp.d, f2.n * k - tmp.n };
-        std::cout << f2.d << "/" << f2.n << " ";
+        // std::cout << f2.d << "/" << f2.n << " ";
     }
 }
 int64_t cntdiv (int64_t num) {

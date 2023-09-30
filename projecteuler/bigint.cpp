@@ -485,14 +485,14 @@ int main () {
             p.push_back(i);
         }
     }
-    
+
 
     for (int n = 0; n < p.size(); n++) {
         int64_t sq = p[n] * p[n];
         Bigint a (to_string(p[n] - 1)), b (to_string(p[n] + 1));
 
         Bigint c = power(a, n); // + power (b, n);
-//cout << sq << " ";
+        //cout << sq << " ";
        // int64_t a = pow (p[n] - 1, n), b = pow (p[n] + 1, n);
        // int64_t res = (a + b) % sq;
        // cout << a << "+" << b << "=" << a + b << " :: " << res << "\n";

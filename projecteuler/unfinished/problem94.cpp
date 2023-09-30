@@ -4,22 +4,19 @@
 #include <cstdint>
 
 #include <algorithm>
+
+#include <thread>
+#include <atomic>
 #include <chrono>
-#include<bits/stdc++.h>
 
 using namespace std;
-// int gcd (int a, int b) { return b == 0 ? a : gcd (b, a % b); }
-uint64_t gcd (uint64_t a, uint64_t b) {
-    while (b) b ^= a ^= b ^= a %= b;
-    return a;
-}
 
 void trilet (uint64_t limit) {
   uint64_t a, b, c = 0;
 
   for (uint64_t m = 2; (m * m + 1) < limit; m++) {
       for (uint64_t n = 1; n < m ; n++) {
-          if ((m + n) % 2 == 0 || gcd (m,n) != 1) continue; // primitive right triangle : cannot be scaled to another smaller right triangle
+          if ((m + n) % 2 == 0 || __gcd (m,n) != 1) continue; // primitive right triangle : cannot be scaled to another smaller right triangle
 
           a = m * m - n * n;
           b = 2 * m * n;
@@ -44,7 +41,7 @@ vector<vector<uint64_t>> gentriple (uint64_t limit) { // primitive triplet gener
       if (c >= limit) {
           n = m;
       } else {
-          if (gcd(m,n) == 1) {
+          if (__gcd(m,n) == 1) {
             // a = m * m - n * n;
             // b = 2 * m * n;
             // cout << a << " " << b << " " << c << "\n" ;
@@ -56,18 +53,45 @@ vector<vector<uint64_t>> gentriple (uint64_t limit) { // primitive triplet gener
   return tri;
 }
 
+void pythtriple (uint64_t fs, uint64_t nd, uint64_t limit, atomic<uint64_t> &cnt) {
+    uint64_t m, n;
+    uint64_t c;
+
+    for (m = fs; m < nd; m++) {
+        for (n = 1 + m& 1; n < m ; n += 2) {
+            if (__gcd (m,n) != 1) continue;
+            c = m * m + n * n;
+            if (c > limit) break;
+
+            cnt++;
+        }
+    }
+}
+
+uint64_t count_triples (uint64_t limit) {
+  const uint64_t nthread = thread::hardware_concurrency();
+  uint64_t mlim = sqrt(limit) + 1;
+  thread pool[nthread];
+  atomic<uint64_t> cnt = 0;
+
+  for (int i = 0; i < nthread; i++) {
+      uint64_t fs = (mlim / nthread) * i, nd = (mlim / nthread) * (i + 1);
+      pool[i] = thread (pythtriple, fs, nd, limit, std::ref (cnt));
+  }
+
+  for (thread &th : pool) {
+      if (th.joinable()) {
+          th.join();
+      }
+  }
+
+  return cnt;
+}
+
 int main () {
 
     chrono::steady_clock::time_point alpha = chrono::steady_clock::now (), end;
-
   /*
-           ^
-          /|\
-         / | \
-      c /  |h \ c
-       /   |   \
-      /____|____\
-        b/2  b/2
 
     pythagorean triplet with m > n, a = m * m - n * n, b = 2 * n * m, c = m * m + n * n;
 
@@ -91,47 +115,55 @@ int main () {
     1^8 => 15915492
     1^9 => 159154994
 
-    1 16 158 1593 15919 159139 1591579 15915492
+    x <<= 1; // Multiply x by 2
+    x >>= 1; // Divide x by 2
+    a ^= b ^= a ^= b // swap a and b
+
     */
+    // vector<int> fun = {1,16,158,1593,15919,159139,1591579,15915492};
 
-    vector<int> fun = {1,16,158,1593,15919,159139,1591579,15915492};
     int64_t limit = 100000000;
-    limit = 1e8;
-    // sqrt(limit - m * m);
-    const double pi = 3.14159265358979323846;
+    limit = 100;
 
-    uint64_t n = 1, m = 2;
-    uint64_t a, b, c;
-    uint64_t cnt = 0;
+    int mlim = sqrt(limit) + 1;
 
+    std::vector<int64_t> phi (mlim + 1);
 
-    for (uint64_t m = 2; (m * m + 1) < limit; m++) {
-        uint64_t nd = min((uint64_t) sqrt(limit - m * m) + 1, m);
-        for (uint64_t n = 1 + m % 2; n < nd ; n += 2) {
-            // if (gcd (m,n) != 1) continue;
-            // c = m * m + n * n;
-            // if (c >= limit) break;
+    for (int64_t i = 0; i <= mlim; i++) {
+        phi[i] = i;
+    }
 
-            cnt++;
+    for (int64_t i = 2; i <= mlim; i++) {
+        if (phi[i] == i) {
+            for (int64_t j = i; j <= mlim; j += i)
+                phi[j] -= phi[j] / i;
         }
     }
 
-    // while ((m * m + 1) < limit) {
-    //     if (n >= m) n = m % 2, m++;
-    //     c = m * m + n * n;
-    //
-    //     if (c >= limit) {
-    //         n = m;
-    //     } else {
-    //         if (gcd (m,n) == 1) {
-    //             // a = m * m - n * n;
-    //             // b = 2 * m * n;
-    //             // cout << a << " " << b << " " << c << "\n" ;
-    //             cnt++;
-    //         }
-    //         n += 2;
-    //     }
+    int64_t cnt = 0;
+    int64_t c;
+
+    for (int64_t m = 2; m < mlim; m++) {
+        for (int64_t n = 1 + m& 1; n < m ; n += 2) {
+            // if (phi[n] == phi[m]) {
+                if (__gcd (m,n) != 1) {
+                  cout << m << " " << n << endl;
+                    continue;
+                } else {
+                }
+
+                c = m * m + n * n;
+                if (c > limit) break;
+
+                cnt++;
+        }
+    }
+
+
+    // for (int64_t i = 0; i <= mlim; i++) {
+    //     cout << phi[i]<< " ";
     // }
+
 
     cout << "count => " << cnt;
 
