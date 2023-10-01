@@ -1,12 +1,13 @@
 #include <numeric>
 #include <algorithm>
+#include <numbers>
 
 #include "base.hpp"
 #include "ntheory.hpp"
 // stackoverflow d~a6fK~*>Z$~2Zy
 // projecteuler NEQ5xBztxeg43aP
 
-// -std=c++17 -Wall -Wextra -O2 -pthread -march=native
+// -std=c++20 -Wall -Wextra -O2 -pthread -march=native
 
 using u64 = unsigned long long int;
 const u64 mod = 1000000007;
@@ -65,6 +66,7 @@ int main () {
 
     Timer chrono;
     const u64 limit = 1e8;
+    constexpr auto π = std::numbers::pi;
 
     /*
     problem 754 - Product of Gauss Factorials
@@ -76,7 +78,8 @@ int main () {
     You are given G(10) = 23044331520000.
     Find G(10^8). Give your answer modulo 1000000007.
 
-    φ
+
+    φ ∏
     1 1
     1 1
     2 2
