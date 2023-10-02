@@ -53,6 +53,7 @@ std::vector<uint32_t> sieve (int64_t limit) { // SOE with wheel factorization =>
     delete[] sieve;
     return vs;
 }
+
 int64_t tau (int64_t n) { // count number of divisors
     int64_t total = 1;
 
