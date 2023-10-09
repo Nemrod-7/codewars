@@ -85,7 +85,7 @@ class Timer {
         void start () { alpha = std::chrono::steady_clock::now ();}
         void stop () { update();}
         void get_duration () {
-            std::cout << "\nExecution time : " << hformat (elapsed.count());
+            std::cout << "\nExecution time : " << hformat (elapsed.count()) << "\n";
         }
         bool running (double total) {
             update();

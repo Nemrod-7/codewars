@@ -1,31 +1,38 @@
+#pragma once
+
 #include <string>
 #include <vector>
 #include <cmath>
 #include <cstdint>
 
+using u64 = unsigned long int;
+using i64 = long int;
+
+const i64 mod = 1000000007;
+
 uint64_t gcd (uint64_t a, uint64_t b) {
     while (b) b ^= a ^= b ^= a %= b;
     return a;
 }
-int lcm (int a, int b) { return a * gcd (a,b) / b; }
+i64 lcm (i64 a, i64 b) { return a * gcd (a,b) / b; }
 
-bool issquare (int64_t num) {
-    int64_t sq = sqrt(num);
+bool issquare (i64 num) {
+    i64 sq = sqrt(num);
     return sq * sq == num;
 }
-bool is_prime (int64_t num) {
+bool is_prime (i64 num) {
 
     if (num < 2) return false;
     if (num < 4) return true;
     if (num % 2 == 0 || num % 3 == 0 ) return false;
 
-    for (int64_t i = 5; i * i <= num; i += 6)
+    for (i64 i = 5; i * i <= num; i += 6)
         if (num % i == 0 || num % (i + 2) == 0)
             return false;
 
     return true;
 }
-std::vector<uint32_t> sieve (int64_t limit) { // SOE with wheel factorization => ex limit == 1e8 : memory usage ~31.71 MB / execution time ~0.80ms
+std::vector<uint32_t> sieve (i64 limit) { // SOE with wheel factorization => ex limit == 1e8 : memory usage ~31.71 MB / execution time ~0.80ms
     const uint64_t hal = ((limit / 3) >> 6) ; // divide limit by 192
     uint64_t *sieve = new uint64_t[hal + 1]();
     std::vector<uint32_t> vs {2,3};
@@ -54,13 +61,13 @@ std::vector<uint32_t> sieve (int64_t limit) { // SOE with wheel factorization =>
     return vs;
 }
 
-int64_t tau (int64_t n) { // count number of divisors
-    int64_t total = 1;
+i64 tau (i64 n) { // count number of divisors
+    i64 total = 1;
 
     for (; (n & 1) == 0; n >>= 1) // Deal with powers of 2 first
         ++total;
 
-    for (int64_t p = 3; p * p <= n; p += 2) { // Odd prime factors up to the square root
+    for (i64 p = 3; p * p <= n; p += 2) { // Odd prime factors up to the square root
         int count = 1;
         for (; n % p == 0; n /= p)
             ++count;
@@ -70,14 +77,14 @@ int64_t tau (int64_t n) { // count number of divisors
     if (n > 1) total *= 2; // If n > 1 then it's prime
     return total;
 }
-int64_t sigma (int64_t num) { // sum of proper divisors
+i64 sigma (i64 num) { // sum of proper divisors
 
-    int64_t n = num, sum = 1;
-    int64_t p = 2;
+    i64 n = num, sum = 1;
+    i64 p = 2;
 
     while (p * p <= n && n > 1) {
         if (n % p == 0) {
-            int64_t j = p * p;
+            i64 j = p * p;
             n /= p;
 
             while (n % p == 0) {
@@ -94,9 +101,10 @@ int64_t sigma (int64_t num) { // sum of proper divisors
 
     return sum - num;
 }
-int64_t phi (int64_t num) { // totient funtion
 
-    int64_t res = num;
+i64 phi (i64 num) { // totient funtion
+
+    i64 res = num;
 
     if (num % 2 == 0) {
         while (num % 2 == 0)
@@ -105,7 +113,7 @@ int64_t phi (int64_t num) { // totient funtion
         res -= res / 2;
     }
 
-    for (int64_t pr = 3; pr * pr <= num; pr += 2) {
+    for (i64 pr = 3; pr * pr <= num; pr += 2) {
         if (num % pr == 0) {
             while (num % pr == 0)
                 num /= pr;
@@ -115,13 +123,14 @@ int64_t phi (int64_t num) { // totient funtion
     }
 
     return (num > 1) ? res - res / num : res;
+
 }
-int64_t phi2 (int64_t num, std::vector<int64_t> &prime) { // totient funtion
+i64 phi2 (i64 num, std::vector<i64> &prime) { // totient funtion
 
-    int64_t res = num;
-    int64_t *p = prime.data();
+    i64 res = num;
+    i64 *p = prime.data();
 
-    for (int64_t i = 0; p[i] * p[i] <= num; i++) {
+    for (i64 i = 0; p[i] * p[i] <= num; i++) {
         if (num % p[i] == 0) {
             while (num % p[i] == 0)
                 num /= p[i];
@@ -132,27 +141,58 @@ int64_t phi2 (int64_t num, std::vector<int64_t> &prime) { // totient funtion
 
     return (num > 1) ? res - res / num : res;
 }
-std::vector<int64_t> phi3 (int64_t lim) { // sieve of totient
-    std::vector<int64_t> sieve (lim + 1);
+std::vector<i64> totient (i64 lim) { // sieve of totient function
+    std::vector<i64> sieve (lim + 1);
 
-    for (int64_t i = 0; i <= lim; i++)
+    for (i64 i = 0; i <= lim; i++)
         sieve[i] = i;
 
-    for (int64_t i = 2; i <= lim; i++) {
+    for (i64 i = 2; i <= lim; i++) {
         if (sieve[i] == i) {
-            for (int64_t j = i; j <= lim; j += i)
+            for (i64 j = i; j <= lim; j += i)
                 sieve[j] -= sieve[j] / i;
         }
     }
     return sieve;
 }
+std::vector<short> moebius (i64 limit) { // sieve of mobius function
 
-int64_t fibonacci (int64_t n) {
+    i64 max = limit + 1;
+    std::vector<short> sieve (max);
+    sieve[1] = 1;
+    // μ(n) = −1 if n is a square-free positive integer with an odd number of prime factors.
+    // μ(n) = +1 if n is a square-free positive integer with an even number of prime factors.
+    // μ(n) =  0 if n has a squared prime factor.
+
+    for(i64 i = 2; i < max; i++) {
+        if (sieve[i]) continue;
+
+        for(i64 j = i; j < max; j += i)
+            sieve[j]++;
+    }
+
+    for(i64 i = 2; i * i < max; i++) {
+        if(sieve[i] != 1) continue;
+        i64 sqi = i * i;
+        for (i64 j = sqi; j < max; j += sqi)
+            sieve[j] = 0;
+    }
+
+    for(i64 i = 2; i < max; i++) {
+        if(!sieve[i]) continue;
+
+        sieve[i] = (sieve[i]&1) ? -1 : 1;
+    }
+
+    return sieve;
+}
+
+i64 fibonacci (i64 n) {
     if (n == 0) return 0;
     if (n == 1) return 1;
     return fibonacci (n - 1) + fibonacci (n - 2);
 }
-std::string collatz (int64_t n) {
+std::string collatz (i64 n) {
 
     std::string os;
 
@@ -162,7 +202,7 @@ std::string collatz (int64_t n) {
     }
     return os + "1";
 }
-void collatz2 (int64_t a1) {
+void collatz2 (i64 a1) {
     const char alpha[3] = {'D','U','d'};
     std::string seq;
     // std::cout << a1 << " => ";
@@ -180,14 +220,14 @@ void collatz2 (int64_t a1) {
     }
 }
 
-bool isPentagonal (int64_t N) {
+bool isPentagonal (i64 N) {
     double n = (1 + sqrt(24*N + 1))/6;
-    return (n - (int64_t) n) == 0;
+    return (n - (i64) n) == 0;
 }
-bool check_goldbach (int64_t num, const std::vector<int64_t> &prime) {
+bool check_goldbach (i64 num, const std::vector<i64> &prime) {
 
-    for (int64_t i = 0; i < prime.size() && prime[i] < num; i++) {
-        for (int64_t k = 1; k * k < num; k++) {
+    for (i64 i = 0; i < prime.size() && prime[i] < num; i++) {
+        for (i64 k = 1; k * k < num; k++) {
             if (prime[i] + 2 * (k * k) == num) {
                 //cout << prime[i] << " + 2 x " << k << "²";
                 return true;
@@ -211,7 +251,7 @@ void farey (int n) {
         // std::cout << f2.d << "/" << f2.n << " ";
     }
 }
-int64_t cntdiv (int64_t num) {
+i64 cntdiv (i64 num) {
     int np = 0;
 
     while ((num &1) == 0) {
@@ -220,7 +260,7 @@ int64_t cntdiv (int64_t num) {
         if (np > 2) return np;
     }
 
-    for (int64_t p = 3; p * p <= num; p += 2) {
+    for (i64 p = 3; p * p <= num; p += 2) {
         while (num % p == 0) {
             num /= p;
             np++;
@@ -231,9 +271,9 @@ int64_t cntdiv (int64_t num) {
     return np;
 }
 
-int64_t reverse (int64_t num) {
+i64 reverse (i64 num) {
 
-    int64_t rev = 0;
+    i64 rev = 0;
 
     do {
         rev = rev * 10 + num % 10;
@@ -241,19 +281,43 @@ int64_t reverse (int64_t num) {
 
     return rev;
 }
-bool palindrome (int64_t num) {
+bool palindrome (i64 num) {
     if (num % 10 == 0) return false;
     return reverse (num) == num;
 }
 
-int64_t radical (int64_t n) {
+i64 gaussian (i64 n) { // gauss factorial => product of all positive numbers <= n that are relatively prime to n -> OEIS A001783
+    auto prime = sieve(n);
+    const int size = (n >> 6) + 1;
+    i64 mul = 1, bmask[n];
+
+    std::fill_n (bmask, size, 0);
+
+    for (int i = 0; i < prime.size() && prime[i] < n; i++) {
+        if (n % prime[i] == 0) {
+            for (int j = prime[i]; j < n; j += prime[i]) {
+                bmask[j >> 6] |= 1UL << (j &63);
+            }
+        }
+    }
+
+    for (int i = 2; i < n; i++) {
+        if ((bmask[i >> 6] >> (i &63) &1UL) == 0) {
+            mul = (mul * i) % mod;
+        }
+    }
+
+    return mul;
+}
+
+i64 radical (i64 n) {
     // A007947 -> r(n) -> Π p|n
     if (is_prime (n)) return n;
 
-    int64_t res = (n % 2 == 0) ? 2 : 1;
+    i64 res = (n % 2 == 0) ? 2 : 1;
     while (n % 2 == 0) n /= 2;
 
-    for (int64_t i = 3; i * i <= n; i += 2) {
+    for (i64 i = 3; i * i <= n; i += 2) {
         if (n % i == 0) {
             res *= i;
             while (n % i == 0) n /= i;
@@ -263,29 +327,39 @@ int64_t radical (int64_t n) {
     if (n != 1) res *= n;
     return res;
 }
-double resilience (int64_t d) { return phi (d) / static_cast<double> (d-1); }
+double resilience (i64 d) { return phi (d) / static_cast<double> (d-1); }
 
+std::vector<i64> factorial (i64 limit) {
+    std::vector<i64> fact (limit + 1);
+    fact[0] = 1;
+
+    for (int i = 1; i <= limit; i++) {
+        fact[i] = (fact[i-1] * i) % mod;
+    }
+
+    return fact;
+}
 std::vector<std::vector<uint64_t>> triplet (uint64_t limit) {
-  uint64_t n = 1, m = 2;
-  uint64_t a, b, c;
-  std::vector<std::vector<uint64_t>> tri;
+    uint64_t n = 1, m = 2;
+    uint64_t a, b, c;
+    std::vector<std::vector<uint64_t>> tri;
 
-  while ((m * m + 1) < limit) {
-      if (n >= m) n = m % 2, m = m + 1;
-      c = m * m + n * n;
+    while ((m * m + 1) < limit) {
+        if (n >= m) n = m % 2, m = m + 1;
+        c = m * m + n * n;
 
-      if (c >= limit) {
-          n = m;
-      } else {
-          if (gcd(m,n) == 1) {
-            a = m * m - n * n;
-            b = 2 * m * n;
-            // cout << a << " " << b << " " << c << "\n" ;
-            tri.push_back({a,b,c});
-          }
-      }
-      n += 2;
-  }
+        if (c >= limit) {
+            n = m;
+        } else {
+            if (gcd(m,n) == 1) {
+                a = m * m - n * n;
+                b = 2 * m * n;
+                // cout << a << " " << b << " " << c << "\n" ;
+                tri.push_back({a,b,c});
+            }
+        }
+        n += 2;
+    }
 
-  return tri;
+    return tri;
 }
