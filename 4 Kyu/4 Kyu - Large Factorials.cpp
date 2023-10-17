@@ -14,17 +14,17 @@ string factorial(int n) {
     string  os;
 
     for (x = 2; x <= n; x++) {
-
-        for (i = 0; i < ndigits; ++i) {
+        for (i = 0; i < ndigits; i++) {
             tmp = buffer[i] * x;
             buffer[i] = (tmp + carry) % 10;
             carry = (tmp + carry) / 10;
 
-            if (i == ndigits - 1 && carry > 0)
+            if (i == (ndigits - 1) && (carry > 0))
                   ndigits++;
         }
+        cout << ndigits << ' ';
     }
-
+    // cout << ndigits << endl;
     while (ndigits-->0)
           os += buffer[ndigits] + '0';
 
@@ -33,6 +33,12 @@ string factorial(int n) {
 
 int main () {
 
-    cout << factorial (10);
+    string res = factorial (15);
+
+    // cout << res << endl;
+
+    for (int i = 1; i < 20; i++) {
+
+    }
 
 }
