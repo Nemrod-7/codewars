@@ -1,5 +1,5 @@
 [package]
-name = "simplify"
+name = "sim"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,5 +9,5 @@ edition = "2021"
 regex = { git = "https://github.com/rust-lang/regex.git" }
 
 [[bin]]
-name = "simplify"
-path = "simplify.rs"
+name = "sim"
+path = "polynomial.rs"

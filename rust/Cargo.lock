@@ -44,7 +44,7 @@ version = "0.8.2"
 source = "git+https://github.com/rust-lang/regex.git#837fd85e79fac2a4ea64030411b9a4a7b17dfa42"
 
 [[package]]
-name = "simplify"
+name = "sim"
 version = "0.1.0"
 dependencies = [
  "regex",
