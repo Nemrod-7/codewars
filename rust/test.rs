@@ -1,23 +1,26 @@
 
 #![allow(dead_code, unused)]
 
-use std::collections::LinkedList;
+use std::collections::HashMap;
 
 fn main() {
 
-    let mut list = LinkedList::from([1,2,3,4,5,6,7,8,9]);
-    let mut iter = list.iter();
-
-    if let Some(removed) = list.remove(1) {
-        println!("Removed element at index 1: {}", removed);
-    }
+    let mut list:HashMap<String, Vec<i32>> = HashMap::new();
     
-    while let Some(num) = iter.next() {
-        print!("{}", num);
+    let num = 1;
+
+    match list.get_mut("x") {
+        Some(x) => x.push(num),
+        None => { list.insert ("x".to_string(),vec![num]); } ,
     }
-    print!("\n");
 
     /*
-    */
+       for it in list {
+
+       print!("{:?}\n", it);
+       }
+
+       print!("\n");
+       */
     //show(getvar(t1));
 }
