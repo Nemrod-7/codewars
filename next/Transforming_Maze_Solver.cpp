@@ -6,7 +6,8 @@
 
 using namespace std;
 
-using point = pair<int,int>;
+//using point = pair<int,int>;
+struct point {int x,y; };
 
 struct vertex {
     int id;
@@ -24,9 +25,9 @@ class Display {
                     int cell = grid[y][x];
                     if (cell < 0) {
                         if (cell == -1) {
-                            os << "[" << setw(2) << " " << "]";
+                            os << "[" << setw(2) << "-" << "]";
                         } else {
-                            os << "[" << setw(2) << "x" << "]";
+                            os << "[" << setw(2) << "+" << "]";
                         }
                     } else {
                         os << "[" << setw(2) << cell << "]";
@@ -37,8 +38,8 @@ class Display {
 
             return os.str();
         }
-        static void point (const pair<int,int> &p) {
-            cout << "[" << p.first << "," << p.second << "]\n";
+        static void point (const point &p) {
+            cout << "[" << p.x << "," << p.y << "]\n";
         }
         static string grph (const vector<vector<vertex>> &graph) {
             stringstream os;
@@ -47,7 +48,7 @@ class Display {
             for (int y = 0; y < height; y++) {
                 for (int x = 0; x < width; x++) {
                     //os += to_string(graph[y][x].id);
-                    os << "[" << setw(2) << cell << "]";
+                    os << "[" << setw(2) << graph[y][x].id << "]";
                 }
                 os << '\n';
             }
@@ -56,9 +57,8 @@ class Display {
         }
 };
 
-point operator+ (const point& a, const point& b) {
-    return {a.first + b.first, a.second + b.second};
-}
+point operator + (const point& a, const point& b) { return {a.x + b.x, a.y + b.y}; }
+bool is_inside (point p, int width, int height) { return p.x >= 0 && p.y >= 0 && p.x < width && p.y < height; }
 
 const vector<string> alp= {"E","S","W","N"};
 const vector<point> dir {{1,0},{0,1},{-1,0},{0,-1}};
@@ -76,29 +76,13 @@ void rotate (vector<vector<int>> &grid) {
                 } else {
                     grid[y][x] -= (15 - grid[y][x]);
                 }
-                /*
-                   switch (cell) {
-                   case 8  : grid[y][x] = 1; break; // -7
-                   case 9  : grid[y][x] = 3; break; // -6
-                   case 10 : grid[y][x] = 5; break; // -5
-                   case 11 : grid[y][x] = 7; break; // -4
-                   case 12 : grid[y][x] = 9; break; // -3
-                   case 13 : grid[y][x] = 11; break;// -2
-                   case 14 : grid[y][x] = 13; break;// -1
-                   default : grid[y][x] *= 2; break;
-                   }
-                   */
             }
         }
     }
 }
-bool is_inside (point p, int width, int height) {
-    return p.first >= 0 && p.second >= 0 && p.first < width && p.second < height;
-}
 
 bool update (vector<vector<int>> &grid, vector<vector<vertex>> &graph, int cycle) {
-
-    int height = grid.size(), width = grid[0].size();
+    const int height = grid.size(), width = grid[0].size();
     vector<point> stack;
 
     for (int y = 0; y < graph.size(); y++) {
@@ -112,8 +96,8 @@ bool update (vector<vector<int>> &grid, vector<vector<vertex>> &graph, int cycle
 
     while (!stack.empty()) {
         point curr = stack.back();
-        auto [id, path] = graph[curr.second][curr.first];
-        int cell = grid[curr.second][curr.first];
+        auto [id, path] = graph[curr.y][curr.x];
+        int cell = grid[curr.y][curr.x];
         stack.pop_back();
 
         if (cell == -2)
@@ -124,9 +108,9 @@ bool update (vector<vector<int>> &grid, vector<vector<vertex>> &graph, int cycle
             point nxp = curr + dir[i];
 
             if (is_inside (nxp, width, height)) {
-                int next = grid[nxp.second][nxp.first];
+                int next = grid[nxp.y][nxp.x];
                 bool out = cell < 0 ? 0 : (cell >> i&1), door = next < 0 ? 0 : (next >> j&1);
-                vertex *vtx = &graph[nxp.second][nxp.first];
+                vertex *vtx = &graph[nxp.y][nxp.x];
 
                 if (out == 0 && door == 0 && vtx->id == 99) {
                     vtx->id = cycle + 1;
@@ -143,7 +127,7 @@ bool update (vector<vector<int>> &grid, vector<vector<vertex>> &graph, int cycle
 vector<string> maze_solver (vector<vector<int>> grid) {
 
     int cycle = 0;
-    int height = grid.size(), width = grid[0].size();
+    const int height = grid.size(), width = grid[0].size();
     point exit;
     vector<vector<vertex>> graph (height, vector<vertex> (width, {99}));
 
@@ -158,14 +142,12 @@ vector<string> maze_solver (vector<vector<int>> grid) {
 
     cout << Display::board(grid) << endl;
 
-    while (cycle < 9) {
+    while (cycle < 20) {
         if (update(grid, graph, cycle) == true) {
-
-            for (string &route : graph[exit.second][exit.first].path) {
-                //cout << "[" << route << "]";
-            }
-            return graph[exit.second][exit.first].path;
-            //break;
+            // for (string &route : graph[exit.y][exit.x].path) {
+            //     cout << "[" << route << "]";
+            // }
+            return graph[exit.y][exit.x].path;
         }
         rotate (grid);
         cycle++;
@@ -198,8 +180,58 @@ void dotest (pair<vector<vector<int>>, vector<string>> test) {
     }
 
 }
+
 int main () {
 
+    vector<vector<int>> grid;
+
+    grid = {
+        {  4,  2,  5,  4},
+        {  4, 15, 11,  1},
+        { -1,  9,  6,  8},
+        { 12,  7,  7, -2}};
+
+
+    for (int i = 0; i < 4; i++) {
+        cout << Display::board(grid) << endl;
+        rotate (grid);
+    }
+
+    cout << "\nend\n";
+    grid = {
+        { 9,12, 7, 6, 9, 1, 1,15, 5, 1},
+        {13, 5, 4, 9,11,13, 2,11, 4,13},
+        {14, 7, 5,10,15, 8, 5, 9, 7, 6},
+        { 5, 6, 5, 1,13,10, 9,10, 7,10},
+        {10, 4, 1, 9,13,15, 0, 4,11,15},
+        {-1, 5,11, 5,14, 7,13, 8, 9,12},
+        { 9,10, 0,13, 5, 3, 6, 9, 2, 3},
+        {14, 4, 4, 2,15, 9, 2,11, 2,-2}};
+
+    grid ={
+        { 7, 2,15,14,11, 5,13,13},
+        { 2, 5, 3,13,13,10, 4,14},
+        {-1,14, 7, 3,14, 8, 7,12},
+        {11, 5, 2, 7, 6, 5, 7,-2},
+        {14,13, 7, 5, 0, 4, 5,13} };
+
+    // maze_solver(grid);
+}
+////////////////////////////////////////////////////////////////////////////////
+void Test () {
+
+    /* rotation rule :
+       switch (cell) {
+       case 8  : grid[y][x] = 1; break; // -7
+       case 9  : grid[y][x] = 3; break; // -6
+       case 10 : grid[y][x] = 5; break; // -5
+       case 11 : grid[y][x] = 7; break; // -4
+       case 12 : grid[y][x] = 9; break; // -3
+       case 13 : grid[y][x] = 11; break;// -2
+       case 14 : grid[y][x] = 13; break;// -1
+       default : grid[y][x] *= 2; break;
+       }
+       */
     vector<vector<int>> grid = {
         {  4,  2,  5,  4},
         {  4, 15, 11,  1},
@@ -215,88 +247,4 @@ int main () {
             {{ {6,3,0,9,14,13,14}, {-1,14,9,11,15,14,15}, {2,15,0,12,6,15,-2}, {4,10,7,6,15,5,3}, {7,3,13,13,14,7,0} }, {}}
     };
 
-    dotest(test[1]);
-    // cout << res << "\n";
-    // cout << "██";
-
 }
-////////////////////////////////////////////////////////////////////////////////
-void Test () {
-
-    using grid = vector<vector<int>>;
-
-    pair<vector<vector<int>>, vector<string>> test;
-
-    test = {{ {4,2,5,4}, {4,15,11,1}, {-1,9,6,8}, {12,7,7,-2} }, {"NNE", "EE", "S", "SS"}};
-    test = {{ {6,3,10,4,11}, {8,10,4,8,5}, {-1,14,11,3,-2}, {15,3,4,14,15}, {14,7,15,5,5} }, {"", "", "E", "", "E", "NESE"}};
-    test = {{ {9,1,9,0,13,0}, {14,1,11,2,11,4}, {-1,2,11,0,0,15}, {4,3,9,6,3,-2} }, {"E", "SE", "", "E", "E", "E"}};
-    test = {{ {-1,6,12,15,11}, {8,7,15,7,10}, {13,7,13,15,-2}, {11,10,8,1,3}, {12,6,9,14,7} }, {}};
-    test = {{ {6,3,0,9,14,13,14}, {-1,14,9,11,15,14,15}, {2,15,0,12,6,15,-2}, {4,10,7,6,15,5,3}, {7,3,13,13,14,7,0} }, {}};
-
-}
-
-/*
-   vector<point> mkstack (vector<vector<vertex>> &graph) {
-   vector<point> stack;
-
-   for (int y = 0; y < graph.size(); y++) {
-   for (int x = 0; x < graph[0].size(); x++) {
-   if (graph[y][x].id) {
-   stack.push_back({x,y});
-//graph[y][x].id = 0;
-}
-}
-}
-return stack;
-}
-bool update (vector<vector<int>> &grid, vector<vector<vertex>> &graph, int move) {
-
-int height = grid.size(), width = grid[0].size();
-vector<point> stack ; //= mkstack (graph);
-
-for (int y = 0; y < graph.size(); y++) {
-for (int x = 0; x < graph[0].size(); x++) {
-if (graph[y][x].id == move) {
-stack.push_back({x,y});
-}
-}
-}
-
-while (!stack.empty()) {
-point curr = stack.back();
-auto [id, path] = graph[curr.second][curr.first];
-int cell = grid[curr.second][curr.first];
-stack.pop_back();
-
-if (cell == -2)
-return true;
-
-for (int i = 0; i < 4; i++) {
-int j = (i + 2) % 4;
-point nxp = curr + dir[i];
-
-if (is_inside (nxp, width, height)) {
-int next = grid[nxp.second][nxp.first];
-bool out = cell < 0 ? 0 : (cell >> i&1), door = next < 0 ? 0 : (next >> j&1);
-vertex *vtx = &graph[nxp.second][nxp.first];
-
-if (out == 0 && door == 0 && vtx->id == 9) {
-vector<string> route = path;
-
-if (route.size() == move) {
-route.push_back(alp[i]);
-} else {
-route[move] += alp[i];
-}
-
-vtx->id = move + 1;
-vtx->path = route;
-stack.push_back(nxp);
-}
-}
-}
-}
-
-return false;
-}
-*/

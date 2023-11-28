@@ -1,6 +1,7 @@
+#![allow(dead_code, unused)]
 
 mod flux_puzzle {
-
+///////////// display component/////////////////////
     fn showgraph (graph: &Vec<Vec<(usize,Vec<String>)>>) {
         print!("\n");
         for y in 0..graph.len() {
@@ -45,7 +46,6 @@ mod flux_puzzle {
         }
     }
     fn update (grid: &Vec<Vec<i8>>, graph: &mut Vec<Vec<(usize,Vec<String>)>>, cycle: usize) -> bool {
-
         let alp:Vec<&str> = vec!["E","S","W","N"];
         let dir:Vec<(i32,i32)> = vec![(1,0),(0,1),(-1,0),(0,-1)];
         let height = grid.len();
@@ -94,7 +94,6 @@ mod flux_puzzle {
         false
     }
     pub fn maze_solver (grid: &Vec<Vec<i8>>) -> Option<Vec<String>> {
-
         let height = grid.len();
         let width = grid[0].len();
         let mut exit = (0,0);
