@@ -45,6 +45,11 @@ int main () {
 
 block sanitize (const char *src, unsigned size) {
 
+
+    //int fst = src.find("<~");
+    //int scd = src.find("~>");
+    //:b2
+    //std::cout << src.substr(fst + 2, scd - fst - 2 );
     block actual;
     int next = 0, i = 0;
     char *out = new char[BUFFSIZE];

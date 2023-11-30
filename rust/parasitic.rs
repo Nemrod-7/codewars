@@ -1,65 +1,65 @@
+#![allow(dead_code, unused)]
 
-fn calc_special(last: u8, base: u8) -> String {
-    let N = 100000;
-    let mut num = 11;
-    let pow = base;
-    
-    /*
-    while num < N {
 
- //       if num > pow * base { pow * base }
-        let dig = num % base;
-        let trunc = num % base;
-        let nxt = dig * pow + trunc;
+fn parasitic (dig:u8, base:u8) -> String {
+    let mut num = vec![dig];
 
-        if dig > 0 {
-            if /* dig != nxt % base && */  dig * num == nxt {
-                print!("{num} * {mul} == {nxt}\n");
-            }
+    for _ in 0..23 {
+        let mut size = num.len() + 1;
+        let mut ans = vec![0; size + 1];
+
+        num = num.into_iter().rev().collect();
+
+        for j in 0..num.len() {
+            ans[j] += dig * num[j];
+            ans[j + 1] = ans[j + 1] + ans[j] / base;
+            ans[j] %= base;
         }
-        num += 1;
-    }
-*/
-    
-    "".to_string()
-}
 
+        while ans[size] == 0 { size -= 1 }
+        if ans[size] < dig { size -= 1 }
 
-fn parasitic (mul: u8, base: u8) -> String {
-    let N:usize = 1000000;
-    let mut pow:usize = 10;
-    let mut hist = Vec::new();
-    
-    hist.push(vec![1,2,3,4,5,6,7,8,9]);
+        num = (0..=size).rev().map(|x| ans[x]).collect();
+        num.push(dig);
 
-    while pow < N {
-        let mut line = Vec::new();
-
-        for part in hist.last().unwrap() {
-            for dig in 0..10 {
-                let fst = part * 10 + dig;
-                let scd = dig * pow + part;
-
-                if mul as usize * fst == scd {
-                    print!("{mul} * {fst} == {scd}\n");
-                }
-
-                line.push(fst);
-            }
+        if ans[size] == 0 {
+            let res = "1".to_string() + &num.iter().map(|x| (x + 0x30) as char ).collect::<String>();
+            // print!("res : [{}]\n", res);
+            return res;
         }
-        print!("\n");
 
-        hist.push(line);
-        pow *= 10;
+        // print!("{} {:?}\n", size, num);
     }
-
 
     "".to_string()
 }
-
 fn main() {
 
+/*
+1 => []
+2 => [105263157894736842]
+3 => [10689655172413793]
+4 => [102564]
+5 => []
+6 => [10677966]
+7 => [105797]
+8 => [1012658227848]
+9 => [10224719]
 
-    parasitic(4, 10);
+let dyson = vec![0, 1, 105263157894736842, 1034482758620689655172413793, 102564, 142857,
+ 	1016949152542372881355932203389830508474576271186440677966,
+ 	1014492753623188405797, 1012658227848,
+ 	10112359550561797752808988764044943820224719]
+*/
+
+    let dig = 3;
+    let base = 10;
+
+
+    for dig in 1..10 {
+
+        let res = parasitic(dig,10);
+        print!("{dig} => [{res}]\n");
+    }
 
 }
