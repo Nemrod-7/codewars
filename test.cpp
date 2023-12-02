@@ -1,22 +1,40 @@
-
 #include <iostream>
+
+using namespace std;
+
+
+enum type_e {zero, equals, unequal};
+
+struct testing {
+
+};
+
+struct result : public testing {
+    type_e type;
+
+    result Not () {
+        return *this;
+    }
+
+    template<typename T> 
+        result EqualTo(const T &x) {
+            if (type == zero) type = equals;
+
+            return *this;
+        }
+};
+
+
+
+
+result Is () { return {zero}; }
+
+
 
 int main () {
 
-    std::string src = "<~this is a test~>";
+    //fn res = Is().Not().EqualTo(3);
+    result expect = Is().Not().EqualTo(3.5);
 
-    //int fst = src.find("<~");
-    //int scd = src.find("~>");
-
-    int pow[5] = {1, 85, 7225, 614125, 52200625};
-    int pw = 1;
-
-    for (int i = 0; i < 5; i++) {
-        std::cout << pw << ' ';
-        pw *= 85;
-    }
-
-    //std::cout << scd - fst - 2;
-    //std::cout << src.substr(fst + 2, scd - fst - 2 );
 
 }
