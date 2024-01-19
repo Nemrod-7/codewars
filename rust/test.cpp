@@ -1,43 +1,26 @@
 #include <iostream>
+#include <vector>
+#include <numeric>
 
-namespace Assert {
-
-    enum {equal, noteq };
-
-    template<class T> 
-        struct result {
-            int type;
-            T x;
-        };
-
-    template<class T> 
-        void That(const T &actual, const result<T> &expected, const std::string &msg = "") {
-            bool success = true;
-
-            if (expected.type == equal && actual != expected.x) {
-                success = false;
-            } else if (expected.type == noteq && actual == expected.x) {
-                success = false;
-            }
-
-            if (success == false) {
-                if (msg == "") {
-                    std::cout << "\nactual   : " << actual;
-                    std::cout << "\nexpected : " << expected.x;
-                }
-            }
-        }
-}
-
-std::string ExtraMessage(const char *src) { return src; }
-template<class T> Assert::result<T> Equals (const T &x) { return { Assert::equal, x }; }
-
-int tower (int a, int b, int x) { return 0; }
-
+static long findMissing(std::vector<long> seq) {    
+    const size_t n = seq.size();
+    long fst = seq[0], nxt = seq[n - 1]; 
+    long total; 
+  
+    if ((fst + nxt) % 2 == 0) { 
+        total = (n + 1) * (fst + nxt) / 2; 
+    } else { 
+        total = (fst + nxt) * (n + 1) / 2; 
+    } 
+    
+    long sum = std::accumulate (seq.begin(), seq.end(), 0);
+  
+    return total - sum; 
+} 
+  
 int main () {
 
-    Assert::That(3, Equals(3));
-    Assert::That(tower(729, 0, 1), Equals(0), ExtraMessage(" Incorrect answer for base=729 exp=0 mod=1"));
+    std::cout << findMissing({-16,-25,-43});
 
 }
 
