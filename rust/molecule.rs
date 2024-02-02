@@ -1,28 +1,105 @@
 #![allow(dead_code, unused)]
 
+extern crate regex;
+use regex::Regex;
+
+use thiserror::Error;
 use std::collections::HashMap;
 
-fn tokenize(src: &str) -> Vec<(String,i32)> {
-    let mut vc:Vec<(String,i32)> = Vec::new();
+pub type Atom = (String, usize);
+pub type Molecule = Vec<Atom>;
 
-    for ch in src.chars() {
-        if ch.is_lowercase() {
-            if vc.len() > 0 {
-                let size = vc.len() - 1;
-                &vc[size].0.push(ch);
-            }
+#[derive(Error, Debug)]
+#[derive(Debug)]
+pub struct ParseError {
+    info: ErrType,
+}
+pub enum ErrType {
+    ValidErr,            //"Not a valid molecule",
+    MismatchErr,         //"Mismatched parenthesis",
+    NoErr,               //"ok"
+}
+impl std::fmt::Debug for ErrType {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match *self {
+            ErrType::ValidErr => write!(f, "{}", " Mismatched parenthesis"),
+            ErrType::MismatchErr => write!(f, "{}", "Not a valid molecule"),
+            _ => write!(f, "{}", "no_err"),
+        }
+    }
+}
+impl ParseError {
+    pub fn new(information: &str) -> ParseError {
+        ParseError { info: get_err_info(information) }
+    }
+}
+
+pub fn get_err_info(s: &str) -> ErrType {
+
+    let v = _vec(&s);
+    let sum_bracket_1 = &v.iter()
+        .filter(|x| ["(".to_string(), ")".to_string()].contains(&x))
+        .collect::<Vec<_>>()
+        .len();
+
+    let sum_bracket_2 = &v.iter()
+        .filter(|x| ["[".to_string(), "]".to_string()].contains(&x))
+        .collect::<Vec<_>>()
+        .len();
+    if sum_bracket_1 % 2 != 0 || sum_bracket_2 % 2 != 0 {
+        return ErrType::MismatchErr;
+    }
+    //pie problem
+    let mut c = 0;
+    let mut _chars: Vec<String> = Vec::new();
+    ("abcdefghijklmnopqrstuvwxyz")
+        .chars()
+        .into_iter()
+        .map(|x| {
+            _chars.push(x.to_string());
+            x
+        })
+        .collect::<Vec<_>>();
+
+    for e in v {
+        if _chars.contains(&(e.to_lowercase())) {
+            c += 1;
         } else {
-            vc.push((ch.to_string(), 1));
+            c = 0;
+        }
+        if c >= 3 {
+            return ErrType::ValidErr;
+        }
+    }
+    return ErrType::NoErr;
+}
+
+fn valid_braces (expr: &str) -> bool {
+    let mut brc = Vec::new();
+
+    for index in 0.. expr.len() {
+        let ch = expr.chars().nth(index).unwrap();
+
+        match ch {
+            '(' => brc.push(')'),
+            '[' => brc.push(']'),
+            '{' => brc.push('}'),
+            ')' => if Some(ch) != brc.pop() { return false },
+            '}' => if Some(ch) != brc.pop() { return false },
+            ']' => if Some(ch) != brc.pop() { return false },
+             _  => (),
         }
     }
 
-    vc
+    brc.is_empty()
 }
-
-fn parse_molecule (src: &str) -> Vec<(String, i32)> {
-
-    let mut code = src.chars().map(|x| (x.to_string(), 1)).collect::<Vec<_>>();
-    let mut map: HashMap<String,i32> = HashMap::new(); 
+fn tokenize2 (src: &str) -> Molecule {
+    let token = Regex::new("[\\(\\)\\[\\]]|[A-Z][a-z]?|[0-9]").unwrap();
+    token.captures_iter(src).map(|x| (x[0].to_string(), 1)).collect::<Vec<_>>()
+}
+pub fn parse_molecule (src: &str) -> Molecule {
+    let mut code = src.chars().map(|x| (x.to_string(), 1)).collect::<Vec<Atom>>();
+    let mut map: HashMap<String,usize> = HashMap::new();
     let mut index = 0;
 
     while index != code.len() {
@@ -67,7 +144,7 @@ fn parse_molecule (src: &str) -> Vec<(String, i32)> {
 
 fn main () {
 
-    let res = parse_molecule("K4[ON(SO3)2]2"); 
+    let res = parse_molecule("K4[ON(SO3)2]2");
 
     let src = "On4H5";
 
