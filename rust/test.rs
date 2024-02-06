@@ -9,7 +9,7 @@ use Element::*;
 struct Atom {
     id:usize,
     element:Element,
-    edge:Vec<usize>,
+    edge:Vec<(usize,usize)>,
 }
 struct Molecule {
     id:String,
@@ -23,29 +23,17 @@ impl Molecule {
     fn branch (&mut self, nxt: &[usize]) {
 
     }
-    fn bond (&mut self, )
 }
 fn main () {
 
     let nxt = [14,1,1];
 
-    let carbon = Atom{id: 0, element:C, edge:vec![] };
-    let hydrog = Atom{id: 0, element:H, edge:vec![] };
+    //let carbon = Atom{id: 0, element:C, edge:vec![] };
+    //let hydrog = Atom{id: 0, element:H, edge:vec![] };
 
-    let mut subs:Vec<Vec<Atom>> = Vec::new();
+    let mut subs:Vec<i32> = vec![1,2,3,4];
 
-     for _ in 0..nxt.len() {
-         let mut atoms:Vec<Atom> = (0..=src[i]).map(|ix| Atom {id:ix, element:C, edge:vec![]}).collect();
-
-    //     for j in 0..atoms.len() - 1 {
-    //         let a = j;
-    //         let b = j + 1;
-    //         let ida = atoms[a].id;
-    //         let idb = atoms[b].id;
-    //
-    //         atoms[a].edge.push(idb);
-    //         atoms[b].edge.push(ida);
-    //
-    //     }
-     }
+    let formula = subs.iter().map(|x| format!("{x}")).collect::<String>();
+    print!("{formula}\n");
 }
+
