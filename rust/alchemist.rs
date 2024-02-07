@@ -123,7 +123,7 @@ impl Molecule {
 
                 for i in 0..atom.edge.len() {
                     let pos = atom.edge[i];
-                    
+
                     let name = symbol.get(&self.subs[pos.1][pos.0].element).unwrap();
                     os += &format!("{}{},", name, pos.0);
                 }
@@ -216,10 +216,11 @@ impl Molecule {
         let symbol = HashMap::from([ ("H",H), ("B",B), ("C",C), ("N",N), ("O",O), ("F",F), ("Mg",Mg), ("P",P), ("S",S), ("Cl",Cl), ("Br",Br) ]);
 
         for it in nxt {
+            (0..self.subs[it.1].len()).filter(|x| self.subs[it.1][x].element == C).collect<Vec<_>>(); 
             let nc = it.0;
             let nb = it.1;
             let elt = it.2; // elt = *symbol.get(&it.2 as &str).unwrap();
-        } 
+        }
 
         Ok(0)
     }
@@ -363,4 +364,3 @@ fn construct () -> Result<usize,ChemError> {
 
     Ok(0)
 }
-
