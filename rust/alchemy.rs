@@ -65,7 +65,6 @@ impl Molecule {
         }
     }
 
-
     fn name (&self) -> ChemResult<String> {
 
         if self.subs.len() == 0 {
@@ -92,6 +91,7 @@ impl Molecule {
                     let pos = atom.edge[i];
 
                     let name = symbol(self.subs[pos.1][pos.0].element);
+
                     os += &format!("{}{},", name, pos.0);
                 }
                 if os.len() > 0 { os.pop(); }
@@ -112,12 +112,17 @@ impl Molecule {
 
         for i in 1..self.subs.len() {
             for j in 1..self.subs[i].len() {
-                let at = &self.subs[i][j];
-                if let Some(val) = freq.get_mut(&at.element) {
+                let atom = &self.subs[i][j];
+
+                /*
+                if let Some(val) = freq.get_mut(&atom.element) {
                     *val += 1;
                 } else {
-                    freq.insert(at.element.clone(), 1);
+                    freq.insert(atom.element.clone(), 1);
                 }
+                */
+                *freq.entry(atom.element).or_insert(1) += 1;
+            
             }
         }
 
@@ -136,7 +141,6 @@ impl Molecule {
         for i in 1..self.subs.len() {
             for j in 1..self.subs[i].len() {
                 let atom = &self.subs[i][j];
-
                 sum += mass(atom.element); 
             }
         }
@@ -144,7 +148,7 @@ impl Molecule {
         Ok(sum)
     }
 
-    fn bond (&mut self, bonds: &[(usize,usize,usize,usize)]) -> Result<usize,ChemError> {
+    fn bond (&mut self, bonds: &[(usize,usize,usize,usize)]) -> ChemResult<&mut Molecule> {
 
         /*
            (&mut m).bond(&[(c1, b1, c2, b2), ...])
@@ -170,9 +174,9 @@ impl Molecule {
 
         }
 
-        Ok(0)
+        Ok(self)
     }
-    fn branch (&mut self, list: &[usize]) -> Result<usize,ChemError> {
+    fn branch (&mut self, list: &[usize]) -> ChemResult<&mut Molecule> { 
 
         /*
            ie: (&mut m).branch(&[x, y, z, ...])
@@ -200,9 +204,9 @@ impl Molecule {
             &self.subs.push(section);
         }
 
-        Ok(0)
+        Ok(self)
     }
-    fn mutate (&mut self, list: &[(usize,usize,Element)]) -> Result<usize,ChemError> {
+    fn mutate (&mut self, list: &[(usize,usize,Element)]) -> ChemResult<&mut Molecule> {
         /*
            (&mut m).mutate(&[(nc, nb, elt), ...])
 
@@ -215,16 +219,19 @@ impl Molecule {
         if self.lock == true { return Err(ChemError::LockedMolecule); }
 
         for it in list {
-            let tablex = (0..self.subs[it.1].len()).filter(|x| self.subs[it.1][*x].element == C).collect::<Vec<_>>();
-            let atom = &mut self.subs[it.1][tablex[it.0]];
+            let carbon = (0..self.subs[it.1].len()).filter(|x| self.subs[it.1][*x].element == C).collect::<Vec<_>>();
+            let atom = &mut self.subs[it.1][carbon[it.0]];
 
             atom.element = it.2;
-            if atom.edge.len() > valence(atom.element) { return Err(ChemError::InvalidBond); }
+            
+            if atom.edge.len() > valence(atom.element) { 
+                return Err(ChemError::InvalidBond); 
+            }
         }
 
-        Ok(0)
+        Ok(self)
     }
-    fn add (&mut self, list: &[(usize,usize,String)]) -> Result<usize,ChemError> {
+    fn add (&mut self, list: &[(usize,usize,String)]) -> ChemResult<&mut Molecule> {
 
         /*
            (&mut m).add(&[(nc, nb, elt), ...])
@@ -241,20 +248,20 @@ impl Molecule {
         for it in list {
             let nb = self.subs[0].len();
             let next = Atom{id: nb, element: *symbol.get(&it.2 as &str).unwrap(), edge:vec![(it.0,it.1)]};
-            let tablex = (0..self.subs[it.1].len()).filter(|x| self.subs[it.1][*x].element == C).collect::<Vec<_>>();
-            let atom = &mut self.subs[it.1][tablex[it.0]];
+            let carbon = (0..self.subs[it.1].len()).filter(|x| self.subs[it.1][*x].element == C).collect::<Vec<_>>();
+            let atom = &mut self.subs[it.1][carbon[it.0]];
 
             if atom.edge.len() < valence(atom.element) {
-                self.subs[it.1][tablex[it.0]].edge.push((0,nb));
+                atom.edge.push((0,nb));
                 self.subs[0].push(next);
             } else {
                 return Err(ChemError::InvalidBond);
             }
         }
 
-        Ok(0)
+        Ok(self)
     }
-    fn add_chain (&mut self) -> Result<usize,ChemError> {
+    fn add_chain (&mut self) -> ChemResult<&mut Molecule> {
         /*
            (&mut m).add_chaining(nc, nb, &[elt, ...])
 
@@ -267,10 +274,10 @@ impl Molecule {
 
         if self.lock == true { return Err(ChemError::LockedMolecule); }
 
-        Ok(0)
+        Ok(self)
     }
 
-    fn close (&mut self) {
+    fn close (&mut self) -> ChemResult<&mut Molecule> {
         // Finalizes the molecule instance, adding missing hydrogens everywhere and locking the object (see behaviours part below).
         self.lock = true;
 
@@ -278,9 +285,12 @@ impl Molecule {
             for j in 1..self.subs[i].len() {
                 let val = valence(self.subs[i][j].element);
                 let cur = self.subs[i][j].edge.len();
-                let left = val - cur;
+                
+                if val < cur {
+                    return Err(ChemError::InvalidBond);
+                }
 
-                for _ in 0..left {
+                for _ in 0..(val - cur) {
                     let size = self.subs[i].len();
                     let hydrogen = Atom {id:size, element:H, edge:vec![]};
 
@@ -288,10 +298,11 @@ impl Molecule {
                     self.subs[i].push(hydrogen);
                 }
             }
-
         }
+
+        Ok(self)
     }
-    fn unlock(&mut self) {
+    fn unlock(&mut self) -> ChemResult<&mut Molecule> {
         self.lock = false;
         let mut index:Vec<usize> = Vec::new();
         let molecule = self.subs.clone();
@@ -314,6 +325,8 @@ impl Molecule {
         //     //Err(ChemError::EmptyMolecule);
         // }
 
+
+        Ok(self)
     }
 }
 
@@ -329,7 +342,6 @@ fn main () {
        The fields formula and molecular_weight or the associated getters (depending on your language) should throw an UnlockedMolecule exception if an user tries to access them while the molecule isn't locked
        (because we do not want the user to catch incomplete/invalid information).
        In a similar manner, attempts of modification of a molecule after it has been locked should throw a LockedMolecule exception (the closer method follows this behavior too).
-       */
 
     let dictionary:HashMap<Element,(&str, usize, f32)> = HashMap::from(
         [
@@ -342,6 +354,7 @@ fn main () {
     let mole = HashMap::from([(H, 1.0),(B, 10.8),(C,12.0),(N,14.0),(O,16.0),(F,19.0),(Mg,24.3),(P,31.0),(S,21.1),(Cl,35.5),(Br,80.0)]);
     let symbol = HashMap::from([(H,"H"),(B,"B"),(C,"C"),(N,"N"),(O,"O"),(F,"F"),(Mg,"Mg"),(P,"P"),(S,"S"),(Cl,"Cl"),(Br,"Br")]);
     let valence = HashMap::from([(H, 1),(B, 3),(C,4),(N,3),(O,2),(F,1),(Mg,2),(P,3),(S,2),(Cl,1),(Br,1)]);
+    */
 
     let ref mut biotin = Molecule::from("biotin");
 
