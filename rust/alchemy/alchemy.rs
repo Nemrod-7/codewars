@@ -30,8 +30,8 @@ fn mass (atom: Element) -> f32 { DATA.iter().find(|x| x.0 == atom).unwrap().1.2 
 ///////////////////////////////////////////////////////////////////
 #[derive(Hash, Clone)]
 struct Atom {
-    id:usize,
-    element:Element,
+    pub id:usize,
+    pub element:Element,
     edge:Vec<(usize,usize)>,
 }
 
@@ -43,10 +43,22 @@ impl PartialEq for Atom {
 
 impl Eq for Atom { }
 
-struct Molecule {
+impl std::fmt::Display for Atom {
+    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        todo!()
+    }
+}
+
+pub struct Molecule {
     id:String,
     subs:Vec<Vec<Atom>>,
+    atoms: Vec<Atom>,
     lock:bool,
+}
+impl From<&'static str> for Molecule {
+    fn from(_value: &'static str) -> Self {
+        todo!()
+    }
 }
 
 impl Molecule {
@@ -54,6 +66,7 @@ impl Molecule {
         Molecule {
             id:String::new(),
             subs:vec![vec![]],
+            atoms:vec![],
             lock:false,
         }
     }
@@ -61,47 +74,41 @@ impl Molecule {
         Molecule {
             id:src.to_string(),
             subs:vec![vec![]],
+            atoms:vec![],
             lock:false,
         }
     }
+    fn getcarbon (&mut self, nxt:&(usize, usize, Element)) -> &mut Atom {
+        let arm = &mut self.subs[nxt.1];
+        let carbon = (0..arm.len()).filter(|x| arm[*x].element == C).collect::<Vec<_>>();
 
-    fn name (&self) -> ChemResult<String> {
-
-        if self.subs.len() == 0 {
-            return Err(ChemError::EmptyMolecule);
-        }
-
-        Ok (self.id.to_string())
+        &mut arm[carbon[nxt.0]]
     }
-    fn atoms(&self) -> ChemResult<String> {
-        if self.subs.len() == 0 { return Err(ChemError::EmptyMolecule); }
-        if self.lock == false { return Err(ChemError::UnlockedMolecule); }
+    fn name (&self) -> &str { &self.id }
 
-        let mut os = String::new();
+    fn atoms(&self) -> Vec<&Atom> {
+        let mut atm = Vec::new();
 
         for i in 1..self.subs.len() {
             for j in 1..self.subs[i].len() {
                 let atom = &self.subs[i][j];
+                //let name = symbol(atom.element);
+                //if atom.element == H { continue } 
+                //os += &format!("Atom({}.{}:", name, atom.id);
 
-                if atom.element == H { continue } 
-                let name = symbol(atom.element);
-                os += &format!("Atom({}.{}:", name, atom.id);
-
-                for i in 0..atom.edge.len() {
-                    let pos = atom.edge[i];
-
+                for k in 0..atom.edge.len() {
+                    let pos = atom.edge[k];
                     let name = symbol(self.subs[pos.1][pos.0].element);
-
-                    os += &format!("{}{},", name, pos.0);
+                    //os += &format!("{}{},", name, pos.0);
                 }
-                if os.len() > 0 { os.pop(); }
-                os += &")\n";
+                //if os.len() > 0 { os.pop(); }
+                //os += &")\n";
+                atm.push(atom);
             }
-            os += &"\n";
+            //os += &"\n";
         }
 
-        print!("{os}");
-        Ok(os)
+        atm
     }
     fn formula (&self) -> ChemResult<String> {
         if self.subs.len() == 0 { return Err(ChemError::EmptyMolecule); }
@@ -114,21 +121,12 @@ impl Molecule {
             for j in 1..self.subs[i].len() {
                 let atom = &self.subs[i][j];
 
-                /*
-                if let Some(val) = freq.get_mut(&atom.element) {
-                    *val += 1;
-                } else {
-                    freq.insert(atom.element.clone(), 1);
-                }
-                */
-                *freq.entry(atom.element).or_insert(1) += 1;
-            
+                 *freq.entry(atom.element).or_insert(1) += 1;
             }
         }
 
-
         let mut freq = freq.iter().collect::<Vec<_>>();
-        freq.sort_by(|a,b| a.1.cmp(b.1));
+        freq.sort_by(|a,b| a.0.cmp(b.0));
 
         Ok (freq.iter().map(|atom| format!("{}{}", symbol(*atom.0), atom.1)).collect::<String>())
     }
@@ -148,7 +146,7 @@ impl Molecule {
         Ok(sum)
     }
 
-    fn bond (&mut self, bonds: &[(usize,usize,usize,usize)]) -> ChemResult<&mut Molecule> {
+    fn bond (&mut self, bonds: &[(usize,usize,usize,usize)]) -> ChemResult<&mut Self> {
 
         /*
            (&mut m).bond(&[(c1, b1, c2, b2), ...])
@@ -166,17 +164,13 @@ impl Molecule {
         if self.lock == true { return Err(ChemError::LockedMolecule); }
 
         for it in bonds {
-            let nc1 = (0..self.subs[it.1].len()).filter(|x| self.subs[it.1][*x].element == C).collect::<Vec<_>>();
-            let nc2 = (0..self.subs[it.3].len()).filter(|x| self.subs[it.3][*x].element == C).collect::<Vec<_>>();
-
-            self.subs[it.1][nc1[it.0]].edge.push((it.2,it.3));
-            self.subs[it.3][nc2[it.2]].edge.push((it.0,it.1));
-
+            self.getcarbon(&(it.0,it.1,H)).edge.push((it.2,it.3));
+            self.getcarbon(&(it.2,it.3,H)).edge.push((it.0,it.1));
         }
 
         Ok(self)
     }
-    fn branch (&mut self, list: &[usize]) -> ChemResult<&mut Molecule> { 
+    fn branch (&mut self, list: &[usize]) -> ChemResult<&mut Self> { 
 
         /*
            ie: (&mut m).branch(&[x, y, z, ...])
@@ -192,21 +186,22 @@ impl Molecule {
         if self.lock == true { return Err(ChemError::LockedMolecule); }
 
         for i in 0..list.len() {
-            let nc = self.subs.len();
+            let nb = self.subs.len();
+            //let mut section = vec![Atom{id: 0, element:C, edge: vec![]}; list[i] + 1];
             let mut section:Vec<Atom> = (0..=list[i]).map(|ix| Atom{id: ix, element:C, edge: vec![]}).collect();
 
             for j in 1..list[i] {
                 let a = j;
                 let b = j + 1;
-                section[a].edge.push((b, nc));
-                section[b].edge.push((a, nc));
+                section[a].edge.push((b, nb));
+                section[b].edge.push((a, nb));
             }
             &self.subs.push(section);
         }
 
         Ok(self)
     }
-    fn mutate (&mut self, list: &[(usize,usize,Element)]) -> ChemResult<&mut Molecule> {
+    fn mutate (&mut self, list: &[(usize,usize,Element)]) -> ChemResult<&mut Self> {
         /*
            (&mut m).mutate(&[(nc, nb, elt), ...])
 
@@ -219,9 +214,7 @@ impl Molecule {
         if self.lock == true { return Err(ChemError::LockedMolecule); }
 
         for it in list {
-            let carbon = (0..self.subs[it.1].len()).filter(|x| self.subs[it.1][*x].element == C).collect::<Vec<_>>();
-            let atom = &mut self.subs[it.1][carbon[it.0]];
-
+            let atom = self.getcarbon(it);
             atom.element = it.2;
             
             if atom.edge.len() > valence(atom.element) { 
@@ -231,7 +224,7 @@ impl Molecule {
 
         Ok(self)
     }
-    fn add (&mut self, list: &[(usize,usize,String)]) -> ChemResult<&mut Molecule> {
+    fn add (&mut self, list: &[(usize,usize,Element)]) -> ChemResult<&mut Self> {
 
         /*
            (&mut m).add(&[(nc, nb, elt), ...])
@@ -242,18 +235,15 @@ impl Molecule {
            Atoms added this way are not considered as being part of the branch they are bounded to and aren't considered a new branch of the molecule.
            */
         if self.lock == true { return Err(ChemError::LockedMolecule); }
-
-        let symbol = HashMap::from([("H",H),("B",B),("C",C),("N",N),("O",O),("F",F),("Mg",Mg),("P",P),("S",S),("Cl",Cl),("Br",Br)]);
+        //let symbol = HashMap::from([("H",H),("B",B),("C",C),("N",N),("O",O),("F",F),("Mg",Mg),("P",P),("S",S),("Cl",Cl),("Br",Br)]);
 
         for it in list {
             let nb = self.subs[0].len();
-            let next = Atom{id: nb, element: *symbol.get(&it.2 as &str).unwrap(), edge:vec![(it.0,it.1)]};
-            let carbon = (0..self.subs[it.1].len()).filter(|x| self.subs[it.1][*x].element == C).collect::<Vec<_>>();
-            let atom = &mut self.subs[it.1][carbon[it.0]];
+            let atom = self.getcarbon(it);
 
             if atom.edge.len() < valence(atom.element) {
-                atom.edge.push((0,nb));
-                self.subs[0].push(next);
+                atom.edge.push((0, nb));
+                self.subs[0].push(Atom{id: nb, element: it.2, edge:vec![(it.0,it.1)]});
             } else {
                 return Err(ChemError::InvalidBond);
             }
@@ -261,7 +251,7 @@ impl Molecule {
 
         Ok(self)
     }
-    fn add_chain (&mut self) -> ChemResult<&mut Molecule> {
+    fn add_chain (&mut self) -> ChemResult<&mut Self> {
         /*
            (&mut m).add_chaining(nc, nb, &[elt, ...])
 
@@ -277,7 +267,7 @@ impl Molecule {
         Ok(self)
     }
 
-    fn close (&mut self) -> ChemResult<&mut Molecule> {
+    fn close (&mut self) -> ChemResult<&mut Self> {
         // Finalizes the molecule instance, adding missing hydrogens everywhere and locking the object (see behaviours part below).
         self.lock = true;
 
@@ -302,11 +292,32 @@ impl Molecule {
 
         Ok(self)
     }
-    fn unlock(&mut self) -> ChemResult<&mut Molecule> {
-        self.lock = false;
-        let mut index:Vec<usize> = Vec::new();
-        let molecule = self.subs.clone();
+    fn rebuild (&mut self) {
+        let mut build:Vec<Vec<Atom>> = Vec::new();
+        let prev = &self.subs;
 
+        let mut build:Vec<Vec<Atom>> = Vec::new();
+
+        for i in 0..prev.len() {
+            let mut line:Vec<Atom> = Vec::new(); 
+
+            for j in 0..prev[i].len() {
+                let atom = &prev[i][j];
+
+                if atom.element != H {
+                    let edg = atom.edge.clone();
+                    let next = Atom {id: atom.id, element:atom.element, edge: edg.into_iter().filter(|x| prev[x.1][x.0].element != H).collect::<Vec<_>>() };
+                    line.push(next);
+                }
+            }
+            build.push(line);
+        } 
+        self.subs = build;
+    }
+    fn unlock(&mut self) -> ChemResult<&mut Self> {
+        self.lock = false;
+        let mut build:Vec<Vec<Atom>> = Vec::new();
+        let prev = &self.subs;
         /*
            Makes the molecule mutable again.
            Hydrogens should be removed, as well as any empty branch you might encounter during the process.
@@ -315,16 +326,39 @@ impl Molecule {
            After removing hydrogens, if you end up with some atoms that aren't connected in any way to the branches of the unlocked molecule, keep them anyway in the Molecule instance (for the sake of simplicity...).
            Once unlocked, the molecule has to be modifiable again, in any manner.
            */
-        // for atom in &mut self.subs {
-        //     atom.edge.retain(|&id| branch[id].element == Element::H);
-        // }
 
-        // self.subs.retain(|x| x.element == Element::H);
+        // remove hydrogen
+        for i in 0..prev.len() {
+            let mut line = vec![prev[i][0].clone()];
 
-        // if self.subs.len() == 0 {
-        //     //Err(ChemError::EmptyMolecule);
-        // }
+            for j in 1..prev[i].len() {
+                let atom = &prev[i][j];
 
+                if atom.element != H {
+                    let edge = atom.edge.clone().into_iter().filter(|x| prev[x.1][x.0].element != H).collect::<Vec<_>>();
+                    let next = Atom { id: atom.id, element:atom.element, edge:edge.clone(), };
+
+                    if edge.len() == 0 && i > 0 {
+                        build[0].push(next);
+                    } else {
+                        line.push(next);
+                    }
+
+                }
+            }
+            build.push(line);
+        }
+
+        self.subs = build;
+        // make atoms id to be continuous
+        // todo!
+
+
+        self.subs.retain(|x| x.len() == 1); // remove empty branches
+
+        if self.subs.len() == 0 {
+            return Err(ChemError::EmptyMolecule);
+        }
 
         Ok(self)
     }
@@ -343,28 +377,24 @@ fn main () {
        (because we do not want the user to catch incomplete/invalid information).
        In a similar manner, attempts of modification of a molecule after it has been locked should throw a LockedMolecule exception (the closer method follows this behavior too).
 
-    let dictionary:HashMap<Element,(&str, usize, f32)> = HashMap::from(
-        [
-        (Element::H,("H",1,1.0)), (Element::B,("B",3,10.8)), (Element::C,("C",4,12.0)), (Element::N,("N",3,14.0)),
-        (Element::O,("O",2,16.0)), (Element::F,("F",1,19.0)), (Element::Mg,("Mg",2,24.3)), (Element::P,("P",3,31.0)),
-        (Element::S,("S",2,21.1)), (Element::Cl,("Cl",1,35.5)), (Element::Br,("Br",1,80.0))
-        ]);
+*/
+
+    let mut mol = Molecule::from("methane");
+    mol.branch(&[1]);
+    mol.close();
+
+    let atoms = mol.atoms();
+
+    for i in 0..atoms.len() {
+        let name = symbol(atoms[i].element);
+
+        print!("Atom({}.{}: ", name, atoms[i].id);
 
 
-    let mole = HashMap::from([(H, 1.0),(B, 10.8),(C,12.0),(N,14.0),(O,16.0),(F,19.0),(Mg,24.3),(P,31.0),(S,21.1),(Cl,35.5),(Br,80.0)]);
-    let symbol = HashMap::from([(H,"H"),(B,"B"),(C,"C"),(N,"N"),(O,"O"),(F,"F"),(Mg,"Mg"),(P,"P"),(S,"S"),(Cl,"Cl"),(Br,"Br")]);
-    let valence = HashMap::from([(H, 1),(B, 3),(C,4),(N,3),(O,2),(F,1),(Mg,2),(P,3),(S,2),(Cl,1),(Br,1)]);
-    */
 
-    let ref mut biotin = Molecule::from("biotin");
-
-    biotin.branch(&[14,1,1]);
-    //biotin.bond(&[(2,1,1,2),  (2,1,1,2), (10,1,1,3), (10,1,1,3), (8,1,12,1), (7,1,14,1)]);
-    //biotin.mutate(&[(1,1,O),  (1,2,O), (1,3,O), (11,1,N), (9,1,N), (14,1,S)]);
-    biotin.close();
-
-    biotin.atoms();
-    //print!("{:?} {:?}\n", biotin.name(), biotin.formula());
+        print!(")\n");
+    }
+    //print!("{:?}\n", atoms);
 
 
 }
