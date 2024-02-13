@@ -1,0 +1,237 @@
+Overview:
+
+The idea of this kata is to create two classes, Molecule and Atom, that will allow you, using a set of methods, to build numerical equivalents of organic compounds and to restitute some of their simplest properties (molecular weight and raw formula, for instance). You will need to implement some Exception classes in the process (note for Java users: all exceptions will be unchecked and extend RuntimeException / note for JS users: use classes extending Error / note for Rust users: use variants of ChemError)
+
+
+Molecules are beautiful things. Especially organic ones...
+
+The Molecule class
+
+This is the main object, the "builder of things" ( ;p ), representing the whole molecule, its properties and atoms, and holding all the related methods to build and modify the molecule object.
+Notes for Rustaceans
+
+    The Kata Spec has only changed with respect to names, enums, and errors. Expected behavior is the same!
+
+Rust method signatures are updated to conform to community standards, e.g. using verbs instead of "-er" nouns. To afford chaining as well as standalone mutative calls as per the kata spec, the builder methods take and emit &mut self.
+
+Additionally, instead of using string literals as the spec suggests, Rustaceans will use variants of the preloaded::Element enum. Wherever the spec mentions an element symbol string, an Element will be provided instead.
+
+Lastly, in Rust we use results, not exceptions. Take care to handle interrupts the way exceptions would be used in the other languages of this kata. The errors referenced are encapsulated in the preloaded::ChemError enum as part of the preloaded module. Wherever the spec mentions throwing an Exception, return a Result<_, ChemResult> instead.
+
+Look at the final notes section for more detail on the preloaded module!
+Examples of Syntax Changes:
+Original Syntax 	Rust Syntax
+brancher 	branch
+bonder 	bond
+addChaining 	add_chain
+"Cl" 	Element::Cl
+raise InvalidBond() 	return Err(ChemError::InvalidBond)
+m.bounder(..).mutate(..) 	(&mut m).bond(..)?.mutate(..)?
+Required properties/getters:
+
+    To get the raw formula of the final molecule as a string (ex: "C4H10", "C5H10O2BrClS", ...; see detailed behaviours and additional information below):
+
+self.formula()
+
+    To get the value of the molecular weight of the final molecule in g/mol, as a double value (see detailed behaviours and additional information below):
+
+self.molecular_weight()
+
+    To get a list of Atom objects. Atoms are appended to the list in the order of their creation:
+
+self.atoms()
+
+    To get the name of the molecule, as a string of course, if given in the constructor (default: empty string):
+
+self.name()
+
+
+Required methods:
+Constructor(s):
+
+With or without the name of the molecule as argument (as a string):
+
+let m = Molecule::default();
+let m = Molecule::from("name");
+
+Modifiers:
+
+(&mut m).branch(&[x, y, z, ...])
+
+In a Molecule instance, a "branch" represents a chain of atoms bounded together. When a branch is created, all of its atoms are carbons. Each "branch" of the Molecule is identifiable by a number that matches its creation order: first created branch as number 1, second as number 2, ...
+
+The branch method...:
+
+    Can take any number of arguments (positive integers).
+    Adds new "branches" to the current molecule.
+    Each argument gives the number of carbons of the new branch.
+
+(&mut m).bond(&[(c1, b1, c2, b2), ...])
+
+The bond method...:
+
+    Creates new bounds between two atoms of existing branches.
+    Each argument is a tuple (python), array (ruby/JS), or T object (java) of four integers giving:
+        c1 & b1: carbon and branch positions of the first atom
+        c2 & b2: carbon and branch positions of the second atom
+    All positions are 1-indexed, meaning (1,1,5,3) will bound the first carbon of the first branch with the fifth of the third branch.
+    Only positive integers will be used.
+
+(&mut m).mutate(&[(nc, nb, elt), ...])
+
+The mutate method...:
+
+    Mutates the carbon nc in the branch nb to the chemical element elt(given as a string).
+    Don't forget that carbons and branches are 1-indexed.
+    This is mutation: the id number of the Atom instance stays the same. See the Atom class specs about that.
+
+(&mut m).add(&[(nc, nb, elt), ...])
+
+The add method...:
+
+    Adds a new Atom of kind elt (string) on the carbon nc in the branch nb.
+    Atoms added this way are not considered as being part of the branch they are bounded to and aren't considered a new branch of the molecule.
+
+(&mut m).add_chaining(nc, nb, &[elt, ...])
+
+The add_chaining method...:
+
+    Adds on the carbon nc in the branch nb a chain with all the provided elements, in the specified order. Meaning: m.add_chaining(2, 5, "N", "C", "C", "Mg", "Br") will add the chain ...-N-C-C-Mg-Br to the atom number 2 in the branch 5.
+    As for the add method, this chain is not considered a new branch of the molecule.
+
+(&mut m).close()
+
+The close method...:
+
+    Finalizes the molecule instance, adding missing hydrogens everywhere and locking the object (see behaviours part below).
+
+(&mut m).unlock()
+
+The unlock method...:
+
+    Makes the molecule mutable again.
+    Hydrogens should be removed, as well as any empty branch you might encounter during the process.
+    After the molecule has been "unlocked", if by any (bad...) luck it does not have any branch left, throw an EmptyMolecule exception.
+    The id numbers of the remaining atoms have to be continuous again (beginning at 1), keeping the order they had when the molecule was locked.
+    After removing hydrogens, if you end up with some atoms that aren't connected in any way to the branches of the unlocked molecule, keep them anyway in the Molecule instance (for the sake of simplicity...).
+    Once unlocked, the molecule has to be modifiable again, in any manner.
+
+
+Related behaviours:
+
+    Methods that involve building molecule or mutating molecule objects have to be chainable (ex: let ref mut m = Molecule::from("octane"); m.branch(&[8])?.close()?;).
+
+    Building a molecule consists in mutating the original object at each method call.
+    An InvalidBond exception should be thrown each time you encounter a case where an atom exceeds its valence number or is bounded to itself (about the valence number, see additional information below).
+    When a method throws an exception while it still has several arguments/atoms left to handle, the modifications resulting from the valid previous operations must be kept but all the arguments after the error are ignored.
+    Special case with add_chaining: if an error occurs at any point when adding the chain, all its atoms have to be removed from the instance (even the valid ones).
+    The whole molecule integrity should hold against any error, meaning that it must be possible to correctly work with a molecule object even after it threw an exception.
+    The fields formula and molecular_weight or the associated getters (depending on your language) should throw an UnlockedMolecule exception if an user tries to access them while the molecule isn't locked (because we do not want the user to catch incomplete/invalid information).
+    In a similar manner, attempts of modification of a molecule after it has been locked should throw a LockedMolecule exception (the closer method follows this behavior too).
+
+
+Additional information:
+
+    Raw formula of organic compounds:
+
+The raw formula gives the number of each kind of chemical element in the molecule. There are several possible rules when it comes to the order of the atoms in the raw formula. Here we will use the following: C, H, O, then other elements in alphabetic order. Examples: "C4H10" for C4H10, "C5H10O2BrClS", ... Note that the ones are not appearing (Br and not Br1).
+
+    Valence number of an atom:
+
+The valence number of an atom is the number of bounds it can hold. No less, no more.
+(Note to chemists: we will use all atoms at their lowest possible valence when several are possible. Meaning the valence number for S will be 2, for P it will be 3, ... Similarly, impossible bonds due to geometrical criteria such as a quadruple bound between two carbons will be allowed)
+
+    Molecular weight:
+
+The molecular weight of a molecule is the sum of the atomic weight of all its atoms.
+
+You may find below all the data needed in the kata (symbols, valence numbers, and related atomic weights):
+
+Symbol:           H     B     C     N     O     F    Mg     P     S    Cl    Br
+Valence number:   1     3     4     3     2     1     2     3     2     1     1
+Atomic weight:  1.0  10.8  12.0  14.0  16.0  19.0  24.3  31.0  32.1  35.5  80.0  (in g/mol)
+
+
+
+The Atom Spec
+
+Values of this type represent atoms in a specific Molecule instance and the bonds they hold with other Atom instances in the same Molecule.
+Required fields:
+
+To get the chemical symbol as a string ("C", "Br", "O", ...):
+
+self.element
+
+To get the id number of this atom:
+
+self.id
+
+The id number is an integer that allows to keep track of all the atoms of the same molecule, beginning with 1 (step of one for any new Atom instance).
+Required methods:
+
+Rust has required, provided impls that should not be modified.
+
+impl PartialEq for Atom {
+    fn eq(&self, other: &Self) -> bool {
+      self.id == other.id
+    }
+}
+
+impl Eq for Atom {}
+
+Unlike other languages, Hash is not provided for Atom as it is unnecessary for the Rust test suite.
+
+As you will see with the implementations of these methods, all atoms are considered different from each other in a Molecule instance.
+
+format!("{atom}")
+
+Return a string formatted like the following: "Atom(element.id: element1id,element2id,element3id...)".
+
+    element: symbol of the current Atom instance
+    id: id of the current element (beginning at 1 for each Molecule instance)
+    element1id: element1, bonded to the current Atom and its id number. If the bonded atom is a hydrogen, do not display its id number, to increase readability.
+
+The elements bonded to the current atom must be sorted in the same order as for the raw formula, except that the hydrogens will go to the end, again for better readability. Atoms of the same chemical element are sorted by increasing value of their id number. If an atom isn't bonded to any other atom, then just return the element.id part: "Atom(H.12)".
+
+Examples: "Atom(C.2: C3,C14,O6,H)" or "Atom(C.24: C1,O6,N2,H)", or "Atom(C.1)"
+
+
+Final notes:
+
+    You can add any method or field you'd like to the two objects and organize/design the whole thing as you'd prefer as long as the objects comply with the contracts above.
+
+    The tests permit adding lifetimes to the Atom and Molecule structs.
+
+    The tests will only call for properties/methods described in the present contracts.
+    Methods will always receive valid arguments, considering carbons or branches numbers, or chemical elements symbols.
+    Atom instances will never be modified directly during the tests, all is done through the Molecule class.
+
+About the preloaded module.
+
+This is the contents of the module:
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Element {
+    C, H, O, B, Br, Cl, F, Mg, N, P, S,
+}
+
+impl Display for Element {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // str of the element symbol.
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ChemError {
+    EmptyMolecule,
+    LockedMolecule,
+    InvalidBond,
+    UnlockedMolecule,
+}
+
+pub type ChemResult<T> = Result<T, ChemError>;
+
+Hint: preloaded is treated as a submodule of your solution. This means that you can write impls (if not derives) for all types defined there.
+
+
+Enjoy!
