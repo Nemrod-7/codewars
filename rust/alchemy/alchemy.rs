@@ -59,7 +59,13 @@ struct Molecule {
 
 impl From<&'static str> for Molecule {
     fn from(_value: &'static str) -> Self {
-        todo!()
+        Molecule {
+
+        id: _value.to_string(),
+        index:vec![vec![]],
+        atoms: vec![Atom{id:0, element:C,edge: vec![]}],
+        lock:false,
+        }
     }
 }
 
@@ -87,8 +93,8 @@ impl Molecule {
         self.atoms[c1].edge.push(at2);
         self.atoms[c2].edge.push(at1);
 
-        //self.atoms[c1].edge.sort_by(|a,b| a.id.cmp(&b.id));
-        //self.atoms[c2].edge.sort_by(|a,b| a.id.cmp(&b.id));
+        self.atoms[c1].edge.sort_by(|a,b| a.id.cmp(&b.id));
+        self.atoms[c2].edge.sort_by(|a,b| a.id.cmp(&b.id));
     }
     fn ncarb (&self, nc: usize, nb: usize) -> usize {
         let carbon = (0..self.index[nb].len()).filter(|x| self.atoms[self.index[nb][*x]].element == C).collect::<Vec<_>>();
@@ -139,16 +145,31 @@ impl Molecule {
         if self.lock == true { return Err(ChemError::LockedMolecule); }
 
         for (nc, nb, elt) in _ms {
-            let it = self.index[*nb][*nc]; //let it = self.index[*nb][self.ncarb(*nc,*nb)];
-            let atom = &mut self.atoms[it];
+            let it = self.index[*nb][*nc]; 
+            let mut curr = self.atoms[it].clone();
+            curr.element = *elt;
 
-            atom.element = *elt;
-
-            if atom.edge.len() > valence(atom.element) {
+            if curr.edge.len() > valence(curr.element) {
                 return Err(ChemError::InvalidBond);
+            } else {
+
+                for edge in &curr.edge {
+                    let nid = edge.id;
+
+                    for link in &mut self.atoms[nid].edge {
+                        if link.id == curr.id {
+                            link.element = *elt;
+                        }
+                    }
+                }
             }
+
+            self.atoms[it] = curr;
         }
 
+        for i in 1..self.atoms.len() {
+            print!("{}\n", self.atoms[i]);
+        }
         Ok(self)
     }
 
@@ -239,18 +260,18 @@ impl Molecule {
 
     pub fn atoms(&self) -> Vec<&Atom> {
         (1..self.atoms.len()).map(|x| &self.atoms[x]).collect::<Vec<_>>()
-        /*
-        let mut atm = Vec::new();
+            /*
+               let mut atm = Vec::new();
 
-        for i in 1..self.index.len() {
-            for j in 1..self.index[i].len() {
-                atm.push(&self.atoms[self.index[i][j]]);
-            }
-        }
-        print!("{}\n", atm.len());
+               for i in 1..self.index.len() {
+               for j in 1..self.index[i].len() {
+               atm.push(&self.atoms[self.index[i][j]]);
+               }
+               }
+               print!("{}\n", atm.len());
 
-        atm
-        */
+               atm
+               */
     }
 
 }
@@ -296,22 +317,24 @@ fn temp () {
 }
 
 fn main () {
-    //"Furane: no additional hydrogens while closing after mutation",
-    //vec! [5],
-    //vec![(5,1,1,1), (5,1,4,1), (2,1,3,1)], vec![(1,1,O)], "C4H4O", 68.,
-    //vec!["Atom(O.1: C2,C5)", "Atom(C.2: C3,C3,O1,H)", "Atom(C.3: C2,C2,C4,H)", "Atom(C.4: C3,C5,C5,H)", "Atom(C.5: C4,C4,O1,H)"]
-    let name = "isopropylmagnesium bromide";
-    //"C3H7BrMg";
-    //147.3;
-    //vec! ["Atom(C.1: C2,H,H,H)", "Atom(C.2: C1,C5,Mg3,H)", "Atom(Mg.3: C2,Br4)", "Atom(Br.4: Mg3)", "Atom(C.5: C2,H,H,H)"];
-
-    let mut m = Molecule::from("isopropylmagnesium bromide");
-    m.branch(&[4, 1]);
-    m.bond(&[(2,1,1,2)]);
-    //m.mutate(&[(3,1,Mg), (4,1,Br)]);
+    let mutation =  [
+        ( "Furane: no additional hydrogens while closing after mutation",
+          vec! [5], vec![(5,1,1,1), (5,1,4,1), (2,1,3,1)], vec![(1,1,O)], "C4H4O", 68.,
+          vec!["Atom(O.1: C2,C5)", "Atom(C.2: C3,C3,O1,H)", "Atom(C.3: C2,C2,C4,H)", "Atom(C.4: C3,C5,C5,H)", "Atom(C.5: C4,C4,O1,H)"]
+        ),
+    ];
 
 
-    tests::run();
+    for it in mutation {
+        let mut m = Molecule::from(it.0);
+        m.branch(&it.1);
+        m.bond(&it.2);
+        m.mutate(&it.3);
+        m.close();
+    }
+
+
+    //tests::run();
 }
 
 mod tests  {
@@ -536,12 +559,10 @@ mod tests  {
                   vec! [5], vec![(5,1,1,1), (5,1,4,1), (2,1,3,1)], vec![(1,1,O)], "C4H4O", 68.,
                   vec!["Atom(O.1: C2,C5)", "Atom(C.2: C3,C3,O1,H)", "Atom(C.3: C2,C2,C4,H)", "Atom(C.4: C3,C5,C5,H)", "Atom(C.5: C4,C4,O1,H)"]
                 ),
-                   ( "isopropylmagnesium bromide",
-                   vec![4, 1], vec![(2,1,1,2)], vec![(3,1,Mg), (4,1,Br)], "C3H7BrMg", 147.3,
-                   vec! ["Atom(C.1: C2,H,H,H)", "Atom(C.2: C1,C5,Mg3,H)", "Atom(Mg.3: C2,Br4)", "Atom(Br.4: Mg3)", "Atom(C.5: C2,H,H,H)"]
-                   )
-                       /*
-                   */
+                ( "isopropylmagnesium bromide",
+                  vec![4, 1], vec![(2,1,1,2)], vec![(3,1,Mg), (4,1,Br)], "C3H7BrMg", 147.3,
+                  vec! ["Atom(C.1: C2,H,H,H)", "Atom(C.2: C1,C5,Mg3,H)", "Atom(Mg.3: C2,Br4)", "Atom(Br.4: Mg3)", "Atom(C.5: C2,H,H,H)"]
+                )
             ];
 
 
