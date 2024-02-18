@@ -25,10 +25,20 @@ struct result : public testing {
 };
 
 // result Is () { return {zero}; }
-int smbase (const unsigned long int N) {
-    if (N % 10 == 1) {
-        // return N - 1;
+
+int bas(int num, int i) {
+    while (num % i == 1) {
+        num /= i;
     }
+
+    return num;
+}
+int smbase (const unsigned long int N) {
+
+    if (bas(N, N-1) == 0) {
+        return N-1;
+    }
+    
     for (int i = 2; i < N; i++) {
         int num = N;
 
@@ -52,16 +62,23 @@ int main () {
     int mul = 10;
     int temp = number % mul;
     vector<vector<int>> base(10, vector<int> (1,1));
+    int sum = 0;
 
     while (temp < number) {
         temp = number % mul;
+        int maxv = 0;
 
         for (int i = 0; i < 10; i++) {
-            int num = base[i].back();
-            base[i].push_back(num * i);
+            int num = base[i].back() * i;
+            base[i].push_back(num);
+
+            if (sum + num <= temp) {
+                maxv = num;
+            }
             cout << num << ' ';
         }
 
+        sum += maxv;
         cout << '\n';
 
         mul *= 10;
