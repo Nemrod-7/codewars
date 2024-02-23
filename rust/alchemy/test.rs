@@ -43,22 +43,10 @@ impl Molecule {
 
 fn main () {
     //let mut atoms: Vec<Atom> = vec![Atom{id:0, element:C, edge:vec![]}];
-    let index =
-    [
-    vec![C],
-    vec![C,C,H,C,Mg],
-    vec![C,Mg]];
-
-    let nc:Vec<Vec<usize>> = (0..index.len()) .map(|i| (0..i) .filter(|j| index[i][*j] == C).collect::<Vec<_>>()).collect::<Vec<_>>();
-
-    /*
-        .filter(|i|
-          (0..*i)
-              .filter (|j|
-              index[i][j] == 1
-            ).collect::<Vec<_>>()
-        ).collect::<Vec<_>>();
-
-*/
+    let mut index = vec![
+        vec![],
+        vec![0],
+        vec![0,1,2,3],
+    ];
 
 }
