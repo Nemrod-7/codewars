@@ -138,11 +138,11 @@ impl Molecule {
         for (nc, nb, elt) in _ms {
             let it = self.index[*nb][*nc]; 
             let mut curr = self.atoms[it].clone();
-            curr.element = *elt;
 
             if curr.edge.len() > valence(curr.element) {
                 return Err(ChemError::InvalidBond);
             } else {
+                curr.element = *elt;
 
                 for edge in &curr.edge {
                     let nid = edge.id;
@@ -168,8 +168,8 @@ impl Molecule {
 
         for (nc, nb, elt) in _els {
             let ix = self.index[*nb][*nc];
-            let curr = self.atoms[ix].clone();
             let nx = self.atoms.len();
+            let curr = self.atoms[ix].clone();
 
             if curr.edge.len() < valence(curr.element) {
                 self.atoms.push(Atom {id: nx, element: *elt, edge:vec![]});
@@ -205,25 +205,6 @@ impl Molecule {
 
             self.atoms[i] = atom;
         }
-
-        // for i in 1..self.index.len() {
-        //     for j in 1..self.index[i].len() {
-        //         let mut atom = self.atoms[self.index[i][j]].clone();
-        //         let size = valence (atom.element) as i32 - atom.edge.len() as i32;
-
-        //         if size < 0 {
-        //             return Err(ChemError::InvalidBond);
-        //         } else {
-        //             for _ in 0..size {
-        //                 let hydrogen = Atom {id: self.atoms.len(), element:H, edge:vec![atom.clone()]};
-
-        //                 atom.edge.push(hydrogen.clone());
-        //                 self.atoms.push(hydrogen);
-        //             }
-        //         }
-        //         self.atoms[self.index[i][j]] = atom;
-        //     }
-        // }
 
         Ok(self)
     }
