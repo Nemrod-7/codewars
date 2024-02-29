@@ -4,14 +4,13 @@
 #include <string>
 #include <vector>
 
-bool is_inside (int x, int y, int width, int height) { return x >= 0 && y >= 0 && x < width && y < height; }
 
 std::array<int, 10> cockroaches(const std::vector<std::string> &grid) {
-    const std::vector<std::pair<int,int>> direction = {{0,-1},{-1,-1}, {-1,0}, {-1,1}, {0,1}, {1,1}, {1,0}, {1,-1}};
 
     const int width = grid[0].size(), height = grid.size();
     std::array<int, 10> freq {0};
     std::vector<std::pair<char,std::pair<int,int>>> roaches;
+    // const std::vector<std::pair<int,int>> direction = {{0,-1},{-1,-1}, {-1,0}, {-1,1}, {0,1}, {1,1}, {1,0}, {1,-1}};
 
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
@@ -21,41 +20,53 @@ std::array<int, 10> cockroaches(const std::vector<std::string> &grid) {
         }
     }
 
-    for (auto [dir,pos] : roaches) {
-        bool search = true;
+    for (auto [dir,p1] : roaches) {
+        auto [dx,dy] = p1;
         std::cout << dir << " => ";
 
-        while (search) {
-            std::cout << pos.first << ' ' << pos.second << "\n";
-            for (auto &[dx,dy] : direction) {
-                int nx = pos.first + dx, ny = pos.second + dy;
-                if (is_inside (nx,ny,width,height)) {
+        while (true) {
+            char nxt = ' ';
 
-                    if (isdigit (grid[ny][nx])) {
-                        freq[grid[ny][nx] - '0']++;
-                        search = false;
-                        std::cout << grid[ny][nx] - '0' << "\n";
-                        break;
-                    } else if (grid[ny][nx] == '|') {
-                        if (dir == 'R') {dir = 'U'; break; }
-                        if (dir == 'L') {dir = 'D'; break; }
-                    } else if (grid[ny][nx] == '-') {
-                        if (dir == 'U') {dir = 'L'; break; }
-                        if (dir == 'D') {dir = 'R'; break; }
-                    }
-                }
+            if (dy == height-2) {
+                nxt = grid[height-1][dx];
+            }
+            if (dx == width-2) {
+                nxt = grid[dy][width-1];
             }
 
-            switch (dir) {
-                case 'L': pos.first--; break;
-                case 'R': pos.first++; break;
-                case 'U': pos.second--; break;
-                case 'D': pos.second++; break;
+            if (dy == 1) {
+                nxt = grid[0][dx];
+            }
+            if (dx == 1) {
+                nxt = grid[dy][0];
+            }
+
+            // std::cout << dx << " " << dy << " " << dir << nxt << "\n";
+
+            if (nxt == '+') break;
+
+            if (isdigit(nxt)) {
+                freq[nxt-'0']++;
+
+                std::cout << nxt-'0' << '\n';
+                break;
+            } else if (nxt == '|') {
+                if (dir == 'L') dir = 'D';
+                if (dir == 'R') dir = 'U';
+            } else if (nxt == '-') {
+                if (dir == 'U') dir = 'L';
+                if (dir == 'D') dir = 'R';
+            }
+
+            switch(dir) {
+              case 'U': dy--; break;
+              case 'L': dx--; break;
+              case 'D': dy++; break;
+              case 'R': dx++; break;
             }
         }
-
     }
-
+    // std::cout << dir << " => "  ;
     return freq;
 }
 int main () {
@@ -76,104 +87,68 @@ int main () {
     };
     // , {1,2,2,5,0,0,0,0,0,0});
 
-    // auto res = cockroaches(grid);
+    auto res = cockroaches(grid);
 
-    // std::cout << "\n";
-    // for (int i = 0; i < 10; i++) {
-    //     if (res[i]) {
-    //         std::cout << i << " :: " << res[i] << "\n";
-    //     }
-    // }
-    const std::vector<std::pair<int,int>> direction = {{-1,0},{0,-1},{0,1},{1,0}};
+    std::cout << "\n";
+    for (int i = 0; i < 10; i++) {
+        if (res[i]) {
+            std::cout << i << " :: " << res[i] << "\n";
+        }
+    }
+
+    std::cout << "\nexit\n";
+}
+
+bool is_inside (int x, int y, int width, int height) { return x >= 0 && y >= 0 && x < width && y < height; }
+
+std::array<int, 10> cockroaches_ark(const std::vector<std::string> &grid) {
+    //                                                    N      NW       W       SW     S     SE     E      NE
+    const std::vector<std::pair<int,int>> direction = {{0,-1},{-1,-1}, {-1,0}, {-1,1}, {0,1}, {1,1}, {1,0}, {1,-1}};
+
     const int width = grid[0].size(), height = grid.size();
     std::array<int, 10> freq {0};
-    std::vector<std::pair<char,std::pair<int,int>>> roaches, hole;
+    std::vector<std::pair<char,std::pair<int,int>>> roaches;
 
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             if (isalpha(grid[y][x])) {
                 roaches.push_back({grid[y][x], {x,y}});
-            } else if (isdigit(grid[y][x])) {
-                hole.push_back({grid[y][x], {x,y}});
             }
         }
     }
 
-    auto [dir,p1] = roaches[0];
+    for (auto [dir,pos] : roaches) {
+        bool search = true;
+        // std::cout << dir << " => ";
 
+        while (search) {
+            // std::cout << pos.first << ' ' << pos.second << "\n";
+            for (auto &[dx,dy] : direction) {
+                int nx = pos.first + dx, ny = pos.second + dy;
 
-    std::cout << dir << " => "  ;
-    // std::map<char, std::pair<int,int>> direction {{'U', {0,-1}}, {'L', {-1,0}}, {'D', {0,1}}, {'R', {1,0}}};
+                if (isdigit (grid[ny][nx])) {
+                    freq[grid[ny][nx] - '0']++;
+                    search = false;
+                    // std::cout << grid[ny][nx] - '0' << "\n";
+                    break;
+                } else if (grid[ny][nx] == '|') {
+                    if (dir == 'R') {dir = 'U'; break; }
+                    if (dir == 'L') {dir = 'D'; break; }
+                } else if (grid[ny][nx] == '-') {
+                    if (dir == 'U') {dir = 'L'; break; }
+                    if (dir == 'D') {dir = 'R'; break; }
+                }
+            }
 
-    if (dir == 'U') {
-        if (is_inside (p1.first,p1.second-1, width, height)) {
-            char nxt = grid[p1.second-1][p1.first];
-
-            if (isdigit(nxt)) {
-                freq[nxt-'0']++;
-            } else if (nxt == '-') {
-                dir = 'L';
-            } else {
-                p1.second--;
+            switch (dir) {
+                case 'L': pos.first--; break;
+                case 'R': pos.first++; break;
+                case 'U': pos.second--; break;
+                case 'D': pos.second++; break;
             }
         }
-    } else if (dir == 'L') {
-        if (is_inside (p1.first - 1,p1.second, width, height)) {
-          char nxt = grid[p1.second][p1.first-1];
 
-          if (isdigit(nxt)) {
-              freq[nxt-'0']++;
-          } else if (nxt == '|') {
-              dir = 'D';
-          } else {
-              p1.first--;
-          }
-}
-    } else if (dir == 'D') {
-        if (is_inside (p1.first,p1.second + 1, width, height)) {
-          char nxt = grid[p1.second+1][p1.first];
-
-          if (isdigit(nxt)) {
-              freq[nxt-'0']++;
-          } else if (nxt == '-') {
-              dir = 'R';
-          } else {
-              p1.second++;
-          }
-        }
-    } else if (dir == 'R') {
-        if (is_inside (p1.first + 1,p1.second, width, height)) {
-          char nxt = grid[p1.second][p1.first+1];
-
-          if (isdigit(nxt)) {
-              freq[nxt-'0']++;
-          } else if (nxt == '-') {
-              dir = 'U';
-          } else {
-              p1.first++;
-          }
-        }
     }
 
-
-    // for (auto &[ex, p2] : hole) {
-    //       if (dir == 'U') {
-    //           if (p2.first <= p1.first && p2.second < p1.second) {
-    //               std::cout << "first : " << ex << "\n";
-    //               // break;
-    //           } else if (p2.first < p1.first && p2.second >= p1.second){
-    //               std::cout << "second : " << ex << "\n";
-    //             // break;
-    //           }
-    //           else if (p2.first >= p1.first && p2.second > p1.second) {
-    //               std::cout << "third : " << ex << "\n";
-    //
-    //           } else if (p2.first > p1.first && p2.second < p1.second) {
-    //               std::cout << "fourth : " << ex << "\n";
-    //           }
-    //       }
-    // }
-
-
-
+    return freq;
 }
