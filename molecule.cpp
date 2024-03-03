@@ -11,7 +11,7 @@ struct Atom {
     vector<Atom> edge;
 };
 
-// Symbol:        "H"     "B"     "C"     "N"     "O"     "F"    "Mg"     "P"     "S"    "Cl"    "Br"
+// Symbol:        "H"     "B"   "C"   "N"   "O"   "F"   "Mg"  "P"   "S"   "Cl"  "Br"
 // Valence number:   1     3     4     3     2     1     2     3     2     1     1
 // Atomic weight:  1.0  10.8  12.0  14.0  16.0  19.0  24.3  31.0  32.1  35.5  80.0  (in g/mol)
 
@@ -132,6 +132,10 @@ class Molecule {
 
             for (auto &b : bn) {
                 int c1 = b[0], b1 = b[1], c2 = b[2], b2 = b[3];
+
+                if (index[b1][c1] == index[b2][c2]) {
+                    break;
+                }
                 link(index[b1][c1], index[b2][c2]);
             }
 
@@ -156,6 +160,26 @@ class Molecule {
         }
         Molecule &add_chain (int nc, int nb, vector<string> elt) {
             if (lock == true) throw::runtime_error ("molecule locked.");
+            
+            for (int i = 0; i < elt.size(); i++) {
+                int val = valence(elt[i]) - ((i < elt.size() - 1) ? 2 : 1);
+
+                if (val < 0) throw::runtime_error("Invalid Bond.");
+            }
+
+            vector<int> arm(elt.size());
+
+            for (int i = 0; i < elt.size(); i++) {
+                arm[i] = base.size();
+                base.push_back(create(arm[i], elt[i]));
+
+                if (i > 0) {
+                    link(arm[i-1], arm[i-0]);
+                }
+            }
+
+
+            link(index[nb][nc], arm[0]);
 
             return *this;
         }
@@ -224,11 +248,11 @@ int main () {
     Molecule m ("biotin");
 
     m.branch({14,1,1});
-    m.bond({ {2,1,1,2},  {2,1,1,2}, {10,1,1,3}, {10,1,1,3}, {8,1,12,1}, {7,1,14,1} });
-    m.mutate({{1,1,"O"},{1,2,"O"}, {1,3,"O"}, {11,1,"N"}, {9,1,"N"}, {14,1,"S"}});
+    //m.bond({ {2,1,1,2},  {2,1,1,2}, {10,1,1,3}, {10,1,1,3}, {8,1,12,1}, {7,1,14,1} });
+    //m.mutate({{1,1,"O"},{1,2,"O"}, {1,3,"O"}, {11,1,"N"}, {9,1,"N"}, {14,1,"S"}});
 
-    m.close();
+    //m.close();
 
-    cout << m.name() << " => " <<  m.formula() << " :: " << m.molecular_weight();
-    cout << "\nend\n";
+    //cout << m.name() << " => " <<  m.formula() << " :: " << m.molecular_weight();
+    //cout << "\nend\n";
 }
