@@ -9,12 +9,14 @@ std::array<int, 10> cockroaches (const std::vector<std::string> &grid) {
     const int width = grid[0].size(), height = grid.size();
     std::array<int, 10> freq {0};
     std::vector<std::pair<char,std::pair<int,int>>> roaches;
+    std::vector<std::string> board = grid;
 
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             if (isalpha(grid[y][x])) {
                 roaches.push_back({grid[y][x], {x,y}});
-            }
+                board[y][x] = ' ';
+              }
         }
     }
 
@@ -28,6 +30,7 @@ std::array<int, 10> cockroaches (const std::vector<std::string> &grid) {
             case 'R': while (dx < width - 2) dx++; dir = 'U'; break;
             case 'D': while (dy < height - 2) dy++; dir = 'R';  break;
         }
+        board[dy][dx] = dir ;
 
         while (search) {
             int nx = dx, ny = dy, lx = dx, ly = dy;
@@ -43,8 +46,12 @@ std::array<int, 10> cockroaches (const std::vector<std::string> &grid) {
                 freq[grid[ly][lx] - '0']++;
                 break;
             }
+
             if (isdigit (grid[ny][lx])) {
                 freq[grid[ny][lx] - '0']++;
+                break;
+            } else if (isdigit(grid[ly][nx])) {
+                freq[grid[ly][nx] - '0']++;
                 break;
             }
 
@@ -60,27 +67,33 @@ std::array<int, 10> cockroaches (const std::vector<std::string> &grid) {
         }
     }
 
+    for (int i = 0; i < board.size(); i++) {
+        std::cout << board[i] << "\n";
+    }
     return freq;
 }
+
 
 int main () {
 
     std::vector<std::string> grid ;
 
-    grid = {
-      "+----------------0---------------+",
-      "|                                |",
-      "|                                |",
-      "|          U        D            |",
-      "|     L                          |",
-      "|              R                 |",
-      "|           L                    |",
-      "|  U                             1",
-      "3        U    D                  |",
-      "|         L              R       |",
-      "|                                |",
-      "+----------------2---------------+"
-    };
+
+      grid = {
+        "+----------------0---------------+",
+        "|                                |",
+        "|                                |",
+        "|          U        D            |",
+        "|     L                          |",
+        "|              R                 |",
+        "|           L                    |",
+        "|  U                             1",
+        "3        U    D                  |",
+        "|         L              R       |",
+        "|                                |",
+        "+----------------2---------------+"
+      };
+
 
     auto res = cockroaches(grid);
     std::cout << "\n";
@@ -94,6 +107,33 @@ int main () {
     std::cout << "\nexit\n";
 }
 
+void test() {
+  std::vector<std::string> grid ;
+
+  grid = {
+    "+----------------0---------------+",
+    "|                                |",
+    "|                                |",
+    "|          U        D            |",
+    "|     L                          |",
+    "|              R                 |",
+    "|           L                    |",
+    "|  U                             1",
+    "3        U    D                  |",
+    "|         L              R       |",
+    "|                                |",
+    "+----------------2---------------+"
+  };
+
+  grid =
+{"2-----------4",
+"|           |",
+"|    UD     |",
+"|    RL     |",
+"|           |",
+"6-----------8"};
+
+}
 std::array<int, 10> cockroaches1 (const std::vector<std::string> &grid) {
 
     const int width = grid[0].size(), height = grid.size();
