@@ -88,7 +88,7 @@ fn showbase(base: &Vec<Atom>) {
 
 impl Molecule {
      fn carbindex(&self) -> Vec<Vec<usize>> {
-         (0..self.index.len()) .map(|i| (0..i) .filter(|j| self.atoms[self.index[i][*j]].element == C).collect::<Vec<_>>()).collect::<Vec<_>>()
+         (0..self.index.len()) .map(|i| (0..i).filter(|j| self.atoms[self.index[i][*j]].element == C).collect::<Vec<_>>()).collect::<Vec<_>>()
      }
 
     fn link(&mut self, c1: usize, c2: usize) {
