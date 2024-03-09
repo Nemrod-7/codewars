@@ -4,6 +4,7 @@ fn cockroaches(room: &[&str]) -> [u32; 10] {
     let height = grid.len();
     let width = grid[0].len();
     let mut freq = [0u32;10];
+    let mut search;
     let mut roaches = Vec::new();
 
     for y in 0..grid.len() {
@@ -23,8 +24,9 @@ fn cockroaches(room: &[&str]) -> [u32; 10] {
             _ => (),
         }
 
+        search = true;
 
-        loop {
+        while search == true {
             let mut nx = x;
             let mut ny = y;
             let mut lx = x;
@@ -37,26 +39,14 @@ fn cockroaches(room: &[&str]) -> [u32; 10] {
                 'D' => { ny += 1; lx -= 1 },
                 _ => (),
             }
-            print!("{} {} {} {}\n", dir, nx, ny, grid[ny][nx]);
 
             for nxt in [(nx,ny),(lx,ly),(nx,ly),(lx,ny)] {
                 if grid[nxt.1][nxt.0].is_digit(10) {
                     freq[grid[nxt.1][nxt.0] as usize - 48] += 1;
+                    search = false;
                     break;
                 }
             }
-            //if grid[ly][lx].is_digit(10) {
-            //    freq[grid[ly][lx] as usize - 48] += 1;
-            //    break;
-            //}
-
-            //If grid[ly][nx].is_digit(10) {
-            //    freq[grid[ly][nx] as usize - 48] += 1;
-            //    break;
-            //} else if grid[ny][lx].is_digit(10)  {
-            //    freq[grid[ny][lx] as usize - 48] += 1;
-            //    break;
-            //}
 
             if grid[ny][nx] == '|' {
                 if dir == 'R' { dir = 'U' }
@@ -68,9 +58,6 @@ fn cockroaches(room: &[&str]) -> [u32; 10] {
                 x = nx; y = ny;
             }
         }
-        print!("\n");
-        /*
-        */
     }
 
     freq

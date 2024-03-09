@@ -1,26 +1,29 @@
 
+fn decomp (mut num: u64) -> u64 {
+    let mut sum = 0;
+
+    while num > 1 {
+        sum += num % 10;
+        num /= 10;
+    }
+    sum
+}
 fn main () {
 
-    let grid:Vec<Vec<char>> = vec![
-        vec!['+','-','+'],
-        vec!['|','U','|'],
-        vec!['+','-','+']
-    ];
+
+    let mut num =  81;
 
 
-        let res = (0..grid.len())
-            .map( |y| (0..grid[y].len()) 
-                  .filter(|x| grid[y][*x].is_alphabetic())
-                  .map(|x| (grid[y][x], (x,y)))
-                  .collect::<Vec<_>>()
-                )
-            .into_iter()
-            .flatten()
-            .collect::<Vec<_>>() ;
 
-        print!("{:?}\n", res);
+    for dig in 1..10 {
+        let mut pw = 1;
 
-        //su.extend(grid[y].clone());
+        for it in 1..10 {
+            pw *= dig;
+            print!("{pw} ");
+        }
+        print!("\n");
+    }
 
-        //print!("{res}\n")
+
 }
