@@ -9,6 +9,7 @@ uint64_t big_modulo (const char* src, uint64_t div) {
     for (int i = 0; src[i] != '\0'; i++) {
         uint64_t mid = (res * 10 + (src[i] - 48));
         res = mid % div;
+        
         printf("%i", (src[i] - 48));
 
         // printf("%llu\n", (src[i] - 48));

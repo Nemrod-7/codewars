@@ -1,64 +1,80 @@
+#![allow(warnings, unused)]
 
-fn getterm (str: &str) -> (i32, String) {
-    let num = str.chars().filter(|x| x.is_digit(10)).collect::<String>() ;
-    let val = if num != "" { num.parse::<i32>().unwrap() } else { 1 };
-    let var = str.chars().filter(|x| x.is_alphabetic()).collect::<String>();
-    let sign = if str.find('-') == None { 1 } else { -1 };
-    
-    (sign * val, var)
+fn binomial (size: usize) -> Vec<Vec<i32>> {
+    let mut binom = vec![vec![1; size + 1]; size + 1];
+
+    (0..=size).for_each( |i| (1..i).for_each(
+            |j| binom[i][j] = binom[i-1][j-1] + binom[i-1][j]
+       )
+   );
+
+    binom
 }
-
 fn expand (expr: &str) {
 
     let mid = expr.find('^').unwrap();
-    let ex:i32 = expr[mid + 1..].parse::<i32>().unwrap();
-    let term = &expr[1..mid-1];
+    let n = expr[mid + 1..].parse::<usize>().unwrap();
+    let terms = &expr[1..mid-1];
 
-    let mut t1 = (0i32, "".to_string());
-    let mut t2 = (0i32, "".to_string());
+    let binom = binomial(n + 1);
+    let mut x:&str = &"";
+    let mut a:i32 = 0;
+    let mut b:i32 = 0;
 
-    for i in (0..term.len()).rev() {
-        if let Some(ch) = term.chars().nth(i) {
-
+    for i in (0..terms.len()).rev() {
+        if let Some(ch) = terms.chars().nth(i) {
             if ch == '+' || ch == '-' {
-                t1 = getterm(&term[..i]);
-                t2 = getterm(&term[i..]);
+                let num = terms[..i-1].chars().filter(|x| x.is_digit(10)).collect::<String>();
+                let sign = if &terms[..1] == "-" { 1 } else { -1 };
+                x = &terms[i-1..i];
+
+                a = if num != "" { num.parse::<i32>().unwrap() } else { 1 } * sign;
+                b = terms[i..].parse::<i32>().unwrap();
                 break;
             }
         }
     }
 
-    let size = ex as usize ;
-    let mut binom = vec![vec![1; size + 1]; size + 1];
+    for k in 0..=n {
+        let mul = binom[n][k] * a.pow((n - k) as u32) * b.pow(k as u32);
 
-    for i in 0..=size {
-        for j in 1..i {
-            binom[i][j] = binom[i-1][j-1] + binom[i-1][j];
+        if k > 0 && mul > 0 {
+            print!("+");
+        } 
+
+        if n - k == 0 {
+            print!("{mul}");
+        } else if n - k != 1 {
+            match mul {
+                -1 => { print!("-{x}"); },
+                1 => { print!("{x}"); },
+                _ => { print!("{mul}{x}"); },
+            }
+
+            print!("^{}", n - k);
         }
     }
 
-    for i in 0..binom[size].len() {
-        let mul = binom[size][i];
-        let n1 = t1.0.pow((size - i) as u32); 
-        let n2 = t2.0.pow(i as u32); 
-
-
-    }
-
-    //print!("{:?}\n", binom[size]);
-    //print!("{} ^ {}\n", term, ex);
+    print!("\n");
 }
 
 fn main () {
 
-    expand("(x+1)^2");      // returns "x^2+2x+1"
-    expand("(p-1)^3");      // returns "p^3-3p^2+3p-1"
-    expand("(2f+4)^6");     // returns "64f^6+768f^5+3840f^4+10240f^3+15360f^2+12288f+4096"
-    expand("(-2a-4)^0");    // returns "1"
-    expand("(-12t+43)^2");  // returns "144t^2-1032t+1849"
-    expand("(-x-1)^2");     // returns "x^2+2x+1
-                            //expand("(r+0)^203");    // returns "r^203"
+
+    expand ("(x+1)^2");      // returns "x^2+2x+1"
+    expand ("(p-1)^3");      // returns "p^3-3p^2+3p-1"
+    expand ("(2f+4)^6");     // returns "64f^6+768f^5+3840f^4+10240f^3+15360f^2+12288f+4096"
+    expand ("(-2a-4)^0");    // returns "1"
+    expand ("(-12t+43)^2");  // returns "144t^2-1032t+1849"
+    expand ("(-x-1)^2");     // returns "x^2+2x+1
+    expand("(-z-12)^1");
+    /*
+    */
+
+    let size = 5;
+    let mut binom = vec![vec![1; size + 1]; size + 1];
 
 
+    print!("\nend\n");
 
 }

@@ -1,29 +1,52 @@
+use std::sync::Mutex;
+static MEM:Mutex<Vec<u32>> = Mutex::new(Vec::new());
 
-fn decomp (mut num: u64) -> u64 {
-    let mut sum = 0;
+fn stream() -> impl Iterator<Item = u32> {
+    let mut seq = MEM.lock().unwrap();
+    print!("size {} \n", seq.len());
 
-    while num > 1 {
-        sum += num % 10;
-        num /= 10;
+    if seq.len() == 0 {
+        let lim = 1e6 as usize;
+        let mut sieve = vec![0u64; (lim >> 6) + 1];
+        *seq = vec![2];
+
+        (3..lim)
+            .step_by(2)
+            .for_each(
+                |i| if (sieve[i >> 6] >> (i&63)&1) == 0 {
+                    seq.push(i as u32);
+
+                    (i*i..lim)
+                        .step_by(2 * i)
+                        .for_each( |j| sieve[j >> 6] |= 1u64 << (j &63))
+                }
+                );
+
+        sieve.clear();
     }
-    sum
+
+    seq.clone().into_iter()
 }
+
 fn main () {
 
+    let lim = 1e2 as usize;
+    let mut sieve = vec![0; lim + 1];
 
-    let mut num =  81;
-
-
-
-    for dig in 1..10 {
-        let mut pw = 1;
-
-        for it in 1..10 {
-            pw *= dig;
-            print!("{pw} ");
+    (2..(lim as f64).sqrt() as usize)
+        .step_by(1)
+        .for_each( |i| if sieve[i] == 0 {
+            (i*i..lim).step_by(i).for_each( |j| sieve[j] = 1 )
         }
-        print!("\n");
+        );
+
+
+    for i in 2..lim - 2 {
+        if sieve[i] == 0 && sieve[i+2] == 0 {
+            print!("({} {})", i, i+2);
+        }
     }
+
 
 
 }
