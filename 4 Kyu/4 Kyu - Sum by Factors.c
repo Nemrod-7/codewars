@@ -5,7 +5,6 @@
 #include <string.h>
 #include <math.h>
 
-#define NUM *(list + size)
 #define BUFFSIZE 1024
 #define MAX(x,y) (((x) > (y)) ? (x) : (y))
 #define MIN(x,y) (((x) < (y)) ? (x) : (y))
@@ -40,31 +39,53 @@ unsigned maxnum (const int* list,int size) {
 
     unsigned max = 0;
     while (size-->0)
-        max = MAX (max, abs (NUM));
+        max = MAX (max, abs (list[size]));
 
     return max;
 }
-char *sumOfDivided (const int *list, int l) {
+char *getsum (const int *list, int size, int prime) {
+  int sum = 0;
+  _Bool divided = false;
+  char *output = malloc (64 * sizeof(char)), *out = output;
 
+  for (int j = 0; j < size; j++) {
+      if (abs (list[j]) % prime == 0) {
+          sum += list[j], divided = true;
+      }
+  }
+  if (divided == true) {
+      sprintf (out,"(%i %i)", prime, sum);
+  }
+
+  return output;
+}
+
+char *sumOfDivided (const int *list, int size) {
+    int sum = 0, max = maxnum (list, size) + 1;
     bool divided = false;
-    int sum = 0, max = maxnum (list,l) + 1;
+    bool *sieve = calloc(max + 1, sizeof(bool));
     char *output = malloc (BUFFSIZE * sizeof(char)), *out = output;
-    const unsigned *primes = SieveOfEratosthenes (max);
     *output = '\0';
 
-    for (int i = 1; i < primes[0]; i++) {
-        for (int size = 0; size < l; size++) {
-            if (abs (NUM) % primes[i] == 0) {
-                sum += NUM, divided = true;
+    for (uint64_t i = 2; i <= max; i++) {
+        if (sieve[i] == 0) {
+            for (int j = 0; j < size; j++) {
+                if (abs (list[j]) % i == 0) {
+                    sum += list[j], divided = true;
+                }
+            }
+            if (divided == true) {
+                out += sprintf (out,"(%i %i)", i, sum);
+            }
+
+            sum = 0, divided = false;
+
+            for (uint64_t j = i * i; j <= max; j += i) {
+                sieve[j] = 1;
             }
         }
-
-        if (divided == true) {
-            out += sprintf (out,"(%i %i)", primes[i], sum);
-        }
-
-        sum = 0, divided = false;
     }
+
     return output;
 }
 

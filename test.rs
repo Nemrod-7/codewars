@@ -15,28 +15,51 @@ fn sieve(num: usize) -> Vec<i64> {
     prime
 }
 
-fn main () {
+fn sudoku (grid: [[u8;9];9]) {
 
-    let lst:Vec<i64> = vec![15,21,24,30,45];
+    let mut x;
+    let mut y;
+    let mut z;
 
-    let lim = *lst.iter().max().unwrap() as usize;
-    let prime = sieve(lim);
-    let mut os = String::new();
+    for i in 0..81 {
+        y = i / 9, x = i % 9, z = y / 3 * 3 + x / 3;
 
-    for p in &prime {
-        let mut sum = 0; 
-
-        for num in &lst {
-            if num.abs() % p == 0 {
-                sum += num;
-            }
+        if grid[y][x] != 0 {
+            //col[x] |= 1 << grid[y][x];
+            //row[y] |= 1 << grid[y][x];
+            //sub[z] |= 1 << grid[y][x];
         }
-
-        if sum != 0 {
-            os += &format!("({p} {sum})");
-        }
+        print!("{y} {x}\n");
     }
 
+
+}
+fn cntbits1 (mut mask: u16) -> usize {
+
+    let mut cnt:usize = 0;
+
+    while mask != 0 {
+        if mask &1 != 0 { cnt += 1 }
+        mask >>= 1;
+    }
+
+    cnt
+}
+
+fn cntbits2 (mut mask: u16) -> usize {
+    let mut cnt:usize = 0;
+
+    while mask != 0 {
+        mask &= (mask - 1);
+    }
+
+    cnt
+}
+fn main () {
+
+    for i in 0..10 {
+        
+    }
 
 
 }
