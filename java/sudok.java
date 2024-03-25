@@ -1,6 +1,5 @@
-import java.util.Vector;
 import java.util.Collections;
-import java.util.ArrayList;
+import java.util.Arrays;
 
 //import java.lang.Exception;
 
@@ -21,13 +20,14 @@ class hash implements Comparable<hash> {
 class SudokuSolver {
     int N = 9;
     int[][] grid ;
+    int[] col = new int[10], row = new int[10], sub = new int[10];
 
     static public void display(int[][] board) {
         System.out.print("\n");
 
-        for (int i = 0; i < 9; i++) {
-            for (int j = 0; j < 9; j++) {
-                var dig = board[i][j];
+        for (int y = 0; y < 9; y++) {
+            for (int x = 0; x < 9; x++) {
+                var dig = board[y][x];
 
                 if (dig == 0) {
                     System.out.print('.');
@@ -56,13 +56,21 @@ class SudokuSolver {
     }
     private boolean check(int[][] source) {
 
-        for (int i = 0; i < N; i++) {
-            for (int j = 0; j < N; j++) {
-                if (source[i][j] < 0 || source[i][j] > 9) {
-                    return false;
+        int cnt = 0;
+
+        for (int y = 0; y < N; y++) {
+            for (int x = 0; x < N; x++) {
+                if (source[y][x] != 0) {
+                    if (source[y][x] < 0 || source[y][x] > 9) {
+                        return false;
+                    } 
+
+                    cnt++;
                 }
             }
         }
+
+        if (cnt < 17) return false;
         return true;
     }
     private int nconflict (int col, int row, int sub) {
@@ -78,31 +86,30 @@ class SudokuSolver {
 
         return mask;
     }
-    private boolean backtrack(int[][] board, int[] col, int[] row, int[] sub, Vector<hash> tape, int end) {
+    private boolean backtrack(hash[] tape, int end) {
 
         if (end == -1) return true;
-        int x, y, z, index = tape.get(end).pos;
+        int x, y, z, index = tape[end].pos;
 
         for (int i = 0; i < end; i++) {
-            var curr = tape.get(i);
+            var curr = tape[i];
             x = curr.pos % N; y = curr.pos / N; z = y / 3 * 3 + x / 3;
             curr.val = nconflict (col[x], row[y], sub[z]);
-
         }
 
-        //Collections.sort(tape);
+        Arrays.sort(tape, 0, end);
         x = index % N; y = index / N; z = y / 3 * 3 + x / 3;
 
         for (int dig = 1; dig <= N; dig++) {
             if ( !exist(row[y], dig) && !exist(col[x], dig) && !exist(sub[z], dig)) {
                 col[x] ^= 1 << dig; row[y] ^= 1 << dig; sub[z] ^= 1 << dig;
-                board[y][x] = dig;
+                grid[y][x] = dig;
 
-                if (backtrack(board, col, row, sub, tape, end - 1) == true) {
+                if (backtrack(tape, end - 1) == true) {
                     return true;
                 }
 
-                board[y][x] = 0;
+                grid[y][x] = 0;
                 col[x] ^= 1 << dig; row[y] ^= 1 << dig; sub[z] ^= 1 << dig;
             }
         }
@@ -111,8 +118,8 @@ class SudokuSolver {
     }
     public int[][] solve() {
 
-        int[] col = new int[9], row = new int[9], sub = new int[9];
-        Vector<hash> hist = new Vector<>();
+        int size = 0;
+        hash[] hist = new hash[81];
 
         for (int y = 0; y < 9; y++) {
             for (int x = 0; x < 9; x++)  {
@@ -134,7 +141,7 @@ class SudokuSolver {
                     int mask = nconflict(col[x], row[y], sub[z]);
 
                     if (Integer.bitCount(mask) > 1) {
-                        hist.add ( new hash(mask, index)) ;
+                        hist[size++] = new hash(mask, index);
                     } else {
                         int dig = getbit(mask);
                         grid[y][x] = dig;
@@ -153,8 +160,8 @@ class SudokuSolver {
         //    System.out.print('\n');
         //}
 
-        Collections.sort(hist);       
-        backtrack(grid, col, row, sub, hist, hist.size() - 1);
+        Arrays.sort(hist, 0, size);
+        backtrack( hist, size - 1);
 
         return grid;
     }

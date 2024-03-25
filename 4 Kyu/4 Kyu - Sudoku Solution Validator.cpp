@@ -31,6 +31,7 @@ bool validSolution (unsigned int board[9][9]) {
 int main () {
 
     unsigned int board[9][9];
+    int row[10] = {};
 
     for (int i = 0; i < 9; i++) {
         for (int j = 0; j < 9; j++) {
@@ -38,13 +39,23 @@ int main () {
         }
     }
 
-    for (int i = 0; i < 9; i++) {
-        for (int j = 0; j < 9; j++) {
-            int ix = i / 3 * 3 + j / 3, iy = i % 3 * 3 + j % 3;
+    int cnt = 0;
+    for (int y = 0; y < 9; y++) {
+        for (int x = 0; x < 9; x++) {
+            int zx = y / 3 * 3 + x / 3, zy = y % 3 * 3 + x % 3;
+            
+            if (board[y][x] < 0 || board[y][x] > 9) {
+                return false;
+            }
+            if (board[y][x]) cnt++;
 
-            std::cout << board[ix][iy] << ' ';
+            // row[y] |= 1 << board[y][x];
+            // col[x] |= 1 << board[x][y];
+            // col[zx] |= 1 << board[zx][zy];
+
+            // std::cout << board[zx][zy] << ' ';
         }
-        std::cout << '\n';
+        // std::cout << '\n';
     }
 
 }
