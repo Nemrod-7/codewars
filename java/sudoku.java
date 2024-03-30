@@ -1,6 +1,4 @@
-import java.util.Collections;
 import java.util.Arrays;
-
 //import java.lang.Exception;
 
 class hash implements Comparable<hash> {
@@ -9,7 +7,7 @@ class hash implements Comparable<hash> {
     public hash(int val, int pos) {
         this.val = val;
         this.pos = pos;
-    }   
+    }
 
     @Override
     public int compareTo(hash p) {
@@ -22,6 +20,21 @@ class SudokuSolver {
     int[][] grid ;
     int[] col = new int[10], row = new int[10], sub = new int[10];
 
+    boolean validate() {
+        for (int r = 0; r < 9; r++) {
+            int row = 0, col = 0, box = 0;
+            for (int c = 0; c < 9; c++) {
+                int i = (r % 3) * 3 + c % 3, j = (r / 3) * 3 + c / 3;
+                row ^= 1 << grid[r][c];
+                col ^= 1 << grid[c][r];
+                box ^= 1 << grid[j][i];
+            }
+            if (row != 1022 || col != 1022 || box != 1022) {
+                return false;
+            }
+        }
+        return true;
+    }
     static public void display(int[][] board) {
         System.out.print("\n");
 
@@ -35,7 +48,7 @@ class SudokuSolver {
                     System.out.print(dig);
                 }
                 System.out.print(' ');
-            } 
+            }
             System.out.print("\n");
         }
     }
@@ -55,17 +68,29 @@ class SudokuSolver {
         return 0;
     }
     private boolean check(int[][] source) {
-
-        int cnt = 0;
+        int cnt = 0, dig, z;
+        if (source.length != 9) return false;
 
         for (int y = 0; y < N; y++) {
+            if (source[y].length != 9) return false;
+
             for (int x = 0; x < N; x++) {
+                dig = source[y][x];
+                z = y / 3 * 3 + x / 3;
+
                 if (source[y][x] != 0) {
                     if (source[y][x] < 0 || source[y][x] > 9) {
                         return false;
-                    } 
+                    } else {
+                        if ((row[y] >> dig &1) == 1 || (col[x] >> dig &1) == 1 || (sub[z] >> dig &1) == 1) {
+                            return false;
+                        }
 
-                    cnt++;
+                        cnt++;
+                        row[y] |= 1 << grid[y][x];
+                        col[x] |= 1 << grid[y][x];
+                        sub[z] |= 1 << grid[y][x];
+                    }
                 }
             }
         }
@@ -123,18 +148,6 @@ class SudokuSolver {
 
         for (int y = 0; y < 9; y++) {
             for (int x = 0; x < 9; x++)  {
-                int z = y / 3 * 3 + x / 3;
-
-                if (grid[y][x] != 0) {
-                    col[x] |= 1 << grid[y][x]; 
-                    row[y] |= 1 << grid[y][x]; 
-                    sub[z] |= 1 << grid[y][x]; 
-                }
-            }
-        }
-
-        for (int y = 0; y < 9; y++) {
-            for (int x = 0; x < 9; x++)  {
                 int z = y / 3 * 3 + x / 3, index = y * 9 + x;
 
                 if (grid[y][x] == 0) {
@@ -146,9 +159,9 @@ class SudokuSolver {
                         int dig = getbit(mask);
                         grid[y][x] = dig;
 
-                        col[x] |= 1 << dig; 
-                        row[y] |= 1 << dig; 
-                        sub[z] |= 1 << dig; 
+                        col[x] |= 1 << dig;
+                        row[y] |= 1 << dig;
+                        sub[z] |= 1 << dig;
                     }
                 }
             }
@@ -161,18 +174,23 @@ class SudokuSolver {
         //}
 
         Arrays.sort(hist, 0, size);
-        backtrack( hist, size - 1);
+        var status = backtrack( hist, size - 1);
+
+        if (status == false) {
+            throw new IllegalArgumentException("No result.");
+        } else if (validate() == false) {
+            throw new IllegalArgumentException("Invalid.");
+        }
 
         return grid;
     }
 
     public SudokuSolver(int[][] src) {
+        grid = src;
 
         if (check(src) == false) {
             throw new IllegalArgumentException("Invalid board.");
         }
-
-        grid = src;
     }
 
 }
@@ -181,41 +199,35 @@ class SudokuSolver {
 class Main {
     static public void main(String[] args) {
 
-        int[][] puzzle1   =
-        {{0, 0, 6, 1, 0, 0, 0, 0, 8}, 
-            {0, 8, 0, 0, 9, 0, 0, 3, 0}, 
-            {2, 0, 0, 0, 0, 5, 4, 0, 0}, 
-            {4, 0, 0, 0, 0, 1, 8, 0, 0}, 
-            {0, 3, 0, 0, 7, 0, 0, 4, 0}, 
-            {0, 0, 7, 9, 0, 0, 0, 0, 3}, 
-            {0, 0, 8, 4, 0, 0, 0, 0, 6}, 
-            {0, 2, 0, 0, 5, 0, 0, 8, 0}, 
-            {1, 0, 0, 0, 0, 2, 5, 0, 0}},
+        int[][] puzzle   =
+        {{0, 0, 6, 1, 0, 0, 0, 0, 8},
+            {0, 8, 0, 0, 9, 0, 0, 3, 0},
+            {2, 0, 0, 0, 0, 5, 4, 0, 0},
+            {4, 0, 0, 0, 0, 1, 8, 0, 0},
+            {0, 3, 0, 0, 7, 0, 0, 4, 0},
+            {0, 0, 7, 9, 0, 0, 0, 0, 3},
+            {0, 0, 8, 4, 0, 0, 0, 0, 6},
+            {0, 2, 0, 0, 5, 0, 0, 8, 0},
+            {1, 0, 0, 0, 0, 2, 5, 0, 0}};
 
-            solution = {{3, 4, 6, 1, 2, 7, 9, 5, 8}, 
-                {7, 8, 5, 6, 9, 4, 1, 3, 2}, 
-                {2, 1, 9, 3, 8, 5, 4, 6, 7}, 
-                {4, 6, 2, 5, 3, 1, 8, 7, 9}, 
-                {9, 3, 1, 2, 7, 8, 6, 4, 5}, 
-                {8, 5, 7, 9, 4, 6, 2, 1, 3}, 
-                {5, 9, 8, 4, 1, 3, 7, 2, 6},
-                {6, 2, 4, 7, 5, 9, 3, 8, 1},
-                {1, 7, 3, 8, 6, 2, 5, 9, 4}};
+        int[][] puzz1 = 
+        {  {4, 0, 5, 0, 1, 0, 7, 0, 8},
+            {0, 0, 7, 0, 0, 5, 0, 0, 0},
+            {0, 3, 0, 7, 0, 0, 0, 5, 0},
+            {0, 0, 3, 0, 0, 0, 0, 0, 5},
+            {0, 4, 0, 2, 0, 8, 0, 6, 0},
+            {5, 0, 0, 0, 0, 0, 1, 0, 0},
+            {0, 7, 0, 0, 2, 3, 0, 1, 0},
+            {0, 0, 0, 4, 0, 0, 2, 0, 0},
+            {9, 0, 6, 0, 7, 0, 4, 0, 3}
+        };
+        var result = new SudokuSolver(puzz1).solve();
 
-        int[][] puzzle2 =
-        {{0, 3, 4, 6, 7, 8, 9, 0, 2},
-            {6, 7, 2, 1, 9, 5, 3, 4, 8},
-            {0, 9, 8, 3, 4, 2, 5, 6, 7},
-            {8, 5, 9, 7, 6, 1, 4, 2, 3},
-            {4, 2, 6, 8, 5, 3, 7, 9, 1},
-            {7, 1, 3, 9, 2, 4, 8, 5, 6},
-            {9, 6, 1, 5, 3, 7, 2, 8, 4},
-            {2, 8, 7, 4, 1, 9, 6, 3, 5},
-            {3, 4, 5, 2, 8, 6, 1, 7, 0}};
-
-        var result = new SudokuSolver(puzzle1).solve();
-
+        
         SudokuSolver.display(result);
 
+
     }
+
+
 }

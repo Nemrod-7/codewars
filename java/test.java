@@ -8,7 +8,7 @@ class hash implements Comparable<hash> {
     public hash(int val, int pos) {
         this.val = val;
         this.pos = pos;
-    }   
+    }
 
     /*
     public hash(hash p) {
@@ -48,11 +48,8 @@ class Main {
 
         for (int i = 0; i < size ; i++) {
             var curr = base[i];
-            System.out.printf( "%d ", curr.val ); 
+            System.out.printf( "%d ", curr.val );
 
         }
-
-
-
     }
 }

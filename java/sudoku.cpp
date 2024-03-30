@@ -5,8 +5,6 @@
 #include <chrono>
 
 using namespace std;
-const int N = 9;
-enum {beginner,easy,medium,hard,hell};
 ////////////////////////////////////////////////////////////////////////////////
 class Timer {
     //using time = chrono::steady_clock;
@@ -53,10 +51,10 @@ string display (vector<int> board) {
 
   string os;
 
-  for (int y = 0; y < N * N; y++) {
+  for (int y = 0; y < 81; y++) {
       if (y != 0) {
-        if (y % (N * 3) == 0) os += '\n';
-        if (y % N == 0) os += '\n';
+        if (y % (9 * 3) == 0) os += '\n';
+        if (y % 9 == 0) os += '\n';
       }
 
       os += (board[y] ? to_string (board[y]) : ".") + " ";
@@ -68,176 +66,232 @@ string display (vector<int> board) {
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void flip (int &mask, int bit) { mask ^= 1 << bit; }
-bool exist (int &mask, int bit) { return mask >> bit &1; }
-int bitcnt (int mask) {
-    int cnt = 0;
+class bit {
+    public :
+        static int count (int mask) {
+            int cnt = 0;
 
-    do {
-        cnt += mask &1;
-    } while (mask >>= 1);
+            do {
+                cnt += mask &1;
+            } while (mask >>= 1);
 
-    return cnt;
-}
-int getbit (int mask) {
-    for (int i = 1; i <= N; i++)
-        if (mask >> i &1) return i;
+            return cnt;
+        }
+        static int get (int mask) {
+            switch (mask) {
+              case 2 : return 1; break;
+              case 4 : return 2; break;
+              case 8 : return 3; break;
+              case 16 : return 4; break;
+              case 32 : return 5; break;
+              case 64 : return 6; break;
+              case 128 : return 7; break;
+              case 256 : return 8; break;
+              case 512 : return 9; break;
+            }
+            return 0;
+        }
 
-    return 0;
-}
+        static void flip (int &mask, int bit) { mask ^= 1 << bit; }
+        static bool exist (int &mask, int bit) { return mask >> bit &1; }
+        static std::string show (int mask) {
+            std::string os;
+            for (int i = 1; i < 10; i++) {
+                os += to_string(mask >> i&1 );
+            }
+            return os;
+        }
+        static bool is_pow_of_2 (int mask) {
+            return (mask & -mask) == mask;
+        }
+};
 
-int nconflict (int col, int row, int sub) {
-    int mask = 0;
+class Sudoku {
+    private:
+        enum level_e {beginner,easy,medium,hard,hell};
+        // const std::vector<std::string> difficulty = {"beginner", "easy", "medium", "hard", "hell"};
+        static const int N = 9;
+        static int level;
+        ///////////////////////////solver////////////////////////
 
-    for (int j = 1; j <= N; j++) {
-        bool ex = col &1 << j, ey = row &1 << j, bl = sub &1 << j;
+        static int nconflict (int col, int row, int sub) {
+            int mask = 0;
 
-        if (!ex && !ey && !bl)
-            mask |= 1 << j;
-    }
+            for (int j = 1; j <= 9; j++) {
+                bool ex = col &1 << j, ey = row &1 << j, bl = sub &1 << j;
 
-    return mask;
-}
+                if (!ex && !ey && !bl)
+                    mask |= 1 << j;
+            }
 
-bool backtrack (vector<int> &board, int col[], int row[], int sub[], vector<pair<int,int>> &tape, int end) {
+            return mask;
+        }
+        bool is_valid (const std::vector<int> &board) {
 
-    if (end == -1) return true;
-    int x,y,z;
+            int col[10] = {}, row[10] = {}, sub[10] = {};
 
-    for (int i = 0; i < end; i++) {
-        auto &[mask, pos] = tape[i];
-        x = pos % N, y = pos / N, z = y / 3 * 3 + x / 3;
-        mask = nconflict (col[x], row[y], sub[z]);
-    }
+            for (size_t i = 0; i < board.size(); i++) {
+                int x = i % N, y = i / N, z = y / 3 * 3 + x / 3;
+                if (board[i] == 0) return false;
+                col[x] += board[i], row[y] += board[i], sub[z] += board[i];
+            }
 
-    sort (&tape[0], &tape[end], [](const pair<int,int> &a, const pair<int,int> &b) {
-            return bitcnt (a.first) > bitcnt (b.first);
+            for (int i = 0; i < N; i++) {
+                if (col[i] != 45 || row[i] != 45 || sub[i] != 45) return false;
+            }
+
+            return true;
+        }
+        static bool backtrack (std::vector<int> &board, int col[], int row[], int sub[], std::vector<std::pair<int,int>> &tape, int it) {
+
+            if (it == -1) return true;
+            int x,y,z;
+
+            for (auto &[mask, pos] : tape) {
+                x = pos % N, y = pos / N, z = y / 3 * 3 + x / 3;
+                mask = nconflict (col[x], row[y], sub[z]);
+            }
+
+            std::sort (&tape[0], &tape[it], [](const std::pair<int,int> &a, const std::pair<int,int> &b) {
+                    return bit::count (a.first) > bit::count (b.first);
+                    });
+
+            int index = tape[it].second;
+            x = index % N, y = index / N, z = y / 3 * 3 + x / 3;
+
+            for (int dig = 1; dig <= N; dig++) {
+
+                if (!bit::exist (col[x], dig) && !bit::exist (row[y], dig) && !bit::exist (sub[z], dig)) {
+                    col[x] ^= 1 << dig, row[y] ^= 1 << dig, sub[z] ^= 1 << dig;
+                    board[index] = dig;
+
+                    if (backtrack (board, col, row, sub, tape, it - 1))
+                        return true;
+
+                    board[index] = 0;
+                    col[x] ^= 1 << dig, row[y] ^= 1 << dig, sub[z] ^= 1 << dig;
+                }
+            }
+
+            return false;
+        }
+        /////////////////////////////////////////////////////////
+
+        static std::vector<int> create () {
+            std::vector<int> board (9 * 9), pos (9 * 9);
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_int_distribution<> dist (0, board.size() - 1), digits (1, 9);
+
+            int ncell = 10;
+            int col[10] = {}, row[10] = {}, sub[10] = {};
+
+            while (ncell-->0) {
+                int pos = dist(gen), dig = digits(gen);
+                int x = pos % 9, y = pos / 9, z = y / 3 * 3 + x / 3;
+
+                if (!(col[x] &1 << dig) && !(row[y] &1 << dig) && !(sub[z] &1 << dig)) {
+                    board[pos] = dig;
+                    col[x] |= 1 << dig, row[y] |= 1 << dig, sub[z] |= 1 << dig;
+                }
+            }
+
+            board = solver (board);
+            std::generate (pos.begin(), pos.end(), [i = 0] () mutable { return i++;});
+            std::shuffle (pos.begin(), pos.end(), rd);
+
+            switch (level) {
+                case beginner : ncell = 30; break;
+                case easy     : ncell = 40; break;
+                case medium   : ncell = 50; break;
+                case hard     : ncell = 60; break;
+                case hell     : ncell = 70; break;
+            }
+
+            while (ncell-->0)
+                board[pos[ncell]] = 0;
+
+            return board;
+        }
+    public:
+
+        static std::vector<int> solver (std::vector<int> board) {
+
+            int col[10] = {}, row[10] = {}, sub[10] = {};
+
+            for (size_t i = 0; i < board.size(); i++) {
+                int dig = board[i];
+                int x = i % N, y = i / N, z = y / 3 * 3 + x / 3;
+
+                if (dig != 0) {
+                    col[x] |= 1 << dig, row[y] |= 1 << dig, sub[z] |= 1 << dig;
+                }
+            }
+
+            std::vector<std::pair<int,int>> hist;
+
+            for (size_t i = 0; i < board.size(); i++) {
+                if (board[i] == 0) {
+                    int x = i % N, y = i / N, z = y / 3 * 3 + x / 3;
+                    int mask = nconflict (col[x], row[y], sub[z]);
+
+                    if (!bit::is_pow_of_2(mask)) {
+                    // if (bit::count (mask) > 1) {
+                        hist.push_back({mask, i});
+                    } else {
+                        int dig = bit::get (mask);
+                        board[i] = dig;
+                        col[x] |= 1 << dig, row[y] |= 1 << dig, sub[z] |= 1 << dig;
+                    }
+                }
+            }
+
+            std::sort (&hist[0], &hist[hist.size()], [](const std::pair<int,int> &a, const std::pair<int,int> &b) {
+                return bit::count (a.first) > bit::count (b.first);
             });
 
-    int index = tape[end].second;
-    x = index % N, y = index / N, z = y / 3 * 3 + x / 3;
+            backtrack (board, col, row, sub, hist, hist.size() - 1);
 
-    for (int dig = 1; dig <= N; dig++) {
-
-        if (!exist (col[x], dig) && !exist (row[y], dig) && !exist (sub[z], dig)) {
-            col[x] ^= 1 << dig, row[y] ^= 1 << dig, sub[z] ^= 1 << dig;
-            board[index] = dig;
-
-            if (backtrack (board, col, row, sub, tape, end - 1))
-                return true;
-
-            board[index] = 0;
-            col[x] ^= 1 << dig, row[y] ^= 1 << dig, sub[z] ^= 1 << dig;
+            return board;
         }
-    }
+        static void test(std::vector<int> board) {
+            int col[10] = {}, row[10] = {}, sub[10] = {};
 
-    return false;
-}
-vector<int> solver (vector<int> board) {
+            for (size_t i = 0; i < board.size(); i++) {
+                int dig = board[i];
+                int x = i % N, y = i / N, z = y / 3 * 3 + x / 3;
 
-    int col[10] = {}, row[10] = {}, sub[10] = {};
+                if (dig != 0) {
+                    col[x] |= 1 << dig, row[y] |= 1 << dig, sub[z] |= 1 << dig;
+                }
+            }
 
-    for (int i = 0; i < board.size(); i++) {
-        int dig = board[i];
-        int x = i % N, y = i / N, z = y / 3 * 3 + x / 3;
+            std::vector<std::pair<int,int>> hist;
 
-        if (dig != 0) {
-            col[x] |= 1 << dig, row[y] |= 1 << dig, sub[z] |= 1 << dig;
-        }
-    }
+            for (size_t i = 0; i < board.size(); i++) {
+                if (board[i] == 0) {
+                    int x = i % N, y = i / N, z = y / 3 * 3 + x / 3;
+                    int mask = nconflict (col[x], row[y], sub[z]);
 
-    vector<pair<int,int>> hist;
-
-    for (int i = 0; i < board.size(); i++) {
-        if (board[i] == 0) {
-            int x = i % N, y = i / N, z = y / 3 * 3 + x / 3;
-            int mask = nconflict (col[x], row[y], sub[z]);
-
-            if (bitcnt (mask) > 1) {
-                hist.push_back({mask, i});
-            } else {
-                int dig = getbit (mask);
-
-                board[i] = dig;
-                col[x] |= 1 << dig, row[y] |= 1 << dig, sub[z] |= 1 << dig;
+                    if ((mask & -mask) == mask) {
+                        cout << mask << " " << bit::show(mask) << " " << bit::get(mask)  << "\n";
+                    }
+                }
             }
         }
-    }
+};
 
-    sort (&hist[0], &hist[hist.size()], [](const pair<int,int> &a, const pair<int,int> &b) {
-            return bitcnt (a.first) > bitcnt (b.first);
-            });
-
-    backtrack (board, col, row, sub, hist, hist.size() - 1);
-
-    return board;
-}
-
-vector<int> generate (int lvl) {
-
-    vector<int> board (N * N), pos (N * N);
-    random_device rd;
-    mt19937 gen(rd());
-    uniform_int_distribution<> dist (0, board.size() - 1), digits (1, 9);
-
-    int ncell = 10;
-    int col[10] = {}, row[10] = {}, sub[10] = {};
-
-    while (ncell-->0) {
-        int pos = dist(gen), dig = digits(gen);
-        int x = pos % N, y = pos / N, z = y / 3 * 3 + x / 3;
-
-        if (!(col[x] &1 << dig) && !(row[y] &1 << dig) && !(sub[z] &1 << dig)) {
-            board[pos] = dig;
-            col[x] |= 1 << dig, row[y] |= 1 << dig, sub[z] |= 1 << dig;
-        }
-    }
-
-    board = solver (board);
-    generate (pos.begin(), pos.end(), [i = 0] () mutable { return i++;});
-
-    shuffle (pos.begin(), pos.end(), rd);
-
-    switch (lvl) {
-        case beginner : ncell = 30; break;
-        case easy     : ncell = 40; break;
-        case medium   : ncell = 50; break;
-        case hard     : ncell = 60; break;
-        case hell     : ncell = 70; break;
-    }
-
-    while (ncell-->0)
-        board[pos[ncell]] = 0;
-
-    return board;
-}
 vector<int> convert (vector<vector<int>> input) {
     vector<int> board;
 
-    for (int y = 0; y < N; y++) {
-        for (int x = 0; x < N; x++) {
+    for (int y = 0; y < 9; y++) {
+        for (int x = 0; x < 9; x++) {
             board.push_back (input[y][x]);
         }
     }
     return board;
 }
 
-bool is_valid (const vector<int> &board) {
-
-    int col[N] = {}, row[N] = {}, sub[N] = {};
-
-    for (int i = 0; i < board.size(); i++) {
-        int x = i % N, y = i / N, z = y / 3 * 3 + x / 3;
-        if (board[i] == 0) return false;
-        col[x] += board[i], row[y] += board[i], sub[z] += board[i];
-    }
-
-    for (int i = 0; i < N; i++) {
-        if (col[i] != 45 || row[i] != 45 || sub[i] != 45) return false;
-    }
-
-    return true;
-}
 
 int main () {
 
@@ -255,15 +309,27 @@ int main () {
         {1, 2, 4, 9, 0, 5, 6, 3, 0}};
 
 
-    grid = {{0, 0, 6, 1, 0, 0, 0, 0, 8}, 
-        {0, 8, 0, 0, 9, 0, 0, 3, 0}, 
-        {2, 0, 0, 0, 0, 5, 4, 0, 0}, 
-        {4, 0, 0, 0, 0, 1, 8, 0, 0}, 
-        {0, 3, 0, 0, 7, 0, 0, 4, 0}, 
-        {0, 0, 7, 9, 0, 0, 0, 0, 3}, 
-        {0, 0, 8, 4, 0, 0, 0, 0, 6}, 
-        {0, 2, 0, 0, 5, 0, 0, 8, 0}, 
+    grid = {{0, 0, 6, 1, 0, 0, 0, 0, 8},
+        {0, 8, 0, 0, 9, 0, 0, 3, 0},
+        {2, 0, 0, 0, 0, 5, 4, 0, 0},
+        {4, 0, 0, 0, 0, 1, 8, 0, 0},
+        {0, 3, 0, 0, 7, 0, 0, 4, 0},
+        {0, 0, 7, 9, 0, 0, 0, 0, 3},
+        {0, 0, 8, 4, 0, 0, 0, 0, 6},
+        {0, 2, 0, 0, 5, 0, 0, 8, 0},
         {1, 0, 0, 0, 0, 2, 5, 0, 0}};
+
+        grid = // multiple solutions ?
+        {  {4, 0, 5, 0, 1, 0, 7, 0, 8},
+            {0, 0, 7, 0, 0, 5, 0, 0, 0},
+            {0, 3, 0, 7, 0, 0, 0, 5, 0},
+            {0, 0, 3, 0, 0, 0, 0, 0, 5},
+            {0, 4, 0, 2, 0, 8, 0, 6, 0},
+            {5, 0, 0, 0, 0, 0, 1, 0, 0},
+            {0, 7, 0, 0, 2, 3, 0, 1, 0},
+            {0, 0, 0, 4, 0, 0, 2, 0, 0},
+            {9, 0, 6, 0, 7, 0, 4, 0, 3}
+        };
 
     // grid = // no solution
     // {{0, 0, 0, 0, 0, 5, 0, 8, 0},
@@ -276,10 +342,10 @@ int main () {
     //  {0, 0, 0, 0, 0, 0, 0, 0, 4},
     //  {0, 0, 0, 0, 0, 0, 0, 0, 0}};
 
+    Sudoku::test(convert(grid));
+    // vector<int> board = solver (convert(grid));
 
-    vector<int> board = solver (convert(grid));
-
-    cout << display(board);
+    // cout << display(board);
 
     clock.stop();
     clock.get_duration();
