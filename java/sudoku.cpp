@@ -113,19 +113,6 @@ class Sudoku {
         static const int N = 9;
         static int level;
         ///////////////////////////solver////////////////////////
-
-        static int nconflict (int col, int row, int sub) {
-            int mask = 0;
-
-            for (int j = 1; j <= 9; j++) {
-                bool ex = col &1 << j, ey = row &1 << j, bl = sub &1 << j;
-
-                if (!ex && !ey && !bl)
-                    mask |= 1 << j;
-            }
-
-            return mask;
-        }
         bool is_valid (const std::vector<int> &board) {
 
             int col[10] = {}, row[10] = {}, sub[10] = {};
@@ -142,6 +129,20 @@ class Sudoku {
 
             return true;
         }
+
+        static int nconflict (int col, int row, int sub) {
+            int mask = 0;
+
+            for (int j = 1; j <= 9; j++) {
+                bool ex = col &1 << j, ey = row &1 << j, bl = sub &1 << j;
+
+                if (!ex && !ey && !bl)
+                    mask |= 1 << j;
+            }
+
+            return mask;
+        }
+
         static bool backtrack (std::vector<int> &board, int col[], int row[], int sub[], std::vector<std::pair<int,int>> &tape, int it) {
 
             if (it == -1) return true;
@@ -176,7 +177,35 @@ class Sudoku {
             return false;
         }
         /////////////////////////////////////////////////////////
+        static void simulated_annealing (std::vector<int> &board, int col[], int row[], int sub[], std::vector<std::pair<int,int>> &tape) {
+            random_device rd;
+            mt19937 gen(rd());
 
+            for (auto &[mask, pos] : tape) {
+                int x = pos % N, y = pos / N, z = y / 3 * 3 + x / 3;
+                mask = nconflict (col[x], row[y], sub[z]);
+
+                if (bit::is_pow_of_2(mask)) {
+                    board[pos] = bit::get(mask);
+                } else {
+                    std::vector<int> candidate;
+
+                    for (int dig = 1; dig <= N; dig++) {
+                        if (bit::exist (mask, dig)) {
+                            candidate.push_back(dig);
+                        }
+                    }
+
+                    uniform_int_distribution<> rng (0, candidate.size() - 1);
+                    int dig = rng(gen);
+                    
+                    board[pos] = candidate[dig];
+                    col[x] ^= 1 << dig, row[y] ^= 1 << dig, sub[z] ^= 1 << dig;
+
+                }
+            }
+
+        }
         static std::vector<int> create () {
             std::vector<int> board (9 * 9), pos (9 * 9);
             std::random_device rd;
@@ -196,7 +225,7 @@ class Sudoku {
                 }
             }
 
-            board = solver (board);
+            board = solver2 (board);
             std::generate (pos.begin(), pos.end(), [i = 0] () mutable { return i++;});
             std::shuffle (pos.begin(), pos.end(), rd);
 
@@ -215,7 +244,7 @@ class Sudoku {
         }
     public:
 
-        static std::vector<int> solver (std::vector<int> board) {
+        static std::vector<int> solver1 (std::vector<int> board) {
 
             int col[10] = {}, row[10] = {}, sub[10] = {};
 
@@ -250,12 +279,15 @@ class Sudoku {
                 return bit::count (a.first) > bit::count (b.first);
             });
 
-            backtrack (board, col, row, sub, hist, hist.size() - 1);
+            // backtrack (board, col, row, sub, hist, hist.size() - 1);
+            simulated_annealing (board, col, row, sub, hist);
 
             return board;
         }
-        static void test(std::vector<int> board) {
+        static std::vector<int> solver2 (std::vector<int> board) {
+            bool flag = true;
             int col[10] = {}, row[10] = {}, sub[10] = {};
+            std::vector<std::pair<int,int>> hist;
 
             for (size_t i = 0; i < board.size(); i++) {
                 int dig = board[i];
@@ -266,18 +298,39 @@ class Sudoku {
                 }
             }
 
-            std::vector<std::pair<int,int>> hist;
+            while (flag) {
+                flag = false;
+
+                for (size_t i = 0; i < board.size(); i++) {
+                    if (board[i] == 0) {
+                        int x = i % N, y = i / N, z = y / 3 * 3 + x / 3;
+                        int mask = nconflict (col[x], row[y], sub[z]);
+                        int dig = bit::get (mask);
+
+                        if (dig != 0) {
+                            board[i] = dig;
+                            col[x] |= 1 << dig, row[y] |= 1 << dig, sub[z] |= 1 << dig;
+                            flag = true;
+                        }
+                    }
+                }
+            }
 
             for (size_t i = 0; i < board.size(); i++) {
                 if (board[i] == 0) {
                     int x = i % N, y = i / N, z = y / 3 * 3 + x / 3;
                     int mask = nconflict (col[x], row[y], sub[z]);
-
-                    if ((mask & -mask) == mask) {
-                        cout << mask << " " << bit::show(mask) << " " << bit::get(mask)  << "\n";
-                    }
+                    hist.push_back({mask,i});
                 }
             }
+
+            std::sort (&hist[0], &hist[hist.size()], [](const std::pair<int,int> &a, const std::pair<int,int> &b) {
+                return bit::count (a.first) > bit::count (b.first);
+            });
+
+            // backtrack (board, col, row, sub, hist, hist.size() - 1);
+            simulated_annealing (board, col, row, sub, hist);
+            return board;
         }
 };
 
@@ -342,10 +395,10 @@ int main () {
     //  {0, 0, 0, 0, 0, 0, 0, 0, 4},
     //  {0, 0, 0, 0, 0, 0, 0, 0, 0}};
 
-    Sudoku::test(convert(grid));
+    vector<int> board = Sudoku::solver1 (convert(grid));
     // vector<int> board = solver (convert(grid));
 
-    // cout << display(board);
+    cout << display(board);
 
     clock.stop();
     clock.get_duration();
