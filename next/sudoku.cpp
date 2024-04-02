@@ -134,7 +134,7 @@ class Sudoku {
             return true;
         }
 
-        static int candidates (int col, int row, int sub) {
+        static int mkmask (int col, int row, int sub) {
             int mask = 0;
 
             for (int j = 1; j <= 9; j++) {
@@ -154,7 +154,7 @@ class Sudoku {
 
             for (auto &[mask, pos] : tape) {
                 x = pos % N, y = pos / N, z = y / 3 * 3 + x / 3;
-                mask = candidates (col[x], row[y], sub[z]);
+                mask = mkmask (col[x], row[y], sub[z]);
             }
 
             std::sort (&tape[0], &tape[it], [](const std::pair<int,int> &a, const std::pair<int,int> &b) {
@@ -181,67 +181,86 @@ class Sudoku {
         }
         /////////////////////////////////////////////////////////
         static int rnd_walk(int mask) {
-
             std::vector<int> candidate;
+
             for (int dig = 1; dig <= N; dig++) {
                 if (bit::exist (mask, dig)) {
                     candidate.push_back(dig);
                 }
             }
             uniform_int_distribution<> rng (0, candidate.size() - 1);
+            // int pos = rng(gen);
             return candidate[rng(gen)];
         }
-        static int cost(std::vector<int> &board, int col[], int row[], int sub[]) {
+        static int cost(std::vector<int> &board) {
             int cnt = 0;
+            int col[10] = {0}, row[10] = {0};
 
             for (int i = 0; i < 81; i++) {
                 int dig = board[i];
 
-                if (bit::exist(col[i % 9], dig)) cnt++;
-                if (bit::exist(row[i / 9], dig)) cnt++;
-                if (bit::exist(sub[(i / 9) / 3 * 3 + (i % 9) / 9], dig)) cnt++;
+                if (dig == 0) {
+                    cnt++;
+                }
+
             }
-            return cnt / 2;
+
+            return cnt;
         }
         static void simulated_annealing (std::vector<int> &board, int col[10], int row[10], int sub[10], std::vector<std::pair<int,int>> &tape) {
             uniform_int_distribution<> rng (0, tape.size() - 1);
+            uniform_real_distribution<> dist (0, 1);
 
             for (auto &[mask, pos] : tape) {
                 int x = pos % N, y = pos / N, z = y / 3 * 3 + x / 3;
-                mask = candidates (col[x], row[y], sub[z]);
+                mask = mkmask (col[x], row[y], sub[z]);
 
                 if (bit::is_pow_of_2(mask)) {
                     board[pos] = bit::get(mask);
-                } else {
-                    int dig = rnd_walk(mask);
-
-                    board[pos] = dig;
-                    col[x] ^= 1 << dig, row[y] ^= 1 << dig, sub[z] ^= 1 << dig;
                 }
             }
 
-
-            const double alpha = 1.0 - 1e-7, t_min = 0.01;
-            double T = 0.4;
+            const double alpha = 1.0 - 1e-4, t_min = 0.01;
+            double T = 1.0;
             std::vector<int> curr = board, next;
-            int nx[10], ny[10], ns[10];
+            int x, y, z;
 
-            while (T > t_min) {
+
+            int cnt = 0;
+            int nxh = 0;
+            // cout << display(board);
+
+
+
+
+            while (nxh-->0) {
+            // while (T > t_min) {
                 // mutation
-                next = curr;
-                int costa = cost(curr, col, row, sub);
+                auto [mask, index] = tape[rng(gen)];
 
-                auto [mask, pos] = tape[rng(gen)];
-                int dig = rnd_walk(mask);
+                int c0 = cost(board);
+                int bak = board[index], dig = rnd_walk(mask);
 
-                next[pos] = dig;
+                board[index] = dig;
+                // int c1 = cost(board);
+                //
+                // cout << display(board);
+                // cout << x << " " << y << " :: " << dig ;
+                // cout << " => " << c0 << " " << c1;
+                //
+                // if (c1 == 0) {
+                //     break;
+                // } else if (c1 < c0) {
+                //
+                // } else // if (exp((c0 - c1) / T) < dist(gen))
+                // {
+                //     cout << "]" ;
+                //     board[index] = bak;
+                // }
 
-                if (cost(next, col, row, sub) < costa) {
+                cout << " nc : " << cost(board);
 
-                } else {
-
-                }
-
+                cout << "\n";
                 T *= alpha;
             }
 
@@ -308,7 +327,7 @@ class Sudoku {
                 for (size_t i = 0; i < board.size(); i++) {
                     if (board[i] == 0) {
                         int x = i % N, y = i / N, z = y / 3 * 3 + x / 3;
-                        int mask = candidates (col[x], row[y], sub[z]);
+                        int mask = mkmask (col[x], row[y], sub[z]);
                         int dig = bit::get (mask);
 
                         if (dig != 0) {
@@ -323,7 +342,7 @@ class Sudoku {
             for (size_t i = 0; i < board.size(); i++) {
                 if (board[i] == 0) {
                     int x = i % N, y = i / N, z = y / 3 * 3 + x / 3;
-                    int mask = candidates (col[x], row[y], sub[z]);
+                    int mask = mkmask (col[x], row[y], sub[z]);
                     hist.push_back({mask,i});
                 }
             }
@@ -332,8 +351,8 @@ class Sudoku {
                 return bit::count (a.first) > bit::count (b.first);
             });
 
-            backtrack (board, col, row, sub, hist, hist.size() - 1);
-            // simulated_annealing (board, col, row, sub, hist);
+            // backtrack (board, col, row, sub, hist, hist.size() - 1);
+            simulated_annealing (board, col, row, sub, hist);
 
             return board;
         }
@@ -365,16 +384,6 @@ int main () {
         {0, 2, 0, 0, 5, 0, 0, 8, 0},
         {1, 0, 0, 0, 0, 2, 5, 0, 0}};
 
-
-     res = {{3, 4, 6, 1, 2, 7, 9, 5, 8},
-        {7, 8, 5, 6, 9, 4, 1, 3, 2},
-        {2, 1, 9, 3, 8, 5, 4, 6, 7},
-        {4, 6, 2, 5, 3, 1, 8, 7, 9},
-        {9, 3, 1, 2, 7, 8, 6, 4, 5},
-        {8, 5, 7, 9, 4, 6, 2, 1, 3},
-        {5, 9, 8, 4, 1, 3, 7, 2, 6},
-        {6, 2, 4, 7, 5, 9, 3, 8, 1},
-        {1, 7, 3, 8, 6, 2, 5, 9, 4}};
         // grid = // multiple solutions ?
         // {  {4, 0, 5, 0, 1, 0, 7, 0, 8},
         //     {0, 0, 7, 0, 0, 5, 0, 0, 0},
@@ -398,13 +407,14 @@ int main () {
     //  {0, 0, 0, 0, 0, 0, 0, 0, 4},
     //  {0, 0, 0, 0, 0, 0, 0, 0, 0}};
 
+
     vector<int> board = Sudoku::solver2 (convert(grid));
     // vector<int> board = solver (convert(grid));
 
     // if (board != res) {
     //     cout << " Error : \n";
     // }
-    cout << display(board);
+
 
     clock.stop();
     clock.get_duration();
