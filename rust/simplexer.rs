@@ -15,16 +15,17 @@ impl Token {
 }
 
 pub enum TokenKind {
-    Integer,
-    Boolean,
-    String,
-    Operator,
-    Keyword,
-    Whitespace,
-    Identifier,
+    Integer, Boolean, String, Operator, Keyword, Whitespace, Identifier,
 }
 
 
+fn search (ve: &Vec<&str>, expr: &str) -> bool {
+
+    match ve.iter().find(|&x| *x == expr) {
+        Some(_) => true,
+        None => false,
+    }
+}
 fn main () {
 
     /*
@@ -37,12 +38,30 @@ fn main () {
        identifier:  Any sequence of alphanumeric characters, as well as '_' and '$' - Must not start with a digit - Make sure that keywords and booleans aren't matched as identifiers
        */
 
-    let _text = "id1 + id2 = 245 \"operation\" ";
-        
-    let operator = ['+','-','*','/','%','(',')','='];
-    let keyword = ["if","else","for","while","return","func","break"];
+    let src = "id1 + id2 = 245 \"operation\" ";
+
+    let _txt = src.chars().collect::<Vec<_>>();
+
+    let boolean = vec!["true","false"];
+    let operator = vec!["+","-","*","/","%","(",")","="];
+    let keyword = vec!["if","else","for","while","return","func","break"];
+
+    let token = ["123", "tpok18", "false", "="];
 
 
+    for tok in token {
+
+
+        if search(&operator, tok) {
+            print!("oper: {}\n", tok);
+        } else if search(&boolean, tok) {
+            print!("bool: {}\n", tok);
+        } else if search(&keyword, tok) {
+            print!("key : {}\n", tok);
+        }
+
+
+    }
 
 
 }

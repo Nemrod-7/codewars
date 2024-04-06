@@ -113,7 +113,7 @@ class Sudoku {
 
         enum level_e {beginner,easy,medium,hard,hell};
         // const std::vector<std::string> difficulty = {"beginner", "easy", "medium", "hard", "hell"};
-        inline static int X[81], Y[81], Z[81];
+        // inline static int X[81], Y[81], Z[81];
         static const int N = 9;
         static int level;
         ///////////////////////////solver////////////////////////
@@ -180,92 +180,15 @@ class Sudoku {
             return false;
         }
         /////////////////////////////////////////////////////////
-        static int rnd_walk(int mask) {
-            std::vector<int> candidate;
-
-            for (int dig = 1; dig <= N; dig++) {
-                if (bit::exist (mask, dig)) {
-                    candidate.push_back(dig);
-                }
-            }
+        static int rnd_walk(std::vector<int> candidate) {
             uniform_int_distribution<> rng (0, candidate.size() - 1);
-            // int pos = rng(gen);
             return candidate[rng(gen)];
         }
         static int cost(std::vector<int> &board) {
-            int cnt = 0;
-            int col[10] = {0}, row[10] = {0};
 
-            for (int i = 0; i < 81; i++) {
-                int dig = board[i];
-
-                if (dig == 0) {
-                    cnt++;
-                }
-
-            }
-
-            return cnt;
         }
-        static void simulated_annealing (std::vector<int> &board, int col[10], int row[10], int sub[10], std::vector<std::pair<int,int>> &tape) {
-            uniform_int_distribution<> rng (0, tape.size() - 1);
-            uniform_real_distribution<> dist (0, 1);
+        static void simulated_annealing (std::vector<int> &board, vector<int> col, vector<int> row, vector<int> sub, std::vector<std::pair<int,int>> &tape) {
 
-            for (auto &[mask, pos] : tape) {
-                int x = pos % N, y = pos / N, z = y / 3 * 3 + x / 3;
-                mask = mkmask (col[x], row[y], sub[z]);
-
-                if (bit::is_pow_of_2(mask)) {
-                    board[pos] = bit::get(mask);
-                }
-            }
-
-            const double alpha = 1.0 - 1e-4, t_min = 0.01;
-            double T = 1.0;
-            std::vector<int> curr = board, next;
-            int x, y, z;
-
-
-            int cnt = 0;
-            int nxh = 0;
-            // cout << display(board);
-
-
-
-
-            while (nxh-->0) {
-            // while (T > t_min) {
-                // mutation
-                auto [mask, index] = tape[rng(gen)];
-
-                int c0 = cost(board);
-                int bak = board[index], dig = rnd_walk(mask);
-
-                board[index] = dig;
-                // int c1 = cost(board);
-                //
-                // cout << display(board);
-                // cout << x << " " << y << " :: " << dig ;
-                // cout << " => " << c0 << " " << c1;
-                //
-                // if (c1 == 0) {
-                //     break;
-                // } else if (c1 < c0) {
-                //
-                // } else // if (exp((c0 - c1) / T) < dist(gen))
-                // {
-                //     cout << "]" ;
-                //     board[index] = bak;
-                // }
-
-                cout << " nc : " << cost(board);
-
-                cout << "\n";
-                T *= alpha;
-            }
-
-
-            cout << endl;
         }
 
         static std::vector<int> create () {
@@ -305,7 +228,6 @@ class Sudoku {
             return board;
         }
     public:
-
         static std::vector<int> solver2 (std::vector<int> board) {
             bool reduce = true;
             int col[10] = {}, row[10] = {}, sub[10] = {};
@@ -314,7 +236,7 @@ class Sudoku {
             for (size_t i = 0; i < board.size(); i++) {
                 int dig = board[i];
                 int x = i % N, y = i / N, z = y / 3 * 3 + x / 3;
-                X[i] = i % 9, Y[i] = i / 9, Z[i] = Y[i] / 3 * 3 + X[i] / 3;
+                // X[i] = i % 9, Y[i] = i / 9, Z[i] = Y[i] / 3 * 3 + X[i] / 3;
 
                 if (dig != 0) {
                     col[x] |= 1 << dig, row[y] |= 1 << dig, sub[z] |= 1 << dig;
@@ -352,8 +274,41 @@ class Sudoku {
             });
 
             // backtrack (board, col, row, sub, hist, hist.size() - 1);
-            simulated_annealing (board, col, row, sub, hist);
 
+            return board;
+        }
+        static std::vector<int> solver3 (std::vector<int> board) {
+            vector<vector<int>> row, col, sub;
+
+            row.resize (10, vector<int>(10));
+            col.resize (10, vector<int>(10));
+            sub.resize (10, vector<int>(10));
+
+            for (int y = 0; y < 9; y++) {
+                for (int x = 0; x < 9; x++) {
+                    int z = z = y / 3 * 3 + x / 3;
+
+                    row[y][board[y * 9 + x]]++;
+                    col[x][board[y * 9 + x]]++;
+                    sub[z][board[y * 9 + x]]++;
+                }
+            }
+            
+            for (int y = 0; y < 9; y++) {
+                for (int x = 0; x < 9; x++) {
+                    int z = y / 3 * 3 + x / 3;
+                    vector<int> cand;
+
+                    for (int i = 1; i < 10; i++) {
+                        if (!row[y][i] && !col[x][i] && !sub[z][i]) {
+                            cand.push_back(i);
+                        }
+                    }
+                    if (cand.size()) {
+                        tape.push_back({cand, y * 9 + x});
+                    }
+                }
+            }
             return board;
         }
 };

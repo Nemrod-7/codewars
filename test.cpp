@@ -4,15 +4,43 @@
 
 using namespace std;
 
+string display (vector<int> board) {
+
+  string os;
+
+  for (int y = 0; y < 81; y++) {
+      if (y != 0) {
+        if (y % (9 * 3) == 0) os += '\n';
+        if (y % 9 == 0) os += '\n';
+      }
+
+      os += (board[y] ? to_string (board[y]) : ".") + " ";
+      if (y % 3 == 2) os += ' ';
+  }
+  os += "\n-------------------\n";
+
+  return os;
+}
+vector<int> convert (vector<vector<int>> input) {
+    vector<int> board;
+
+    for (int y = 0; y < 9; y++) {
+        for (int x = 0; x < 9; x++) {
+            board.push_back (input[y][x]);
+        }
+    }
+    return board;
+}
+
 class Sudoku {
 private:
-    vector<vector<int>> grid;
+    vector<int> grid;
     vector<vector<int>> row, col, sub;
     vector<pair<vector<int>,int>> tape;
 
 public:
 
-  Sudoku (vector<vector<int>> src) {
+  Sudoku (vector<int> src) {
       row.resize (10, vector<int>(10));
       col.resize (10, vector<int>(10));
       sub.resize (10, vector<int>(10));
@@ -22,9 +50,9 @@ public:
           for (int x = 0; x < 9; x++) {
               int z = z = y / 3 * 3 + x / 3;
 
-              row[y][grid[y][x]]++;
-              col[x][grid[y][x]]++;
-              sub[z][grid[y][x]]++;
+              row[y][src[y * 9 + x]]++;
+              col[x][src[y * 9 + x]]++;
+              sub[z][src[y * 9 + x]]++;
           }
       }
 
@@ -67,48 +95,52 @@ public:
       random_device rd;
       mt19937 gen(rd());
       uniform_real_distribution<> rng (0, 1);
-      // uniform_int_distribution<> pos (0, size - 1), dig (0, 9);
+      uniform_int_distribution<> pos (0, tape.size() - 1);
 
       double T = 1.0;
       const double alpha = 1.0 - 1e-4, T_min = 0.1;
-
-      auto [cand, index] = tape.back();
-      int x  = index % 9, y = index / 9;
-      int z = y / 3 * 3 + x / 3;
-
       int c0, c1;
-      int dig = cand.back(), bak = grid[y][x];
-
-      c0 = cost();
-
-      grid[y][x] = dig;
-      row[y][0]--, col[x][0]--, sub[z][0]--;
-      row[y][dig]++, col[x][dig]++, sub[z][dig]++;
-
-      c1 = cost();
-
-      if (c1 == 0) {
-
-      } else if (c1 < c0) {
-
-      } else if (exp((c0 - c1) / T) > rng(gen)) {
-
-          grid[y][x] = bak;
-          row[y][0]++, col[x][0]++, sub[z][0]++;
-          row[y][dig]--, col[x][dig]--, sub[z][dig]--;
-      }
 
       while (T > T_min) {
+
+          auto [cand, index] = tape[pos(gen)];
+          int x  = index % 9, y = index / 9;
+          int z = y / 3 * 3 + x / 3;
+          uniform_int_distribution<> rnw (0, cand.size() - 1);
+
+          int dig = cand[rnw(gen)], bak = grid[index];
+          // cout << x << " " << y << "::";
+
+          c0 = cost();
+
+          grid[index] = dig;
+          row[y][bak]--, col[x][bak]--, sub[z][bak]--;
+          row[y][dig]++, col[x][dig]++, sub[z][dig]++;
+
+          c1 = cost();
+
+          // cout << c0 << " " << c1;
+          // cout << '\n';
+
+          if (c1 == 0) {
+              break;
+          } else if (c1 < c0) {
+
+          } else
+           // if (exp((c0 - c1) / T) > rng(gen))
+          {
+
+              grid[index] = bak;
+              row[y][bak]++, col[x][bak]++, sub[z][bak]++;
+              row[y][dig]--, col[x][dig]--, sub[z][dig]--;
+          }
 
           T *= alpha;
       }
 
-      // cout << x << " " << y << "::";
-      // cout << c0 << " " << c1;
-      // cout << '\n';
-
   }
 };
+
 int main () {
   vector<vector<int>> grid;
 
@@ -123,7 +155,7 @@ int main () {
       {0, 2, 0, 0, 5, 0, 0, 8, 0},
       {1, 0, 0, 0, 0, 2, 5, 0, 0}};
 
-      Sudoku curr (grid);
+      Sudoku curr (convert(grid));
 
       curr.simulated_annealing();
 
