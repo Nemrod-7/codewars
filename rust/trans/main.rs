@@ -26,7 +26,7 @@ struct Simplexer {
 }
 
 fn tokenize (src: &str) -> Vec<String> {
-    let token = Regex::new("[0-9]+|_?[a-zA-Z0-9]+|[-*+/%()=]|[ \t\n]+|(\"[^\"]+\")").unwrap();
+    let token = Regex::new("[0-9]+|[a-zA-Z0-9_$]+|[-*+/%()=]|[ \t\n]+|(\"[^\"]+\")").unwrap();
     token.captures_iter(src).map(|x| x[0].to_string()).collect::<Vec<_>>()
 }
 
@@ -41,13 +41,13 @@ impl Simplexer {
             TokenKind::Integer
         } else if Regex::new("[+-/*%()=]").unwrap().is_match(&tok) {
             TokenKind::Operator
-        } else if Regex::new("^true$|^false$").unwrap().is_match(&tok) {
+        } else if Regex::new("^(true|false)$").unwrap().is_match(&tok) {
             TokenKind::Boolean
-        } else if Regex::new("if|else|for|while|return|func|break").unwrap().is_match(&tok) {
-            TokenKind::Keyword
         } else if Regex::new("[ \t\n]+").unwrap().is_match(&tok) {
             TokenKind::Whitespace
-        } else if Regex::new("\".*\"").unwrap().is_match(&tok) {
+        } else if Regex::new("if|else|for|while|return|func|break").unwrap().is_match(&tok) {
+            TokenKind::Keyword
+        } else if Regex::new("\"[^\"]*\"").unwrap().is_match(&tok) {
             TokenKind::String
         } else {
             TokenKind::Identifier
@@ -86,16 +86,17 @@ fn main () {
        */
 
 
-    let txt = "\"hello\nthere\"\"Commander Spock\"";
-    let code = tokenize(txt);
+    let txt = "34022\"return03 true\"==\t RSc7\ttrue\t for\t \n19593else";
+    let txt = "yAD8H1r\n  agM\n\t\treturn \n\tuX_";
 
 
-    for cell in code {
-        print!("[{cell}]");
+    for cell in tokenize(txt) {
+print!("[{cell}]");
     }
+    //let curr = Simplexer::new(txt);
 
 
-
+    print!("\n");
 }
 
 
