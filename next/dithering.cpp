@@ -42,17 +42,25 @@ int main () {
     int size = 4, s2 = size * size;
     vector<int> seq (size * size);
     vector<int> ref = {1,9,3,11,13,5,15,7,4,12,2,10,16,8,14,6}; // 4x4
+
     // 1  2  3  4  5  6  7  8  9  10 11 12 13 14 15
     // 8,-6, 8, 2,-8,10,-8,-3, 8,-10, 8, 6,-8, 6,-8
+    // +     +     -     -     +      +     -     -
 
-    for (int i = 1; i < s2; i += 2) {
-        seq[i] = (size * size) / 2;
+    int sign = 1;
+
+    for (int i = 1; i < s2; i += size) {
+        for (int j = 0; j < size; j += 2) {
+          seq[i + j] = ((size * size) / 2) * sign;
+          // cout << i + j << " ";
+        }
+        sign *= -1;
     }
 
 
     for (int i = 1; i < ref.size(); i++) {
-        cout << ref[i-0] - ref[i-1] << " " ;
-        // cout << seq[i] << " ";
+        // cout << ref[i-0] - ref[i-1] << " " ;
+        cout << seq[i] << " ";
     }
 
 
