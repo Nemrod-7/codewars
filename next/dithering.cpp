@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <queue>
 
 using namespace std;
@@ -21,30 +22,29 @@ int main () {
     while (!s1.empty()) {
         auto [sx, sy] = s1.front();
         s1.pop();
-
         cycle++;
-        if (cycle == 3) {
-            break;
-        }
-        cout << sx << " " << sy << "\n";
 
         if (!visit[sx][sy]) {
             visit[sx][sy] = true;
 
             for (int i = 0; i < 4; i++) {
-              auto [dx,dy] = order[i];
-              int nx = dx * width / 2 + sx, ny = dy * height / 2 + sy;
+                auto [dx,dy] = order[i];
+                int nx = dx * width / 2 + sx, ny = dy * height / 2 + sy;
 
-              mat[nx][ny] = index++;
-              // cout << nx / 2 << " " << ny / 2 << "\n";
-              s1.push({nx / 2, ny / 2});
+                if (nx < width && ny < height) {
+                    mat[nx][ny] = index++;
+                    s1.push({nx / 2, ny / 2});
+                }
+
             }
         }
     }
 
+    cout << cycle << '\n';
+
     for (int x = 0; x < width; x++) {
         for (int y = 0; y < height; y++) {
-            cout <<  mat[x][y] << ' ';
+            cout << setw(2) <<  mat[x][y] << ' ';
         }
         cout << endl;
     }
