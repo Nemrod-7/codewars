@@ -36,40 +36,10 @@ class Show {
     }
 };
 
-
-int main () {
-
-    int n = 20, g = 4;
-
-    vector<int> visit(n);
-    vector<vector<int>> graph (n, vector<int> (n));
-
-    // vector<int> key(20);
-    // generate(key.begin(), key.end(), [n = 0] () mutable { return n++; });
-    //
-    // while (cycle-->0) {
-    //     vector<pair<int,int>> duo;
-    //
-    //     for (int i = 0; i < n / 2; i++) {
-    //         int a = i * 2, b = n - a - 1;
-    //         // printf("%2i %2i|", key[a], key[b]);
-    //         duo.push_back({key[a],key[b]});
-    //     }
-    //     // cout << endl;
-    //     rotate(key.begin(), key.begin() + 1, key.end());
-    // }
-
-    // sgp(8, 4, 5);
-
-    cout << "\nend\n";
-}
-
-
 struct vertex {
     int index;
-    vector<int> visit;
+    int visit;
     vector<vector<int>> key;
-    vector<vector<int>> hist;
 };
 
 void sgp (int num, int grp, int day) {
@@ -77,24 +47,25 @@ void sgp (int num, int grp, int day) {
     vector<vector<int>> start (num / grp, vector<int> (grp));
     vector<vector<int>> graph (num, vector<int> (num));
 
-    for (int i = 0; i < (num / grp); i++) {
-        for (int j = 0; j < grp - 1; j++) {
-            int a  = i * grp + j;
-            for (int k = j + 1; k < grp; k++) {
-                int b  = i * grp + k;
-                graph[a][b] = graph[b][a] = true;
-            }
-        }
-    }
+    // for (int i = 0; i < (num / grp); i++) {
+    //     for (int j = 0; j < grp - 1; j++) {
+    //         int a  = i * grp + j;
+    //         for (int k = j + 1; k < grp; k++) {
+    //             int b  = i * grp + k;
+    //             graph[a][b] = graph[b][a] = true;
+    //         }
+    //     }
+    // }
 
     int cycle = 0;
-    vertex source = {0, vector<int> (num), start, graph};
+    vertex source = {0, 0, start};
     vector<vertex> stack {source};
 
     const vector<string> exit = {"TPLH","SOKG","RNJD","QMFB","IEBA"};
+    int count = 0;
 
     while (!stack.empty()) {
-        auto [index, visit, key, hist] = stack.back();
+        auto [index, visit, key] = stack.back();
         int x = index / grp, y = index % grp;
         stack.pop_back();
 
@@ -102,43 +73,37 @@ void sgp (int num, int grp, int day) {
         if (cycle == 1000000) break;
 
         if (index == num) {
-            // for (int i = 0; i < (num / grp); i++) {
-            //     for (int j = 0; j < grp - 1; j++) {
-            //         int a  = i * grp + j;
-            //
-            //         for (int k = j + 1; k < grp; k++) {
-            //             int b  = i * grp + k;
-            //             graph[a][b] = graph[b][a] = true;
-            //         }
-            //     }
-            // }
+            for (int i = 0; i < (num / grp); i++) {
+                for (int j = 0; j < grp - 1; j++) {
+                    int a  = i * grp + j;
 
-            Show::key(key);
+                    for (int k = j + 1; k < grp; k++) {
+                        int b  = i * grp + k;
+                        graph[a][b] = graph[b][a] = true;
+                    }
+                }
+            }
+
+            count++;
+            // Show::key(key);
         } else if (index < num) {
 
             for (int i = 0; i < num; i++) {
-                if (!visit[i]) {
+                if ((visit >> i &1) == 0) {
                     bool free = true;
 
                     for (int j = 0; j < y; j++) {
-                        if (hist[key[x][j]][i] == true) {
+                        if (graph[key[x][j]][i] == true) {
                             free = false;
                             break;
                         }
                     }
 
                     if (free == true) {
-                        vertex next = {index + 1, visit, key, hist};
+                        vertex next = {index + 1, visit, key};
 
-                        next.visit[i] = true;
+                        next.visit |= 1 << i;
                         next.key[x][y] = i;
-
-                        for (int j = 0; j < y; j++) {
-                            int a = key[x][j];
-
-                            next.hist[a][i] = true;
-                            next.hist[i][a] = true;
-                        }
 
                         stack.push_back (next);
                     }
@@ -147,4 +112,75 @@ void sgp (int num, int grp, int day) {
         }
     }
 
+    printf("count : %i\n", cycle);
+}
+
+int main () {
+
+    int n = 8, g = 4;
+    int cycle = n - 1;
+
+    vector<int> index(n - 1);
+    vector<int> visit(n);
+    vector<vector<int>> graph (n, vector<int> (n));
+
+    generate(index.begin(), index.end(), [n = 1] () mutable { return n++; });
+
+    // while (cycle-->0) {
+        vector<vector<int>> tablex, cluster;
+        index.push_back(0);
+
+        for (int i = 0; i < n / 2; i++) {
+            int a = i * 2, b = n - a - 1;
+            printf("%2i %2i|", index[a], index[b]);
+            tablex.push_back({index[a],index[b]});
+        }
+
+
+        for (int i = 0; i < tablex.size(); i++) {
+            int a = tablex[i][0];
+            int b = tablex[i][1];
+
+            if (cluster.size() < (n / g)) {
+                visit[a] = true;
+                visit[b] = true;
+
+                cluster.push_back(tablex[i]);
+            } else {
+
+                for (int j = 0; j < cluster.size(); j++) {
+                    int csize = cluster[j].size();
+
+                    if (csize < g) {
+                        for (int k = 0; k < cluster[j].size(); k++) {
+                            int num = cluster[j][k];
+
+                            if (graph[num][a] == false) {
+
+                            }
+
+                            if (graph[num][b] == false) {
+
+                            }
+
+                        }
+                    }
+
+                }
+            }
+
+
+        }
+
+
+
+        printf("\n");
+        index.pop_back();
+        rotate(index.begin(), index.begin() + 1, index.end());
+    // }
+
+
+    //sgp(n, g, 5);
+
+    cout << "\nend\n";
 }

@@ -6,7 +6,9 @@ using namespace std;
 
 int main () {
 
-    int n = 20, g = 4;
+    int n = 8, g = 2;
+
+    // ['AB', 'CD', 'EF', 'GH']
 
 
     int nblock = n / g;
@@ -33,7 +35,7 @@ int main () {
         sort(clust.begin(), clust.end());
         nkey.push_back(clust);
     }
-    
+
     vec.pop_back();
 
 
