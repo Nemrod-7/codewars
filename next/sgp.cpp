@@ -12,14 +12,15 @@ class Show {
         for (auto &ch : vec) {
             cout << ch << ' ';
         }
+            cout << endl;
     }
-    static void graph (const vector<vector<int>> &hist) {
+    static void graph (const vector<vector<int>> &graph) {
 
-        for (int i = 0; i < hist.size(); i++) {
+        for (int i = 0; i < graph.size(); i++) {
             cout << tochar (i) << " : ";
-            for (int j = 0; j < hist.size(); j++) {
-                if (hist[i][j]) {
-                    cout << tochar (j);
+            for (int j = 0; j < graph.size(); j++) {
+                if (graph[i][j]) {
+                    cout << Show::tochar (j) << ":" << graph[i][j] << " ";
                 }
             }
             cout << endl;
@@ -36,151 +37,102 @@ class Show {
     }
 };
 
-struct vertex {
-    int index;
-    int visit;
-    vector<vector<int>> key;
-};
+void update(vector<vector<int>> &graph, vector<vector<int>> &key) {
 
-void sgp (int num, int grp, int day) {
+    for (int i = 0; i < key.size(); i++) {
+        for (int j = 0; j < key[i].size() - 1; j++) {
+            for (int k = j + 1; k < key[i].size(); k++) {
+                int a = key[i][j], b = key[i][k];
 
-    vector<vector<int>> start (num / grp, vector<int> (grp));
-    vector<vector<int>> graph (num, vector<int> (num));
-
-    // for (int i = 0; i < (num / grp); i++) {
-    //     for (int j = 0; j < grp - 1; j++) {
-    //         int a  = i * grp + j;
-    //         for (int k = j + 1; k < grp; k++) {
-    //             int b  = i * grp + k;
-    //             graph[a][b] = graph[b][a] = true;
-    //         }
-    //     }
-    // }
-
-    int cycle = 0;
-    vertex source = {0, 0, start};
-    vector<vertex> stack {source};
-
-    const vector<string> exit = {"TPLH","SOKG","RNJD","QMFB","IEBA"};
-    int count = 0;
-
-    while (!stack.empty()) {
-        auto [index, visit, key] = stack.back();
-        int x = index / grp, y = index % grp;
-        stack.pop_back();
-
-        cycle++;
-        if (cycle == 1000000) break;
-
-        if (index == num) {
-            for (int i = 0; i < (num / grp); i++) {
-                for (int j = 0; j < grp - 1; j++) {
-                    int a  = i * grp + j;
-
-                    for (int k = j + 1; k < grp; k++) {
-                        int b  = i * grp + k;
-                        graph[a][b] = graph[b][a] = true;
-                    }
-                }
+                graph[a][b]++;
+                graph[b][a]++;
             }
+        }
+    }
 
-            count++;
-            // Show::key(key);
-        } else if (index < num) {
+}
+vector<vector<int>> search_key(vector<int> index, vector<vector<int>> &graph, int g) {
 
-            for (int i = 0; i < num; i++) {
-                if ((visit >> i &1) == 0) {
+    int n = index.size(), n2 = index.size() / 2;
+    vector<int> visit(n);
+    vector<vector<int>> tablex, cluster;
+
+    for (int i = 0; i < n2; i++) {
+        int a = i * 2, b = n - a - 1;
+        tablex.push_back({index[a],index[b]});
+    }
+
+    while (cluster.size() < (n / g)) {
+        vector<int> curr = tablex.back();
+
+        for (auto &a : curr) {
+            visit[a] = true;
+        }
+
+        tablex.pop_back();
+        cluster.push_back(curr);
+    }
+
+    for (int i = 0; i < tablex.size(); i++) {
+        for (int l = 0; l < 2; l++) {
+            int a = tablex[i][l];
+
+            //cout << Show::tochar(a) << ": ";
+            for (int j = 0; j < cluster.size(); j++) {
+
+                if (cluster[j].size() < g) {
                     bool free = true;
 
-                    for (int j = 0; j < y; j++) {
-                        if (graph[key[x][j]][i] == true) {
+                    for (int k = 0; k < cluster[j].size(); k++) {
+                        int b = cluster[j][k];
+
+                        if (graph[a][b] == true) {
                             free = false;
-                            break;
                         }
                     }
 
-                    if (free == true) {
-                        vertex next = {index + 1, visit, key};
 
-                        next.visit |= 1 << i;
-                        next.key[x][y] = i;
-
-                        stack.push_back (next);
+                    if (!visit[a] && free == true) {
+                        visit[a] = true;
+                        cluster[j].push_back(a);
                     }
+
                 }
             }
         }
     }
 
-    printf("count : %i\n", cycle);
+    return cluster;
 }
 
 int main () {
 
-    int n = 8, g = 4;
-    int cycle = n - 1;
+    const int n = 20, g = 4;
+    const int n2 = n / 2;
 
     vector<int> index(n - 1);
-    vector<int> visit(n);
-    vector<vector<int>> graph (n, vector<int> (n));
+    vector<vector<int>> graph (n, vector<int> (n)), cluster;
 
     generate(index.begin(), index.end(), [n = 1] () mutable { return n++; });
+    int cycle = 2;// n - 0;
 
-    // while (cycle-->0) {
-        vector<vector<int>> tablex, cluster;
+    while (cycle-->0) {
+
         index.push_back(0);
 
-        for (int i = 0; i < n / 2; i++) {
-            int a = i * 2, b = n - a - 1;
-            printf("%2i %2i|", index[a], index[b]);
-            tablex.push_back({index[a],index[b]});
-        }
+        Show::vec(index);
 
-
-        for (int i = 0; i < tablex.size(); i++) {
-            int a = tablex[i][0];
-            int b = tablex[i][1];
-
-            if (cluster.size() < (n / g)) {
-                visit[a] = true;
-                visit[b] = true;
-
-                cluster.push_back(tablex[i]);
-            } else {
-
-                for (int j = 0; j < cluster.size(); j++) {
-                    int csize = cluster[j].size();
-
-                    if (csize < g) {
-                        for (int k = 0; k < cluster[j].size(); k++) {
-                            int num = cluster[j][k];
-
-                            if (graph[num][a] == false) {
-
-                            }
-
-                            if (graph[num][b] == false) {
-
-                            }
-
-                        }
-                    }
-
-                }
-            }
-
-
-        }
-
-
-
-        printf("\n");
         index.pop_back();
         rotate(index.begin(), index.begin() + 1, index.end());
-    // }
 
+    }
+
+
+    /*
+*/
+
+    //cluster = search_key(index, graph, g);
 
     //sgp(n, g, 5);
-
     cout << "\nend\n";
 }

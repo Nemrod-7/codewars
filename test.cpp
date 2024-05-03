@@ -157,7 +157,7 @@ int main () {
 
       Sudoku curr (convert(grid));
 
-      curr.simulated_annealing();
+      //curr.simulated_annealing();
 
 
 
