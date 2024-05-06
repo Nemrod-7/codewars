@@ -3,29 +3,31 @@
 
 using namespace std;
 
-void generateLatinSquare(int n) {
-    int firstend = n + 1;
-
-    for (int i = 1; i <= n; i++) {
-        int cell = firstend;
-
-        while (cell <= n) {
-            cout << cell << " ";
-            cell++;
+void backtrack(vector<char> line, int index, int open, int closed) {
+    int n = line.size() / 2;
+    // cout << n << ' ';
+    if (index == n && (open - closed) == 0) {
+        for (auto &ch : line) {
+          cout << ch;
         }
-
-        for (int secstart = 1; secstart < firstend; secstart++){
-            cout << secstart << " ";
-        }
-        firstend--;
-
         cout << endl;
     }
-    cout << endl;
+
+    if (open < n) {
+        line[index] = '(';
+        backtrack(line, index + 1 , open + 1, closed);
+    }
+    if ((open - closed) > 0  && closed < n) {
+        line[index] = ')';
+        backtrack(line, index + 1, open, closed + 1);
+    }
 }
 
 int main () {
 
-    generateLatinSquare(4);
+    const int n = 3;
+    vector<char> line (n * 2);
+
+    backtrack(line, 0, 0, 0);
 
 }
