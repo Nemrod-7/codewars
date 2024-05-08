@@ -1,45 +1,35 @@
 
-struct Parentesis {
-    data: Vec<String>,
-}
-impl Parentesis {
-    fn new() -> Parentesis {
-        Parentesis {
-            data : Vec::new()
-        }
-    }
+fn balanced_parens(n: u16) -> Vec<String> {
 
-    fn backtrack (mut comb: Vec<char>, index: usize, open: u32, close: u32) {
+    let mut q1 = vec![ ( 0, vec![' '; 2 * n  as usize], 0,0) ];
+    let mut res = Vec::new();
 
-        let n = comb.len() / 2;
+    while let Some ((index, mut comb, open, close)) = q1.pop() {
 
-        if index == comb.len()  && open - close == 0 {
-            let str = comb.iter().collect::<String>();
-
-            print!("{:?}\n", str);
+        if index == comb.len() && open - close == 0 {
+            res.push(comb.iter().collect::<String>());
         } else if index < comb.len() {
-
-            if (open as usize) < comb.len() {
+            if open < n {
                 comb[index] = '(';
-                Self::backtrack (comb.clone(), index + 1, open + 1, close);
+                q1.push( ( index + 1, comb.clone(), open + 1, close));
             }
 
-            if open - close > 0 && (close as usize) < comb.len() {
+            if close < open {
                 comb[index] = ')';
-                Self::backtrack (comb.clone(), index + 1, open, close + 1);
+                q1.push( ( index + 1, comb.clone(), open, close + 1));
             }
         }
-
     }
 
+    print!("{:?}\n", res);
+    res
 }
 
 fn main () {
 
     let n = 3;
-    let mut comb = vec![' '; n * 2];
 
-    let vc = Parentesis::new(); 
-    Parentesis::backtrack(comb, 0, 0, 0);
+
+    balanced_parens(3);
 
 }
