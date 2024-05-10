@@ -49,9 +49,9 @@ void update(vector<vector<int>> &graph, vector<vector<int>> &key) {
             }
         }
     }
-
 }
-vector<vector<int>> search_key(vector<int> index, vector<vector<int>> &graph, int g) {
+
+vector<vector<int>> sgp_test (vector<int> index, vector<vector<int>> &graph, int g) {
 
     int n = index.size(), n2 = index.size() / 2;
     vector<int> visit(n);
@@ -91,7 +91,6 @@ vector<vector<int>> search_key(vector<int> index, vector<vector<int>> &graph, in
                         }
                     }
 
-
                     if (!visit[a] && free == true) {
                         visit[a] = true;
                         cluster[j].push_back(a);
@@ -110,23 +109,13 @@ int main () {
     const int n = 20, g = 4;
     const int n2 = n / 2;
 
-    vector<int> index(n - 1);
+    vector<int> index(n);
     vector<vector<int>> graph (n, vector<int> (n)), cluster;
 
-    generate(index.begin(), index.end(), [n = 1] () mutable { return n++; });
+    generate(index.begin(), index.end(), [n = 0] () mutable { return n++; });
     int cycle = 2;// n - 0;
 
-    while (cycle-->0) {
-
-        index.push_back(0);
-
-        Show::vec(index);
-
-        index.pop_back();
-        rotate(index.begin(), index.begin() + 1, index.end());
-
-    }
-
+    Show::vec(index);
 
     /*
 */

@@ -4,41 +4,51 @@
 using namespace std;
 using i64 = long int;
 
-int ipow (int p, int e) {
-    int x = 1;
+int ipow(int base, int exp) {
+    int power = 1;
 
-    while (e--> 0) {
-        x *= p;
+    while (exp) {
+        if (exp &1)
+            power *= base;
+        exp >>= 1;
+
+        base *= base;
     }
 
-    return x;
+    return power;
 }
-vector<int> factors(int n) {
-    int i = 3;
-    vector<int> ve;
+vector<int> factors (int n) {
+		vector<int> vs;
+		vector<int> pr = {2,3,5,7};
+		const int wheel[48] = {2,4,2,4,6,2,6,4,2,4,6,6,2,6,4,2,6,4,6,8,4,2,4,2,4,8,6,4,6,2,4,6,2,6,6,4,2,4,6,2,6,4,2,4,2,10,2,10};
 
-    if (n % 2 == 0) {
-        ve.push_back(2);
-        while (n % 2 == 0) n /= 2;
-    }
+		for (auto &i : pr) {
+				if (n % i == 0) {
+						while (n % i == 0) {
+								n /= i;
+						}
+						vs.push_back(i);
+				}
+		}
 
-    while (i * i <= n) {
-        if (n % i == 0) {
-            ve.push_back(2);
-            while (n % i == 0) n /= i;
-        } 
-        i += 2;
-    }
+		for (int i = 11, t = 2; i * i <= n; i += wheel[t], t = t == 47 ? 0 : t + 1) {
+				if (n % i == 0) {
+						while (n % i == 0) {
+								n /= i;
+						}
+						vs.push_back(i);
+				}
+		}
 
-    if (n > 1) ve.push_back(n);
-    return ve;
+		if (n > 1) vs.push_back(n);
+		return vs;
 }
 int gcd (int a, int b) {
     while (b) b ^= a ^= b ^= a %= b;
     return a;
 }
-int lcm (int a, int b) { 
-    return (a / gcd (a,b)) * b; 
+int lcm (int a, int b) {
+    return (a / gcd (a,b)) * b;
 }
 
 int pisano_period (int n) { // OEIS A001175
@@ -48,7 +58,7 @@ int pisano_period (int n) { // OEIS A001175
     vector<int> fac = factors(n);
 
     if (fac.size() > 1) {
-        //A formulae to calculate the pisano period for integer powers k of prime numbers p is: pisano(p^k) == p^(k-1) * pisano (p) 
+        //A formulae to calculate the pisano period for integer powers k of prime numbers p is: pisano(p^k) == p^(k-1) * pisano (p)
 
         for (int i = 0; i < fac.size(); i++) {
             int p = fac[i];
@@ -168,5 +178,3 @@ vector<int> fibonacci (int n, int m) {
 
     return seq;
 }
-
-
