@@ -1,48 +1,40 @@
 #include <iostream>
+#include <iomanip>
 #include <vector>
+#include <cstdint>
+// #include "/home/wintermute/code/templates/Assert.hpp"
 
 using namespace std;
+
+////////////////////////////////////////////////////////////////////////////////
+namespace Assert {
+    void That (uint64_t actual, uint64_t expect) {
+
+        if (actual != expect) {
+            std::cout << " actual : " << actual;
+            std::cout << " expected : " << expect;
+            std::cout << "\n";
+        }
+    }
+}
+uint64_t Equals (uint64_t x ) { return x; }
+void Test() ;
+////////////////////////////////////////////////////////////////////////////////
 using i64 = long int;
 
-int ipow(int base, int exp) {
-    int power = 1;
+class show {
+    public:
+        static void factors(const vector<pair<uint64_t,uint64_t>> &fac) {
+            for (auto &[p,e] : fac) {
+                if (e == 1) {
+                    cout << p << " ";
+                } else {
+                    cout << p << "^" << e << " ";
+                }
+            }
+        }
+};
 
-    while (exp) {
-        if (exp &1)
-            power *= base;
-        exp >>= 1;
-
-        base *= base;
-    }
-
-    return power;
-}
-vector<int> factors (int n) {
-		vector<int> vs;
-		vector<int> pr = {2,3,5,7};
-		const int wheel[48] = {2,4,2,4,6,2,6,4,2,4,6,6,2,6,4,2,6,4,6,8,4,2,4,2,4,8,6,4,6,2,4,6,2,6,6,4,2,4,6,2,6,4,2,4,2,10,2,10};
-
-		for (auto &i : pr) {
-				if (n % i == 0) {
-						while (n % i == 0) {
-								n /= i;
-						}
-						vs.push_back(i);
-				}
-		}
-
-		for (int i = 11, t = 2; i * i <= n; i += wheel[t], t = t == 47 ? 0 : t + 1) {
-				if (n % i == 0) {
-						while (n % i == 0) {
-								n /= i;
-						}
-						vs.push_back(i);
-				}
-		}
-
-		if (n > 1) vs.push_back(n);
-		return vs;
-}
 int gcd (int a, int b) {
     while (b) b ^= a ^= b ^= a %= b;
     return a;
@@ -51,64 +43,142 @@ int lcm (int a, int b) {
     return (a / gcd (a,b)) * b;
 }
 
-int pisano_period (int n) { // OEIS A001175
+int ipow(int base, int exp) {
+    int power = 1;
+
+    while (exp) {
+        if (exp &1) power *= base;
+
+        exp >>= 1;
+        base *= base;
+    }
+
+    return power;
+}
+vector<pair<uint64_t,uint64_t>> factors (uint64_t n) {
+    vector<pair<uint64_t,uint64_t>> vs;
+    vector<int> pr = {2,3,5,7};
+    const int wheel[48] = {2,4,2,4,6,2,6,4,2,4,6,6,2,6,4,2,6,4,6,8,4,2,4,2,4,8,6,4,6,2,4,6,2,6,6,4,2,4,6,2,6,4,2,4,2,10,2,10};
+
+    for (auto &i : pr) {
+        if (n % i == 0) {
+            int ex = 0;
+            while (n % i == 0) {
+                n /= i, ex++;
+            }
+            vs.push_back({i,ex});
+        }
+    }
+
+    for (int i = 11, t = 2; i * i <= n; i += wheel[t], t = t == 47 ? 0 : t + 1) {
+        if (n % i == 0) {
+            int ex = 0;
+            while (n % i == 0) {
+                n /= i, ex++;
+            }
+            vs.push_back({i,ex});
+        }
+    }
+
+    if (n > 1) vs.push_back({n,1});
+
+    return vs;
+}
+
+uint64_t pisano_prime (uint64_t n) {
+    uint64_t a1 = 1, a0 = 1, tmp = 1;
+    uint64_t cycle = 1;
+
+    while (a0 != 0 || a1 != 1) {
+        cycle++;
+        tmp = (a0 + a1) % n, a0 = a1, a1 = tmp;
+    }
+
+    return cycle;
+}
+
+uint64_t pisano_period (uint64_t n) { // OEIS A001175 pisano period of fib(i) mod m
     if (n == 1) return 1;
 
-    int cycle = 1;
-    vector<int> fac = factors(n);
+    uint64_t cycle = 1;
+    vector<pair<uint64_t,uint64_t>> fac = factors(n);
+
+    show::factors(fac);
 
     if (fac.size() > 1) {
-        //A formulae to calculate the pisano period for integer powers k of prime numbers p is: pisano(p^k) == p^(k-1) * pisano (p)
-
-        for (int i = 0; i < fac.size(); i++) {
-            int p = fac[i];
-            int an = ipow(p, i - 1) * pisano_period(p);
+        // if p is a prime number and k is interger power : pisano(p^k) == p^(k-1) * pisano (p)
+        for (auto &[p,ex] : fac) {
+            int an = ipow(p, ex - 1) * pisano_period(p);
             cycle = lcm(cycle,an)  ;
         }
 
     } else {
-        int a1 = 1, a0 = 1, tmp = 1;
-
-        while (a0 != 0 || a1 != 1) {
-            cycle++;
-            tmp = (a0 + a1) % n, a0 = a1, a1 = tmp;
-        }
+        cycle = pisano_prime(n);
     }
 
 
     return cycle;
 }
 
-int pisano1 (int m) {
+void evaluate() {
 
-    if (m == 1) return 1;
-    int cycle = 1;
+    int n = 1000;
+    vector<int> sieve (n);
 
-    return cycle  ;
+    for (int i = 2; i < n; i++) {
+        if (sieve[i] == 0) {
+            int cycle = pisano_prime(i);
+
+            int n5 = i / 5;
+            vector<int> bound = {i - 1, 2 * i + 2};
+            cout << setw(2) << i << " : ";
+            
+            if (cycle == bound[0]) {
+                cout << "[" << setw(3) << bound[0] << "][   ] ";
+            } else if (cycle == bound[1]) {
+                cout << "[   ][" << setw(3) << cycle << "] ";
+            } else {
+                cout << "[" <<setw(8) << cycle <<"] ";
+            }
+
+            if ((i - 1) % 5 == 0 || (i + 1) % 5 == 0) {
+                cout << i - 1 << " ";  
+            }
+            if ((i - 2) % 5 == 0 || (i + 2) % 5 == 0) {
+                cout << 2 * i + 2 << " ";
+            }
+
+            cout << endl;
+
+            for (int j = i * i; j < n; j += i) {
+                sieve[j] = true;
+            }
+        }
+    }
 }
+
 
 int main () {
     const vector<int> pi = {1, 1, 3, 8, 6, 20, 24, 16, 12, 24, 60, 10, 24, 28, 48, 40, 24, 36, 24, 18, 60, 16, 30, 48, 24, 100, 84, 72, 48, 14, 120, 30, 48, 40, 36, 80, 24, 76, 18, 56, 60, 40, 48, 88, 30, 120, 48, 32, 24, 112, 300, 72, 84, 108, 72, 20, 48, 72, 42, 58, 120, 60, 30, 48, 96, 140, 120, 136};
 
     const vector end = {0,1};
     int a1 = 1, an = 1, a0 = 0;
-    //ofstream ofs ("pisano", ios::app );
 
-    for (int n = 1; n < pi.size(); n++) {
-        int cycle = pisano_period (n);
+    uint64_t ref = 2438389198053, res = 10624179384;
+    uint64_t num; 
+    num = 3 * 3 * 3;
+    num = 17;
+    num = 5312394767;
 
-        if (cycle != pi[n]) {
-            cout << "err : " << n << " " << cycle;
-            cout << endl;
-        }
+    evaluate();
 
-    }
+    //pisano_prime(num);
+    //Assert::That(pisano_period(2438389198053), Equals(10624179384));
 
 }
 
-void test () {
+void Test () {
 
-    /*
     {
         Assert::That(pisano_period(5), Equals(20));
         Assert::That(pisano_period(47), Equals(32));
@@ -135,10 +205,18 @@ void test () {
         Assert::That(pisano_period(2438389198053), Equals(10624179384));
     }
 
+    /*
     */
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+int pisano1 (int m) {
+
+    if (m == 1) return 1;
+    int cycle = 1;
+
+    return cycle  ;
+}
 bool is_prime (i64 p) {
     if (p < 2) return false;
     if (0 == p % 2) return 2 == p;
