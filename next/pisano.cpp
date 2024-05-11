@@ -1,6 +1,8 @@
 #include <iostream>
+#include <fstream>
 #include <iomanip>
 #include <vector>
+#include <algorithm>
 #include <cstdint>
 // #include "/home/wintermute/code/templates/Assert.hpp"
 
@@ -24,6 +26,11 @@ using i64 = long int;
 
 class show {
     public:
+        static void vect(const vector<uint64_t> &vs) {
+            for (auto &nu : vs) {
+                cout << nu << " ";
+            }
+        }
         static void factors(const vector<pair<uint64_t,uint64_t>> &fac) {
             for (auto &[p,e] : fac) {
                 if (e == 1) {
@@ -35,6 +42,89 @@ class show {
         }
 };
 
+class ntheory {
+    private :
+        static inline vector<uint64_t> arr;
+
+        static void helper (const uint64_t index, uint64_t curr, const vector<pair<uint64_t,uint64_t>> &fact) {
+
+            if (index == fact.size()) {
+                arr.push_back(curr);
+                return;
+            }
+            for (uint64_t i = 0; i <= fact[index].second; i++) {
+                helper (index + 1, curr, fact);
+                curr *= fact[index].first;
+            }
+        }
+
+    public :
+        static vector<pair<uint64_t,uint64_t>> factors (uint64_t n) {
+            vector<pair<uint64_t,uint64_t>> vs;
+            vector<int> pr = {2,3,5,7};
+            const int wheel[48] = {2,4,2,4,6,2,6,4,2,4,6,6,2,6,4,2,6,4,6,8,4,2,4,2,4,8,6,4,6,2,4,6,2,6,6,4,2,4,6,2,6,4,2,4,2,10,2,10};
+
+            for (auto &i : pr) {
+                if (n % i == 0) {
+                    int ex = 0;
+                    while (n % i == 0) {
+                        n /= i, ex++;
+                    }
+                    vs.push_back({i,ex});
+                }
+            }
+
+            for (int i = 11, t = 2; i * i <= n; i += wheel[t], t = t == 47 ? 0 : t + 1) {
+                if (n % i == 0) {
+                    int ex = 0;
+                    while (n % i == 0) {
+                        n /= i, ex++;
+                    }
+                    vs.push_back({i,ex});
+                }
+            }
+
+            if (n > 1) vs.push_back({n,1});
+
+            return vs;
+        }
+        static vector<uint64_t> divisors (uint64_t n) {
+
+            helper(0,1,factors(n));
+            sort(arr.begin(), arr.end());
+
+            return arr;
+        }
+};
+
+uint64_t mulmod (uint64_t a, uint64_t b, uint64_t mod) {
+    uint64_t res = 0;
+
+    while (b > 0) {
+        if (b & 1) {
+            res = (res + a) % mod;
+        }
+        a = (a * 2) % mod;
+        b >>= 1;
+    }
+
+    return res;
+}
+uint64_t powmod (uint64_t a, uint64_t b, uint64_t mod) {
+    uint64_t res = 1;
+    a %= mod;
+
+    while (b > 0) {
+        if (b & 1) {
+            res = mulmod(res, a, mod);
+        }
+        a = mulmod(a, a, mod);
+        b >>= 1;
+    }
+
+    return res;
+}
+
 int gcd (int a, int b) {
     while (b) b ^= a ^= b ^= a %= b;
     return a;
@@ -43,7 +133,7 @@ int lcm (int a, int b) {
     return (a / gcd (a,b)) * b;
 }
 
-int ipow(int base, int exp) {
+int ipow (int base, int exp) {
     int power = 1;
 
     while (exp) {
@@ -55,35 +145,7 @@ int ipow(int base, int exp) {
 
     return power;
 }
-vector<pair<uint64_t,uint64_t>> factors (uint64_t n) {
-    vector<pair<uint64_t,uint64_t>> vs;
-    vector<int> pr = {2,3,5,7};
-    const int wheel[48] = {2,4,2,4,6,2,6,4,2,4,6,6,2,6,4,2,6,4,6,8,4,2,4,2,4,8,6,4,6,2,4,6,2,6,6,4,2,4,6,2,6,4,2,4,2,10,2,10};
 
-    for (auto &i : pr) {
-        if (n % i == 0) {
-            int ex = 0;
-            while (n % i == 0) {
-                n /= i, ex++;
-            }
-            vs.push_back({i,ex});
-        }
-    }
-
-    for (int i = 11, t = 2; i * i <= n; i += wheel[t], t = t == 47 ? 0 : t + 1) {
-        if (n % i == 0) {
-            int ex = 0;
-            while (n % i == 0) {
-                n /= i, ex++;
-            }
-            vs.push_back({i,ex});
-        }
-    }
-
-    if (n > 1) vs.push_back({n,1});
-
-    return vs;
-}
 
 uint64_t pisano_prime (uint64_t n) {
     uint64_t a1 = 1, a0 = 1, tmp = 1;
@@ -96,12 +158,51 @@ uint64_t pisano_prime (uint64_t n) {
 
     return cycle;
 }
+vector<uint64_t> pisano_proto (uint64_t m) {
 
+    uint64_t p = m;
+
+    //if (p == 2) return 3;
+    //if (p == 5) return 20;
+
+    vector<uint64_t> divisor;
+
+    if ((p - 1) % 10 == 0 || (p + 1) % 10 == 0) {
+        vector<uint64_t> d1 = ntheory::divisors(p - 1);
+
+        for (int i = 0; i < d1.size(); i++) {
+            if (d1[i] % 2 == 0) {
+                divisor.push_back(d1[i]);
+            }
+        }
+
+    } else {
+        vector<uint64_t> d1 = ntheory::divisors(p - 1);
+        vector<uint64_t> d2 = ntheory::divisors(2 * p + 2);
+
+        for (int i = 0; i < d2.size(); i++) {
+            bool valid = true;
+
+            for (int j = 0; j < d1.size(); j++) {
+                if (d2[i] == d1[j]) {
+                    valid = false;
+                    break;
+                }
+            }
+
+            if (valid) divisor.push_back(d2[i]);
+        }
+    }
+
+    return divisor;
+}
 uint64_t pisano_period (uint64_t n) { // OEIS A001175 pisano period of fib(i) mod m
     if (n == 1) return 1;
+    if (n == 2) return 3;
+    if (n == 5) return 20;
 
     uint64_t cycle = 1;
-    vector<pair<uint64_t,uint64_t>> fac = factors(n);
+    vector<pair<uint64_t,uint64_t>> fac = ntheory::factors(n);
 
     show::factors(fac);
 
@@ -122,17 +223,16 @@ uint64_t pisano_period (uint64_t n) { // OEIS A001175 pisano period of fib(i) mo
 
 void evaluate() {
 
-    int n = 1000;
+    int n = 100;
     vector<int> sieve (n);
 
     for (int i = 2; i < n; i++) {
         if (sieve[i] == 0) {
             int cycle = pisano_prime(i);
 
-            int n5 = i / 5;
             vector<int> bound = {i - 1, 2 * i + 2};
             cout << setw(2) << i << " : ";
-            
+
             if (cycle == bound[0]) {
                 cout << "[" << setw(3) << bound[0] << "][   ] ";
             } else if (cycle == bound[1]) {
@@ -142,13 +242,14 @@ void evaluate() {
             }
 
             if ((i - 1) % 5 == 0 || (i + 1) % 5 == 0) {
-                cout << i - 1 << " ";  
+                cout << i - 1 << " ";
             }
-            if ((i - 2) % 5 == 0 || (i + 2) % 5 == 0) {
-                cout << 2 * i + 2 << " ";
+            if ((i - 3) % 10 == 0 || (i + 3) % 10 == 0) {
+                cout << 2 * i + 2 << "<";
             }
 
             cout << endl;
+
 
             for (int j = i * i; j < n; j += i) {
                 sieve[j] = true;
@@ -157,20 +258,47 @@ void evaluate() {
     }
 }
 
-
 int main () {
+
     const vector<int> pi = {1, 1, 3, 8, 6, 20, 24, 16, 12, 24, 60, 10, 24, 28, 48, 40, 24, 36, 24, 18, 60, 16, 30, 48, 24, 100, 84, 72, 48, 14, 120, 30, 48, 40, 36, 80, 24, 76, 18, 56, 60, 40, 48, 88, 30, 120, 48, 32, 24, 112, 300, 72, 84, 108, 72, 20, 48, 72, 42, 58, 120, 60, 30, 48, 96, 140, 120, 136};
 
     const vector end = {0,1};
     int a1 = 1, an = 1, a0 = 0;
 
     uint64_t ref = 2438389198053, res = 10624179384;
-    uint64_t num; 
+    uint64_t num;
     num = 3 * 3 * 3;
     num = 17;
     num = 5312394767;
 
-    evaluate();
+    int n = 100;
+    vector<int> sieve (n);
+    ofstream ofs ("notes", ios::out);
+
+    for (int i = 2; i < n; i++) {
+        if (sieve[i] == 0) {
+
+            int cycle = pisano_prime(i);
+
+            ofs << setw(2) << i << " : ";
+            ofs << "[" << setw(3) << cycle << "]";
+
+            vector<uint64_t> div = pisano_proto(i);
+
+            for (int i = 0; i < div.size(); i++) {
+                ofs << div[i] << " ";
+            }
+
+            ofs << "\n";
+
+            for (int j = i * i; j < n; j += i) {
+                sieve[j] = true;
+            }
+        }
+    }
+
+    ofs.close();
+    //evaluate();
 
     //pisano_prime(num);
     //Assert::That(pisano_period(2438389198053), Equals(10624179384));
