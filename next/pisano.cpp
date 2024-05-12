@@ -26,11 +26,6 @@ using i64 = long int;
 
 class show {
     public:
-        static void vect(const vector<uint64_t> &vs) {
-            for (auto &nu : vs) {
-                cout << nu << " ";
-            }
-        }
         static void factors(const vector<pair<uint64_t,uint64_t>> &fac) {
             for (auto &[p,e] : fac) {
                 if (e == 1) {
@@ -42,6 +37,14 @@ class show {
         }
 };
 
+template<class T> std::ostream &operator << (std::ostream &stream, const std::vector<T> &arr) {
+    for (auto &it : arr) {
+        stream << it << " ";
+    }
+
+    return stream;
+}
+////////////////////////////////////////////////////////////////////////////////
 class ntheory {
     private :
         static inline vector<uint64_t> arr;
@@ -90,6 +93,7 @@ class ntheory {
         }
         static vector<uint64_t> divisors (uint64_t n) {
 
+            arr.clear();
             helper(0,1,factors(n));
             sort(arr.begin(), arr.end());
 
@@ -145,7 +149,6 @@ int ipow (int base, int exp) {
 
     return power;
 }
-
 
 uint64_t pisano_prime (uint64_t n) {
     uint64_t a1 = 1, a0 = 1, tmp = 1;
@@ -273,23 +276,18 @@ int main () {
 
     int n = 100;
     vector<int> sieve (n);
-    ofstream ofs ("notes", ios::out);
+    // ofstream ofs ("notes", ios::out);
 
     for (int i = 2; i < n; i++) {
         if (sieve[i] == 0) {
 
             int cycle = pisano_prime(i);
 
-            ofs << setw(2) << i << " : ";
-            ofs << "[" << setw(3) << cycle << "]";
+            cout << setw(2) << i << " : ";
+            cout << "[" << setw(3) << cycle << "]";
 
-            vector<uint64_t> div = pisano_proto(i);
-
-            for (int i = 0; i < div.size(); i++) {
-                ofs << div[i] << " ";
-            }
-
-            ofs << "\n";
+            cout << pisano_proto(i);
+            cout << "\n";
 
             for (int j = i * i; j < n; j += i) {
                 sieve[j] = true;
@@ -297,7 +295,7 @@ int main () {
         }
     }
 
-    ofs.close();
+    // ofs.close();
     //evaluate();
 
     //pisano_prime(num);
