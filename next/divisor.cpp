@@ -9,8 +9,39 @@ template <class T> std::ostream &operator << (std::ostream &stream, const std::v
     for (auto &it : obj) {
         stream << it << " ";
     }
-
     return stream;
+}
+template<class T> std::ostream &operator << (std::ostream &stream, const std::pair<T,T> &obj) {
+    stream << "[" << obj.first << "," << obj.second << "]";
+    return stream;
+}
+
+int64_t mulmod (int64_t a, int64_t b, int64_t mod) {
+    int64_t res = 0;
+
+    while (b > 0) {
+        if (b & 1) {
+            res = (res + a) % mod;
+        }
+        a = (a * 2) % mod;
+        b >>= 1;
+    }
+
+    return res;
+}
+int64_t powmod (int64_t a, int64_t b, int64_t mod) {
+    int64_t res = 1;
+    a %= mod;
+
+    while (b > 0) {
+        if (b & 1) {
+            res = mulmod(res, a, mod);
+        }
+        a = mulmod(a, a, mod);
+        b >>= 1;
+    }
+
+    return res;
 }
 
 vector<pair<uint64_t,uint64_t>> factors (uint64_t n) {
@@ -39,11 +70,9 @@ vector<pair<uint64_t,uint64_t>> factors (uint64_t n) {
     }
 
     if (n > 1) vs.push_back({n,1});
-
     return vs;
 }
-
-vector<uint64_t> divisor (uint64_t n) {
+vector<uint64_t> divisors (uint64_t n) {
     vector<uint64_t> divisor = {1};
     vector<pair<uint64_t,uint64_t>> fac = factors(n);
 
@@ -63,49 +92,35 @@ vector<uint64_t> divisor (uint64_t n) {
     return divisor;
 }
 
+pair<uint64_t,uint64_t> fibonacci (uint64_t n, uint64_t m) { // Function calculate the N-th fibonacci number using fast doubling method
+
+    if (n == 0) return {0,1};
+
+    auto [f0,f1] = fibonacci(n >> 1, m);
+    int64_t c = 2 * f1 - f0;
+
+    if (c < 0) c += m;
+
+    c = (f0 * c) % m; // F(2n) = F(n)[2F(n+1) – F(n)]
+    uint64_t d = (f0 * f0 + f1 * f1) % m; // F(2n + 1) = F(n)^2 + F(n+1)^2
+
+    return (n % 2 == 0) ? pair<uint64_t,uint64_t> {c, d} : pair<uint64_t,uint64_t> {d, c + d};
+}
+
+
+
 int main () {
 
-  uint64_t prime = 47; // period = 32
-  std::vector<uint64_t> div = { 3,4,6,8,12,16,24,32,48,96};
-  const int U[2][2] = {{1,1},{1,0}};
-  const int I[2][2] = {{0,1},{0,1}};
+    uint64_t num = 181; // period = 32
+    const pair<uint64_t, uint64_t> period = {0,1};
+     std::vector<uint64_t> div = divisors (num - 1);
 
+     for (auto n : div) {
+         cout << fibonacci (n, num) ;
 
-  int f1 = 3;
-  cout << f1 * U[0][0] * f1 * U[1][1] - f1 * U[0][1] * f1 * U[1][0];
+     }
 
 
 
     cout << "\nexit\n";
 }
-
-////////////////////////////////////////////////////////////////////////////////
-// void divisors2 (const vector<factor> &fac) {
-//     vector<int> array;
-//     int factors_count = 1;
-//     for (int i = 0; i < fac.size(); ++i) {
-//         factors_count *= 1 + fac[i].second;
-//     }
-//     array.resize(factors_count);
-//
-//     array[0] = 1;
-//     int count = 1;
-//
-//     for (int index = 0; index < fac.size(); ++index) {
-//         const int count_so_far = count;
-//         auto [prime,exponent] = fac[index];
-//         int multiplier = 1;
-//
-//         for (int j = 0; j < exponent; ++j) {
-//             multiplier *= prime;
-//
-//             for (int i = 0; i < count_so_far; ++i) {
-//                 array[count++] = array[i] * multiplier;
-//             }
-//         }
-//     }
-//
-//     for (int i = 0; i < array.size(); i++) {
-//         // cout << array[i] << " ";
-//     }
-// }

@@ -45,62 +45,6 @@ template<class T> std::ostream &operator << (std::ostream &stream, const std::ve
     return stream;
 }
 ////////////////////////////////////////////////////////////////////////////////
-class ntheory {
-    private :
-        static inline vector<uint64_t> arr;
-
-        static void helper (const uint64_t index, uint64_t curr, const vector<pair<uint64_t,uint64_t>> &fact) {
-
-            if (index == fact.size()) {
-                arr.push_back(curr);
-                return;
-            }
-            for (uint64_t i = 0; i <= fact[index].second; i++) {
-                helper (index + 1, curr, fact);
-                curr *= fact[index].first;
-            }
-        }
-
-    public :
-        static vector<pair<uint64_t,uint64_t>> factors (uint64_t n) {
-            vector<pair<uint64_t,uint64_t>> vs;
-            vector<int> pr = {2,3,5,7};
-            const int wheel[48] = {2,4,2,4,6,2,6,4,2,4,6,6,2,6,4,2,6,4,6,8,4,2,4,2,4,8,6,4,6,2,4,6,2,6,6,4,2,4,6,2,6,4,2,4,2,10,2,10};
-
-            for (auto &i : pr) {
-                if (n % i == 0) {
-                    int ex = 0;
-                    while (n % i == 0) {
-                        n /= i, ex++;
-                    }
-                    vs.push_back({i,ex});
-                }
-            }
-
-            for (int i = 11, t = 2; i * i <= n; i += wheel[t], t = t == 47 ? 0 : t + 1) {
-                if (n % i == 0) {
-                    int ex = 0;
-                    while (n % i == 0) {
-                        n /= i, ex++;
-                    }
-                    vs.push_back({i,ex});
-                }
-            }
-
-            if (n > 1) vs.push_back({n,1});
-
-            return vs;
-        }
-        static vector<uint64_t> divisors (uint64_t n) {
-
-            arr.clear();
-            helper(0,1,factors(n));
-            sort(arr.begin(), arr.end());
-
-            return arr;
-        }
-};
-
 uint64_t mulmod (uint64_t a, uint64_t b, uint64_t mod) {
     uint64_t res = 0;
 
@@ -149,8 +93,68 @@ int ipow (int base, int exp) {
 
     return power;
 }
+vector<pair<uint64_t,uint64_t>> factors (uint64_t n) {
+    vector<pair<uint64_t,uint64_t>> vs;
+    vector<int> pr = {2,3,5,7};
+    const int wheel[48] = {2,4,2,4,6,2,6,4,2,4,6,6,2,6,4,2,6,4,6,8,4,2,4,2,4,8,6,4,6,2,4,6,2,6,6,4,2,4,6,2,6,4,2,4,2,10,2,10};
+
+    for (auto &i : pr) {
+        if (n % i == 0) {
+            int ex = 0;
+            while (n % i == 0) {
+                n /= i, ex++;
+            }
+            vs.push_back({i,ex});
+        }
+    }
+
+    for (int i = 11, t = 2; i * i <= n; i += wheel[t], t = t == 47 ? 0 : t + 1) {
+        if (n % i == 0) {
+            int ex = 0;
+            while (n % i == 0) {
+                n /= i, ex++;
+            }
+            vs.push_back({i,ex});
+        }
+    }
+
+    if (n > 1) vs.push_back({n,1});
+    return vs;
+}
+vector<uint64_t> divisors (uint64_t n) {
+    vector<uint64_t> divisor = {1};
+    vector<pair<uint64_t,uint64_t>> fac = factors(n);
+
+    for (auto &[pr,ex] : fac) {
+        int mult = 1, end = divisor.size();
+
+        for (int j = 0; j < ex; j++) {
+            mult *= pr;
+
+            for (int k = 0; k < end; k++) {
+                divisor.push_back(divisor[k] * mult);
+            }
+        }
+    }
+
+    sort(divisor.begin(), divisor.end());
+    return divisor;
+}
+
+pair<uint64_t, uint64_t> fibonacci (uint64_t n, uint64_t m) {
+    if (n == 0) return {0, 1};
+
+    pair<uint64_t, uint64_t> p = fibonacci (n >> 1, m);
+    uint64_t c = ( p.first * (2 * p.second - p.first)) % m;
+    uint64_t d = ( p.first * p.first + p.second * p.second) % m;
+
+    return (n &1) ? pair { d , c + d } : pair { c, d };
+}
 
 uint64_t pisano_prime (uint64_t n) {
+    if (n == 2) return 3;
+    if (n == 5) return 20;
+    
     uint64_t a1 = 1, a0 = 1, tmp = 1;
     uint64_t cycle = 1;
 
@@ -161,27 +165,22 @@ uint64_t pisano_prime (uint64_t n) {
 
     return cycle;
 }
-vector<uint64_t> pisano_proto (uint64_t m) {
+uint64_t pisano_prime2 (uint64_t m) {
 
-    uint64_t p = m;
+    const pair<uint64_t, uint64_t> period = {0,1};
+    uint64_t cycle = 2 * m + 2;
+    vector<uint64_t> divisor, d1 = divisors(m - 1);
 
-    //if (p == 2) return 3;
-    //if (p == 5) return 20;
-
-    vector<uint64_t> divisor;
-
-    if ((p - 1) % 10 == 0 || (p + 1) % 10 == 0) {
-        vector<uint64_t> d1 = ntheory::divisors(p - 1);
+    if ((m - 1) % 10 == 0 || (m + 1) % 10 == 0) {
 
         for (int i = 0; i < d1.size(); i++) {
-            if (d1[i] % 2 == 0) {
+            //if (d1[i] % 2 == 0) {
                 divisor.push_back(d1[i]);
-            }
+            //}
         }
 
     } else {
-        vector<uint64_t> d1 = ntheory::divisors(p - 1);
-        vector<uint64_t> d2 = ntheory::divisors(2 * p + 2);
+        vector<uint64_t> d2 = divisors(2 * m + 2);
 
         for (int i = 0; i < d2.size(); i++) {
             bool valid = true;
@@ -197,15 +196,22 @@ vector<uint64_t> pisano_proto (uint64_t m) {
         }
     }
 
-    return divisor;
+    for (auto &d : divisor) {
+        if (fibonacci(d, m) == period) {
+            cycle = min(d,cycle);
+        }
+    }
+
+    return cycle;
 }
-uint64_t pisano_period (uint64_t n) { // OEIS A001175 pisano period of fib(i) mod m
+
+uint64_t pisano_period (uint64_t n) { // OEIS A001175 pisano period of fib(i) mod n
     if (n == 1) return 1;
     if (n == 2) return 3;
     if (n == 5) return 20;
 
     uint64_t cycle = 1;
-    vector<pair<uint64_t,uint64_t>> fac = ntheory::factors(n);
+    vector<pair<uint64_t,uint64_t>> fac = factors(n);
 
     show::factors(fac);
 
@@ -213,7 +219,7 @@ uint64_t pisano_period (uint64_t n) { // OEIS A001175 pisano period of fib(i) mo
         // if p is a prime number and k is interger power : pisano(p^k) == p^(k-1) * pisano (p)
         for (auto &[p,ex] : fac) {
             int an = ipow(p, ex - 1) * pisano_period(p);
-            cycle = lcm(cycle,an)  ;
+            cycle = lcm(cycle,an) ;
         }
 
     } else {
@@ -224,6 +230,84 @@ uint64_t pisano_period (uint64_t n) { // OEIS A001175 pisano period of fib(i) mo
     return cycle;
 }
 
+int main () {
+
+    const vector<int> pi = {1, 1, 3, 8, 6, 20, 24, 16, 12, 24, 60, 10, 24, 28, 48, 40, 24, 36, 24, 18, 60, 16, 30, 48, 24, 100, 84, 72, 48, 14, 120, 30, 48, 40, 36, 80, 24, 76, 18, 56, 60, 40, 48, 88, 30, 120, 48, 32, 24, 112, 300, 72, 84, 108, 72, 20, 48, 72, 42, 58, 120, 60, 30, 48, 96, 140, 120, 136};
+
+    const vector end = {0,1};
+    int a1 = 1, an = 1, a0 = 0;
+
+    uint64_t ref = 2438389198053, res = 10624179384;
+    uint64_t num;
+    num = 3 * 3 * 3;
+    num = 17;
+    num = 5312394767;
+
+    int n = 1000;
+    vector<int> sieve (n);
+    // ofstream ofs ("notes", ios::out);
+
+    for (int i = 2; i < n; i++) {
+        if (sieve[i] == 0) {
+
+            int p1 = pisano_prime(i);
+            int p2 = pisano_prime2(i);
+
+
+            if (p1 != p2) {
+                cout << setw(2) << i << " : ";
+                cout << "[" << setw(3) << p1 << "]";
+                cout << p2;
+                cout << "\n";
+            }
+
+
+            for (int j = i * i; j < n; j += i) {
+                sieve[j] = true;
+            }
+        }
+    }
+
+    // ofs.close();
+    //evaluate();
+
+    //pisano_prime(num);
+    //Assert::That(pisano_period(2438389198053), Equals(10624179384));
+}
+
+void Test () {
+
+    {
+        Assert::That(pisano_period(5), Equals(20));
+        Assert::That(pisano_period(47), Equals(32));
+        Assert::That(pisano_period(20), Equals(60));
+        Assert::That(pisano_period(101), Equals(50));
+    }
+
+    {
+        Assert::That(pisano_period(4253), Equals(8508));
+        Assert::That(pisano_period(19661), Equals(9830));
+        Assert::That(pisano_period(14207), Equals(28416));
+        Assert::That(pisano_period(761), Equals(380));
+    }
+
+    {
+        Assert::That(pisano_period(440119), Equals(444496));
+        Assert::That(pisano_period(1672377), Equals(160720));
+        Assert::That(pisano_period(4020378), Equals(483720));
+        Assert::That(pisano_period(14451817), Equals(1804224));
+    }
+
+    {
+        Assert::That(pisano_period(1818176898), Equals(1408320));
+        Assert::That(pisano_period(2438389198053), Equals(10624179384));
+    }
+
+    /*
+    */
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void evaluate() {
 
     int n = 100;
@@ -260,82 +344,6 @@ void evaluate() {
         }
     }
 }
-
-int main () {
-
-    const vector<int> pi = {1, 1, 3, 8, 6, 20, 24, 16, 12, 24, 60, 10, 24, 28, 48, 40, 24, 36, 24, 18, 60, 16, 30, 48, 24, 100, 84, 72, 48, 14, 120, 30, 48, 40, 36, 80, 24, 76, 18, 56, 60, 40, 48, 88, 30, 120, 48, 32, 24, 112, 300, 72, 84, 108, 72, 20, 48, 72, 42, 58, 120, 60, 30, 48, 96, 140, 120, 136};
-
-    const vector end = {0,1};
-    int a1 = 1, an = 1, a0 = 0;
-
-    uint64_t ref = 2438389198053, res = 10624179384;
-    uint64_t num;
-    num = 3 * 3 * 3;
-    num = 17;
-    num = 5312394767;
-
-    int n = 100;
-    vector<int> sieve (n);
-    // ofstream ofs ("notes", ios::out);
-
-    for (int i = 2; i < n; i++) {
-        if (sieve[i] == 0) {
-
-            int cycle = pisano_prime(i);
-
-            cout << setw(2) << i << " : ";
-            cout << "[" << setw(3) << cycle << "]";
-
-            cout << pisano_proto(i);
-            cout << "\n";
-
-            for (int j = i * i; j < n; j += i) {
-                sieve[j] = true;
-            }
-        }
-    }
-
-    // ofs.close();
-    //evaluate();
-
-    //pisano_prime(num);
-    //Assert::That(pisano_period(2438389198053), Equals(10624179384));
-
-}
-
-void Test () {
-
-    {
-        Assert::That(pisano_period(5), Equals(20));
-        Assert::That(pisano_period(47), Equals(32));
-        Assert::That(pisano_period(20), Equals(60));
-        Assert::That(pisano_period(101), Equals(50));
-    }
-
-    {
-        Assert::That(pisano_period(4253), Equals(8508));
-        Assert::That(pisano_period(19661), Equals(9830));
-        Assert::That(pisano_period(14207), Equals(28416));
-        Assert::That(pisano_period(761), Equals(380));
-    }
-
-    {
-        Assert::That(pisano_period(440119), Equals(444496));
-        Assert::That(pisano_period(1672377), Equals(160720));
-        Assert::That(pisano_period(4020378), Equals(483720));
-        Assert::That(pisano_period(14451817), Equals(1804224));
-    }
-
-    {
-        Assert::That(pisano_period(1818176898), Equals(1408320));
-        Assert::That(pisano_period(2438389198053), Equals(10624179384));
-    }
-
-    /*
-    */
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 int pisano1 (int m) {
 
     if (m == 1) return 1;
