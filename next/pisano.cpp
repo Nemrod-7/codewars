@@ -141,20 +141,23 @@ vector<uint64_t> divisors (uint64_t n) {
     return divisor;
 }
 
-pair<uint64_t, uint64_t> fibonacci (uint64_t n, uint64_t m) {
-    if (n == 0) return {0, 1};
+pair<int64_t,int64_t> fibonacci (int64_t n, int64_t mod) { // Function calculate the N-th fibonacci number using fast doubling method
 
-    pair<uint64_t, uint64_t> p = fibonacci (n >> 1, m);
-    uint64_t c = ( p.first * (2 * p.second - p.first)) % m;
-    uint64_t d = ( p.first * p.first + p.second * p.second) % m;
+    if (n == 0) return {0,1};
+    auto [f0, f1] = fibonacci ((n / 2), mod);
+    int64_t c = 2 * f1 - f0;
 
-    return (n &1) ? pair { d , c + d } : pair { c, d };
+    if (c < 0) c += mod;
+    c = (f0 * c) % mod; // As F(2n) = F(n)[2F(n+1) – F(n)]
+    int64_t d = (f0 * f0 + f1 * f1) % mod; // As F(2n + 1) = F(n)^2 + F(n+1)^2
+
+    return (n % 2 == 0) ? pair<int64_t,int64_t> {c, d} : pair<int64_t,int64_t> {d, c + d};
 }
 
 uint64_t pisano_prime (uint64_t n) {
     if (n == 2) return 3;
     if (n == 5) return 20;
-    
+
     uint64_t a1 = 1, a0 = 1, tmp = 1;
     uint64_t cycle = 1;
 
@@ -167,16 +170,16 @@ uint64_t pisano_prime (uint64_t n) {
 }
 uint64_t pisano_prime2 (uint64_t m) {
 
-    const pair<uint64_t, uint64_t> period = {0,1};
+    const pair<int64_t, int64_t> period = {0,1};
     uint64_t cycle = 2 * m + 2;
     vector<uint64_t> divisor, d1 = divisors(m - 1);
 
     if ((m - 1) % 10 == 0 || (m + 1) % 10 == 0) {
 
         for (int i = 0; i < d1.size(); i++) {
-            //if (d1[i] % 2 == 0) {
+            if (d1[i] % 2 == 0) {
                 divisor.push_back(d1[i]);
-            //}
+            }
         }
 
     } else {
@@ -243,16 +246,15 @@ int main () {
     num = 17;
     num = 5312394767;
 
-    int n = 1000;
+    int n = 10000;
     vector<int> sieve (n);
     // ofstream ofs ("notes", ios::out);
 
-    for (int i = 2; i < n; i++) {
+    for (uint64_t i = 2; i < n; i++) {
         if (sieve[i] == 0) {
 
-            int p1 = pisano_prime(i);
-            int p2 = pisano_prime2(i);
-
+            uint64_t p1 = pisano_prime(i);
+            uint64_t p2 = pisano_prime2(i);
 
             if (p1 != p2) {
                 cout << setw(2) << i << " : ";
@@ -261,8 +263,7 @@ int main () {
                 cout << "\n";
             }
 
-
-            for (int j = i * i; j < n; j += i) {
+            for (uint64_t j = i * i; j < n; j += i) {
                 sieve[j] = true;
             }
         }
@@ -271,6 +272,7 @@ int main () {
     // ofs.close();
     //evaluate();
 
+    cout << "\nexit\n";
     //pisano_prime(num);
     //Assert::That(pisano_period(2438389198053), Equals(10624179384));
 }
