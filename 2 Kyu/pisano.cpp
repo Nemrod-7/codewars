@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <cstdint>
 #include "base.hpp"
-// #include "/home/wintermute/code/templates/Assert.hpp"
+
 // 2 kyu - Pisano Period - Performance Edition
 using namespace std;
 
@@ -102,9 +102,9 @@ pair<uint64_t,uint64_t> fibonacci (uint64_t n, uint64_t mod) {
   // Function calculate the N-th fibonacci number using fast doubling method => returns [Fn, Fn+1]
     if (n == 0) return {0,1};
     auto [f0, f1] = fibonacci (n / 2, mod);
-    // As F(2n + 1) = F(n)^2 + F(n+1)^2, As F(2n) = F(n)[2F(n+1) – F(n)]
+    // As F(2n + 1) = F(n)^2 + F(n+1)^2, As F(2.n) = F(n)[2.F(n+1) – F(n)]
     int64_t c = mulmod(2, f1, mod) - f0, d = addmod(f0 * f0, f1 * f1, mod);
-
+    cout << d << " ";
     if (c < 0) c += mod;
     c = mulmod(f0, c, mod);
 
@@ -170,8 +170,10 @@ int main () {
     int64_t N = 2474324059;
     int64_t d = 2474324058;
 
-    Assert::That(pisano_period(4256513951), Equals(851302790)); // primes_32_bits
+    // Assert::That(pisano_period(4256513951), Equals(851302790)); // primes_32_bits
     // Assert::That(pisano_period(1840094077), Equals(3219724224703183324)); // primes_64_bits
+
+    fibonacci(851302790, 4256513951);
 
     // Test();
     cout << "\nexit\n";
