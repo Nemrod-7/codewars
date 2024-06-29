@@ -61,7 +61,9 @@ fn dither (width: usize, height: usize) -> Vec<(usize,usize)> {
 
 
 fn main() {
+
     /*
+
  1 16  6 21  3 18
 25 10 28 13 26 11
  8 23  5 20  9 24
