@@ -10,34 +10,13 @@ using namespace std;
 
 using u64 =  unsigned long int;
 
-bool check (u64 b, u64 x) {
-    u64 z = x;
 
-    while (z % b == 1) {
-        z = (z - 1) / b;
-        cout << z << " " << flush;
-    }
-
-    return z == 0;
-}
-
-u64 get_min_base (u64 x) {
-
-  for (u64 n = ceil(log2(x)); n > 2; n--) {
-      u64 b = floor(pow (x, 1 / n));
-      cout << b - 1 << " " << x << "\n" << flush;
-      if (check (b, x)) return b;
-      // if (check (b - 1, x)) return b - 1;
-  }
-
-  return x - 1;
-}
-
-u64 get_min_base1 (u64 num) {
+u64 get_min_base (u64 num) {
 
     for (u64 b = 2 ; b * b <= num; b++) {
         if (num % b != 1) continue;
         u64 pow = b + 1;
+        if (b > 2200000) break;
 
         while (pow <= num) {
 
@@ -68,22 +47,22 @@ void test() {
       dotest(n, expected);
   }
 
-  // for (auto [n, expected] : vector<pair<u64,u64>> {{1000002, 1000001}, {1000000002, 1000000001}, {1000000000000, 999999999999}}) {
-  //     dotest(n, expected);
-  // }
-  //
-  // for (auto [n, expected] : vector<pair<u64,u64>> {{1001001, 1000}, {1001001001, 1000}, {1001001001001, 1000}, {2500050001, 50000},
-  // {125002500050001, 50000}}) {
-  //     dotest(n, expected);
-  // }
-  //
-  // for (auto [n, expected] : vector<pair<u64,u64>> {{149760653732457804, 2723}, {99013090109455081, 680},{1037362579310443,318},{99247603088339501,17749},{10503607679802991111,2190010}}) {
-  //     dotest(n, expected);
-  // }
-  //
-  // for(int i = 0; i < sample.size(); i++) {
-  //   get_min_base(sample[i]);
-  // }
+  for (auto [n, expected] : vector<pair<u64,u64>> {{1000002, 1000001}, {1000000002, 1000000001}, {1000000000000, 999999999999}}) {
+      dotest(n, expected);
+  }
+
+  for (auto [n, expected] : vector<pair<u64,u64>> {{1001001, 1000}, {1001001001, 1000}, {1001001001001, 1000}, {2500050001, 50000},
+  {125002500050001, 50000}}) {
+      dotest(n, expected);
+  }
+
+  for (auto [n, expected] : vector<pair<u64,u64>> {{149760653732457804, 2723}, {99013090109455081, 680},{1037362579310443,318},{99247603088339501,17749},{10503607679802991111,2190010}}) {
+      dotest(n, expected);
+  }
+
+  for(int i = 0; i < sample.size(); i++) {
+    get_min_base(sample[i]);
+  }
 }
 
 int main () {
@@ -95,8 +74,10 @@ int main () {
     // in base b is all 1s if and only if n*(b-1)+1 is a power of b
     // A079696  Numbers one more than composite numbers.
     // A002808  The composite numbers: numbers n of the form x*y for x > 1 and y > 1.
+    u64 num = 10503607679802991111;
 
     test();
+
 
 
 
