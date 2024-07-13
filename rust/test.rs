@@ -1,22 +1,26 @@
 
 
-fn riddle (arr:&Vec<u8>) -> u8 {
-    arr.iter().filter(|&&x| x == 3 || x == 5).fold(0,|sum,dig| sum + dig - 1)
-}
-
 fn main () {
 
+    let max = 100;
+    let  mut sieve = vec![0u32; max];
+    let mut i = 3;
 
-    let res = riddle(&[1,2,3,4,5].to_vec());
-    print!("{res}\n");
+    while i < max {
+        if (sieve[i >> 5] >> (i &31) &1u32) == 0 {
+            print!("{} ", i);
 
-    let res = riddle(&[2,2,3,3].to_vec());
-    print!("{res}\n");
+            let mut j = i * i;
 
-    let res = riddle(&[6,6,4,4,1,3].to_vec());
-    print!("{res}\n");
- 
-    let res = riddle(&[ 3, 5, 3, 5, 4, 2 ].to_vec());
-    print!("{res}\n");
+
+            while j < max {
+                sieve[j >> 5] |= 1u32 << (j &31);
+                j += i;
+            }
+        }
+
+        i += 2;
+    }
+
 
   }
