@@ -40,21 +40,28 @@ fn main() {
     let mut cnt = 0;
     let mut sieve = vec![0u32; (max >> 5) + 1];
 
+    let mut seq = Vec::new();
     //getsize(max >> 6);
     // (i..max).step_by(2).for_each(|i| {})
-    print!("2 3 5 ");
+    //print!("2 3 5 ");
 
     while i < max {
         if (sieve[i >> 5] >> (i &31)&1) == 0 {
             let mut j = i * i;
-            cnt += 1;
-            print!("{} ", i);
+            seq.push(i);
+           // print!("{} ", i);
             while j < max {
                 sieve[j >> 5] |= 1 << (j &31);
                 j += 2 * i;
             }
         } else {
-            cnt = 0;
+            seq.clear();
+        }
+
+        if seq.len() == 7 {
+            seq.pop();
+            print!("seq : {:?}\n", seq);
+            seq.clear();
         }
 
         i += WHEEL[u];
