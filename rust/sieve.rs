@@ -34,10 +34,9 @@ fn main() {
     let limit = 1000;
     const WHEEL: [usize;8] = [4,2,4,2,4,6,2,6];
     // 29 700 000
-    let max = 1e2 as usize;
+    let max = 1e8 as usize;
     let mut i = 7;
     let mut u = 0;
-    let mut cnt = 0;
     let mut sieve = vec![0u32; (max >> 5) + 1];
 
     let mut seq = Vec::new();
@@ -48,47 +47,28 @@ fn main() {
     while i < max {
         if (sieve[i >> 5] >> (i &31)&1) == 0 {
             let mut j = i * i;
-            seq.push(i);
+            if u < 6 { seq.push(i) }
+
            // print!("{} ", i);
             while j < max {
                 sieve[j >> 5] |= 1 << (j &31);
                 j += 2 * i;
             }
-        } else {
-            seq.clear();
         }
 
-        if seq.len() == 7 {
-            seq.pop();
-            print!("seq : {:?}\n", seq);
-            seq.clear();
+        if seq.len() == 6 {
+            let sum:usize = seq.iter().sum();
+            print!("seq : {:?} {}\n", seq, sum);
+        }
+
+        if u == 5 && seq.len() > 0 {
+            seq.clear()
         }
 
         i += WHEEL[u];
         u = if u == 7 { 0 } else { u + 1 };
     }
 
-//            for &j in &seq {
-//                if i > 22 {
-//                    let ix = i - j;
-//
-//                    if (sieve[ix >> 5] >> (ix &31)&1) == 1 { 
-//                        sum = 0;
-//                        break;
-//                    } else {
-//                        sum += ix
-//                    }
-//                }
-//            }
-//
-//            if sum > 0 {
-//                print!("{sum} = ");
-//                for j in &seq {
-//                    print!("{} ", i - j);
-//                }
-//
-//                print!("\n");
-//            }
 
     // let primes = (3..n)
     //     .step_by(2)
