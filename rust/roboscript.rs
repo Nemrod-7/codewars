@@ -95,6 +95,7 @@ fn execute (code: &str) -> String {
     let x = [1,0,-1,0];
     let y = [0,1,0,-1];
 
+    let mut _dir = compass.iter();
     let mut ix = 0;
     let mut code = code.chars().peekable();
     let mut hist = vec![(0,0)]; 
@@ -109,7 +110,7 @@ fn execute (code: &str) -> String {
                 //hist.push((coef * compass[ix].0 + last.0, coef * compass[ix].1 + last.1)); 
             }
             'R' => { ix = if ix == 3 { 0 } else { ix + 1 }; },
-            'l' => { ix = if ix == 0 { 3 } else { ix - 1 }; },
+            'L' => { ix = if ix == 0 { 3 } else { ix - 1 }; },
             _ => {},
         }
     }
@@ -125,19 +126,22 @@ fn construct(path:  &Vec<(i32,i32)>) {
     let mut miny = path.iter().min_by_key(|x| x.1).unwrap().1;
     let mut maxy = path.iter().max_by_key(|x| x.1).unwrap().1;
 
+    let offx = std::cmp::min(minx,0).abs(); // if minx < 0 { minx.abs() } else { 0 };
+    let offy = std::cmp::min(miny,0).abs();
     let width = minx.abs() + maxx.abs() + 1;
     let height = miny.abs() + maxy.abs() + 1;
 
     let mut grid = vec![vec!['.'; width as usize]; height as usize];
 
     for it in path.iter() {
-        let x = it.0;
-        let y = it.1;
+        let x = it.0 + offx;
+        let y = it.1 + offy;
 
+        print!("[{x},{y}]");
         grid[y as usize][x as usize] = 'x';
     }
 
-    print!("{} {} {} {}\n", minx, maxx, miny, maxy);
+    print!("{} {} {} {} {}\n", minx, maxx, miny, maxy, offy);
     print!("width : {} height : {} \n", width, height);
 
     for line in grid {
@@ -150,6 +154,8 @@ fn construct(path:  &Vec<(i32,i32)>) {
 fn main() {
 
     let code = "FFFRFFFFRFFFRFFF";
+
+    let code = "FFFLFF";
     execute(&code);
 
 
