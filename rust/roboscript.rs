@@ -1,5 +1,6 @@
 #![allow(dead_code,unused)]
 use std::iter::Peekable;
+use std::cmp;
 
 fn tokenize<'a>( program : &'a str) -> Vec<String> {
     let mut tokens : Vec<String> = vec![];
@@ -65,7 +66,7 @@ fn highlight(code :&str) -> String {
                     'R' => os += &format!("<span style=\"color: green\">{com}</span>"),
                     _ => unreachable!(),    
                 }
-os += "\n";
+                os += "\n";
             },
         }
     }
@@ -89,13 +90,32 @@ fn getnum (code : &mut Peekable<impl Iterator<Item = char>>) -> i32 {
         Err(_) => { 1 },
     }
 }
-fn execute (code: &str) -> String {
+fn construct(path:  &Vec<(i32,i32)>) -> String {
 
-    let compass = [(1,0),(0,1),(-1,0),(0,-1)];
+    let minx = path.iter().min_by_key(|x| x.0).unwrap().0;
+    let maxx = path.iter().max_by_key(|x| x.0).unwrap().0;
+    let miny = path.iter().min_by_key(|x| x.1).unwrap().1;
+    let maxy = path.iter().max_by_key(|x| x.1).unwrap().1;
+
+    let offx = std::cmp::min(minx,0).abs(); 
+    let offy = std::cmp::min(miny,0).abs();
+    let width = minx.abs() + maxx.abs() + 1;
+    let height = miny.abs() + maxy.abs() + 1;
+
+    let mut grid = vec![vec![' '; width as usize]; height as usize];
+
+    path.iter()
+        .for_each(|x| { grid[(x.1 + offy) as usize][(x.0 + offx) as usize] = '*'; });
+
+    grid.iter()
+        .map(|line| format!("{}\r\n", line.iter().collect::<String>()))
+        .collect::<String>()
+}
+pub fn execute (code: &str) -> String {
+
     let x = [1,0,-1,0];
     let y = [0,1,0,-1];
 
-    let mut _dir = compass.iter();
     let mut ix = 0;
     let mut code = code.chars().peekable();
     let mut hist = vec![(0,0)]; 
@@ -104,10 +124,12 @@ fn execute (code: &str) -> String {
         match curr {
             'F' => {
                 let coef = getnum(&mut code);
-                let last = hist[hist.len() - 1];
 
-                hist.push((coef * x[ix] + last.0, coef * y[ix] + last.1)); 
-                //hist.push((coef * compass[ix].0 + last.0, coef * compass[ix].1 + last.1)); 
+                (0..coef).for_each(|_| {
+                    if let Some(last) = hist.last() {
+                        hist.push((x[ix] + last.0, y[ix] + last.1)); 
+                    }
+                });
             }
             'R' => { ix = if ix == 3 { 0 } else { ix + 1 }; },
             'L' => { ix = if ix == 0 { 3 } else { ix - 1 }; },
@@ -115,51 +137,45 @@ fn execute (code: &str) -> String {
         }
     }
 
-    construct(&hist);
-    format!("")
+    let mut res = construct(&hist);
+    res.pop(); res.pop();
+    res
 }
 
-fn construct(path:  &Vec<(i32,i32)>) {
-
-    let mut minx = path.iter().min_by_key(|x| x.0).unwrap().0;
-    let mut maxx = path.iter().max_by_key(|x| x.0).unwrap().0;
-    let mut miny = path.iter().min_by_key(|x| x.1).unwrap().1;
-    let mut maxy = path.iter().max_by_key(|x| x.1).unwrap().1;
-
-    let offx = std::cmp::min(minx,0).abs(); // if minx < 0 { minx.abs() } else { 0 };
-    let offy = std::cmp::min(miny,0).abs();
-    let width = minx.abs() + maxx.abs() + 1;
-    let height = miny.abs() + maxy.abs() + 1;
-
-    let mut grid = vec![vec!['.'; width as usize]; height as usize];
-
-    for it in path.iter() {
-        let x = it.0 + offx;
-        let y = it.1 + offy;
-
-        print!("[{x},{y}]");
-        grid[y as usize][x as usize] = 'x';
-    }
-
-    print!("{} {} {} {} {}\n", minx, maxx, miny, maxy, offy);
-    print!("width : {} height : {} \n", width, height);
-
-    for line in grid {
-
-        print!("{:?}\n", line);
-    }
-
+macro_rules! expect_equal {
+  ($actual:expr, $expected:expr $(,)*) => {{
+    let actual = $actual;
+    let expected = $expected;
+    assert_eq!(actual, expected, "\ngot:\n{}\n\nexpected:\n{}\n", actual, expected);
+  }};
 }
 
+fn examples_in_description() {
+  expect_equal!(execute(""), "*");
+  expect_equal!(execute("FFFFF"), "******");
+  expect_equal!(
+    execute("FFFFFLFFFFFLFFFFFLFFFFFL"),
+    "******\r\n*    *\r\n*    *\r\n*    *\r\n*    *\r\n******",
+  );
+  expect_equal!(
+    execute("LFFFFFRFFFRFFFRFFFFFFF"),
+    "    ****\r\n    *  *\r\n    *  *\r\n********\r\n    *   \r\n    *   ",
+  );
+  expect_equal!(
+    execute("LF5RF3RF3RF7"),
+    "    ****\r\n    *  *\r\n    *  *\r\n********\r\n    *   \r\n    *   ",
+  );
+}
 fn main() {
 
-    let code = "FFFRFFFFRFFFRFFF";
+    let code = "F5";
 
-    let code = "FFFLFF";
-    execute(&code);
+    let actual = execute(&"LF5RF3RF3RF7");
+    // print!("{actual}");
+    examples_in_description();
 
-
-
+    //  print!("{} {} {} {} {}\n", minx, maxx, miny, maxy, offy);
+    //  print!("width : {} height : {} \n", width, height);
 
     //print!("{:?}", curr);
 
