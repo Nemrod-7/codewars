@@ -1,6 +1,5 @@
 #![allow(dead_code,unused)]
 use std::iter::Peekable;
-use std::cmp;
 
 fn tokenize<'a>( program : &'a str) -> Vec<String> {
     let mut tokens : Vec<String> = vec![];
@@ -90,7 +89,7 @@ fn getnum (code : &mut Peekable<impl Iterator<Item = char>>) -> i32 {
         Err(_) => { 1 },
     }
 }
-fn construct(path:  &Vec<(i32,i32)>) -> String {
+fn format(path:  &Vec<(i32,i32)>) -> String {
 
     let minx = path.iter().min_by_key(|x| x.0).unwrap().0;
     let maxx = path.iter().max_by_key(|x| x.0).unwrap().0;
@@ -121,58 +120,53 @@ pub fn execute (code: &str) -> String {
     let mut hist = vec![(0,0)]; 
 
     while let Some(curr) = code.next() {
-        match curr {
-            'F' => {
-                let coef = getnum(&mut code);
+        let coef = getnum(&mut code);
 
-                (0..coef).for_each(|_| {
-                    if let Some(last) = hist.last() {
-                        hist.push((x[ix] + last.0, y[ix] + last.1)); 
-                    }
-                });
+        (0..coef).for_each(|_|
+            match curr {
+                'F' => if let Some(last) = hist.last() {
+                    hist.push((x[ix] + last.0, y[ix] + last.1)) 
+                },
+                'R' => ix = if ix == 3 { 0 } else { ix + 1 },
+                'L' => ix = if ix == 0 { 3 } else { ix - 1 },
+                _ => {},
             }
-            'R' => { ix = if ix == 3 { 0 } else { ix + 1 }; },
-            'L' => { ix = if ix == 0 { 3 } else { ix - 1 }; },
-            _ => {},
-        }
+        );
     }
 
-    let mut res = construct(&hist);
+    //print!("{:?}\n", hist);
+    let mut res = format(&hist);
     res.pop(); res.pop();
     res
 }
 
 macro_rules! expect_equal {
-  ($actual:expr, $expected:expr $(,)*) => {{
-    let actual = $actual;
-    let expected = $expected;
-    assert_eq!(actual, expected, "\ngot:\n{}\n\nexpected:\n{}\n", actual, expected);
-  }};
+    ($actual:expr, $expected:expr $(,)*) => {{
+        let actual = $actual;
+        let expected = $expected;
+        assert_eq!(actual, expected, "\ngot:\n{}\n\nexpected:\n{}\n", actual, expected);
+    }};
 }
 
 fn examples_in_description() {
-  expect_equal!(execute(""), "*");
-  expect_equal!(execute("FFFFF"), "******");
-  expect_equal!(
-    execute("FFFFFLFFFFFLFFFFFLFFFFFL"),
-    "******\r\n*    *\r\n*    *\r\n*    *\r\n*    *\r\n******",
-  );
-  expect_equal!(
-    execute("LFFFFFRFFFRFFFRFFFFFFF"),
-    "    ****\r\n    *  *\r\n    *  *\r\n********\r\n    *   \r\n    *   ",
-  );
-  expect_equal!(
-    execute("LF5RF3RF3RF7"),
-    "    ****\r\n    *  *\r\n    *  *\r\n********\r\n    *   \r\n    *   ",
-  );
+    expect_equal!(execute(""), "*");
+    expect_equal!(execute("FFFFF"), "******");
+    expect_equal!(
+        execute("FFFFFLFFFFFLFFFFFLFFFFFL"),
+        "******\r\n*    *\r\n*    *\r\n*    *\r\n*    *\r\n******",
+    );
+    expect_equal!(
+        execute("LFFFFFRFFFRFFFRFFFFFFF"),
+        "    ****\r\n    *  *\r\n    *  *\r\n********\r\n    *   \r\n    *   ",
+    );
+    expect_equal!(
+        execute("LF5RF3RF3RF7"),
+        "    ****\r\n    *  *\r\n    *  *\r\n********\r\n    *   \r\n    *   ",
+    );
 }
 fn main() {
 
-    let code = "F5";
-
-    let actual = execute(&"LF5RF3RF3RF7");
-    // print!("{actual}");
-    examples_in_description();
+     examples_in_description();
 
     //  print!("{} {} {} {} {}\n", minx, maxx, miny, maxy, offy);
     //  print!("width : {} height : {} \n", width, height);
