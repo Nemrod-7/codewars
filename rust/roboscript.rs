@@ -74,7 +74,7 @@ fn highlight(code :&str) -> String {
     os
 }
 
-fn getnum (code : &mut Peekable<impl Iterator<Item = char>>) -> i32 {
+fn getnum (code : &mut Peekable<impl Iterator<Item = char>>) -> u32 {
     let mut tmp = String::new(); 
 
     while let Some(dig) = code.peek() {
@@ -84,11 +84,34 @@ fn getnum (code : &mut Peekable<impl Iterator<Item = char>>) -> i32 {
         }
     }
 
-    match tmp.parse::<i32>() {
+    match tmp.parse::<u32>() {
         Ok(num) => { num },
         Err(_) => { 1 },
     }
 }
+fn getparenthesis (code : &mut Peekable<impl Iterator<Item = char>>) -> String {
+
+    let mut curr = String::new();
+    let mut pile = 1;
+    code.next();
+
+    while let Some(nxt) = code.next() {
+
+        match nxt {
+            ')' => {
+                pile -= 1;
+                if pile == 0 { break }
+            },
+            '(' => pile += 1
+                , 
+            _ => { } ,
+        }
+        curr.push(nxt); 
+    }
+
+    curr
+} 
+
 fn format(path:  &Vec<(i32,i32)>) -> String {
 
     let minx = path.iter().min_by_key(|x| x.0).unwrap().0;
@@ -115,8 +138,8 @@ pub fn execute (code: &str) -> String {
     let y = [0,1,0,-1];
 
     let mut ix = 0;
-    let mut code = code.chars().peekable();
     let mut hist = vec![(0,0)]; 
+    let mut code = code.chars().peekable();
 
     while let Some(curr) = code.next() {
         let coef = getnum(&mut code);
@@ -160,13 +183,55 @@ fn examples_in_description() {
         "    ****\r\n    *  *\r\n    *  *\r\n********\r\n    *   \r\n    *   ",
     );
 }
+
+fn reduce(expr: &str) -> String {
+
+    let mut oss = String::new();
+    let mut code = expr.chars().peekable();
+    let mut s1:Vec<String> = Vec::new();
+
+    while let Some(&val) = code.peek() {
+        match val {
+            '(' => { s1.push(getparenthesis(&mut code)) },
+            '0'..='9' => {
+                let num = getnum(&mut code);
+
+                if let Some(token) = s1.pop() {
+                    (0..num).for_each(|_| s1.push(token.clone()));
+                }
+
+                //print!("num : [{}]\n", num);
+            },
+            _ => {
+               // let mut res = String::new();
+
+               // while let Some(token) = s1.pop() {
+               //     print!("[{token}]");
+               //     res += &token;
+               // }
+
+                match val {
+
+                    _ => {  },
+                }
+
+                s1.push(val.to_string());
+                code.next();
+            },
+        }
+    }
+
+    s1.join("")
+}
 fn main() {
 
-    examples_in_description();
+    //examples_in_description();
 
-    //  print!("{} {} {} {} {}\n", minx, maxx, miny, maxy, offy);
-    //  print!("width : {} height : {} \n", width, height);
+    let code = "RF3";
+    let res = reduce(code);
 
-    //print!("{:?}", curr);
+
+    print!("{res}");
+
 
 }
