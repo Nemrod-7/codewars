@@ -96,19 +96,18 @@ fn format(path:  &Vec<(i32,i32)>) -> String {
     let miny = path.iter().min_by_key(|x| x.1).unwrap().1;
     let maxy = path.iter().max_by_key(|x| x.1).unwrap().1;
 
-    let offx = std::cmp::min(minx,0).abs(); 
-    let offy = std::cmp::min(miny,0).abs();
     let width = minx.abs() + maxx.abs() + 1;
     let height = miny.abs() + maxy.abs() + 1;
 
     let mut grid = vec![vec![' '; width as usize]; height as usize];
 
     path.iter()
-        .for_each(|x| { grid[(x.1 + offy) as usize][(x.0 + offx) as usize] = '*'; });
+        .for_each(|x| { grid[(x.1 + miny.abs()) as usize][(x.0 + minx.abs()) as usize] = '*'; });
 
     grid.iter()
-        .map(|line| format!("{}\r\n", line.iter().collect::<String>()))
-        .collect::<String>()
+        .map(|line| format!("{}", line.iter().collect::<String>()))
+        .collect::<Vec<_>>()
+        .join("\r\n")
 }
 pub fn execute (code: &str) -> String {
 
@@ -134,10 +133,7 @@ pub fn execute (code: &str) -> String {
         );
     }
 
-    //print!("{:?}\n", hist);
-    let mut res = format(&hist);
-    res.pop(); res.pop();
-    res
+    format(&hist)
 }
 
 macro_rules! expect_equal {
@@ -166,7 +162,7 @@ fn examples_in_description() {
 }
 fn main() {
 
-     examples_in_description();
+    examples_in_description();
 
     //  print!("{} {} {} {} {}\n", minx, maxx, miny, maxy, offy);
     //  print!("width : {} height : {} \n", width, height);
