@@ -1,22 +1,10 @@
 #![allow(dead_code, unused)]
 // passed : 36
 
-//////////////////////////////////////////preloaded////////////////////////////////////////////////
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Element { C, H, O, B, Br, Cl, F, Mg, N, P, S, }
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ChemError {
-    EmptyMolecule,
-    LockedMolecule,
-    InvalidBond,
-    UnlockedMolecule,
-}
-
-pub type ChemResult<T> = Result<T, ChemError>;
-///////////////////////////////////////////////////////////////////////////////////////////////////
+mod tests; 
+use tests::*;
+use preloaded::{ChemResult, ChemError, Element::{self, *}};
 use std::collections::HashMap;
-use Element::*;
 
 const DATA: &[(Element,(&str, usize, f32))] =
 &[(H,("H",1,1.0)),(B,("B",3,10.8)),(C,("C",4,12.0)),(N,("N",3,14.0)),(O,("O",2,16.0)),(F,("F",1,19.0)),(Mg,("Mg",2,24.3)),(P,("P",3,31.0)),(S,("S",2,32.1)),(Cl,("Cl",1,35.5)),(Br,("Br",1,80.0))] ;
@@ -204,9 +192,7 @@ impl Molecule {
         let check = (0.._els.len()).map(|x| if x < _els.len()-1 {valence(_els[x]) as i32 - 2} else {valence(_els[x]) as i32 - 1}).collect::<Vec<i32>>();
 
         if self.lock == true { return Err(ChemError::LockedMolecule); }
-        if check.iter().find(|&x| *x < 0).is_some() {
-            return Err(ChemError::InvalidBond);
-        }
+        if check.iter().find(|&x| *x < 0).is_some() { return Err(ChemError::InvalidBond); }
 
         for elt in _els {
             let ax = self.atoms.len();
@@ -309,14 +295,16 @@ fn main () {
     m.add_chain(2,1, &[C,C,F,H]);
     m.close();
 
-    showbase(&m.atoms);
+    //showbase(&m.atoms);
 
     let _els = [C,C,F,H];
     //let check = (0.._els.len()).map(|x| if x < _els.len()-1 {valence(_els[x]) as i32 - 2} else {valence(_els[x]) as i32 - 1}).collect::<Vec<i32>>();
     let check = _els.iter().map(|x| valence(*x) as i32 - 2).collect::<Vec<i32>>();
 
 
-    print!("{:?}\n", check);
+    basics::constructors();
+
+    //print!("{:?}\n", check);
         //let (0..check.len()).map(|x| if x < check.len()-1 {check[x]-2} else {check[x]-1}).collect::<Vec<i32>>();
         //*check.last_mut().unwrap() += 1;
 

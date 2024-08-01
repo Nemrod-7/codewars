@@ -1,52 +1,32 @@
 #![allow(dead_code, unused)]
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Element { C, H, O, B, Br, Cl, F, Mg, N, P, S, }
-use Element::*;
-
-const DATA: &[ (Element,(&str, usize, f32)) ] =
-&[(H,("H",2,1.0)),(B,("B",3,10.8)),(C,("C",4,12.0)),(N,("N",3,14.0)),(O,("O",2,16.0)),(F,("F",1,19.0)),(Mg,("Mg",2,24.3)),(P,("P",3,31.0)),(S,("S",2,21.1)),(Cl,("Cl",1,35.5)),(Br,("Br",1,80.0))] ;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ChemError {
-    EmptyMolecule,
-    LockedMolecule,
-    InvalidBond,
-    UnlockedMolecule,
+macro_rules! say_hello {
+    () => {
+        println!("Hello!")
+    };
 }
 
-pub type ChemResult<T> = Result<T, ChemError>;
 
-#[derive(Hash, Clone)]
-struct Atom {
-    id:usize,
-    element:Element,
-    edge:Vec<Atom>,
-}
+ mod tests {
+     use super::*;
 
-struct Molecule {
-    id: String,
-    index: Vec<Vec<usize>>,
-    atoms: Vec<Atom>,
-}
+     pub mod basics {
 
-impl Molecule {
-    fn from(name: &str) -> Molecule {
-        Molecule {
-            id: name.to_string(),
-            index:vec![],
-            atoms: vec![Atom{id:0, element:C, edge: vec![]}],
+        pub fn construct() {
+
         }
     }
 
+     pub fn jump() {
+
+     }
 }
 
 fn main () {
-    //let mut atoms: Vec<Atom> = vec![Atom{id:0, element:C, edge:vec![]}];
-    let mut index = vec![
-        vec![],
-        vec![0],
-        vec![0,1,2,3],
-    ];
+
+
+    say_hello!();
+
+    tests::basics::construct();
 
 }

@@ -1,7 +1,7 @@
 #![allow(dead_code, unused)]
 
-extern crate regex;
-use regex::Regex;
+//extern crate regex;
+//use regex::Regex;
 
 use thiserror::Error;
 use std::collections::HashMap;
@@ -93,10 +93,12 @@ fn valid_braces (expr: &str) -> bool {
 
     brc.is_empty()
 }
+/*
 fn tokenize2 (src: &str) -> Molecule {
     let token = Regex::new("[\\(\\)\\[\\]]|[A-Z][a-z]?|[0-9]").unwrap();
     token.captures_iter(src).map(|x| (x[0].to_string(), 1)).collect::<Vec<_>>()
 }
+*/
 pub fn parse_molecule (src: &str) -> Molecule {
     let mut code = src.chars().map(|x| (x.to_string(), 1)).collect::<Vec<Atom>>();
     let mut map: HashMap<String,usize> = HashMap::new();

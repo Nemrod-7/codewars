@@ -89,7 +89,7 @@ fn getnum (code : &mut Peekable<impl Iterator<Item = char>>) -> u32 {
         Err(_) => { 1 },
     }
 }
-fn getparenthesis (code : &mut Peekable<impl Iterator<Item = char>>) -> String {
+fn getsub (code : &mut Peekable<impl Iterator<Item = char>>) -> String {
 
     let mut curr = String::new();
     let mut pile = 1;
@@ -132,31 +132,58 @@ fn format(path:  &Vec<(i32,i32)>) -> String {
         .collect::<Vec<_>>()
         .join("\r\n")
 }
+fn expand(expr: &str) -> String {
+
+    let mut code = expr.chars().peekable();
+    let mut s1:Vec<String> = Vec::new();
+
+    while let Some(curr) = code.peek() {
+        match curr {
+            '0'..='9' => {
+                if let Some(token) = s1.pop() {
+                    let coef = getnum(&mut code);
+                    (0..coef).for_each(|_| s1.push(token.clone()));
+                }
+            },
+            '(' => { s1.push(getsub(&mut code)) },
+            _ => { s1.push(code.next().unwrap().to_string()); },
+        }
+    }
+
+    s1.join("")
+}
 pub fn execute (code: &str) -> String {
 
     let x = [1,0,-1,0];
     let y = [0,1,0,-1];
 
     let mut ix = 0;
-    let mut hist = vec![(0,0)]; 
-    let mut code = code.chars().peekable();
+    let mut code = expand(code);
+    let mut hist:Vec<(i32,i32)> = vec![(0,0)]; 
 
-    while let Some(curr) = code.next() {
-        let coef = getnum(&mut code);
+    while code.chars().find(|&x| x == '(' || x.is_numeric()).is_some() {
+        code = expand(&code);
+    }
 
-        (0..coef).for_each(|_|
-            match curr {
-                'F' => if let Some(last) = hist.last() {
-                    hist.push((x[ix] + last.0, y[ix] + last.1)) 
-                },
-                'R' => ix = if ix == 3 { 0 } else { ix + 1 },
-                'L' => ix = if ix == 0 { 3 } else { ix - 1 },
-                _ => {},
-            }
-        );
+    print!("{code}\n");
+    for val in code.chars() {
+        match val  {
+            'L' => ix = if ix == 0 { 3 } else { ix - 1 },
+            'R' => ix = if ix == 3 { 0 } else { ix + 1 },
+            'F' => if let Some(pos) = hist.last() { hist.push((x[ix] + pos.0, y[ix] + pos.1)) } ,
+            _ => { },
+        }
     }
 
     format(&hist)
+}
+
+fn main() {
+
+    let code = "LF5RF3RF3RF7";
+    let actual = execute(code);
+
+    examples_in_description();
 }
 
 macro_rules! expect_equal {
@@ -170,68 +197,36 @@ macro_rules! expect_equal {
 fn examples_in_description() {
     expect_equal!(execute(""), "*");
     expect_equal!(execute("FFFFF"), "******");
-    expect_equal!(
-        execute("FFFFFLFFFFFLFFFFFLFFFFFL"),
-        "******\r\n*    *\r\n*    *\r\n*    *\r\n*    *\r\n******",
-    );
-    expect_equal!(
-        execute("LFFFFFRFFFRFFFRFFFFFFF"),
-        "    ****\r\n    *  *\r\n    *  *\r\n********\r\n    *   \r\n    *   ",
-    );
-    expect_equal!(
-        execute("LF5RF3RF3RF7"),
-        "    ****\r\n    *  *\r\n    *  *\r\n********\r\n    *   \r\n    *   ",
-    );
-}
 
-fn reduce(expr: &str) -> String {
+       expect_equal!(
+       execute("FFFFFLFFFFFLFFFFFLFFFFFL"),
+       "******\r\n*    *\r\n*    *\r\n*    *\r\n*    *\r\n******",
+       );
 
-    let mut oss = String::new();
-    let mut code = expr.chars().peekable();
-    let mut s1:Vec<String> = Vec::new();
+       expect_equal!(
+       execute("LFFFFFRFFFRFFFRFFFFFFF"),
+       "    ****\r\n    *  *\r\n    *  *\r\n********\r\n    *   \r\n    *   ",
+       );
 
-    while let Some(&val) = code.peek() {
-        match val {
-            '(' => { s1.push(getparenthesis(&mut code)) },
-            '0'..='9' => {
-                let num = getnum(&mut code);
+       expect_equal!(
+       execute("LF5RF3RF3RF7"),
+       "    ****\r\n    *  *\r\n    *  *\r\n********\r\n    *   \r\n    *   ",
+       );
 
-                if let Some(token) = s1.pop() {
-                    (0..num).for_each(|_| s1.push(token.clone()));
-                }
-
-                //print!("num : [{}]\n", num);
-            },
-            _ => {
-               // let mut res = String::new();
-
-               // while let Some(token) = s1.pop() {
-               //     print!("[{token}]");
-               //     res += &token;
-               // }
-
-                match val {
-
-                    _ => {  },
-                }
-
-                s1.push(val.to_string());
-                code.next();
-            },
-        }
-    }
-
-    s1.join("")
-}
-fn main() {
-
-    //examples_in_description();
-
-    let code = "RF3";
-    let res = reduce(code);
-
-
-    print!("{res}");
-
-
+       expect_equal!(
+           execute("LF5(RF3)(RF3R)F7"),
+           "    ****\r\n    *  *\r\n    *  *\r\n********\r\n    *   \r\n    *   ",
+       );
+       expect_equal!(
+           execute("(L(F5(RF3))(((R(F3R)F7))))"),
+           "    ****\r\n    *  *\r\n    *  *\r\n********\r\n    *   \r\n    *   ",
+       );
+       expect_equal!(
+           execute("F4L(F4RF4RF4LF4L)2F4RF4RF4"),
+           "    *****   *****   *****\r\n    *   *   *   *   *   *\r\n    *   *   *   *   *   *\r\n    *   *   *   *   *   *\r\n*****   *****   *****   *",
+       );
+       expect_equal!(
+           execute("F4L((F4R)2(F4L)2)2(F4R)2F4"),
+           "    *****   *****   *****\r\n    *   *   *   *   *   *\r\n    *   *   *   *   *   *\r\n    *   *   *   *   *   *\r\n*****   *****   *****   *",
+       );
 }
