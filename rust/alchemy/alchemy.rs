@@ -3,6 +3,7 @@
 
 mod tests; 
 use tests::*;
+use tests::tests::*;
 use preloaded::{ChemResult, ChemError, Element::{self, *}};
 use std::collections::HashMap;
 
@@ -301,8 +302,8 @@ fn main () {
     //let check = (0.._els.len()).map(|x| if x < _els.len()-1 {valence(_els[x]) as i32 - 2} else {valence(_els[x]) as i32 - 1}).collect::<Vec<i32>>();
     let check = _els.iter().map(|x| valence(*x) as i32 - 2).collect::<Vec<i32>>();
 
-
     basics::constructors();
+    basics::simple_carbohydrates();
 
     //print!("{:?}\n", check);
         //let (0..check.len()).map(|x| if x < check.len()-1 {check[x]-2} else {check[x]-1}).collect::<Vec<i32>>();
