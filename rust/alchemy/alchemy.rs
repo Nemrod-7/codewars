@@ -93,7 +93,7 @@ impl Molecule {
     pub fn name(&self) -> &str { &self.id }
     pub fn branch(&mut self, _bs: &[usize]) -> ChemResult<&mut Self> {
         if self.lock == true { return Err(ChemError::LockedMolecule); }
-        print!("branch : {:?}\n", _bs);
+        //print!("branch : {:?}\n", _bs);
 
         for ncarb in _bs {
             let mut arm = vec![0];
@@ -118,7 +118,7 @@ impl Molecule {
         // (&mut m).bond(&[(c1, b1, c2, b2), ...])
 
         if self.lock == true { return Err(ChemError::LockedMolecule); }
-        print!("bond : {:?}\n", _poses);
+        //print!("bond : {:?}\n", _poses);
 
         for it in _poses {
             let c1 = self.index[it.1][it.0];
@@ -137,7 +137,7 @@ impl Molecule {
         // (&mut m).mutate(&[(nc, nb, elt), ...])
 
         if self.lock == true { return Err(ChemError::LockedMolecule); }
-        print!("mutate : {:?}\n", _ms);
+        //print!("mutate : {:?}\n", _ms);
         //showbase(&self.atoms);
 
         for (nc, nb, elt) in _ms {
@@ -170,7 +170,7 @@ impl Molecule {
     }
     pub fn add(&mut self, _els: &[(usize, usize, Element)]) -> ChemResult<&mut Self> {
         if self.lock == true { return Err(ChemError::LockedMolecule); }
-        print!("add : {:?}\n", _els);
+      //  print!("add : {:?}\n", _els);
 
         for (nc, nb, elt) in _els {
             let ix = self.index[*nb][*nc];
@@ -188,7 +188,7 @@ impl Molecule {
         Ok(self)
     }
     pub fn add_chain(&mut self, nc: usize, nb: usize, _els: &[Element]) -> ChemResult<&mut Self> {
-        print!("add_chain : {} {} {:?}\n", nc, nb, _els);
+        //print!("add_chain : {} {} {:?}\n", nc, nb, _els);
         let mut arm:Vec<usize> = Vec::new();
         let check = (0.._els.len()).map(|x| if x < _els.len()-1 {valence(_els[x]) as i32 - 2} else {valence(_els[x]) as i32 - 1}).collect::<Vec<i32>>();
 
@@ -210,7 +210,7 @@ impl Molecule {
         Ok(self)
     }
     pub fn close(&mut self) -> ChemResult<&mut Self> {
-        print!("close\n");
+        //print!("close\n");
         self.lock = true;
 
         for i in 1..self.atoms.len() {
@@ -234,7 +234,7 @@ impl Molecule {
         Ok(self)
     }
     pub fn unlock(&mut self) -> ChemResult<&mut Self> {
-        print!("unlock\n");
+        //print!("unlock\n");
         self.lock = false;
         self.atoms.retain(|x| x.element != H);
 
@@ -288,27 +288,17 @@ impl Molecule {
 
 fn main () {
 
-    //Should fail when chaining atoms after any monovalent atom
-    let mut m = Molecule::from("Carbon 6");
-
-    m.branch(&[3]);
-    m.bond(&[]);
-    m.add_chain(2,1, &[C,C,F,H]);
-    m.close();
-
-    //showbase(&m.atoms);
-
-    let _els = [C,C,F,H];
-    //let check = (0.._els.len()).map(|x| if x < _els.len()-1 {valence(_els[x]) as i32 - 2} else {valence(_els[x]) as i32 - 1}).collect::<Vec<i32>>();
-    let check = _els.iter().map(|x| valence(*x) as i32 - 2).collect::<Vec<i32>>();
-
     basics::constructors();
     basics::simple_carbohydrates();
+    
+    atom_spec::atom_display();
+    atom_spec::element_and_id();
+    atom_spec::atom_display_with_bonds();
+    atom_spec::atom_equals_only_uses_id();
 
-    //print!("{:?}\n", check);
-        //let (0..check.len()).map(|x| if x < check.len()-1 {check[x]-2} else {check[x]-1}).collect::<Vec<i32>>();
-        //*check.last_mut().unwrap() += 1;
+    create_and_bond_carbohydrates::carbo_tests();
+    mutations_and_carbohydrates::mutation_tests();
+  
 
-    //print!(" {} => {:?} {:?}\n", m.name(), m.formula(), m.molecular_weight());
-
+    
 }

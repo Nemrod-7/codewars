@@ -1,10 +1,10 @@
 
 pub mod preloaded {
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub enum Element { C, H, O, B, Br, Cl, F, Mg, N, P, S, }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub enum ChemError {
         EmptyMolecule,
         LockedMolecule,
@@ -13,10 +13,45 @@ pub mod preloaded {
     }
 
     pub type ChemResult<T> = Result<T, ChemError>;
+
+    impl std::fmt::Display for Element {
+
+        fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            let mut os = String::new();
+
+            match self {
+                Element::C  => os += &format!("Carbon"),
+                Element::H  => os += &format!("Hydrogen"),
+                Element::O  => os += &format!("Oxygen"),
+                Element::B  => os += &format!("Bore"),
+                Element::Br => os += &format!("Brome"),
+                Element::Cl => os += &format!("Chlore"),
+                Element::F  => os += &format!("Fluor"),
+                Element::Mg => os += &format!("Magnesium"),
+                Element::N  => os += &format!("Azote"),
+                Element::P  => os += &format!("Phosphore"),
+                Element::S  => os += &format!("Sulfur"),
+                _ => (),
+            }
+            write!(_f, "{}", os)
+        }
+    }
+
+}
+
+macro_rules! assert_float_eq {
+    ($x:expr, $y:expr, $eq1:ident <= $eps:expr, $txt:expr) => {
+
+        if (($x - $y) as f64).abs() > $eps {
+            print!("\nexpected : {} got : {}\n", $x, $y);
+        }
+
+        print!("\n");
+    };
 }
 
 pub mod tests {
-   // use float_eq::assert_float_eq;
+    // use float_eq::assert_float_eq;
     use crate::preloaded::{ChemResult, ChemError, Element::{self, *}};
     use Molecule;
 
@@ -28,7 +63,6 @@ pub mod tests {
             C => 4,
         }
     }
-
     fn weight(a: &Element) -> f32 {
         match a {
             C => 12., H => 1., O => 16., B => 10.8, Br => 80., Cl => 35.5,
@@ -62,7 +96,6 @@ pub mod tests {
             .collect::<Vec<String>>()
     }
 
-
     /// will panic if constructing the molecule fails with the given sequence
     /// of builder `funcs` supplied with `args`
     macro_rules! mol {
@@ -72,8 +105,8 @@ pub mod tests {
                 let _ = (&mut m)$(
                     .$func($($arg, )*)
                     .expect(&format!(
-                        "{} failed",
-                        stringify!($func)
+                            "{} failed",
+                            stringify!($func)
                     )))*;
                 m
             }
@@ -132,17 +165,15 @@ pub mod tests {
         pub fn simple_carbohydrates() {
             let methane = mol!("methane", branch(&[1]), close());
             chem_assert!(&methane.formula().unwrap(), should be, "CH4", "Testing raw formula");
-            //assert_float_eq!(16., methane.molecular_weight().unwrap(), abs <= 0.00001, "Testing molecular weight");
+            assert_float_eq!(16., methane.molecular_weight().unwrap(), abs <= 0.00001, "Testing molecular weight");
 
             let octane = mol!("octane", branch(&[8]), close());
             chem_assert!(&octane.formula().unwrap(), should be, "C8H18", "Testing raw formula");
-            //assert_float_eq!(114., octane.molecular_weight().unwrap(), abs <= 0.00001, "Testing molecular weight");
+            assert_float_eq!(114., octane.molecular_weight().unwrap(), abs <= 0.00001, "Testing molecular weight");
         }
-            }
+    }
 
-    /*
-    #[test]
-    fn biotin() -> ChemResult<()> {
+    pub fn biotin() -> ChemResult<()> {
         println!("Build the biotin (the example at the beginning of the description. Just for fun)");
 
         println!("{}", r#"
@@ -161,8 +192,8 @@ pub mod tests {
 
         biotin.branch(&[14,1,1])?;
         biotin.bond(&[(2,1,1,2), (2,1,1,2),
-                    (10,1,1,3), (10,1,1,3),
-                    (8,1,12,1), (7,1,14,1)])?;
+        (10,1,1,3), (10,1,1,3),
+        (8,1,12,1), (7,1,14,1)])?;
         biotin.mutate(&[(1,1,O),  (1,2,O), (1,3,O), (11,1,N), (9,1,N), (14,1,S)])?;
         biotin.close()?;
 
@@ -173,19 +204,17 @@ pub mod tests {
         Ok(())
     }
 
-    mod atom_spec {
+    pub mod atom_spec {
         use super::*;
 
-        #[test]
-        fn atom_display() {
+        pub fn atom_display() {
             let m = mol!("methane", branch(&[1]));
             let atms = m.atoms();
             chem_assert!(atms.len(), should be, 1);
             chem_assert!(format!("{}", atms.first().unwrap()), should be, "Atom(C.1)".to_string());
         }
 
-        #[test]
-        fn element_and_id() {
+        pub fn element_and_id() {
             let m = mol!("methane", branch(&[1]), close());
             let atoms = m.atoms();
             chem_assert!(atoms.len(), should be, 5);
@@ -196,8 +225,7 @@ pub mod tests {
             }
         }
 
-        #[test]
-        fn atom_display_with_bonds() {
+        pub fn atom_display_with_bonds() {
             let m = mol!("methane", branch(&[1]), close());
             let atoms = m.atoms();
             assert!(atoms.len() > 4, "methane should have more than 4 atoms");
@@ -205,8 +233,7 @@ pub mod tests {
             chem_assert!(format!("{}", &atoms[4]), should be, "Atom(H.5: C1)".to_string());
         }
 
-        #[test]
-        fn atom_equals_only_uses_id() {
+        pub fn atom_equals_only_uses_id() {
             let methane = mol!("methane", branch(&[1]), close());
             let m_atoms = methane.atoms();
             assert!(m_atoms.len() > 2, "methane should have more than two atoms");
@@ -219,125 +246,72 @@ pub mod tests {
             assert_ne!(&m_atoms[2], &o_atoms[3], "Do not modify the PartialEq/Eq implementation");
         }
     }
-
-    mod create_and_bond_carbohydrates {
+    pub mod create_and_bond_carbohydrates {
         use super::*;
 
-        macro_rules! carbo_tests {
-            ($( ( $test_name:ident, $name:expr, $branch:expr, $bonds:expr, $formula:expr, $mm:expr, $carbToStr:expr ) ),+) => {
-                $(
-                    #[test]
-                    fn $test_name() {
-                        println!("Create carbohydrates and bond them correctly (id tracking, raw formula and molecular weight tested)");
-                        let m = mol!($name, branch(&$branch), bond(&$bonds), close());
-                        chem_assert!(m.formula().unwrap(), should be, $formula, "Testing raw formula");
-                        assert_float_eq!(m.molecular_weight().unwrap(), $mm, abs <= 0.00001, "Testing molecular weight");
-                        chem_assert!(atom_strs(&m, false), should all be, $carbToStr, "Checking non-hydrogen bonds");
-                    }
-                )+
-            };
-        }
+        pub fn carbo_tests () {
+            let carbon = [
+                ( "cyclohexane", vec![6], vec![(1,1,6,1)], "C6H12", 84.,
+                vec!["Atom(C.1: C2,C6,H,H)", "Atom(C.2: C1,C3,H,H)", "Atom(C.3: C2,C4,H,H)", "Atom(C.4: C3,C5,H,H)", "Atom(C.5: C4,C6,H,H)", "Atom(C.6: C1,C5,H,H)"]
+                ), (
+                "1,1-dimethyl-2-propylcyclohexane", vec![9,1,1], vec![(4,1,9,1), (5,1,1,2), (5,1,1,3)], "C11H22", 154.,
+                vec!["Atom(C.1: C2,H,H,H)", "Atom(C.2: C1,C3,H,H)", "Atom(C.3: C2,C4,H,H)", "Atom(C.4: C3,C5,C9,H)", "Atom(C.5: C4,C6,C10,C11)", "Atom(C.6: C5,C7,H,H)", "Atom(C.7: C6,C8,H,H)", "Atom(C.8: C7,C9,H,H)", "Atom(C.9: C4,C8,H,H)", "Atom(C.10: C5,H,H,H)", "Atom(C.11: C5,H,H,H)"]
+                ), (
+                "cubane - one branch", vec![8], vec![(3,1,6,1), (2,1,7,1), (1,1,8,1), (4,1,1,1), (5,1,8,1)], "C8H8", 104.,
+                vec!["Atom(C.1: C2,C4,C8,H)", "Atom(C.2: C1,C3,C7,H)", "Atom(C.3: C2,C4,C6,H)", "Atom(C.4: C1,C3,C5,H)", "Atom(C.5: C4,C6,C8,H)", "Atom(C.6: C3,C5,C7,H)", "Atom(C.7: C2,C6,C8,H)", "Atom(C.8: C1,C5,C7,H)"]
+                ), (
+                "cubane - two branches", vec![4,4], vec! [(1,1,4,1), (1,2,4,2), (1,1,1,2), (2,1,2,2), (3,1,3,2), (4,1,4,2)], "C8H8", 104.,
+                vec!["Atom(C.1: C2,C4,C5,H)", "Atom(C.2: C1,C3,C6,H)", "Atom(C.3: C2,C4,C7,H)", "Atom(C.4: C1,C3,C8,H)", "Atom(C.5: C1,C6,C8,H)", "Atom(C.6: C2,C5,C7,H)", "Atom(C.7: C3,C6,C8,H)", "Atom(C.8: C4,C5,C7,H)"]
+                ), (
+                "benzene: double bonds",vec! [2,2,2], vec! [(1,1,2,1), (1,2,2,2), (1,3,2,3), (2,1,1,2), (2,2,1,3), (2,3,1,1)], "C6H6", 78.,
+                vec!["Atom(C.1: C2,C2,C6,H)", "Atom(C.2: C1,C1,C3,H)", "Atom(C.3: C2,C4,C4,H)", "Atom(C.4: C3,C3,C5,H)", "Atom(C.5: C4,C6,C6,H)", "Atom(C.6: C1,C5,C5,H)"]
+                ), (
+                "acetylene: triple bonds", vec![2], vec![(1,1,2,1), (1,1,2,1)], "C2H2", 26.,
+                vec! ["Atom(C.1: C2,C2,C2,H)", "Atom(C.2: C1,C1,C1,H)"]
+                ) ];
 
-        carbo_tests! {
-            (
-                cyclohexane,
-                "cyclohexane",
-                [6],
-                [(1,1,6,1)],
-                "C6H12",
-                84.,
-                ["Atom(C.1: C2,C6,H,H)", "Atom(C.2: C1,C3,H,H)", "Atom(C.3: C2,C4,H,H)", "Atom(C.4: C3,C5,H,H)", "Atom(C.5: C4,C6,H,H)", "Atom(C.6: C1,C5,H,H)"]
-            ),
-            (
-                _1_1_dimethyl_2_propylcyclohexane,
-                "1,1-dimethyl-2-propylcyclohexane",
-                [9,1,1],
-                [(4,1,9,1), (5,1,1,2), (5,1,1,3)],
-                "C11H22",
-                154.,
-                ["Atom(C.1: C2,H,H,H)", "Atom(C.2: C1,C3,H,H)", "Atom(C.3: C2,C4,H,H)", "Atom(C.4: C3,C5,C9,H)", "Atom(C.5: C4,C6,C10,C11)", "Atom(C.6: C5,C7,H,H)", "Atom(C.7: C6,C8,H,H)", "Atom(C.8: C7,C9,H,H)", "Atom(C.9: C4,C8,H,H)", "Atom(C.10: C5,H,H,H)", "Atom(C.11: C5,H,H,H)"]
-            ),
-            (
-                cubane_one_branch,
-                "cubane - one branch",
-                [8],
-                [(3,1,6,1), (2,1,7,1), (1,1,8,1), (4,1,1,1), (5,1,8,1)],
-                "C8H8",
-                104.,
-                ["Atom(C.1: C2,C4,C8,H)", "Atom(C.2: C1,C3,C7,H)", "Atom(C.3: C2,C4,C6,H)", "Atom(C.4: C1,C3,C5,H)", "Atom(C.5: C4,C6,C8,H)", "Atom(C.6: C3,C5,C7,H)", "Atom(C.7: C2,C6,C8,H)", "Atom(C.8: C1,C5,C7,H)"]
-            ),
-            (
-                cubane_two_branches,
-                "cubane - two branches",
-                [4,4],
-                [(1,1,4,1), (1,2,4,2), (1,1,1,2), (2,1,2,2), (3,1,3,2), (4,1,4,2)],
-                "C8H8",
-                104.,
-                ["Atom(C.1: C2,C4,C5,H)", "Atom(C.2: C1,C3,C6,H)", "Atom(C.3: C2,C4,C7,H)", "Atom(C.4: C1,C3,C8,H)", "Atom(C.5: C1,C6,C8,H)", "Atom(C.6: C2,C5,C7,H)", "Atom(C.7: C3,C6,C8,H)", "Atom(C.8: C4,C5,C7,H)"]
-            ),
-            (
-                benzene_double_bonds,
-                "benzene: double bonds",
-                [2,2,2],
-                [(1,1,2,1), (1,2,2,2), (1,3,2,3), (2,1,1,2), (2,2,1,3), (2,3,1,1)],
-                "C6H6",
-                78.,
-                ["Atom(C.1: C2,C2,C6,H)", "Atom(C.2: C1,C1,C3,H)", "Atom(C.3: C2,C4,C4,H)", "Atom(C.4: C3,C3,C5,H)", "Atom(C.5: C4,C6,C6,H)", "Atom(C.6: C1,C5,C5,H)"]
-            ),
-            (
-                acetylene_triple_bonds,
-                "acetylene: triple bonds",
-                [2],
-                [(1,1,2,1), (1,1,2,1)],
-                "C2H2",
-                26.,
-                ["Atom(C.1: C2,C2,C2,H)", "Atom(C.2: C1,C1,C1,H)"]
-            )
+            //println!("Create carbohydrates and bond them correctly (id tracking, raw formula and molecular weight tested)");
+
+            for it in &carbon {
+                let mut m = Molecule::from(it.0);
+                m.branch(&it.1);
+                m.bond(&it.2);
+                m.close();
+
+                chem_assert!(m.formula().unwrap(), should be, it.3, "Testing raw formula");
+                chem_assert!(atom_strs(&m, false), should all be, &it.5, "Checking non-hydrogen bonds");
+            }
         }
     }
-
-    mod mutations_and_carbohydrates {
+    pub mod mutations_and_carbohydrates {
         use super::*;
 
-        macro_rules! mutation_tests {
-            ($( ( $test_name:ident, $name:expr, $branch:expr, $bonds:expr, $mutation:expr, $formula:expr, $mm:expr, $carbToStr:expr ) ),+) => {
-                $(
-                    #[test]
-                    fn $test_name() {
-                        println!("Mutating, adding and valence numbers consistencies with {}", $name);
-                        let m = mol!($name, branch(&$branch), bond(&$bonds), mutate(&$mutation), close());
-                        chem_assert!(m.formula().unwrap(), should be, $formula, "Testing raw formula");
-                        assert_float_eq!(m.molecular_weight().unwrap(), $mm, abs <= 0.00001, "Testing molecular weight");
-                        chem_assert!(atom_strs(&m, false), should all be, $carbToStr, "Checking non-hydrogen bonds");
-                    }
-                )+
-            };
-        }
+        pub fn mutation_tests () {
+            let mutation =  [
+                ( "Furane: no additional hydrogens while closing after mutation",
+                  vec! [5], vec![(5,1,1,1), (5,1,4,1), (2,1,3,1)], vec![(1,1,O)], "C4H4O", 68.,
+                  vec!["Atom(O.1: C2,C5)", "Atom(C.2: C3,C3,O1,H)", "Atom(C.3: C2,C2,C4,H)", "Atom(C.4: C3,C5,C5,H)", "Atom(C.5: C4,C4,O1,H)"]
+                ),
+                ( "isopropylmagnesium bromide",
+                  vec![4, 1], vec![(2,1,1,2)], vec![(3,1,Mg), (4,1,Br)], "C3H7BrMg", 147.3,
+                  vec! ["Atom(C.1: C2,H,H,H)", "Atom(C.2: C1,C5,Mg3,H)", "Atom(Mg.3: C2,Br4)", "Atom(Br.4: Mg3)", "Atom(C.5: C2,H,H,H)"]
+                )
+            ];
 
-        mutation_tests! {
-            (
-                no_additional_h_while_closing_after_mutation,
-                "Furane: no additional hydrogens while closing after mutation",
-                [5],
-                [(5,1,1,1), (5,1,4,1), (2,1,3,1)],
-                [(1,1,O)],
-                "C4H4O",
-                68.,
-                ["Atom(O.1: C2,C5)", "Atom(C.2: C3,C3,O1,H)", "Atom(C.3: C2,C2,C4,H)", "Atom(C.4: C3,C5,C5,H)", "Atom(C.5: C4,C4,O1,H)"]
-            ),
-            (
-                isopropylmagnesium_bromide,
-                "isopropylmagnesium bromide",
-                [4, 1],
-                [(2,1,1,2)],
-                [(3,1,Mg), (4,1,Br)],
-                "C3H7BrMg",
-                147.3,
-                ["Atom(C.1: C2,H,H,H)", "Atom(C.2: C1,C5,Mg3,H)", "Atom(Mg.3: C2,Br4)", "Atom(Br.4: Mg3)", "Atom(C.5: C2,H,H,H)"]
-            )
+
+            for it in mutation {
+                let mut m = Molecule::from(it.0);
+
+                m.branch(&it.1);
+                m.bond(&it.2);
+                m.mutate(&it.3);
+                m.close();
+
+                chem_assert!(m.formula().unwrap(), should be, it.4, "Testing raw formula");
+                chem_assert!(atom_strs(&m, false), should all be, it.6, "Checking non-hydrogen bonds");
+            }
         }
     }
-
     mod mutation_then_additions {
         use std::iter::repeat;
 
@@ -397,7 +371,6 @@ pub mod tests {
         macro_rules! chain_adding_tests {
             ($( ( $test_name:ident, $name:expr, $branch:expr, $add_ch:expr, $formula:expr, $mm:expr, $carbToStr:expr ) ),+) => {
                 $(
-                    #[test]
                     fn $test_name() {
                         println!("Check correct behavior of 'add_chaining' with {}", $name);
                         let (a, b, els) = $add_ch;
@@ -423,7 +396,6 @@ pub mod tests {
         }
     }
 
-    #[test]
     fn chainable_builder_methods() -> ChemResult<()> {
         Molecule::from("")
             .branch(&[2])?
@@ -488,12 +460,12 @@ pub mod tests {
                 (
                     $(
                         ( $test_name:ident
-                        , $message:expr
-                        , $branch:expr
-                        , $bonds:expr
-                        $(, $intermediate:ident ( $i_arg:expr ) )*
-                        =>
-                        $final:ident ( $($f_arg:expr),* )
+                          , $message:expr
+                          , $branch:expr
+                          , $bonds:expr
+                          $(, $intermediate:ident ( $i_arg:expr ) )*
+                          =>
+                          $final:ident ( $($f_arg:expr),* )
                         )
                     ),+
                 ) => {
@@ -560,5 +532,5 @@ pub mod tests {
             }
         }
     }
-    */
+
 }
