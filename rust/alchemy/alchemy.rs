@@ -297,8 +297,11 @@ fn main () {
     atom_spec::atom_equals_only_uses_id();
 
     create_and_bond_carbohydrates::carbo_tests();
-    mutations_and_carbohydrates::mutation_tests();
   
-
+    mutations_and_carbohydrates::mutation_tests();
+    mutation_then_additions::chain_adding();
+  
+    failure::basic_invalid_builds::run();
+    failure::invalid_mutation_and_addition::run();
     
 }

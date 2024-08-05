@@ -312,7 +312,7 @@ pub mod tests {
             }
         }
     }
-    mod mutation_then_additions {
+    pub mod mutation_then_additions {
         use std::iter::repeat;
 
         use super::*;
@@ -320,7 +320,6 @@ pub mod tests {
         macro_rules! add_tests {
             ($( ( $test_name:ident, $neigh:expr ) ),+) => {
                 $(
-                    #[test]
                     fn $test_name() {
                         let neigh = $neigh;
                         println!("Check all possible mutations and correct behavior of 'add' on the mutated atom: {}", neigh);
@@ -334,7 +333,7 @@ pub mod tests {
                             .collect();
                         let expected_mm = raw_el_counts.into_iter()
                             .map(|(e, i)| weight(&e) * (i as f32))
-                            .sum();
+                            .sum::<f32>();
 
                         chem_assert!(m.formula().unwrap(), should be, expected_form, "Testing raw formula after mutation");
                         assert_float_eq!(m.molecular_weight().unwrap(), expected_mm, abs <= 0.00001, "Testing molecular weight");
@@ -375,6 +374,7 @@ pub mod tests {
                         println!("Check correct behavior of 'add_chaining' with {}", $name);
                         let (a, b, els) = $add_ch;
                         let m = mol!($name, branch(&$branch), add_chain(a, b, &els), close());
+
                         chem_assert!(m.formula().unwrap(), should be, $formula, "Testing raw formula");
                         assert_float_eq!(m.molecular_weight().unwrap(), $mm, abs <= 0.00001, "Testing molecular weight");
                         chem_assert!(atom_strs(&m, false), should all be, $carbToStr, "Checking non-hydrogen bonds");
@@ -383,16 +383,19 @@ pub mod tests {
             };
         }
 
-        chain_adding_tests! {
-            (
-                adding_chain,
-                "isopropylmagnesium bromide - adding chain",
-                [3],
-                (2,1, [Mg, Br]),
-                "C3H7BrMg",
-                147.3,
-                ["Atom(C.1: C2,H,H,H)", "Atom(C.2: C1,C3,Mg4,H)", "Atom(C.3: C2,H,H,H)", "Atom(Mg.4: C2,Br5)", "Atom(Br.5: Mg4)"]
-            )
+        pub fn chain_adding () {
+
+            chain_adding_tests! {
+                (
+                    adding_chain,
+                    "isopropylmagnesium bromide - adding chain",
+                    [3],
+                    (2,1, [Mg, Br]),
+                    "C3H7BrMg",
+                    147.3,
+                    ["Atom(C.1: C2,H,H,H)", "Atom(C.2: C1,C3,Mg4,H)", "Atom(C.3: C2,H,H,H)", "Atom(Mg.4: C2,Br5)", "Atom(Br.5: Mg4)"]
+                )
+            }
         }
     }
 
@@ -408,16 +411,15 @@ pub mod tests {
             .map(|_| ())
     }
 
-    mod failure {
+    pub mod failure {
         use super::*;
 
-        mod basic_invalid_builds {
+        pub mod basic_invalid_builds {
             use super::*;
 
             macro_rules! basic_failure_tests {
                 ($( ( $test_name:ident, $message:expr, $branch:expr, $bonds:expr ) ),+) => {
                     $(
-                        #[test]
                         fn $test_name() {
                             chem_assert!(
                                 mol_safe!(branch(&$branch), bond(&$bonds), close()),
@@ -429,29 +431,32 @@ pub mod tests {
                 };
             }
 
-            basic_failure_tests! {
-                (
-                    invalid_self_bonding,
-                    "No self-bonding",
-                    [6],
-                    [(1,1,1,1)]
-                ),
-                (
-                    exceeding_valence_with_adding,
-                    "Should fail when exceeding the valence number adding new alkyls to the same atom",
-                    [3,1,1,1],
-                    [(2,1,1,2), (2,1,1,3), (2,1,1,4)]
-                ),
-                (
-                    exceeding_valence_with_bonding,
-                    "Should fail when exceeding the valence number with multiple bonds",
-                    [4],
-                    [(2,1,3,1), (2,1,3,1), (2,1,3,1)]
-                )
+            pub fn run() {
+
+                basic_failure_tests! {
+                    (
+                        invalid_self_bonding,
+                        "No self-bonding",
+                        [6],
+                        [(1,1,1,1)]
+                    ),
+                    (
+                        exceeding_valence_with_adding,
+                        "Should fail when exceeding the valence number adding new alkyls to the same atom",
+                        [3,1,1,1],
+                        [(2,1,1,2), (2,1,1,3), (2,1,1,4)]
+                    ),
+                    (
+                        exceeding_valence_with_bonding,
+                        "Should fail when exceeding the valence number with multiple bonds",
+                        [4],
+                        [(2,1,3,1), (2,1,3,1), (2,1,3,1)]
+                    )
+                }
             }
         }
 
-        mod invalid_mutation_and_addition {
+        pub mod invalid_mutation_and_addition {
             use super::*;
 
             /// the construction should succeed through the intermediate functions,
@@ -470,7 +475,6 @@ pub mod tests {
                     ),+
                 ) => {
                     $(
-                        #[test]
                         fn $test_name() {
                             // note: this test only makes sense if the builder methods are (&mut self) -> &mut Self
                             // otherwise rust's ownership rules guarantee a chain of (self) -> Self would satisfy
@@ -487,48 +491,51 @@ pub mod tests {
                 };
             }
 
-            failure_tests! {
-                (
-                    mutate_full_carbon_1,
-                    "Should fail when mutating a carbon with three atoms already linked to an oxygen",
-                    [3,1],
-                    [(2,1,1,2)]
-                    =>
-                    mutate(&[(2,1,O)])
-                ),
-                (
-                    mutate_full_carbon_2,
-                    "Should fail when mutating a carbon with two double bonds to nitrogen",
-                    [3],
-                    [(1,1,2,1), (3,1,2,1)]
-                    =>
-                    mutate(&[(2,1,N)])
-                ),
-                (
-                    add_full_carbon,
-                    "Should fail when adding a new hydrogen to a carbon with already 4 bonds",
-                    [3],
-                    [(1,1,2,1), (3,1,2,1)]
-                    =>
-                    add(&[(2,1,H)])
-                ),
-                (
-                    overfilling_fails_after_mutating_element,
-                    "Should fail when mutating an atom and then adding too many atoms on it",
-                    [3],
-                    [(1,1,2,1)],
-                    mutate(&[(2,1,N)])
-                    =>
-                    add(&[(2,1,O)])
-                ),
-                (
-                    chaining_monovalent_atom,
-                    "Should fail when chaining atoms after any monovalent atom",
-                    [3],
-                    []
-                    =>
-                    add_chain(2, 1, &[C,C,F,H])
-                )
+            pub fn run() {
+
+                failure_tests! {
+                    (
+                        mutate_full_carbon_1,
+                        "Should fail when mutating a carbon with three atoms already linked to an oxygen",
+                        [3,1],
+                        [(2,1,1,2)]
+                        =>
+                        mutate(&[(2,1,O)])
+                    ),
+                    (
+                        mutate_full_carbon_2,
+                        "Should fail when mutating a carbon with two double bonds to nitrogen",
+                        [3],
+                        [(1,1,2,1), (3,1,2,1)]
+                        =>
+                        mutate(&[(2,1,N)])
+                    ),
+                    (
+                        add_full_carbon,
+                        "Should fail when adding a new hydrogen to a carbon with already 4 bonds",
+                        [3],
+                        [(1,1,2,1), (3,1,2,1)]
+                        =>
+                        add(&[(2,1,H)])
+                    ),
+                    (
+                        overfilling_fails_after_mutating_element,
+                        "Should fail when mutating an atom and then adding too many atoms on it",
+                        [3],
+                        [(1,1,2,1)],
+                        mutate(&[(2,1,N)])
+                        =>
+                        add(&[(2,1,O)])
+                    ),
+                    (
+                        chaining_monovalent_atom,
+                        "Should fail when chaining atoms after any monovalent atom",
+                        [3],
+                        []
+                        =>
+                        add_chain(2, 1, &[C,C,F,H])
+                    )
+                }
             }
         }
     }
