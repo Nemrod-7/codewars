@@ -4,6 +4,7 @@
 mod tests; 
 use tests::*;
 use tests::tests::*;
+
 use preloaded::{ChemResult, ChemError, Element::{self, *}};
 use std::collections::HashMap;
 
@@ -66,15 +67,6 @@ impl From<&'static str> for Molecule {
         }
     }
 }
-
-fn showbase(base: &Vec<Atom>) {
-    print!("\n");
-    for atom in base {
-        if atom.element != H { print!("{atom} "); }
-    }
-    print!("\n");
-}
-
 impl Molecule {
      fn carbindex(&self) -> Vec<Vec<usize>> {
          (0..self.index.len()) .map(|i| (0..i).filter(|j| self.atoms[self.index[i][*j]].element == C).collect::<Vec<_>>()).collect::<Vec<_>>()
@@ -284,6 +276,14 @@ impl Molecule {
     pub fn atoms(&self) -> Vec<&Atom> {
         (1..self.atoms.len()).map(|x| &self.atoms[x]).collect::<Vec<_>>()
     }
+}
+
+fn showbase(base: &Vec<Atom>) {
+    print!("\n");
+    for atom in base {
+        if atom.element != H { print!("{atom} "); }
+    }
+    print!("\n");
 }
 
 fn main () {
