@@ -85,7 +85,7 @@ impl Molecule {
     pub fn name(&self) -> &str { &self.id }
     pub fn branch(&mut self, _bs: &[usize]) -> ChemResult<&mut Self> {
         if self.lock == true { return Err(ChemError::LockedMolecule); }
-        //print!("branch : {:?}\n", _bs);
+        print!("branch : {:?}\n", _bs);
 
         for ncarb in _bs {
             let mut arm = vec![0];
@@ -110,7 +110,7 @@ impl Molecule {
         // (&mut m).bond(&[(c1, b1, c2, b2), ...])
 
         if self.lock == true { return Err(ChemError::LockedMolecule); }
-        //print!("bond : {:?}\n", _poses);
+        print!("bond : {:?}\n", _poses);
 
         for it in _poses {
             let c1 = self.index[it.1][it.0];
@@ -129,7 +129,7 @@ impl Molecule {
         // (&mut m).mutate(&[(nc, nb, elt), ...])
 
         if self.lock == true { return Err(ChemError::LockedMolecule); }
-        //print!("mutate : {:?}\n", _ms);
+        print!("mutate : {:?}\n", _ms);
         //showbase(&self.atoms);
 
         for (nc, nb, elt) in _ms {
@@ -162,8 +162,8 @@ impl Molecule {
     }
     pub fn add(&mut self, _els: &[(usize, usize, Element)]) -> ChemResult<&mut Self> {
         if self.lock == true { return Err(ChemError::LockedMolecule); }
-      //  print!("add : {:?}\n", _els);
-
+        print!("add : {:?}\n", _els);
+//index out of bounds: the len is 1 but the index is 1 at src/lib.rs:164:22
         for (nc, nb, elt) in _els {
             let ix = self.index[*nb][*nc];
             let nx = self.atoms.len();
@@ -180,7 +180,7 @@ impl Molecule {
         Ok(self)
     }
     pub fn add_chain(&mut self, nc: usize, nb: usize, _els: &[Element]) -> ChemResult<&mut Self> {
-        //print!("add_chain : {} {} {:?}\n", nc, nb, _els);
+        print!("add_chain : {} {} {:?}\n", nc, nb, _els);
         let mut arm:Vec<usize> = Vec::new();
         let check = (0.._els.len()).map(|x| if x < _els.len()-1 {valence(_els[x]) as i32 - 2} else {valence(_els[x]) as i32 - 1}).collect::<Vec<i32>>();
 
@@ -202,7 +202,7 @@ impl Molecule {
         Ok(self)
     }
     pub fn close(&mut self) -> ChemResult<&mut Self> {
-        //print!("close\n");
+        print!("close\n");
         self.lock = true;
 
         for i in 1..self.atoms.len() {
@@ -226,7 +226,7 @@ impl Molecule {
         Ok(self)
     }
     pub fn unlock(&mut self) -> ChemResult<&mut Self> {
-        //print!("unlock\n");
+        print!("unlock\n");
         self.lock = false;
         self.atoms.retain(|x| x.element != H);
 
@@ -274,6 +274,8 @@ impl Molecule {
         Ok(sum)
     }
     pub fn atoms(&self) -> Vec<&Atom> {
+
+        showbase(&self.atoms);
         (1..self.atoms.len()).map(|x| &self.atoms[x]).collect::<Vec<_>>()
     }
 }
@@ -285,8 +287,7 @@ fn showbase(base: &Vec<Atom>) {
     }
     print!("\n");
 }
-
-fn main () {
+fn assert() {
 
     basics::constructors();
     basics::simple_carbohydrates();
@@ -303,5 +304,20 @@ fn main () {
   
     failure::basic_invalid_builds::run();
     failure::invalid_mutation_and_addition::run();
-    
+}
+
+fn main () {
+
+    //Molecule integrity tests:
+    //Atom(C.0) 
+    let ref mut mol = Molecule::from("generic");
+
+    mol.branch(&[1]);
+    mol.bond(&[]);
+
+    mol.add( &[(1, 1, Cl), (1, 1, Cl), (1, 1, Cl), (1, 1, Cl), (1, 1, Cl)]);
+
+    //let base = mol.atoms();
+
+    mol.close();
 }
