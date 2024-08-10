@@ -83,7 +83,7 @@ impl Molecule {
         self.atoms[c2].edge.sort_by( |a,b| if a.element == b.element { a.id.cmp(&b.id) } else { a.element.cmp(&b.element) });
     }
     pub fn name(&self) -> &str { &self.id }
-    pub fn branch(&mut self, _bs: &[usize]) -> ChemResult<&mut Self> {
+pub fn branch(&mut self, _bs: &[usize]) -> ChemResult<&mut Self> {
         if self.lock == true { return Err(ChemError::LockedMolecule); }
         print!("branch : {:?}\n", _bs);
 
@@ -104,6 +104,7 @@ impl Molecule {
 
             self.index.push(arm);
         }
+        print!("size {:?}", self.atoms.len());
         Ok(self)
     }
     pub fn bond(&mut self, _poses: &[(usize, usize, usize, usize)]) -> ChemResult<&mut Self> {
@@ -163,6 +164,7 @@ impl Molecule {
     pub fn add(&mut self, _els: &[(usize, usize, Element)]) -> ChemResult<&mut Self> {
         if self.lock == true { return Err(ChemError::LockedMolecule); }
         print!("add : {:?}\n", _els);
+        //print!("{}",self.atoms.len());
 //index out of bounds: the len is 1 but the index is 1 at src/lib.rs:164:22
         for (nc, nb, elt) in _els {
             let ix = self.index[*nb][*nc];
@@ -309,15 +311,15 @@ fn assert() {
 fn main () {
 
     //Molecule integrity tests:
-    //Atom(C.0) 
-    let ref mut mol = Molecule::from("generic");
+    //Atom(C.0)//from("generic");
+
+    let mut mol:Molecule = Molecule::default();
 
     mol.branch(&[1]);
-    mol.bond(&[]);
+    //mol.bond(&[]);
+    //mol.add( &[(1, 1, Cl), (1, 1, Cl), (1, 1, Cl), (1, 1, Cl), (1, 1, Cl)]);
 
-    mol.add( &[(1, 1, Cl), (1, 1, Cl), (1, 1, Cl), (1, 1, Cl), (1, 1, Cl)]);
-
-    //let base = mol.atoms();
 
     mol.close();
+
 }
