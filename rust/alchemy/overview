@@ -83,6 +83,7 @@ The unlock method...:
     After removing hydrogens, if you end up with some atoms that aren't connected in any way to the branches of the unlocked molecule, keep them anyway in the Molecule instance (for the sake of simplicity...).
     Once unlocked, the molecule has to be modifiable again, in any manner.
 
+
 Related behaviours:
 
     Methods that involve building molecule or mutating molecule objects have to be chainable (ex: let ref mut m = Molecule::from("octane"); m.branch(&[8])?.close()?;).
@@ -117,3 +118,25 @@ Symbol:           H     B     C     N     O     F    Mg     P     S    Cl    Br
 Valence number:   1     3     4     3     2     1     2     3     2     1     1
 Atomic weight:  1.0  10.8  12.0  14.0  16.0  19.0  24.3  31.0  32.1  35.5  80.0  (in g/mol)
 
+---------------------------preloaded section--------------------------------
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Element {
+    C, H, O, B, Br, Cl, F, Mg, N, P, S,
+}
+
+impl Display for Element {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // str of the element symbol.
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ChemError {
+    EmptyMolecule,
+    LockedMolecule,
+    InvalidBond,
+    UnlockedMolecule,
+}
+
+pub type ChemResult<T> = Result<T, ChemError>;
+---------------------------------------------------------------------------
