@@ -260,13 +260,15 @@ impl Molecule {
             let curr = self.atoms[lv].clone();
 
             if curr.id != lv {
-                self.atoms[lv].id = lv;
-                self.index.iter_mut().for_each( |x| { x.into_iter().filter(|x| *x == &curr.id).for_each(|x| *x = lv) });
 
-                for edge in &curr.edge {
-                    self.atoms[edge.id].edge.iter_mut().for_each( |x| { if x.id == curr.id { x.id = lv } });
-                }
+                //self.atoms[lv].id = lv;
+                //self.index.iter_mut().for_each( |x| { x.into_iter().filter(|x| *x == &curr.id).for_each(|x| *x = lv) });
+
+                //for edge in &curr.edge {
+                //    self.atoms[edge.id].edge.iter_mut().for_each( |x| { if x.id == curr.id { x.id = lv } });
+                //}
             }
+            print!("{}\n", self.atoms[lv]);
         });
 
         match self.atoms.len() {
@@ -335,17 +337,22 @@ fn fun() -> ChemResult<Molecule> {
 
     let mut mol:Molecule = Molecule::default();
     mol
+        .branch(&[1, 5])?
+        .bond(&[(2, 2, 5, 2), (4, 2, 1, 1)])?
+        .mutate(&[(1, 1, H)])?
         .branch(&[3])?
-        .add(&[(2, 1, H)])?
-        .branch(&[1])?
-        .bond(&[(2, 1, 1, 2)])?
+        .bond(&[(2, 3, 1, 3), (2, 3, 3, 3)])?
         .close()?
-        .unlock()?       
+        .unlock()?
+
+        //.add(&[(2, 2, P)])?
+        //.add(&[(2, 2, P)])?        
+
         ;
 
 
     /*
-
+	Details: Should remove any empty branch: m.add(&[(2,2,P)]) shouldn't work, now, since the targeted carbon (previously third on the branch) cannot accept new bonds.
 */
 
     //mol.close();
@@ -360,10 +367,5 @@ fn main () {
     //assert();
     fun();
 
-    /*
- 
- 
-
-*/
 
 }
