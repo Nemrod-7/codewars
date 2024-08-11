@@ -67,9 +67,9 @@ impl From<&'static str> for Molecule {
     }
 }
 impl Molecule {
-     fn carbindex(&self) -> Vec<Vec<usize>> {
-         (0..self.index.len()) .map(|i| (0..i).filter(|j| self.atoms[self.index[i][*j]].element == C).collect::<Vec<_>>()).collect::<Vec<_>>()
-     }
+    fn carbindex(&self) -> Vec<Vec<usize>> {
+        (0..self.index.len()).map(|i| (0..i).filter(|&j| self.atoms[self.index[i][j]].element == C).collect::<Vec<_>>()).collect::<Vec<_>>()
+    }
     fn link(&mut self, c1: usize, c2: usize) {
         let at1 = self.atoms[c1].clone();
         let at2 = self.atoms[c2].clone();
@@ -88,21 +88,21 @@ impl Molecule {
         // add new branches with x carbon to the molecule
         if self.lock == true { return Err(ChemError::LockedMolecule); }
         if self.atoms.len() == 0 { *self = Molecule::from(""); }
-        
+
         print!(".branch(&{:?})?\n", _bs);
         //print!("name {:?}\nindex {:?}\natoms {:?}\n", self.id, self.index, self.atoms);
-        for ncarb in _bs {
+        for &ncarb in _bs {
             let mut arm = vec![0];
 
-              for _ in 0..*ncarb {
+            for _ in 0..ncarb {
                 let nb = self.atoms.len();
-                let atom = Atom {id:nb, element:C, edge: vec![] };
+                let atom = Atom { id:nb, element:C, edge: vec![] };
 
                 arm.push(nb);
                 self.atoms.push(atom);
             }
 
-            for i in 2..=*ncarb {
+            for i in 2..=ncarb {
                 self.link(arm[i-1], arm[i-0]);
             }
 
@@ -112,10 +112,9 @@ impl Molecule {
         Ok(self)
     }
     pub fn bond(&mut self, _poses: &[(usize, usize, usize, usize)]) -> ChemResult<&mut Self> {
-        // (&mut m).bond(&[(c1, b1, c2, b2), ...])
+        //(&mut m).bond(&[(c1, b1, c2, b2), ...])
         //creates new bonds between two atoms of existing branches : bond c1 of b1 with c2 of b2
         if self.lock == true { return Err(ChemError::LockedMolecule); }
-        let n_brs = self.index.len();
         print!(".bond(&{:?})?\n", _poses);
 
         for &(c1,b1,c2,b2) in _poses {
@@ -128,9 +127,10 @@ impl Molecule {
                 }
                 self.link(a1,a2);
             } else {
-                //return Err(ChemError::InvalidBond) 
+                // return Err(ChemError::InvalidBond) 
             }
         }
+
 
         Ok(self)
     }
@@ -257,15 +257,20 @@ impl Molecule {
         self.index.retain(|x| x.len() != 1);
 
         (0..self.atoms.len()).for_each(|lv| {
-            let id = self.atoms[lv].id;
+            let curr = self.atoms[lv].clone();
 
-            if id != lv {
-                self.index.iter_mut().for_each(|x| { x.into_iter().filter(|x| *x == &id).for_each(|x| *x = lv); });
+            if curr.id != lv {
+                self.atoms[lv].id = lv;
+                self.index.iter_mut().for_each( |x| { x.into_iter().filter(|x| *x == &curr.id).for_each(|x| *x = lv) });
+
+                for edge in &curr.edge {
+                    self.atoms[edge.id].edge.iter_mut().for_each( |x| { if x.id == curr.id { x.id = lv } });
+                }
             }
         });
 
         match self.atoms.len() {
-            1 => Err(ChemError::EmptyMolecule) ,
+            1 => Err(ChemError::EmptyMolecule),
             _ => Ok(self),
         }
     }
@@ -295,7 +300,6 @@ impl Molecule {
         Ok(sum)
     }
     pub fn atoms(&self) -> Vec<&Atom> {
-
         (1..self.atoms.len()).map(|x| &self.atoms[x]).collect::<Vec<_>>()
     }
 }
@@ -331,16 +335,23 @@ fn fun() -> ChemResult<Molecule> {
 
     let mut mol:Molecule = Molecule::default();
     mol
-
-        .branch(&[1, 6, 4])?
-        .add_chain(1, 1, &[C, Br])?
-        .mutate(&[(1, 1, H)])?
+        .branch(&[3])?
+        .add(&[(2, 1, H)])?
+        .branch(&[1])?
+        .bond(&[(2, 1, 1, 2)])?
         .close()?
-        .unlock()?
-
-        .bond(&[(5, 1, 3, 2)])?
-
+        .unlock()?       
         ;
+
+
+    /*
+
+*/
+
+    //mol.close();
+
+    //showbase(&mol.atoms);
+    //C11H27Br expect : C11H25Br
 
     Ok(mol)
 }
@@ -350,63 +361,8 @@ fn main () {
     fun();
 
     /*
-
-       tests::failure::unlocking::manages_atoms_in_branches
-       Correct management of the atoms that should be in the branches or not
-
-       .branch(&[1, 6, 4])?
-       .add_chain(&1 1 [C, Br])?
-       .mutate(&[(1, 1, H)])?
-       .close()?
-       .unlock()?
-       .bond(&[(5, 1, 3, 2)])?
-
-       tests::failure::unlocking::remove_empty_branches_after_unlocking
-       .branch(&[1, 5])?
-       .bond(&[(2, 2, 5, 2), (4, 2, 1, 1)])?
-       .mutate(&[(1, 1, H)])?
-       .branch(&[3])?
-       .bond(&[(2, 3, 1, 3), (2, 3, 3, 3)])?
-       .close()?
-       .unlock()?
-       .add(&[(2, 2, P)])?
-       .add(&[(2, 2, P)])?
-
-       Got error Err(InvalidBond) but expected InvalidBond.
-       Details: Should remove any empty branch: m.add(&[(2,2,P)]) shouldn't work, now, since the targeted carbon (previously third on the branch) cannot accept new bonds.
-
-       -------------------------------------------------------------
-       tests::failure::unlocking::remove_hydrogens_and_update_id_numbers
-       Properly unlock a molecule, removing hydrogens and updating id numbers)
-
-       .branch(&[3])?
-       .add(&[(2, 1, H)])?
-       .branch(&[1])?
-       .bond(&[(2, 1, 1, 2)])?
-       .close()?
-       .unlock()?
-
-       assertion failed: `(left == right)`
-       left: `["Atom(C.1: C2)", "Atom(C.2: C1,C3,C5)", "Atom(C.3: C2)", "Atom(C.5: C2)"]`,
-       right: `["Atom(C.1: C2)", "Atom(C.2: C1,C3,C4)", "Atom(C.3: C2)", "Atom(C.4: C2)"]`: *All* hydrogens should be removed after unlocking and carbond id modified accordingly:
-       ["Atom(C.1: C2)", "Atom(C.2: C1,C3,C5)", "Atom(C.3: C2)", "Atom(C.5: C2)"] should be ["Atom(C.1: C2)", "Atom(C.2: C1,C3,C4)", "Atom(C.3: C2)", "Atom(C.4: C2)"]
-
-       ---------------------------------------------------
-       tests::failure::unlocking::unlocking_after_mutation_to_h
-       Handle unlocking while a carbon from the 'branches' has been mutated to an hydrogen before
-
-       .branch(&[8, 5])?
-       .bond(&[(2, 2, 5, 2), (4, 2, 2, 1)])?
-       .mutate(&[(1, 2, H)])?
-       .bond(&[(3, 2, 4, 1)])?
-       .close()?
-       .unlock()?
-       assertion failed: `(left == right)`
-       left: `["Atom(C.1: C2)", "Atom(C.2: C1,C3,C12)", "Atom(C.3: C2,C4)", "Atom(C.4: C3,C5,C11)", "Atom(C.5: C4,C6)", "Atom(C.6: C5,C7)", "Atom(C.7: C6,C8)", "Atom(C.8: C7)", "Atom(C.10: C11,C13)", "Atom(C.11: C4,C10,C12)", "Atom(C.12: C2,C11,C13)", "Atom(C.13: C10,C12)"]`,
-
-       right: `["Atom(C.1: C2)", "Atom(C.2: C1,C3,C11)", "Atom(C.3: C2,C4)", "Atom(C.4: C3,C5,C10)", "Atom(C.5: C4,C6)", "Atom(C.6: C5,C7)", "Atom(C.7: C6,C8)", "Atom(C.8: C7)", "Atom(C.9: C10,C12)", "Atom(C.10: C4,C9,C11)", "Atom(C.11: C2,C10,C12)", "Atom(C.12: C9,C11)"]`: Should remove all the hydrogens after unlocking and affect new id numbers when needed:
-
-       ["Atom(C.1: C2)", "Atom(C.2: C1,C3,C12)", "Atom(C.3: C2,C4)", "Atom(C.4: C3,C5,C11)", "Atom(C.5: C4,C6)", "Atom(C.6: C5,C7)", "Atom(C.7: C6,C8)", "Atom(C.8: C7)", "Atom(C.10: C11,C13)", "Atom(C.11: C4,C10,C12)", "Atom(C.12: C2,C11,C13)", "Atom(C.13: C10,C12)"] should be ["Atom(C.1: C2)", "Atom(C.2: C1,C3,C11)", "Atom(C.3: C2,C4)", "Atom(C.4: C3,C5,C10)", "Atom(C.5: C4,C6)", "Atom(C.6: C5,C7)", "Atom(C.7: C6,C8)", "Atom(C.8: C7)", "Atom(C.9: C10,C12)", "Atom(C.10: C4,C9,C11)", "Atom(C.11: C2,C10,C12)", "Atom(C.12: C9,C11)"]
+ 
+ 
 
 */
 
