@@ -1,5 +1,5 @@
 #![allow(dead_code, unused)]
-// passed : 36
+// passed : 88 
 
 mod tests; 
 use tests::*;
@@ -67,8 +67,8 @@ impl From<&'static str> for Molecule {
     }
 }
 impl Molecule {
-    fn carbindex(&self) -> Vec<Vec<usize>> {
-        (0..self.index.len()).map(|i| (0..i).filter(|&j| self.atoms[self.index[i][j]].element == C).collect::<Vec<_>>()).collect::<Vec<_>>()
+    fn checkvalnce(&self, index:usize) -> bool {
+        return self.atoms[index].edge.len() < valence(self.atoms[index].element)
     }
     fn link(&mut self, c1: usize, c2: usize) {
         let at1 = self.atoms[c1].clone();
@@ -88,9 +88,8 @@ impl Molecule {
         // add new branches with x carbon to the molecule
         if self.lock == true { return Err(ChemError::LockedMolecule); }
         if self.atoms.len() == 0 { *self = Molecule::from(""); }
-
         print!(".branch(&{:?})?\n", _bs);
-        //print!("name {:?}\nindex {:?}\natoms {:?}\n", self.id, self.index, self.atoms);
+        
         for &ncarb in _bs {
             let mut arm = vec![0];
 
@@ -119,18 +118,17 @@ impl Molecule {
 
         for &(c1,b1,c2,b2) in _poses {
             if self.inside(c1,b1) && self.inside(c2,b2) {
-                let a1 = self.index[b1][c1];
-                let a2 = self.index[b2][c2];
+                let i1 = self.index[b1][c1];
+                let i2 = self.index[b2][c2];
 
-                if a1 == a2 {
-                    return Err(ChemError::InvalidBond);
-                }
-                self.link(a1,a2);
-            } else {
-                // return Err(ChemError::InvalidBond) 
-            }
+                if i1 == i2 { return Err(ChemError::InvalidBond) } // invalidate self bonding
+                if !self.checkvalnce(i1) || !self.checkvalnce(i2) { return Err(ChemError::InvalidBond) }
+                self.link(i1,i2);
+            } 
+            //else {
+            //     return Err(ChemError::InvalidBond) 
+            //}
         }
-
 
         Ok(self)
     }
@@ -141,34 +139,28 @@ impl Molecule {
         print!(".mutate(&{:?})?\n", _ms);
 
         for &(nc, nb, elt) in _ms {
-            if self.inside(nc,nb) {
-                let it = self.index[nb][nc];
-                let mut curr = self.atoms[it].clone();
+            if !self.inside(nc,nb) { return Err(ChemError::InvalidBond) }
 
-                if curr.edge.len() > valence(elt) {
-                    return Err(ChemError::InvalidBond);
-                } else {
-                    curr.element = elt;
+            let i1 = self.index[nb][nc];
+            let mut curr = self.atoms[i1].clone();
 
-                    for edge in &curr.edge {
-                        let nid = edge.id;
+            if curr.edge.len() <= valence(elt) {
+                curr.element = elt;
 
-                        for link in &mut self.atoms[nid].edge {
-                            if link.id == curr.id {
-                                link.element = elt;
-                            }
-                        }
+                for edge in &curr.edge {
+                    let i2 = edge.id;
 
-                        self.atoms[nid].edge.sort_by(|a,b| if a.element == b.element { a.id.cmp(&b.id) } else { a.element.cmp(&b.element) });
-                    }
+                    self.atoms[i2].edge.iter_mut().for_each (|link| if link.id == curr.id { link.element = elt });
+                    self.atoms[i2].edge.sort_by(|a,b| if a.element == b.element { a.id.cmp(&b.id) } else { a.element.cmp(&b.element) });
                 }
-                self.atoms[it] = curr;
-            }
 
+                self.atoms[i1] = curr;
+            }
         }
 
         Ok(self)
     }
+
     pub fn add(&mut self, _els: &[(usize, usize, Element)]) -> ChemResult<&mut Self> {
         // add a new atom of kind elt on the carbon nc in the branch nb
         if self.lock == true { return Err(ChemError::LockedMolecule); }
@@ -177,16 +169,18 @@ impl Molecule {
         for &(nc, nb, elt) in _els {
             if !self.inside(nc,nb) { return Err(ChemError::InvalidBond) }
 
-            let ix = self.index[nb][nc];
-            let nx = self.atoms.len();
-            let curr = self.atoms[ix].clone();
+            let i1 = self.index[nb][nc];
+            let i2 = self.atoms.len();
+            let curr = self.atoms[i1].clone();
 
             if curr.edge.len() < valence(curr.element) {
-                self.atoms.push(Atom {id: nx, element: elt, edge:vec![]});
-                self.link(ix,nx);
+                self.atoms.push(Atom {id: i2, element: elt, edge:vec![]});
+                self.link(i1,i2);
             } else {
                 return Err(ChemError::InvalidBond);
             }
+
+            self.atoms[i1].edge.sort_by(|a,b| if a.element == b.element { a.id.cmp(&b.id) } else { a.element.cmp(&b.element) });
         }
 
         Ok(self)
@@ -204,9 +198,9 @@ impl Molecule {
         if self.lock == true { return Err(ChemError::LockedMolecule); }
         if check.iter().find(|&x| *x < 0).is_some() { return Err(ChemError::InvalidBond); }
 
-        for elt in _els {
+        for &elt in _els {
             let ax = self.atoms.len();
-            self.atoms.push(Atom {id: ax, element:*elt , edge: vec![]});
+            self.atoms.push(Atom {id: ax, element:elt , edge: vec![]});
             arm.push(ax);
         }
 
@@ -246,35 +240,25 @@ impl Molecule {
         print!(".unlock()?\n");
 
         if self.lock == false { return Err(ChemError::UnlockedMolecule) }
+        let atoms = self.atoms.clone();
 
         self.lock = false;
-        self.atoms.retain(|x| x.element != H);
+
+        self.index.iter_mut().for_each(|arm| arm.retain(|x| atoms[*x].element != H));
         self.index.retain(|x| x.len() != 1);
 
-        for i in 1..self.atoms.len() {
-            self.atoms[i].edge.retain(|x| x.element != H);
-        }
+        self.atoms.retain(|atom| atom.element != H);
+        self.atoms.iter_mut().for_each(|atom| atom.edge.retain(|edge| edge.element != H));
 
         (0..self.atoms.len()).for_each(|lv| {
             let curr = self.atoms[lv].clone();
 
             if curr.id != lv {
-
                 self.atoms[lv].id = lv;
                 self.index.iter_mut().for_each( |x| { x.into_iter().filter(|x| *x == &curr.id).for_each(|x| *x = lv) });
-
-                self.atoms
-                    .iter_mut()
-                    .for_each(
-                        |at| at.edge.iter_mut().for_each (|edge| 
-                            if edge.id == curr.id {
-                                edge.id = lv
-                            }
-                        )
-                    );
+                self.atoms.iter_mut().for_each( |atom| atom.edge.iter_mut().for_each ( |edge| if edge.id == curr.id { edge.id = lv }));
             }
 
-            print!("{}\n", self.atoms[lv]);
         });
 
         match self.atoms.len() {
@@ -338,40 +322,49 @@ fn assert() {
     failure::basic_invalid_builds::run();
     failure::invalid_mutation_and_addition::run();
 }
+fn biotin () -> ChemResult<Molecule> {
 
-fn fun() -> ChemResult<Molecule> {
+    let mut biotin = Molecule::from("biotin");
+
+    biotin.branch(&[14,1,1])?;
+    biotin.bond(&[(2,1,1,2), (2,1,1,2), (10,1,1,3), (10,1,1,3), (8,1,12,1), (7,1,14,1)])?;
+    biotin.mutate(&[(1,1,O),  (1,2,O), (1,3,O), (11,1,N), (9,1,N), (14,1,S)])?;
+    //biotin.close()?;
+
+    print!("\n{:?} {:?}\n", biotin.index, biotin.formula());
+    for atom in &biotin.atoms {
+        print!("{atom}\n");
+    }
+
+
+    Ok(biotin)
+}
+fn test() -> ChemResult<Molecule> {
 
     let mut mol:Molecule = Molecule::default();
     mol
-        .branch(&[1, 5])?
-        .bond(&[(2, 2, 5, 2), (4, 2, 1, 1)])?
-        .mutate(&[(1, 1, H)])?
-        .branch(&[3])?
-        .bond(&[(2, 3, 1, 3), (2, 3, 3, 3)])?
-        .close()?
-        .unlock()?
 
-        //.add(&[(2, 2, P)])?
-        //.add(&[(2, 2, P)])?        
+        .branch(&[3, 1, 8, 5])?
+        .branch(&[5, 7, 9, 1])?
+        .mutate(&[(7, 3, P)])?
+        .add(&[(2, 1, F), (3, 3, C), (2, 3, C), (6, 3, F), (4, 7, O), (8, 3, Mg)])?
+        .add(&[(2, 5, H), (3, 5, C), (6, 6, Cl)])?
+        .add(&[(6, 7, P), (5, 3, F), (4, 7, H), (3, 6, F), (3, 5, Mg), (6, 3, Br)])?
 
         ;
 
-
-    /*
-       Details: Should remove any empty branch: m.add(&[(2,2,P)]) shouldn't work, now, since the targeted carbon (previously third on the branch) cannot accept new bonds.
-       */
-
-    //mol.close();
-
-    //showbase(&mol.atoms);
-    //C11H27Br expect : C11H25Br
+    print!("\n{:?} {:?}\n", mol.index, mol.formula());
+    for atom in &mol.atoms {
+        //print!("{atom}\n");
+    }
 
     Ok(mol)
 }
 fn main () {
 
     //assert();
-    fun();
+    test();
+    //biotin();
 
 
 }

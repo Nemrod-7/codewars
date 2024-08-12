@@ -1,32 +1,23 @@
 #![allow(dead_code, unused)]
 
-macro_rules! say_hello {
-    () => {
-        println!("Hello!")
-    };
-}
-
-
- mod tests {
-     use super::*;
-
-     pub mod basics {
-
-        pub fn construct() {
-
-        }
-    }
-
-     pub fn jump() {
-
-     }
-}
 
 fn main () {
 
+    let left = vec!["Atom(C.1: C2)", "Atom(C.2: C1,C3)", "Atom(C.3: C2,C4)", "Atom(C.4: C3)", "Atom(C.5: P6)", "Atom(P.6: C5,C7)", "Atom(C.7: C8,P6)", "Atom(C.8: C7,C9)", "Atom(C.9: C8,C10,F87)", "Atom(C.10: C9,C11)", "Atom(C.11: C10,C12)", "Atom(C.12: C11)", "Atom(C.13: C14,O51,F86)", "Atom(C.14: C13,C15)", "Atom(C.15: C14)", "Atom(Mg.16: O17)", "Atom(O.17: C18,Mg16)", "Atom(C.18: C19,O17)", "Atom(C.19: C18,C20)", "Atom(C.20: C19,C21)", "Atom(C.21: C20,C22)", "Atom(C.22: C21,C23)", "Atom(C.23: C22,C24)", "Atom(C.24: C23)", "Atom(C.25: C26)", "Atom(C.26: C25,C27)", "Atom(C.27: C26,C28)", "Atom(C.28: C27,C29)", "Atom(C.29: C28,O30)", "Atom(O.30: C29,C31)", "Atom(C.31: C32,O30)", "Atom(C.32: C31,C33)", "Atom(C.33: C32,C34)", "Atom(C.34: C33)", "Atom(C.35: C36)", "Atom(C.36: C35,S37)", "Atom(S.37: C36,C38)", "Atom(C.38: C39,S37)", "Atom(C.39: C38,C40)", "Atom(C.40: C39,C41)", "Atom(C.41: C40,C42)", "Atom(C.42: C41,C43)", "Atom(C.43: C42,C44)", "Atom(C.44: C43,F106)", "Atom(C.45: C46)", "Atom(C.46: C45,C47,Cl88)", "Atom(C.47: C46,C48)", "Atom(C.48: C47)", "Atom(C.49: C50)", "Atom(C.50: C49,O51)", "Atom(O.51: C13,C50)", "Atom(C.52: C53,O108)", "Atom(C.53: C52,C54)", "Atom(C.54: C53,C55)", "Atom(C.55: C54,C56,N103)", "Atom(C.56: C55,C57)", "Atom(C.57: C56,C58)", "Atom(C.58: C57)", "Atom(C.59: C60)", "Atom(C.60: C59,B102)", "Atom(C.61: C62)", "Atom(C.62: C61,C63)", "Atom(C.63: C62,C64)", "Atom(C.64: C63,C65)", "Atom(C.65: C64)", "Atom(C.66: C67)", "Atom(C.67: C66,C68)", "Atom(C.68: C67,C69)", "Atom(C.69: C68,Mg70)", "Atom(Mg.70: C69,C71)", "Atom(C.71: C72,F107,Mg70)", "Atom(C.72: C71,C73)", "Atom(C.73: C72,F105)", "Atom(C.74)", "Atom(C.75: C76)", "Atom(C.76: C75,C77)", "Atom(C.77: C76,C78)", "Atom(C.78: C77,C79)", "Atom(C.79: C78,C80,B101)", "Atom(C.80: C79)", "Atom(F.81: C82)", "Atom(C.82: C83,F81)", "Atom(C.83: C82)", "Atom(C.85: H,B104)", "Atom(F.86: C13)", "Atom(F.87: C9)", "Atom(Cl.88: C46)", "Atom(C.89: C90)", "Atom(C.90: C89,C91)", "Atom(C.91: C90,C92)", "Atom(C.92: C91,C93)", "Atom(C.93: C92,C94)", "Atom(C.94: C93)", "Atom(C.95: C96)", "Atom(C.96: C95,C97)", "Atom(C.97: C96,C98)", "Atom(C.98: C97,C99)", "Atom(C.99: C98,C100)", "Atom(C.100: C99)", "Atom(B.101: C79)", "Atom(B.102: C60)", "Atom(N.103: C55)", "Atom(B.104: C85)", "Atom(F.105: C73)", "Atom(F.106: C44)", "Atom(F.107: C71)", "Atom(O.108: C52)"];
 
-    say_hello!();
+    let right = vec!["Atom(C.1: C2)", "Atom(C.2: C1,C3)", "Atom(C.3: C2,C4)", "Atom(C.4: C3)", "Atom(C.5: P6)", "Atom(P.6: C5,C7)", "Atom(C.7: C8,P6)", "Atom(C.8: C7,C9)", "Atom(C.9: C8,C10,F87)", "Atom(C.10: C9,C11)", "Atom(C.11: C10,C12)", "Atom(C.12: C11)", "Atom(C.13: C14,O51,F86)", "Atom(C.14: C13,C15)", "Atom(C.15: C14)", "Atom(Mg.16: O17)", "Atom(O.17: C18,Mg16)", "Atom(C.18: C19,O17)", "Atom(C.19: C18,C20)", "Atom(C.20: C19,C21)", "Atom(C.21: C20,C22)", "Atom(C.22: C21,C23)", "Atom(C.23: C22,C24)", "Atom(C.24: C23)", "Atom(C.25: C26)", "Atom(C.26: C25,C27)", "Atom(C.27: C26,C28)", "Atom(C.28: C27,C29)", "Atom(C.29: C28,O30)", "Atom(O.30: C29,C31)", "Atom(C.31: C32,O30)", "Atom(C.32: C31,C33)", "Atom(C.33: C32,C34)", "Atom(C.34: C33)", "Atom(C.35: C36)", "Atom(C.36: C35,S37)", "Atom(S.37: C36,C38)", "Atom(C.38: C39,S37)", "Atom(C.39: C38,C40)", "Atom(C.40: C39,C41)", "Atom(C.41: C40,C42)", "Atom(C.42: C41,C43)", "Atom(C.43: C42,C44)", "Atom(C.44: C43,F106)", "Atom(C.45: C46)", "Atom(C.46: C45,C47,Cl88)", "Atom(C.47: C46,C48)", "Atom(C.48: C47)", "Atom(C.49: C50)", "Atom(C.50: C49,O51)", "Atom(O.51: C13,C50)", "Atom(C.52: C53,O108)", "Atom(C.53: C52,C54)", "Atom(C.54: C53,C55)", "Atom(C.55: C54,C56,N103)", "Atom(C.56: C55,C57)", "Atom(C.57: C56,C58)", "Atom(C.58: C57)", "Atom(C.59: C60)", "Atom(C.60: C59,B102)", "Atom(C.61: C62)", "Atom(C.62: C61,C63)", "Atom(C.63: C62,C64)", "Atom(C.64: C63,C65)", "Atom(C.65: C64)", "Atom(C.66: C67)", "Atom(C.67: C66,C68)", "Atom(C.68: C67,C69)", "Atom(C.69: C68,Mg70)", "Atom(Mg.70: C69,C71)", "Atom(C.71: C72,F107,Mg70)", "Atom(C.72: C71,C73)", "Atom(C.73: C72,F105)", "Atom(C.74)", "Atom(C.75: C76)", "Atom(C.76: C75,C77)", "Atom(C.77: C76,C78)", "Atom(C.78: C77,C79)", "Atom(C.79: C78,C80,B101)", "Atom(C.80: C79)", "Atom(F.81: C82)", "Atom(C.82: C83,F81)", "Atom(C.83: C82)", "Atom(C.85: B104,H)", "Atom(F.86: C13)", "Atom(F.87: C9)", "Atom(Cl.88: C46)", "Atom(C.89: C90)", "Atom(C.90: C89,C91)", "Atom(C.91: C90,C92)", "Atom(C.92: C91,C93)", "Atom(C.93: C92,C94)", "Atom(C.94: C93)", "Atom(C.95: C96)", "Atom(C.96: C95,C97)", "Atom(C.97: C96,C98)", "Atom(C.98: C97,C99)", "Atom(C.99: C98,C100)", "Atom(C.100: C99)", "Atom(B.101: C79)", "Atom(B.102: C60)", "Atom(N.103: C55)", "Atom(B.104: C85)", "Atom(F.105: C73)", "Atom(F.106: C44)", "Atom(F.107: C71)", "Atom(O.108: C52)"];
 
-    tests::basics::construct();
+
+
+    print!("{} {}\n", left.len(), right.len());
+    let size = std::cmp::min(left.len(), right.len());
+
+    for i in 0..size {
+
+        if left[i] != right[i] {
+            print!("{} => {} {}\n",i, left[i], right[i]);
+        }
+    }
+
 
 }
