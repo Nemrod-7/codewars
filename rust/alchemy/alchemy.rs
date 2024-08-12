@@ -249,25 +249,31 @@ impl Molecule {
 
         self.lock = false;
         self.atoms.retain(|x| x.element != H);
+        self.index.retain(|x| x.len() != 1);
 
         for i in 1..self.atoms.len() {
             self.atoms[i].edge.retain(|x| x.element != H);
         }
-
-        self.index.retain(|x| x.len() != 1);
 
         (0..self.atoms.len()).for_each(|lv| {
             let curr = self.atoms[lv].clone();
 
             if curr.id != lv {
 
-                //self.atoms[lv].id = lv;
-                //self.index.iter_mut().for_each( |x| { x.into_iter().filter(|x| *x == &curr.id).for_each(|x| *x = lv) });
+                self.atoms[lv].id = lv;
+                self.index.iter_mut().for_each( |x| { x.into_iter().filter(|x| *x == &curr.id).for_each(|x| *x = lv) });
 
-                //for edge in &curr.edge {
-                //    self.atoms[edge.id].edge.iter_mut().for_each( |x| { if x.id == curr.id { x.id = lv } });
-                //}
+                self.atoms
+                    .iter_mut()
+                    .for_each(
+                        |at| at.edge.iter_mut().for_each (|edge| 
+                            if edge.id == curr.id {
+                                edge.id = lv
+                            }
+                        )
+                    );
             }
+
             print!("{}\n", self.atoms[lv]);
         });
 
@@ -352,8 +358,8 @@ fn fun() -> ChemResult<Molecule> {
 
 
     /*
-	Details: Should remove any empty branch: m.add(&[(2,2,P)]) shouldn't work, now, since the targeted carbon (previously third on the branch) cannot accept new bonds.
-*/
+       Details: Should remove any empty branch: m.add(&[(2,2,P)]) shouldn't work, now, since the targeted carbon (previously third on the branch) cannot accept new bonds.
+       */
 
     //mol.close();
 
