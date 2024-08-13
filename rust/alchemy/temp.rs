@@ -3,6 +3,24 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Element { C, H, O, B, Br, Cl, F, Mg, N, P, S, }
 
+impl std::fmt::Display for Element {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            C => write!(f, "C"),
+            H => write!(f, "H"),
+            O => write!(f, "O"),
+            B => write!(f, "B"),
+            F => write!(f, "F"),
+            N => write!(f, "N"),
+            P => write!(f, "P"),
+            S => write!(f, "S"),
+            Mg=> write!(f, "Mg"),
+            Br=> write!(f, "Br"),
+            Cl=> write!(f, "Cl"),
+            _ => write!(f, ""), 
+        }
+    }
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ChemError {
     EmptyMolecule,
@@ -26,10 +44,7 @@ fn mass (atom: Element) -> f32 { DATA.iter().find(|x| x.0 == atom).unwrap().1.2 
 struct Atom {
     id: usize,
     element:Element,
-    edge: Vec<Option<Box<Atom>>>,
-}
-struct Node<'a> {
-    edges: Vec<&'a Node<'a>>,
+    edge: Vec<Atom>,
 }
 
 impl PartialEq for Atom {
@@ -43,6 +58,18 @@ impl std::fmt::Display for Atom {
     fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut os = format!("Atom({}.{}", symbol(self.element), self.id);
 
+        if self.edge.len() > 0 {
+            os += &": ";
+
+            for ed in &self.edge {
+                if ed.element == H {
+                    os += &format!("H,");
+                } else {
+                    os += &format!("{}{},", symbol(ed.element), ed.id);
+                }
+            }
+            if self.edge.len() > 0 { os.pop(); }
+        }
         os += &")";
         write!(_f, "{}", os)
     }
@@ -55,5 +82,24 @@ impl Atom {
 
 fn main () {
 
-    Atom::carbon(0);
+    let mut atom = Atom {
+        id: 36,
+        element:C,
+        edge: vec![
+            Atom {id:35, element:C, edge: vec![]},
+            Atom {id:37, element:C, edge: vec![]},
+            Atom {id:44, element:H, edge: vec![]},
+            Atom {id:50, element:B, edge: vec![]},
+        ]
+    };
+
+    atom.edge.sort_by(
+        |a,b| if a.element == b.element { 
+            a.id.cmp(&b.id) 
+        } else { 
+            valence(b.element).cmp(&valence(a.element))
+        }
+    );
+
+    print!("{}", atom);
 }
