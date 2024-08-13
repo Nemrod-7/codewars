@@ -48,6 +48,11 @@ impl std::fmt::Display for Atom {
     }
 }
 
+impl Atom {
+    fn from(atom: &Atom) -> Atom { Atom {id: atom.id, element: atom.element, edge: vec![]} }
+    fn carbon(id:usize) -> Atom { Atom {id: id, element: C, edge: vec![]} }
+    fn element(id:usize, elt:Element) -> Atom { Atom {id: id, element: elt, edge: vec![]} }
+}
 #[derive(Debug, Default)]
 struct Molecule {
     id: String,
@@ -87,7 +92,7 @@ impl Molecule {
     pub fn branch(&mut self, _bs: &[usize]) -> ChemResult<&mut Self> {
         // add new branches with x carbon to the molecule
         if self.lock == true { return Err(ChemError::LockedMolecule); }
-        if self.atoms.len() == 0 { *self = Molecule::from(""); }
+        if self.atoms.len() == 0 { *self = Molecule::from("") }
         print!(".branch(&{:?})?\n", _bs);
         
         for &ncarb in _bs {
@@ -95,10 +100,8 @@ impl Molecule {
 
             for _ in 0..ncarb {
                 let nb = self.atoms.len();
-                let atom = Atom { id:nb, element:C, edge: vec![] };
-
-                arm.push(nb);
-                self.atoms.push(atom);
+                arm.push(nc);
+                self.atoms.push(Atom::carbon(nc));
             }
 
             for i in 2..=ncarb {
@@ -113,7 +116,7 @@ impl Molecule {
     pub fn bond(&mut self, _poses: &[(usize, usize, usize, usize)]) -> ChemResult<&mut Self> {
         //(&mut m).bond(&[(c1, b1, c2, b2), ...])
         //creates new bonds between two atoms of existing branches : bond c1 of b1 with c2 of b2
-        if self.lock == true { return Err(ChemError::LockedMolecule); }
+        if self.lock == true { return Err(ChemError::LockedMolecule) }
         print!(".bond(&{:?})?\n", _poses);
 
         for &(c1,b1,c2,b2) in _poses {
@@ -135,7 +138,7 @@ impl Molecule {
     pub fn mutate(&mut self, _ms: &[(usize, usize, Element)]) -> ChemResult<&mut Self> {
         // (&mut m).mutate(&[(nc, nb, elt), ...])
         //mutate the carbon nc in the branch nb into the chemeical element elt
-        if self.lock == true { return Err(ChemError::LockedMolecule); }
+        if self.lock == true { return Err(ChemError::LockedMolecule) }
         print!(".mutate(&{:?})?\n", _ms);
 
         for &(nc, nb, elt) in _ms {
@@ -163,7 +166,7 @@ impl Molecule {
 
     pub fn add(&mut self, _els: &[(usize, usize, Element)]) -> ChemResult<&mut Self> {
         // add a new atom of kind elt on the carbon nc in the branch nb
-        if self.lock == true { return Err(ChemError::LockedMolecule); }
+        if self.lock == true { return Err(ChemError::LockedMolecule) }
         print!(".add(&{:?})?\n", _els);
 
         for &(nc, nb, elt) in _els {
