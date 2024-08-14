@@ -44,7 +44,7 @@ fn mass (atom: Element) -> f32 { DATA.iter().find(|x| x.0 == atom).unwrap().1.2 
 struct Atom {
     id: usize,
     element:Element,
-    edge: Vec<Atom>,
+    edge: Vec<(Element, usize)>,
 }
 
 impl PartialEq for Atom {
@@ -61,11 +61,11 @@ impl std::fmt::Display for Atom {
         if self.edge.len() > 0 {
             os += &": ";
 
-            for ed in &self.edge {
-                if ed.element == H {
+            for &(element, id) in &self.edge {
+                if element == H {
                     os += &format!("H,");
                 } else {
-                    os += &format!("{}{},", symbol(ed.element), ed.id);
+                    os += &format!("{}{},", symbol(element), id);
                 }
             }
             if self.edge.len() > 0 { os.pop(); }
@@ -78,28 +78,52 @@ impl Atom {
     fn from(atom: &Atom) -> Atom { Atom {id: atom.id, element: atom.element, edge: vec![]} }
     fn carbon(id:usize) -> Atom { Atom {id: id, element: C, edge: vec![]} }
     fn element(id:usize, elt:Element) -> Atom { Atom {id: id, element: elt, edge: vec![]} }
+    fn bond(&mut self, elt: Element, id: usize) -> &mut Self { 
+        self.edge.push((elt, id));
+        self
+    }
+}
+
+struct Molecule {
+    atoms: Vec<Atom>,
+    branch: Vec<Vec<usize>>,
+    locked: bool,
+}
+
+impl Molecule {
+    fn link  (&mut self, a1: usize, a2: usize) {
+        let e1 = self.atoms[a1].element;        
+        let e2 = self.atoms[a2].element;
+
+        self.atoms[a2].edge.push((e1,a1));
+        self.atoms[a1].edge.push((e2,a2));
+    }
+
+    pub fn branch (&mut self, nbranch: &[(usize)]) {
+        for &ncarb in nbranch {
+            let mut chain = vec![0; ncarb + 1];
+
+            for i in 1..ncarb {
+                let id = self.atoms.len();
+                self.atoms.push(Atom::carbon(id));
+
+                if i > 1 {
+                    self.atoms[id -1].edge.push((C, id -2));
+                    self.atoms[id -2].edge.push((C, id -1));
+                }
+            }
+
+            self.branch.push(chain);
+        }
+
+    }
 }
 
 fn main () {
 
-    let mut atom = Atom {
-        id: 36,
-        element:C,
-        edge: vec![
-            Atom {id:35, element:C, edge: vec![]},
-            Atom {id:37, element:C, edge: vec![]},
-            Atom {id:44, element:H, edge: vec![]},
-            Atom {id:50, element:B, edge: vec![]},
-        ]
-    };
 
-    atom.edge.sort_by(
-        |a,b| if a.element == b.element { 
-            a.id.cmp(&b.id) 
-        } else { 
-            valence(b.element).cmp(&valence(a.element))
-        }
-    );
 
-    print!("{}", atom);
+    //atom.bond(H,2);
+
+
 }
