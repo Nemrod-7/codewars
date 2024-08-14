@@ -71,6 +71,12 @@ impl Molecule {
     fn checkvalnce(&self, index:usize) -> bool {
         return self.atoms[index].edge.len() < valence(self.atoms[index].element)
     }
+    fn sortedge(&mut self, index: usize) {
+        self.atoms[index].edge.sort_by(
+            |a,b| if a.element == b.element { a.id.cmp(&b.id) } else { 
+                valence(b.element).cmp(&valence(a.element)) 
+            });
+    }
     fn link(&mut self, c1: usize, c2: usize) {
         let at1 = self.atoms[c1].clone();
         let at2 = self.atoms[c2].clone();
@@ -78,8 +84,10 @@ impl Molecule {
         self.atoms[c1].edge.push(at2);
         self.atoms[c2].edge.push(at1);
 
-        self.atoms[c1].edge.sort_by( |a,b| if a.element == b.element { a.id.cmp(&b.id) } else { a.element.cmp(&b.element) });
-        self.atoms[c2].edge.sort_by( |a,b| if a.element == b.element { a.id.cmp(&b.id) } else { a.element.cmp(&b.element) });
+        self.sortedge(c1);
+        self.sortedge(c2);
+        //self.atoms[c1].edge.sort_by( |a,b| if a.element == b.element { a.id.cmp(&b.id) } else { a.element.cmp(&b.element) });
+        //self.atoms[c2].edge.sort_by( |a,b| if a.element == b.element { a.id.cmp(&b.id) } else { a.element.cmp(&b.element) });
     }
     fn inside(&self, nc:usize, nb:usize) -> bool { return nb < self.index.len() && nc < self.index[nb].len() }
 
@@ -153,8 +161,8 @@ impl Molecule {
                                 link.element = elt
                             }
                         );
-
-                        self.atoms[nid].edge.sort_by(|a,b| if a.element == b.element { a.id.cmp(&b.id) } else { a.element.cmp(&b.element) });
+                        self.sortedge(nid);
+                        //self.atoms[nid].edge.sort_by(|a,b| if a.element == b.element { a.id.cmp(&b.id) } else { a.element.cmp(&b.element) });
                     }
                 } else {
                     return Err(ChemError::InvalidBond)
@@ -186,13 +194,13 @@ impl Molecule {
             } else {
                 return Err(ChemError::InvalidBond);
             }
-
-            self.atoms[i1].edge.sort_by(|a,b| if a.element == b.element { a.id.cmp(&b.id) } else { a.element.cmp(&b.element) });
+            //self.sortedge(i1);
+            //self.atoms[i1].edge.sort_by(|a,b| if a.element == b.element { a.id.cmp(&b.id) } else { a.element.cmp(&b.element) });
         }
 
         //print!("\n{:?} {:?}\n", self.index, self.formula());
         for atom in &self.atoms {
-          print!("{}\n", atom);
+            print!("{}\n", atom);
         }
 
         Ok(self)
