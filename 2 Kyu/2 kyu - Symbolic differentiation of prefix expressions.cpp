@@ -55,6 +55,7 @@ vector<string> tokenize3 (string expr) {
 string calc (string a, string op, string b) {
 
     regex num ("^-?[0-9]+$");
+
     if (regex_match (a, num) && regex_match (b, num)) {
         ostringstream os;
         os << operate[op] (stod (a), stod (b));

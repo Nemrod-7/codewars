@@ -15,7 +15,6 @@ pub mod preloaded {
     pub type ChemResult<T> = Result<T, ChemError>;
 
     impl std::fmt::Display for Element {
-
         fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             let mut os = String::new();
 

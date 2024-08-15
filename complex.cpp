@@ -1,8 +1,8 @@
 #include <iostream>
 #include <regex>
-#include <complex>
 #include <cmath>
 
+using namespace std;
 
 //  <variable>  ::= "x"
 //  <constant>  ::= [0-9]+(.[0-9]+)?
@@ -33,17 +33,11 @@
 //  std::get<0>(f)({ 2, 2 }) == (-32, 32) Because: f(x) = 2 * x^3 => f(2 + 2i) = 2 * (2 + 2i)^3 = -32 + 32i
 //  st::get<2>(f)({ 2, 2 }) == (24, 24) Because: f''(x) = (6 * x^2)' = 12 * x => f''(2 + 2i) = 12 * (2 + 2i)^2 = 24 + 24i
 
-using namespace std;
-using func = function<complex<double>(complex<double>,complex<double>)>;
-
 template<class T = void> struct power {
     const T operator ()(const T &lhs, const T &rhs) {
         return pow (lhs, rhs);
     }
 };
-
-map<string,int> order {{"+",1},{"-",1},{"*",2},{"/",2},{"%",2},{"^",3}};
-map<string, func> operate {{"+", plus<complex<double>>()},{"-", minus<complex<double>>()}, {"*", multiplies<complex<double>>()}, {"/", divides<complex<double>>()}, {"^", power<complex<double>>()} };
 
 void show (const std::vector<std::string> &vs) {
 
@@ -51,73 +45,6 @@ void show (const std::vector<std::string> &vs) {
         std::cout << "[" << vs[i] << "]";
     }
 }
-
-class engine {
-    private:
-        vector<string> code;
-        template<class T = void> T getstack(vector<T> &s1) {
-
-            if (s1.empty()) return 0;
-            T num = s1.back();
-            s1.pop_back();
-
-            return num;
-        }
-    public:
-        engine(const string &src) {
-            regex re ("([0-9]+(\\.[0-9]+)?)|x|[-+*^]|(sin|cos|tan|cot|log)");
-            sregex_token_iterator iter (src.begin (), src.end (), re);
-            code = vector<string> (iter, sregex_token_iterator ());
-        }
-
-        complex<double> evaluate(const complex<double> &zx) {
-
-            regex term ("^[-+*/^]$");
-            regex number ("^[0-9]+(\\.[0-9]+)?$");
-
-            vector<complex<double>> value;
-            vector<string> oper;
-            bool running = true;
-            int index = 0;
-            /*cout << "(" << z1.real() << " + " << z1.imag() << "i)\n";*/
-
-            while (running) {
-                string cell = code[index];
-
-                if (cell == "x") {
-                    /*cout << "variable : [" << cell << "]";*/
-                    value.push_back(zx);
-                } else if (regex_match(cell, number)) {
-                    /*cout << "number   : [" << cell << "]";*/
-                    value.push_back(stof(cell));
-                } else if (regex_match(cell, term)) {
-                    /*cout << "operator : [" << cell << "]";*/
-
-                    while (!oper.empty() && order[oper.back()] > order[cell]) {
-                        complex<double> z2 = getstack(value), z1 = getstack(value);
-                        string op = getstack(oper);
-                        value.push_back(operate[op](z1,z2));
-                    }
-
-                    oper.push_back(cell);
-                }
-
-                index++;
-                if (index == code.size()) {
-                    running = false;
-                }
-            }
-
-            while (!oper.empty()) {
-                complex<double> z2 = getstack(value), z1 = getstack(value);
-                string op = getstack(oper);
-                value.push_back(operate[op](z1,z2));
-            }
-
-            return value.back();
-        }
-
-};
 
 string differentiate (const string &input) {
 
@@ -136,8 +63,8 @@ string differentiate (const string &input) {
         string a = code[0], op = code[1], b = code[2];
 
         if (regex_match (a, numr) && regex_match (b, numr)) {
-            ostringstream os;          
-            os << operate[op] (stod (a), stod (b)).real();
+            ostringstream os;
+            os << operate[op] (stod (a), stod (b));
             return os.str();
         }
 
@@ -163,7 +90,6 @@ string differentiate (const string &input) {
             if (a == "0") return "0";
         }
 
-        return a + op + b;
     }
 
 
@@ -204,10 +130,7 @@ string differentiate (const string &input) {
 
 int main () {
 
-    /*engine curr("2 * x^3");*/
 
-    string actual = differentiate("x + 3");
-
-    cout << actual;
+    differentiate("2 * x^3");
 
 }
