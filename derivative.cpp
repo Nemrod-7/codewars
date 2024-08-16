@@ -3,18 +3,17 @@
 #include <complex>
 #include <cmath>
 
-
 //  <variable>  ::= "x"
 //  <constant>  ::= [0-9]+(.[0-9]+)?
 //  <func_name> ::= "sin" | "cos" | "tan" | "cot" | "log"
-// 
+//
 //  <factor>     ::= <basic> ( "^" <basic> )*
 //  <expression> ::= <term> ( "+" | "-"  <term> )*
 //  <term>       ::= <factor> ( "*" | "/"  <factor> )*
-// 
+//
 //  <func_call>  ::= <func_name> "(" <expression> ")"
 //  <basic>      ::= <constant> | <variable> | <func_call> | ( "(" <expression> ")" )
-//  
+//
 //  rules of derivation :
 //  con : cst   => 0
 //  lin : x     => 1
@@ -29,21 +28,16 @@
 //  sin : sin x => cos x
 //  cos : cos x => -sin x
 //  tan : tan x => 1 / (cos²(x))
-//
-//  std::get<0>(f)({ 2, 2 }) == (-32, 32) Because: f(x) = 2 * x^3 => f(2 + 2i) = 2 * (2 + 2i)^3 = -32 + 32i
-//  st::get<2>(f)({ 2, 2 }) == (24, 24) Because: f''(x) = (6 * x^2)' = 12 * x => f''(2 + 2i) = 12 * (2 + 2i)^2 = 24 + 24i
 
 using namespace std;
-using func = function<complex<double>(complex<double>,complex<double>)>;
 
-template<class T = void> struct power {
-    const T operator ()(const T &lhs, const T &rhs) {
-        return pow (lhs, rhs);
-    }
-};
-
+//int order (const string &src) {
+//    if (src == "+" || src == "-") return 1;
+//    if (src == "*" || src == "/") return 2;
+//    if (src == "^") return 3;
+//    return 0;
+//}
 map<string,int> order {{"+",1},{"-",1},{"*",2},{"/",2},{"%",2},{"^",3}};
-map<string, func> operate {{"+", plus<complex<double>>()},{"-", minus<complex<double>>()}, {"*", multiplies<complex<double>>()}, {"/", divides<complex<double>>()}, {"^", power<complex<double>>()} };
 
 void show (const std::vector<std::string> &vs) {
 
@@ -52,152 +46,180 @@ void show (const std::vector<std::string> &vs) {
     }
 }
 
-class engine {
-    private:
-        vector<string> code;
-        template<class T = void> T getstack(vector<T> &s1) {
+vector<string> tokenize(const string &input) {
+    regex tokn ("([0-9]+(\\.[0-9]+)?)|x|[-+*^]|(sin|cos|tan|cot|log)");
+    sregex_token_iterator iter (input.begin (), input.end (), tokn);
+    return vector<string> (iter, sregex_token_iterator ());
+}
+string join(vector<string> input) {
+    string os;
+    for (auto &it : input) os += it;
+    return os;
+}
+string getstack(vector<string> &stack) {
+    string val = stack.back();
+    stack.pop_back();
+    return val;
+}
 
-            if (s1.empty()) return 0;
-            T num = s1.back();
-            s1.pop_back();
+complex<double> stoc(const string &input) {
+    istringstream iss(input);
+    complex<double> zx;
+    iss >> zx;
+    return zx;
+}
+string ctos(const complex<double> &zx) {
+    ostringstream oss;
+    zx.imag() == 0 ? oss << zx.real() : oss << zx;
+    return oss.str();
+}
 
-            return num;
+string operate(string a, string op, string b) {
+
+    regex number ("^[0-9]+(\\.[0-9]+)?$");
+    // cout << "[" << a << "] " << op << " [" << b << "]\n";
+    if (regex_match(a, number) && regex_match(b, number)) {
+        switch (op[0]) {
+            case '+' : return ctos( stoc(a) + stoc(b)) ; break;
+            case '-' : return ctos( stoc(a) - stoc(b)) ; break;
+            case '*' : return ctos( stoc(a) * stoc(b)) ; break;
+            case '/' : return ctos( stoc(a) / stoc(b)) ; break;
+            case '^' : return ctos( pow(stoc(a), stoc(b))) ; break;
         }
-    public:
-        engine(const string &src) {
-            regex re ("([0-9]+(\\.[0-9]+)?)|x|[-+*^]|(sin|cos|tan|cot|log)");
-            sregex_token_iterator iter (src.begin (), src.end (), re);
-            code = vector<string> (iter, sregex_token_iterator ());
-        }
+    }
 
-        complex<double> evaluate(const complex<double> &zx) {
+    if (op == "+") {
+        if (a == b) { op = "*", a = "2"; }
+        if (a == "0") return b;
+        if (b == "0") return a;
+    } else if (op == "-") {
+        if (a == b) return "0";
+        if (b == "0") return a;
+    } else if (op == "*") {
+        if (a == b) { op = "^", a = "2"; }
+        if (a == "0" || b == "0") return "0";
+        if (a == "1") return b;
+        if (b == "1") return a;
+    } else if (op == "/") {
+        if (a == b) return "1";
+        if (a == "0") return "0";
+        if (b == "1") return a;
+    } else if (op == "^") {
+        if (a == "1" || b == "1") return a;
+        if (b == "0") return "1";
+        if (a == "0") return "0";
+    }
 
-            regex term ("^[-+*/^]$");
-            regex number ("^[0-9]+(\\.[0-9]+)?$");
+    return a + op + b;
+}
 
-            vector<complex<double>> value;
-            vector<string> oper;
-            bool running = true;
-            int index = 0;
-            /*cout << "(" << z1.real() << " + " << z1.imag() << "i)\n";*/
+string evaluate(const string &expression, const string &value = "") {
 
-            while (running) {
-                string cell = code[index];
+    regex term ("^[-+*/^]$");
+    regex number ("^[0-9]+(\\.[0-9]+)?$");
 
-                if (cell == "x") {
-                    /*cout << "variable : [" << cell << "]";*/
-                    value.push_back(zx);
-                } else if (regex_match(cell, number)) {
-                    /*cout << "number   : [" << cell << "]";*/
-                    value.push_back(stof(cell));
-                } else if (regex_match(cell, term)) {
-                    /*cout << "operator : [" << cell << "]";*/
+    const vector<string> code = tokenize(expression);
+    vector<string> vars;
+    vector<string> oper;
+    bool running = true;
+    int index = 0;
+    /*cout << "(" << z1.real() << " + " << z1.imag() << "i)\n";*/
 
-                    while (!oper.empty() && order[oper.back()] > order[cell]) {
-                        complex<double> z2 = getstack(value), z1 = getstack(value);
-                        string op = getstack(oper);
-                        value.push_back(operate[op](z1,z2));
-                    }
+    while (running) {
+        string token = code[index];
 
-                    oper.push_back(cell);
-                }
-
-                index++;
-                if (index == code.size()) {
-                    running = false;
-                }
+        if (token == "x") {
+            /*cout << "variable : [" << token << "]";*/
+            if (value == "") {
+                vars.push_back(token);
+            } else {
+                vars.push_back(value);
             }
+        } else if (regex_match(token, number)) {
+            /*cout << "number   : [" << token << "]";*/
+            vars.push_back(token);
+        } else if (regex_match(token, term)) {
+            /*cout << "operator : [" << token << "]";*/
 
-            while (!oper.empty()) {
-                complex<double> z2 = getstack(value), z1 = getstack(value);
+            while (!oper.empty() && order[oper.back()] > order[token]) {
+                string z2 = getstack(vars), z1 = getstack(vars);
                 string op = getstack(oper);
-                value.push_back(operate[op](z1,z2));
+                vars.push_back(operate(z1,op,z2));
             }
 
-            return value.back();
+            oper.push_back(token);
         }
 
-};
+        index++;
+        if (index == code.size()) {
+            running = false;
+        }
+    }
 
+    while (!oper.empty()) {
+        string z2 = getstack(vars), z1 = getstack(vars);
+        string op = getstack(oper);
+        vars.push_back(operate(z1,op,z2));
+    }
+
+    return vars.back();
+}
 string differentiate (const string &input) {
 
     regex term ("^[-+*/^]$");
     regex numr ("^-?[0-9]+(\\.[0-9]+)?$");
     regex func ("^[sin|cos|tan|cot|log]$");
-    regex tokn ("([0-9]+(\\.[0-9]+)?)|x|[-+*^]|(sin|cos|tan|cot|log)");
 
     if (input == "x") return "1";
     if (regex_match(input, numr)) return "0";
 
-    sregex_token_iterator iter (input.begin (), input.end (), tokn);
-    vector<string> code (iter, sregex_token_iterator ());
+    vector<string> code = tokenize(input);
 
-    if (code.size() == 3) {
-        string a = code[0], op = code[1], b = code[2];
 
-        if (regex_match (a, numr) && regex_match (b, numr)) {
-            ostringstream os;          
-            os << operate[op] (stod (a), stod (b)).real();
-            return os.str();
+    for (int i = 0; i < code.size(); i++) {
+        if (order[code[i]]) {
+            string t1 = join({code.begin(), code.begin() + i});
+            string t2 = join({code.begin() + i + 1, code.end()});
+            // cout << " => " << res << "\n";
+
+            if (code[i] == "+") { // add : a + b => a' + b'
+                string dx1 = differentiate(t1), dx2 = differentiate(t2);
+
+                return operate(dx1, code[i], dx2);
+            } else if (code[i] == "-") { // min : a - b => a' - b'
+                string dx1 = differentiate(t1), dx2 = differentiate(t2);
+
+                return operate(dx1, code[i], dx2);
+            } else if (code[i] == "*") { // mul : a * b => a.b' + a'.b
+                string dx1 = operate(t1, "*", differentiate(t2));
+                string dx2 = operate(differentiate(t1), "*", t2);
+
+                return operate(dx1, "+", dx2);
+            } else if (code[i] == "/") { // div : a / b => (a'* b − b'* a) / (b * b)
+                string dx1 = operate(t1, "*", differentiate(t2));
+                string dx2 = operate(differentiate(t1), "*", t2);
+                string dx3 = operate(dx1, "-", dx2);
+                string dx4 = operate(t2, "*", t2);
+
+                return operate (dx3, "/", dx1);
+            } else if (code[i] == "^") { // pow : x^a   => a.x^(a - 1)
+                string dx1 = operate (t2, "-", "1");
+                string dx2 = operate (t2, "*", t1);
+                // cout << "[" << t1 << "] " << code[i] << " [" << dx1 << "]";
+
+                return operate (dx2, "^", dx1);
+            }
+        } else if (code[i] == "cos") { // cos : cos x => -sin x
+
+        } else if (code[i] == "sin") { // sin : sin x => cos x
+
+        } else if (code[i] == "tan") { // tan : tan x => 1 / (cos²(x))
+
+        } else if (code[i] == "log") { // ln  : ln(x) => 1 / x
+
         }
-
-        if (op == "+") {
-            if (a == b) { op = "*", a = "2"; }
-            if (a == "0") return b;
-            if (b == "0") return a;
-        } else if (op == "-") {
-            if (a == b) return "0";
-            if (b == "0") return a;
-        } else if (op == "*") {
-            if (a == b) { op = "^", a = "2"; }
-            if (a == "0" || b == "0") return "0";
-            if (a == "1") return b;
-            if (b == "1") return a;
-        } else if (op == "/") {
-            if (a == b) return "1";
-            if (a == "0") return "0";
-            if (b == "1") return a;
-        } else if (op == "^") {
-            if (a == "1" || b == "1") return a;
-            if (b == "0") return "1";
-            if (a == "0") return "0";
-        }
-
-        return a + op + b;
     }
 
-
-
-
-    //    vector<string> t1, t2;
-    //
-    //    for (int i = 0; i < code.size(); i++) {
-    //
-    //        if (code[i] == "x") {
-    //            cout << "variable : [" << code[i] << "]";
-    //        }
-    //        else if (regex_match(code[i], numr)) {
-    //            cout << "number   : [" << code[i] << "]";
-    //        } else if (regex_match(code[i], term)) {
-    //            t1 = {code.begin(), code.begin() + i};
-    //            t2 = {code.begin() + i + 1, code.end()};
-    //
-    //            if (code[i] == "^") {
-    //
-    //            }
-    //            cout << "operator : " ;
-    //            show (t1);
-    //            cout << " <- " << code[i] << " -> ";
-    //            show(t2);
-    //        } else if (regex_match(code[i], func)) {
-    //            cout << "function : " ;
-    //            t1 = {code.begin() + i + 1, code.end()};
-    //            cout << code[i] << " -> ";
-    //            show(t1);
-    //        }
-    //
-    //        cout << endl;
-    //    }
 
     return "";
 }
@@ -205,6 +227,11 @@ string differentiate (const string &input) {
 int main () {
 
     /*engine curr("2 * x^3");*/
+    // (2) * (x^3) => a.b' + a'.b
+    // (x) ^ (3)   => a.x^(a - 1)
+    vector<string> code = {"2","*","x","^","3"};
+    vector<string> t1,t2;
+    t1 = {"2"}, t2 = {"x","^","3"} ;
 
     string actual = differentiate("x + 3");
 
