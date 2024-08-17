@@ -99,7 +99,7 @@ string simpl (const string &expr) {
 }
 string diff (const string &input) {
 
-    regex num ("^-?[0-9]+$");calc
+    regex num ("^-?[0-9]+$");
 
     if (regex_match (input, num)) return "0";
     if (input == "x") return "1";
