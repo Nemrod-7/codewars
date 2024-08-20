@@ -2,6 +2,19 @@
 #include <vector>
 #include <string>
 
+using namespace std;
+
+void show (const std::vector<std::string> &vs) {
+
+    for (int i = 0; i < vs.size(); i++) {
+        std::cout << "[" << vs[i] << "]";
+    }
+    std::cout << std::endl;
+}
+
+bool isfunc (const std::string &input) {
+    return input == "sin" || input == "cos" || input == "tan" || input == "log" || input == "cot";
+}
 bool isnum (const std::string &input) {
 
     int i = 0, end = input.size();
@@ -13,78 +26,125 @@ bool isnum (const std::string &input) {
     for (; i < end; i++) {
         if (input[i] != '.' && input[i] != ',' && !isdigit(input[i]) && input[i] != '-') {
             return false;
-        } 
+        }
     }
 
     return true;
 }
-std::string operate(std::string a, std::string op, std::string b) {
+bool isoper(const string &input) {
+    return input == "*" || input == "/" || input == "+" || input == "-";
+}
 
-    if (isnum(a) && isnum(b)) {
-        int z1 = stoi(a), z2 = stoi(b), result;
+std::string join(const std::vector<std::string> &input) {
+    std::string os;
+    for (auto &it : input) os += it;
+    return os;
+}
+string parenthesis(const string &code) {
+    int i = 1, pile = 1;
+    string buffer;
 
-        switch (op[0]) {
-            case '+' : result = (z1 + z2) ; break;
-            case '-' : result = (z1 - z2) ; break;
-            case '*' : result = (z1 * z2) ; break;
-            case '/' : result = (z1 / z2) ; break;
-                       //         case '^' : result = (pow(z1, z2)) ; break;
+    while (true) {
+        if (code[i] == '(') pile++;
+        if (code[i] == ')') pile--;
+        if (pile == 0) return buffer;
+        buffer += code[i++];
+    }
+
+    return "";
+}
+vector<string> tokenize (const string &input) {
+
+    vector<string> code;
+    int i = 0;
+
+    while (i < input.size()) {
+
+        if (isdigit(input[i])) {
+            string buffer;
+
+            while (isdigit(input[i]) || input[i] == '.') buffer += input[i++];
+            code.push_back(buffer);
+        } else if (isspace(input[i])) {
+            while (isspace(input[i])) i++;
+        } else if (input[i] == '+' || input[i] == '-') {
+            code.push_back(string(1,input[i++]));
+        } else if (input[i] == '*' || input[i] == '/') {
+            code.push_back(string(1,input[i++]));
+        } else if (input[i] == '^') {
+            code.push_back(string(1,input[i++]));
+        } else if (isalpha(input[i])) {
+            string buffer;
+
+            while (isalpha(input[i])) buffer += input[i++];
+            code.push_back(buffer);
+        } else if (input[i] == '(') {
+            string cell = parenthesis(input.substr(i));
+            i += cell.size() + 2;
+
+            code.push_back(cell);
         }
-        //     //std::cout << "[" << z1 << "] " << op << " [" << z2 << "]";
-        //     //std::cout << " => " << result << "\n";
-        return std::to_string(result);
+
+        else {
+            code.push_back(string(1,input[i++]));
+        }
     }
 
-    if (op == "+") {
-        if (a == b) { op = "*", a = "2"; }
-        if (a == "0") return b;
-        if (b == "0") return a;
-    } else if (op == "-") {
-        if (a == b) return "0";
-        if (b == "0") return a;
-    } else if (op == "*") {
-        if (a == b) { op = "^", b = "2"; } // if (a == b) { op = "^", a = "2"; }
-    if (a == "0" || b == "0") return "0";
-    if (a == "1") return b;
-    if (b == "1") return a;
-    } else if (op == "/") {
-        if (a == b) return "1";
-        if (a == "0") return "0";
-        if (b == "1") return a;
-    } else if (op == "^") {
-        if (a == "1" || b == "1") return a;
-        if (b == "0") return "1";
-        if (a == "0") return "0";
-    }
-
-    return a + op + b;
+    return code;
 }
 
 int main () {
 
-//  pow : x^a   => a.x^(a - 1)
-//  exp : a^x   => a^x . ln (a)
-    std::string t1 = "2", op = "^", t2 = "x";
+    string eq = "4 * log(x) + x^2 / 2^x";
+    vector<string> code = tokenize(eq);
+    int i = 0;
 
-    if (t2 == "x") {
-        std::string arg1 = operate(t1,"^",t2);
-        std::string arg2 = "log(" + t1 + ")";
-        std::string arg3 = operate(arg1,"*",arg2);
+    while (i < code.size()) {
 
-        std::cout << arg3;
 
-    //    std::cout << "[" << arg2 << "] " << op << " [" << exp << "]";
+        if (code[i] == "x") {
+            /*cout << "   < variable | ";*/
+        } else if (isnum(code[i])) {
+            /*cout << "   < constant | ";*/
+        } else if (isfunc(code[i])) {
+            //cout << " < function | ";       
+            //cout << "t1 : " << code[i+1]; 
+        } else if (isoper(code[i])) {
+            cout << "[" << code[i] << "]";
+            /**/
+            /*if (code[i] == "+" || code[i] == "-") {*/
+            /*    cout << "   < term     | ";*/
+            /*} else {*/
+            /*    cout << "   < factor   | ";*/
+            /*}*/
+
+            int j = i - 1;
+            string t1,t2;
+
+            while (j--> 0) {
+                if (isoper(code[j])) { break; };
+            }            
+
+            t1 = join({code.begin() + j + 1, code.begin() + i});
+
+            j = i;
+            while (j++ < code.size()) {
+                if (isoper(code[j])) { break; } 
+            }
+
+            t2 = join({code.begin() + i + 1, code.begin() + j });
+            cout << "t1 : [" << t1 << "] ";
+            cout << "t2 : [" << t2 << "] ";
+
+
+            cout << endl;
+        } else if (code[i] == "^") {
+            cout << "[" << code[i] << "]";
+            cout << "   < basic    | "; 
+            cout << "t1 : " << code[i+1]; 
+        }
+
+        i++;
     }
-
-    if (t1 == "x") {
-        std::string exp = operate(t2,"-","1");
-        std::string arg1 = operate(t2,"*",t1);
-        std::string arg2 = operate(arg1,"^",exp);
-
-    }
-    
-
-
-
 
 }
