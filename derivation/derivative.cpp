@@ -8,6 +8,17 @@
 #include "tests.hpp"
 
 
+//  <variable>  ::= "x"
+//  <constant>  ::= [0-9]+(.[0-9]+)?
+//  <func_name> ::= "sin" | "cos" | "tan" | "cot" | "log"
+//
+//  <factor>     ::= <basic> ( "^" <basic> )*
+//  <expression> ::= <term> ( "+" | "-"  <term> )*
+//  <term>       ::= <factor> ( "*" | "/"  <factor> )*
+//
+//  <func_call>  ::= <func_name> "(" <expression> ")"
+//  <basic>      ::= <constant> | <variable> | <func_call> | ( "(" <expression> ")" )
+//
 //  rules of derivation :
 //  con : cst   => 0
 //  lin : x     => 1
@@ -36,18 +47,18 @@ using func_t = std::function<value_t(value_t)>;
 
 bool isnum (const std::string &input) {
 
-   int i = 0, end = input.size();
+    int i = 0, end = input.size();
 
-   if (input.front() == '(' && input.back() == ')') {
-       i += 1, end -= 1;
+    if (input.front() == '(' && input.back() == ')') {
+        i += 1, end -= 1;
 
-   }
+    }
 
-   for (; i < end; i++) {
-       if (input[i] != '.' && input[i] != ',' && !isdigit(input[i]) && input[i] != '-') {
-           return false;
-       }
-   }
+    for (; i < end; i++) {
+        if (input[i] != '.' && input[i] != ',' && !isdigit(input[i]) && input[i] != '-') {
+            return false;
+        }
+    }
 
     return true;
 }
@@ -78,46 +89,45 @@ std::string parenthesis(const std::string &code) {
     return "";
 }
 
-std::vector<std::string> tokenize (const std::string &input) {
+vector<string> tokenize (const string &input) {
 
-    std::vector<std::string> code;
+    vector<string> code;
     int i = 0;
 
     while (i < input.size()) {
 
         if (isdigit(input[i])) {
-            std::string buffer;
+            string buffer;
 
             while (isdigit(input[i]) || input[i] == '.') buffer += input[i++];
             code.push_back(buffer);
         } else if (isspace(input[i])) {
             while (isspace(input[i])) i++;
         } else if (input[i] == '+' || input[i] == '-') {
-            code.push_back(std::string(1,input[i++]));
+            code.push_back(string(1,input[i++]));
         } else if (input[i] == '*' || input[i] == '/') {
-            code.push_back(std::string(1,input[i++]));
+            code.push_back(string(1,input[i++]));
         } else if (input[i] == '^') {
-            code.push_back(std::string(1,input[i++]));
+            code.push_back(string(1,input[i++]));
         } else if (isalpha(input[i])) {
-            std::string buffer;
+            string buffer;
 
             while (isalpha(input[i])) buffer += input[i++];
             code.push_back(buffer);
         } else if (input[i] == '(') {
-            std::string cell = parenthesis(input.substr(i));
+            string cell = parenthesis(input.substr(i));
             i += cell.size() + 2;
 
             code.push_back(cell);
         }
 
         else {
-            code.push_back(std::string(1,input[i++]));
+            code.push_back(string(1,input[i++]));
         }
     }
 
     return code;
 }
-
 double dround (double num) { return floor(1e5 * num) / 1e5; }
 value_t cround (const value_t &zx) { return { dround(zx.real()), dround(zx.imag()) };}
 value_t stoc(const std::string &input) {
@@ -163,8 +173,8 @@ std::string operate(std::string a, std::string op, std::string b) {
             case '/' : result = cround(z1 / z2) ; break;
             case '^' : result = cround(pow(z1, z2)) ; break;
         }
-//        std::cout << "[" << z1 << "] " << code[i]<< " [" << z2 << "]";
-//        std::cout << " => " << result << "\n";
+        //        std::cout << "[" << z1 << "] " << code[i]<< " [" << z2 << "]";
+        //        std::cout << " => " << result << "\n";
         return ctos(result);
     }
 
@@ -261,6 +271,59 @@ std::string evaluate(const std::string &expression, const std::string &number = 
 
     return vars.back();
 }
+std::string diff(std::string t1, std::string term, std::string t2) {
+    std::string result;
+
+    std::string derivate(const std::string &);
+
+    if (term == "+") { // add : a + b => a' + b'
+        std::string d1 = derivate(t1), d2 = derivate(t2);
+
+        return (operate(d1, term, d2));
+    } else if (term == "-") { // min : a - b => a' - b'
+        std::string d1 = derivate(t1), d2 = derivate(t2);
+
+        return (operate(d1, term, d2));
+    } else if (term == "*") { // mul : a * b => a.b' + a'.b
+        std::string d1 = operate(t1, "*", derivate(t2));
+        std::string d2 = operate(derivate(t1), "*", t2);
+
+        return (operate(d1, "+", d2));
+    } else if (term == "/") { // div : a / b => (a'* b − b'* a) / (b * b)
+        std::string d1 = operate(derivate(t1), "*", t2);
+        std::string d2 = operate(t1, "*", derivate(t2));
+        // std::cout << "[" << d1 << "] " << "-" << " [" << d2 << "]\n";
+
+        std::string d3 = operate(d1, "-", d2);
+        std::string d4 = operate(t2, "*", t2);
+
+        return (operate (d3, "/", d1));
+    } else if (term == "^") { // pow : x^a   => a.x^(a - 1)
+
+        if (t2 == "x") { //  exp : a^x   => a^x . ln (a)
+            std::string arg1 = operate(t1,"^",t2);
+            std::string arg2 = "log(" + t1 + ")";
+            std::string arg3 = operate(arg1,"*",arg2);
+
+            return (arg3);
+        }
+
+        if (t1 == "x") { //  pow : x^a   => a.x^(a - 1)
+            std::string arg1 = operate(t2, "-", "1");
+            std::string arg2 = operate(t1,"^",arg1);
+            std::string arg3 = operate(t2, "*", arg2);
+
+            return (arg3);
+        }
+        //std::cout << "[" << t1 << "] [" << t2 << "] => ";
+        //std::cout << operate(t1,"*",t2) << "|" << operate(t2,"*",t1);
+        //std::cout << "\n";
+    }
+
+
+
+    return result;
+}
 std::string derivate(const std::string &input) {
 
     if (input == "x") return "1"; // constant
@@ -273,12 +336,19 @@ std::string derivate(const std::string &input) {
     while (i < code.size()) {
 
         if (is_operator(code[i])) {
-            std::string t1 = join({code.begin(), code.begin() + i});
-            std::string t2 = join({code.begin() + i + 1, code.end()});
+            int j = i - 1, k = i;
+
+            while (j--> 0) 
+                if (is_operator(code[j])) { break; };
+
+            while (k++ < code.size()) 
+                if (is_operator(code[k])) { break; } 
+
+            std::string t1 = join({code.begin() + j + 1, code.begin() + i});
+            std::string t2 = join({code.begin() + i + 1, code.begin() + k });
 
             // std::cout << "[" << t1 << "] " << op << " [" << t2 << "]";
             if (code[i]== "+") { // add : a + b => a' + b'
-
                 std::string d1 = derivate(t1), d2 = derivate(t2);
 
                 return (operate(d1, code[i], d2));
@@ -373,20 +443,10 @@ std::tuple<func_t, func_t, func_t> differentiate(const std::string& eq) {
 
 int main () {
 
-  //  <variable>  ::= "x"
-  //  <constant>  ::= [0-9]+(.[0-9]+)?
-  //  <func_name> ::= "sin" | "cos" | "tan" | "cot" | "log"
-  //
-  //  <factor>     ::= <basic> ( "^" <basic> )*
-  //  <expression> ::= <term> ( "+" | "-"  <term> )*
-  //  <term>       ::= <factor> ( "*" | "/"  <factor> )*
-  //
-  //  <func_call>  ::= <func_name> "(" <expression> ")"
-  //  <basic>      ::= <constant> | <variable> | <func_call> | ( "(" <expression> ")" )
 
-   // const auto [f, df_dx, d2f_dx2] = differentiate("4 * log(x) + x^2 / 2^x");
-   // const auto [f, df_dx, d2f_dx2] = differentiate("sin(cos(x^x^2))");
-   // const auto [f, df_dx, d2f_dx2] = differentiate("(tan(2 * x) + 1) / (cot(x * 3) - 1)");
+    // const auto [f, df_dx, d2f_dx2] = differentiate("4 * log(x) + x^2 / 2^x");
+    // const auto [f, df_dx, d2f_dx2] = differentiate("sin(cos(x^x^2))");
+    // const auto [f, df_dx, d2f_dx2] = differentiate("(tan(2 * x) + 1) / (cot(x * 3) - 1)");
 
     std::string eq = "x^2";
     // auto code = tokenize(eq);

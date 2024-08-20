@@ -96,52 +96,49 @@ vector<string> tokenize (const string &input) {
 int main () {
 
     string eq = "4 * log(x) + x^2 / 2^x";
+
+    eq = "2*x^3";
     vector<string> code = tokenize(eq);
+
     int i = 0;
+    vector<string> expr, oper;
 
     while (i < code.size()) {
 
-
         if (code[i] == "x") {
+            //vars.push_back(code[i]);
             /*cout << "   < variable | ";*/
         } else if (isnum(code[i])) {
+            //vars.push_back(code[i]);
             /*cout << "   < constant | ";*/
         } else if (isfunc(code[i])) {
             //cout << " < function | ";       
             //cout << "t1 : " << code[i+1]; 
+            string result = code[i] + " " + code[i+1];
+            expr.push_back(result);
         } else if (isoper(code[i])) {
-            cout << "[" << code[i] << "]";
-            /**/
-            /*if (code[i] == "+" || code[i] == "-") {*/
-            /*    cout << "   < term     | ";*/
-            /*} else {*/
-            /*    cout << "   < factor   | ";*/
-            /*}*/
+            //cout << "[" << code[i] << "]";
+            int j = i - 1, k = i;
 
-            int j = i - 1;
-            string t1,t2;
-
-            while (j--> 0) {
+            while (j--> 0) 
                 if (isoper(code[j])) { break; };
-            }            
-
-            t1 = join({code.begin() + j + 1, code.begin() + i});
-
-            j = i;
-            while (j++ < code.size()) {
-                if (isoper(code[j])) { break; } 
-            }
-
-            t2 = join({code.begin() + i + 1, code.begin() + j });
-            cout << "t1 : [" << t1 << "] ";
-            cout << "t2 : [" << t2 << "] ";
+                        
+            while (k++ < code.size()) 
+                if (isoper(code[k])) { break; } 
+            
+            std::string t1 = join({code.begin() + j + 1, code.begin() + i});
+            std::string t2 = join({code.begin() + i + 1, code.begin() + k });
 
 
+
+            cout << "[" << t1 << "]" << code[i] << "[" << t2 << "] ";
             cout << endl;
         } else if (code[i] == "^") {
-            cout << "[" << code[i] << "]";
-            cout << "   < basic    | "; 
-            cout << "t1 : " << code[i+1]; 
+            //cout << "[" << code[i] << "]";
+            //cout << "   < basic    | "; 
+            string t1 = code[i-1], t2 = code[i+1];
+
+           // cout << endl;
         }
 
         i++;
