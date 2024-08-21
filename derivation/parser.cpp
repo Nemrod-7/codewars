@@ -209,13 +209,15 @@ std::string operate(std::string a, std::string op, std::string b) {
     return a + op + b;
 }
 
-std::string evaluate (Node *node) {
+std::string evaluate (Node *node, std::string value = "") {
 
     if (node != nullptr) {
         string term = node->token;
         string t1 = evaluate(node->t1), t2 = evaluate(node->t2);
 
-        if (is_operator(term)) {
+        if (term == "x") {
+
+        } else if (is_operator(term)) {
             if (isnum(t1) && isnum(t2)) {
                 int z1 = stoi(t1), z2 = stoi(t2), result = 0;
 
@@ -228,7 +230,9 @@ std::string evaluate (Node *node) {
 
                 return to_string(result);
             }
-        } 
+        } else if (isfunc(term)) {
+
+        }
 
         return t1 + term + t2;
     }
@@ -320,9 +324,9 @@ int main () {
     //expression = "2 * x^3";
     Node *node = parse(expression);
     //string result = derivate(node);
-    cout << derivate(node);
+    cout << derivate(parse(expression)) << "\n ";
 
-    //cout << evaluate(node->t1);
+    cout << evaluate(node->t1);
 
     /*cout << "\nresult : " << result << "\n";*/
     //showtree(node);
