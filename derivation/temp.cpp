@@ -31,27 +31,26 @@ bool isnum (const std::string &input) {
 
     return true;
 }
-bool isoper(const string &input) {
-    return input == "*" || input == "/" || input == "+" || input == "-";
+bool is_operator(const string &input) {
+    return input == "*" || input == "/" || input == "+" || input == "-" || input == "^";
+}
+int order (const string &src) {
+    if (src == "+" || src == "-") return 1;
+    if (src == "*" || src == "/") return 2;
+    if (src == "^") return 3;
+
+    return 0;
+}
+template<class T> T getstack(vector<T> &stack) {
+    T val = stack.back();
+    stack.pop_back();
+    return val;
 }
 
 std::string join(const std::vector<std::string> &input) {
     std::string os;
     for (auto &it : input) os += it;
     return os;
-}
-string parenthesis(const string &code) {
-    int i = 1, pile = 1;
-    string buffer;
-
-    while (true) {
-        if (code[i] == '(') pile++;
-        if (code[i] == ')') pile--;
-        if (pile == 0) return buffer;
-        buffer += code[i++];
-    }
-
-    return "";
 }
 vector<string> tokenize (const string &input) {
 
@@ -78,14 +77,7 @@ vector<string> tokenize (const string &input) {
 
             while (isalpha(input[i])) buffer += input[i++];
             code.push_back(buffer);
-        } else if (input[i] == '(') {
-            string cell = parenthesis(input.substr(i));
-            i += cell.size() + 2;
-
-            code.push_back(cell);
-        }
-
-        else {
+        } else {
             code.push_back(string(1,input[i++]));
         }
     }
@@ -95,53 +87,47 @@ vector<string> tokenize (const string &input) {
 
 int main () {
 
-    string eq = "4 * log(x) + x^2 / 2^x";
-
-    eq = "2*x^3";
-    vector<string> code = tokenize(eq);
+    string expression = "4 * log(x) + ((x^2) / (2^x))";
+    auto code = tokenize(expression);
 
     int i = 0;
-    vector<string> expr, oper;
 
     while (i < code.size()) {
 
         if (code[i] == "x") {
-            //vars.push_back(code[i]);
-            /*cout << "   < variable | ";*/
-        } else if (isnum(code[i])) {
-            //vars.push_back(code[i]);
-            /*cout << "   < constant | ";*/
-        } else if (isfunc(code[i])) {
-            //cout << " < function | ";       
-            //cout << "t1 : " << code[i+1]; 
-            string result = code[i] + " " + code[i+1];
-            expr.push_back(result);
-        } else if (isoper(code[i])) {
-            //cout << "[" << code[i] << "]";
-            int j = i - 1, k = i;
 
-            while (j--> 0) 
-                if (isoper(code[j])) { break; };
-                        
-            while (k++ < code.size()) 
-                if (isoper(code[k])) { break; } 
-            
-            std::string t1 = join({code.begin() + j + 1, code.begin() + i});
-            std::string t2 = join({code.begin() + i + 1, code.begin() + k });
+        }
+        else if (code[i] == "(") {
+            int j = i + 1, pile = 1;
+            string buffer;
 
+            while (true) {
+                if (code[j] == "(") pile++;
+                if (code[j] == ")") pile--;
 
+                if (pile == 0) break;
+                buffer += code[j++];
+            }
 
-            cout << "[" << t1 << "]" << code[i] << "[" << t2 << "] ";
-            cout << endl;
-        } else if (code[i] == "^") {
-            //cout << "[" << code[i] << "]";
-            //cout << "   < basic    | "; 
-            string t1 = code[i-1], t2 = code[i+1];
+            i = j + 1;
+        }
+        else if (isnum(code[i])) {
 
-           // cout << endl;
+        } else if (is_operator(code[i])) {
+
+        } else if (isfunc(code[i])){
+
+        } else {
+
+            cout << "invalid identfier\n";
         }
 
+
+
         i++;
-    }
+    } 
+
+
+
 
 }

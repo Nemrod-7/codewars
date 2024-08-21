@@ -89,40 +89,40 @@ std::string parenthesis(const std::string &code) {
     return "";
 }
 
-vector<string> tokenize (const string &input) {
+std::vector<std::string> tokenize (const std::string &input) {
 
-    vector<string> code;
     int i = 0;
+    std::vector<std::string> code;
 
     while (i < input.size()) {
 
         if (isdigit(input[i])) {
-            string buffer;
+            std::string buffer;
 
             while (isdigit(input[i]) || input[i] == '.') buffer += input[i++];
             code.push_back(buffer);
         } else if (isspace(input[i])) {
             while (isspace(input[i])) i++;
         } else if (input[i] == '+' || input[i] == '-') {
-            code.push_back(string(1,input[i++]));
+            code.push_back(std::string(1,input[i++]));
         } else if (input[i] == '*' || input[i] == '/') {
-            code.push_back(string(1,input[i++]));
+            code.push_back(std::string(1,input[i++]));
         } else if (input[i] == '^') {
-            code.push_back(string(1,input[i++]));
+            code.push_back(std::string(1,input[i++]));
         } else if (isalpha(input[i])) {
-            string buffer;
+            std::string buffer;
 
             while (isalpha(input[i])) buffer += input[i++];
             code.push_back(buffer);
         } else if (input[i] == '(') {
-            string cell = parenthesis(input.substr(i));
+            std::string cell = parenthesis(input.substr(i));
             i += cell.size() + 2;
 
             code.push_back(cell);
         }
 
         else {
-            code.push_back(string(1,input[i++]));
+            code.push_back(std::string(1,input[i++]));
         }
     }
 
