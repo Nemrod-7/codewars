@@ -24,9 +24,8 @@
 //    mul : a * b => a.b' + a'.b
 //    div : a / b => (a'* b − b'* a) / (b * b)
 //    pow : x^a   => a.x^(a - 1)
-//    exp : e^x   => e^x
 //    exp : a^x   => a^x . ln (a)
-//    log : ln(x) => 1 / x
+//    log : ln(x) => x' / x
 //    sin : sin x => cos x
 //    cos : cos x => -sin x
 //    tan : tan x => 1 / (cos²(x))
@@ -309,6 +308,7 @@ string derivate (Node *node) {
         string term = node->token;
         string t1 = evaluate(node->t1), t2 = evaluate(node->t2);
 
+        /*cout << "[" << t1 << "]" << term << "[" << t2 << "] => \n";*/
         /*cout << "[" << t1 << "]" << term << "[" << t2 << "] => " << result << "\n";*/
         if (term == "x") {
             return "1";
@@ -338,13 +338,13 @@ string derivate (Node *node) {
             return operate(a1,"/",b1);
         } else if (term == "^") {
             string d1 = derivate(node->t1);
-            /*cout << "[" << t1 << "]" << term << "[" << t2 << "] => ";*/
             /*cout << "[" << d1 << "]  \n";*/
 
             if (t2 == "x") { //  exp : a^x   => a^x . ln (a)
                 string arg1 = operate(t1,"^",t2);
                 string arg2 = "(" + operate("log(" + t1 + ")","+",d1) + ")";
 
+                //cout << arg1 << " " << arg2 << '\n';
                 return operate(arg1,"*",arg2);
             } else {
                 if (isnum(t2)) {
@@ -356,25 +356,27 @@ string derivate (Node *node) {
             }
 
         } else if (term == "cos") { // dx = -sin x
-            string exp = "-" + derivate(node->t1);
+            string exp = operate("0","-",derivate(node->t1));
             string arg = "(sin (" + t1 + "))";
             //cout << "[" << term << "] => " << t1 << '\n';
 
-            cout << "cos => exp : " << exp << "\n";
+            //cout << "cos => exp : " << exp << " = " << operate(exp, "*", arg) << "\n";
             return operate(exp, "*", arg);
         } else if (term == "sin") { // dx = cos x
             string exp = derivate(node->t1);
             string arg = "(cos (" + t1 + "))";
 
-            cout << "sin => exp : " << t1 << "\n";
-
-            cout << node->t1->token << "\n";
+            /*cout << "sin => exp : " << t1 << "\n";*/
+            /*cout << node->t1->token << "\n";*/
 
             return operate(exp, "*", arg);
         } else if (term == "tan") { // dx = 1 / (cos^2(x))
 
-        } else if (term == "log") { // dx = 1 / x
-            return operate("1","/",t1);
+
+        } else if (term == "log") { // dx = x' / x
+            string dx1 = derivate(node->t1);
+
+            return operate(dx1,"/",t1);
         } else if (term == "cot") {
 
         }
@@ -389,10 +391,10 @@ tuple<func_t, func_t, func_t> differentiate(const string& eq) {
     string pass1 = derivate(parse(pass0));
     string pass2 = derivate(parse(pass1));
 
-    cout << "\nresult : \n";
-    cout << "pass0  : " << pass0 << "\n";
-    cout << "pass1  : " << pass1 << "\n";
-    cout << "pass2  : " << pass2 << "\n";
+    /*cout << "\nresult : \n";*/
+    /*cout << "pass0  : " << pass0 << "\n";*/
+    /*cout << "pass1  : " << pass1 << "\n";*/
+    /*cout << "pass2  : " << pass2 << "\n";*/
 
     return {
         { [pass0](value_t x) { return stoc ( evaluate(parse(pass0), ctos(x))); } },
@@ -404,18 +406,15 @@ tuple<func_t, func_t, func_t> differentiate(const string& eq) {
 
 int main () {
 
-    string expression = "sin (cos(x))";
-    //expression = "log(x) * x^4";
+    string expression = "x^x^2";
+    Node *tree = parse(expression);
 
-    vector<string> token = tokenize(expression);
-    Node *node = parse(expression);
-    string dx = derivate(node);
+    //const auto [f, df_dx, d2f_dx2] = differentiate("sin(cos(x^x^2))");
+    //value_t{ 0.839472, -0.0115338 })
 
+
+    showtree(tree);
     //show(token);
-
-    cout << "\n\n";
-    // showtree(node);
-    cout << "dx : " << dx << "\n";
     //cout << operate("x^x","^","2")t
 
 

@@ -102,13 +102,10 @@ int main () {
 
 
     std::complex<double> z0 = {6,0}, z1 = {2,0}, z3 = {2,2};
-    std::complex<double> ze = {2,0};
+    std::complex<double> ze = {1,1};
+
+    auto exp = power(ze, power(ze, 2));
+    cout << exp;
 
 
-    std::cout << z0 * pow(z3, ze);
-    std::cout << z0 * power(z3, ze);
-
-    cout << "\n";
-
-    cout << 0 - epsilon;
 }
