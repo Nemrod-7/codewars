@@ -136,7 +136,8 @@ double calc2 (const string &input) {
                 if (pile == 0) break;
                 it++;
             }
-
+            string sub = join({{ng,it}});
+            cout << sub << "\n";
             // vars.push_back(calc2 ({ng,it}) * sign);
         } else if (token != ")") {
 

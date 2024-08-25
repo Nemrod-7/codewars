@@ -1,22 +1,41 @@
 #include <iostream>
-#include <vector>
-#include <string>
+#include <complex>
+#include <cmath>
 
 using namespace std;
+const double epsilon = 1e-8;
 
-void show (const std::vector<std::string> &vs) {
+double round(double x) {
+    return floor(x * 1e8) / 1e8; 
+}
+std::complex<double> round(std::complex<double> x) {
+    return { round(x.real()),round(x.imag()) };
+}
 
-    for (int i = 0; i < vs.size(); i++) {
-        std::cout << "[" << vs[i] << "]";
+std::complex<double> power(std::complex<double> x, std::complex<double> y) {
+    return  exp(y * log(x));
+}
+
+complex<double> stoc (const string &input) {
+    istringstream iss(input);
+    complex<double> zx;
+    iss >> zx;
+    return zx;
+}
+string ctos(const complex<double> &zx) {
+    ostringstream oss;
+
+    if (zx.imag() == 0) {
+        oss << zx.real();
+    } else {
+        oss << zx;
     }
-    std::cout << std::endl;
+    //zx.imag() == 0 ? oss << zx.real() : oss << zx;
+    return oss.str();
 }
+bool isnum (const string &input) {
 
-bool isfunc (const std::string &input) {
-    return input == "sin" || input == "cos" || input == "tan" || input == "log" || input == "cot";
-}
-bool isnum (const std::string &input) {
-
+    if (input.size() == 0) return false;
     int i = 0, end = input.size();
 
     if (input.front() == '(' && input.back() == ')') {
@@ -24,110 +43,72 @@ bool isnum (const std::string &input) {
     }
 
     for (; i < end; i++) {
-        if (input[i] != '.' && input[i] != ',' && !isdigit(input[i]) && input[i] != '-') {
+        if (input[i] == '-' && isdigit(input[i+1])) continue;
+        if (input[i] != '.' && input[i] != ',' && !isdigit(input[i])) {
             return false;
         }
     }
 
     return true;
 }
-bool is_operator(const string &input) {
-    return input == "*" || input == "/" || input == "+" || input == "-" || input == "^";
+
+string add(string a, string b) {
+
+    if (isnum(a) && isnum(b)) return ctos(round(stoc(a) + stoc(b)));
+    if (a == b) return "2*" + b;
+    if (a == "0") return b;
+    if (b == "0") return a;
+
+    return a + "+" + b;
 }
-int order (const string &src) {
-    if (src == "+" || src == "-") return 1;
-    if (src == "*" || src == "/") return 2;
-    if (src == "^") return 3;
+string sub(string a, string b) {
 
-    return 0;
+    if (isnum(a) && isnum(b)) return ctos(round(stoc(a) - stoc(b)));
+    if (a == b) return "0";
+    if (b == "0") return a;
+
+    return a + "-" + b;
 }
-template<class T> T getstack(vector<T> &stack) {
-    T val = stack.back();
-    stack.pop_back();
-    return val;
+string mul(string a, string b) {
+
+    if (isnum(a) && isnum(b)) return ctos(round(stoc(a) / stoc(b)));
+    if (a == b) return a + "^2"; 
+    if (a == "0" || b == "0") return "0";
+    if (a == "1") return b;
+    if (b == "1") return a;
+
+    return a + "*" + b;
+}
+string div(string a, string b) {
+
+    if (isnum(a) && isnum(b)) return ctos(round(stoc(a) / stoc(b)));
+    if (a == b) return "1";
+    if (a == "0") return "0";
+    if (b == "1") return a;
+
+    return a + "/" + b;
+}
+string power(string a, string b) {
+
+    if (isnum(a) && isnum(b)) return ctos(round(std::pow(stoc(a), stoc(b))));
+    if (a == "1" || b == "1") return a;
+    if (b == "0") return "1";
+    if (a == "0") return "0";
+    return a + "^" + b;
 }
 
-std::string join(const std::vector<std::string> &input) {
-    std::string os;
-    for (auto &it : input) os += it;
-    return os;
-}
-vector<string> tokenize (const string &input) {
-
-    vector<string> code;
-    int i = 0;
-
-    while (i < input.size()) {
-
-        if (isdigit(input[i])) {
-            string buffer;
-
-            while (isdigit(input[i]) || input[i] == '.') buffer += input[i++];
-            code.push_back(buffer);
-        } else if (isspace(input[i])) {
-            while (isspace(input[i])) i++;
-        } else if (input[i] == '+' || input[i] == '-') {
-            code.push_back(string(1,input[i++]));
-        } else if (input[i] == '*' || input[i] == '/') {
-            code.push_back(string(1,input[i++]));
-        } else if (input[i] == '^') {
-            code.push_back(string(1,input[i++]));
-        } else if (isalpha(input[i])) {
-            string buffer;
-
-            while (isalpha(input[i])) buffer += input[i++];
-            code.push_back(buffer);
-        } else {
-            code.push_back(string(1,input[i++]));
-        }
-    }
-
-    return code;
-}
 
 int main () {
 
-    string expression = "4 * log(x) + ((x^2) / (2^x))";
-    auto code = tokenize(expression);
 
-    int i = 0;
-
-    while (i < code.size()) {
-
-        if (code[i] == "x") {
-
-        }
-        else if (code[i] == "(") {
-            int j = i + 1, pile = 1;
-            string buffer;
-
-            while (true) {
-                if (code[j] == "(") pile++;
-                if (code[j] == ")") pile--;
-
-                if (pile == 0) break;
-                buffer += code[j++];
-            }
-
-            i = j + 1;
-        }
-        else if (isnum(code[i])) {
-
-        } else if (is_operator(code[i])) {
-
-        } else if (isfunc(code[i])){
-
-        } else {
-
-            cout << "invalid identfier\n";
-        }
+    std::complex<double> z0 = {6,0}, z1 = {2,0}, z3 = {2,2};
+    std::complex<double> ze = {2,0};
 
 
+    std::cout << z0 * pow(z3, ze);
+    std::cout << z0 * power(z3, ze);
 
-        i++;
-    } 
+    cout << "\n";
 
-
-
-
+    cout << 0 - epsilon;
 }
