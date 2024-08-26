@@ -9,10 +9,10 @@ const double epsilon = 1e-8;
 double round(double x) {
     return floor(x * 1e8) / 1e8;
 }
-std::complex<double> round(std::complex<double> x) {
+complex<double> round(complex<double> x) {
     return { round(x.real()),round(x.imag()) };
 }
-std::complex<double> power(std::complex<double> x, std::complex<double> y) {
+complex<double> power(complex<double> x, complex<double> y) {
     return  exp(y * log(x));
 }
 
@@ -56,6 +56,49 @@ bool is_operator (const string &input) {
     return input == "+" || input == "-" || input == "*" || input == "^" || input == "/";
 }
 
+vector<string> tokenize (const string &input) {
+
+    vector<string> code;
+    int i = 0;
+
+    while (i < input.size()) {
+
+        if (isdigit(input[i])) {
+            string buffer;
+
+            while (isdigit(input[i]) || input[i] == '.') buffer += input[i++];
+            code.push_back(buffer);
+        } else if (isspace(input[i])) {
+            while (isspace(input[i])) i++;
+        } else if (input[i] == '+') {
+            code.push_back(string(1,input[i++]));
+        } else if (input[i] == '*' || input[i] == '/') {
+            code.push_back(string(1,input[i++]));
+        } else if (input[i] == '^') {
+            code.push_back(string(1,input[i++]));
+        } else if (isalpha(input[i])) {
+            string buffer;
+
+            while (isalpha(input[i])) buffer += input[i++];
+            code.push_back(buffer);
+        } else if (input[i] == '-') {
+            if (code.size() == 0 || is_operator(code.back())) {
+                string buffer = "-";
+                i++;
+
+                while (isdigit(input[i]) || input[i] == '.') buffer += input[i++];
+                code.push_back(buffer);
+            } else {
+                code.push_back(string(1,input[i++]));
+            }
+        } else {
+            code.push_back(string(1,input[i++]));
+        }
+    }
+
+    return code;
+}
+
 string add(string a, string b) {
 
     if (isnum(a) && isnum(b)) return ctos(round(stoc(a) + stoc(b)));
@@ -94,77 +137,33 @@ string div(string a, string b) {
 }
 string power(string a, string b) {
 
-    if (isnum(a) && isnum(b)) return ctos(round(std::pow(stoc(a), stoc(b))));
+    if (isnum(a) && isnum(b)) return ctos(round(pow(stoc(a), stoc(b))));
     if (a == "1" || b == "1") return a;
     if (b == "0") return "1";
     if (a == "0") return "0";
     return a + "^" + b;
 }
 
-vector<string> tokenize (const string &input) {
-
-    vector<string> code;
-    int i = 0;
-
-    while (i < input.size()) {
-
-        if (isdigit(input[i])) {
-            string buffer;
-
-            while (isdigit(input[i]) || input[i] == '.') buffer += input[i++];
-            code.push_back(buffer);
-        } else if (isspace(input[i])) {
-            while (isspace(input[i])) i++;
-        } else if (input[i] == '+') {
-            code.push_back(string(1,input[i++]));
-        } else if (input[i] == '*' || input[i] == '/') {
-            code.push_back(string(1,input[i++]));
-        } else if (input[i] == '^') {
-            code.push_back(string(1,input[i++]));
-        } else if (isalpha(input[i])) {
-            string buffer;
-
-            while (isalpha(input[i])) buffer += input[i++];
-            code.push_back(buffer);
-        } else if (input[i] == '-') {
-            if (code.size() == 0 || is_operator(code.back())) {
-                string buffer = "-";
-                i++;
-
-                while (isdigit(input[i]) || input[i] == '.') buffer += input[i++];
-                code.push_back(buffer);
-            } else {
-                code.push_back(string(1,input[i++]));
-            }
-        }
-
-        else {
-            code.push_back(string(1,input[i++]));
-        }
-    }
-
-    return code;
-}
 
 int main () {
 
 
-    std::complex<double> z0 = {6,0}, z1 = {2,0}, z3 = {2,2};
-    std::complex<double> ze = {1,1};
+    complex<double> z0 = {6,0}, z1 = {2,0}, z3 = {2,2};
+    complex<double> ze = {1,1};
 
-    string input = "-4*x";
+    string input = "-4*x-32-(34 + 2)--4";
 
     auto code = tokenize(input);
 
-    // for (int i = 0; i < code.size(); i++) {
-    //     cout << "[" << code[i] << "]";
-    // }
+     for (int i = 0; i < code.size(); i++) {
+         cout << "[" << code[i] << "]";
+     }
     // cout << endl;
 
 
-    cout << 3.0 - (3.0 - 2.0) << "\n";
-    cout << (3.0 - 3.0) - 2.0 << "\n";
     /*
+    cout << 3.0 / (3.0 / 2.0) << "\n";
+    cout << (3.0 / 3.0) / 2.0 << "\n";
 
     Let f be a function.
     The derivative function, denoted by f′, is the function whose domain consists of those values of x such that the following limit exists:
