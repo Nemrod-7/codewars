@@ -107,7 +107,7 @@ vector<string> tokenize (const string &input) {
             code.push_back(buffer);
         } else if (isspace(input[i])) {
             while (isspace(input[i])) i++;
-        } else if (input[i] == '+' || input[i] == '-') {
+        } else if (input[i] == '+') {
             code.push_back(string(1,input[i++]));
         } else if (input[i] == '*' || input[i] == '/') {
             code.push_back(string(1,input[i++]));
@@ -118,6 +118,16 @@ vector<string> tokenize (const string &input) {
 
             while (isalpha(input[i])) buffer += input[i++];
             code.push_back(buffer);
+        } else if (input[i] == '-') {
+            if (code.size() == 0 || is_operator(code.back())) {
+                string buffer = "-";
+                i++;
+
+                while (isdigit(input[i]) || input[i] == '.') buffer += input[i++];
+                code.push_back(buffer);
+            } else {
+                code.push_back(string(1,input[i++]));
+            }
         }
 
         else {
@@ -186,7 +196,7 @@ Node *parse (const string &input) {
             tree.push_back( new Node(cell));
         } else if (is_operator(cell)) {
 
-            while(!oper.empty() && order(oper.back()) >= order(cell)) {
+            while(!oper.empty() && order(oper.back()) > order(cell)) {
                 Node *next = new Node(getstack(oper));
                 next->t2 = getstack(tree);
                 next->t1 = getstack(tree);
@@ -308,7 +318,6 @@ string derivate (Node *node) {
         string term = node->token;
         string t1 = evaluate(node->t1), t2 = evaluate(node->t2);
 
-        /*cout << "[" << t1 << "]" << term << "[" << t2 << "] => \n";*/
         /*cout << "[" << t1 << "]" << term << "[" << t2 << "] => " << result << "\n";*/
         if (term == "x") {
             return "1";
@@ -347,6 +356,8 @@ string derivate (Node *node) {
                 //cout << arg1 << " " << arg2 << '\n';
                 return operate(arg1,"*",arg2);
             } else {
+                cout << "[" << t1 << "]" << term << "[" << t2 << "] => \n";
+
                 if (isnum(t2)) {
                     string dx1 = derivate(node->t1);
                     string exp = operate (t1, "^", operate (t2, "-", "1"));
@@ -375,8 +386,8 @@ string derivate (Node *node) {
 
         } else if (term == "log") { // dx = x' / x
             string dx1 = derivate(node->t1);
-
-            return operate(dx1,"/",t1);
+            string den = "(" + t1 + ")";
+            return operate(dx1,"/", "(" + t1 + ")");
         } else if (term == "cot") {
 
         }
@@ -406,14 +417,19 @@ tuple<func_t, func_t, func_t> differentiate(const string& eq) {
 
 int main () {
 
-    string expression = "x^x^2";
+    string expression = "log(3*x)";
     Node *tree = parse(expression);
-
-    //const auto [f, df_dx, d2f_dx2] = differentiate("sin(cos(x^x^2))");
-    //value_t{ 0.839472, -0.0115338 })
-
+    string pass1 = derivate(tree);
 
     showtree(tree);
+    cout << " { " << pass1 << " } " << "\n";
+    // string pass2 = derivate(parse(pass1));
+    // const auto [f, df_dx, d2f_dx2] = differentiate("sin(cos(x^x^2))");
+    //value_t{ 0.839472, -0.0115338 })
+
+    // cout << f({1,1});
+    // cout << evaluate(tree, ctos({1,1}));
+
     //show(token);
     //cout << operate("x^x","^","2")t
 
