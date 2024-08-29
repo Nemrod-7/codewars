@@ -1,11 +1,13 @@
 #include <iostream>
 #include <vector>
-#include <complex>
 #include <cmath>
+#include <tuple>
+#include <complex>
+#include <functional>
 
 using namespace std;
 using value_t = complex<double>;
-// using func_t = function<value_t(value_t)>;
+using func_t = function<value_t(value_t)>;
 
 const double epsilon = 1e-8;
 
@@ -332,6 +334,19 @@ void showtree (const Node *now) {
         showtree (now->t2);
         cout << "]";
     }
+}
+
+tuple<func_t,func_t,func_t> differential(const string &expression) {
+
+    Node *pass0 = parse(expression);
+    Node *pass1 = derivate(pass0);
+
+
+    return {
+        [pass0](value_t x) { return stoc(evaluate(pass0, ctos(x))); },
+        [pass1](value_t x) { return stoc(evaluate(pass1, ctos(x))); },
+        [pass0](value_t x) { return stoc(evaluate(pass0, ctos(x))); },
+    };
 }
 
 int main () {
