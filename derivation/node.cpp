@@ -19,7 +19,18 @@ struct Node {
 
 };
 
-Node zero = Node{"0", nullptr}, one = Node{"1", nullptr};
+void shownode (const Node *now) {
+    cout << "[" << now->sym;
+}
+void showtree (const Node *now) {
+    if (now != nullptr) {
+        shownode (now);
+        showtree (now->t1);
+        showtree (now->t2);
+        cout << "]";
+    }
+}
+//Node zero = Node{"0", nullptr}, one = Node{"1", nullptr};
 
 double round(double x) {
     return floor(x * 1e8) / 1e8;
@@ -279,61 +290,52 @@ string evaluate (Node *node, string value = "") {
         } else if (term == "cot") { //cot(x) = cos(x)/sin(x) or cot(x) = 1 / tan(x)
             return ctos(round( cos(val) / sin(val) ));
         }
-    } 
+    }
 
     return t1 + term + t2;
 }
 Node *derivate(Node *curr) {
 
-    if (curr != nullptr) {
-        string term = curr->sym;
-        Node *t1 = curr->t1, *t2 = curr->t2;
+    //if (curr != nullptr) {
+    string term = curr->sym;
+    Node *t1 = curr->t1, *t2 = curr->t2;
 
-        if (term == "x") {
-            return &one;
-        } else if (isnum(term)) {
-            return &zero;
-        } else if (term == "+") {
-            return add(derivate(t1), derivate(t2));
-        } else if (term == "-") {
-            return sub(derivate(t1), derivate(t2));
-        } else if (term == "*") {
-            return add(mul(t1,derivate(t2)), mul(derivate(t1),t2));
-        } else if (term == "/") {
-            return div( sub(mul(derivate(t1),t2), mul(t1,derivate(t2))), mul(t2,t2)) ;
-        } else if (term == "^") {
-            return exp( mul(t2,t1), sub(t2, &one)) ;
-            //Node *a1 = exp(t1, t2);
-            // Node *inner = add(div(t2,t1), mul(d2,new Node("log", t1)));
-        } else if (term == "cos") {
-            return sub(&zero, new Node("sin", t1));
-        } else if (term == "sin") {
-            return new Node("cos", t1);
-        } else if (term == "tan") { // dx = 1 / (cos(x))^2
-            return div(derivate(t1), exp(new Node("cos", t1),new Node("2")) );
-        } else if (term == "log") { // dx = x' / x
-            return div(derivate(t1),t1);
-        } else if (term == "cot") {
+    if (term == "x") {
+        return new Node("1");
+    } else if (isnum(term)) {
+        return new Node("0");
+    } else if (term == "+") {
+        return add(derivate(t1), derivate(t2));
+    } else if (term == "-") {
+        return sub(derivate(t1), derivate(t2));
+    } else if (term == "*") {
+        return add(mul(t1,derivate(t2)), mul(derivate(t1),t2));
+    } else if (term == "/") {
+        return div( sub(mul(derivate(t1),t2), mul(t1,derivate(t2))), mul(t2,t2)) ;
+    } else if (term == "^") {
+        // return exp( mul(t2,t1), sub(t2, new Node("1"))) ;
+        Node *a1 = exp(t1, t2);
+        Node *inner = add(div(t2,t1), mul(derivate(t2), new Node("log", t1)));
+        // shownode(derivate(t2));
 
-        }
-        else {
+        return mul(a1,inner);
+    } else if (term == "cos") {
+        return sub(new Node("0"), new Node("sin", t1));
+    } else if (term == "sin") {
+        return new Node("cos", t1);
+    } else if (term == "tan") { // dx = 1 / (cos(x))^2
+        return div(derivate(t1), exp(new Node("cos", t1),new Node("2")) );
+    } else if (term == "log") { // dx = x' / x
+        return div(derivate(t1),t1);
+    } else if (term == "cot") {
 
-        }
     }
+    else {
+
+    }
+    //}
 
     return nullptr;
-}
-
-void shownode (const Node *now) {
-    cout << "[" << now->sym;
-}
-void showtree (const Node *now) {
-    if (now != nullptr) {
-        shownode (now);
-        showtree (now->t1);
-        showtree (now->t2);
-        cout << "]";
-    }
 }
 
 tuple<func_t,func_t,func_t> differential(const string &expression) {
@@ -344,22 +346,26 @@ tuple<func_t,func_t,func_t> differential(const string &expression) {
 
     return {
         [pass0](value_t x) { return stoc(evaluate(pass0, ctos(x))); },
-        [pass1](value_t x) { return stoc(evaluate(pass1, ctos(x))); },
-        [pass0](value_t x) { return stoc(evaluate(pass0, ctos(x))); },
+            [pass1](value_t x) { return stoc(evaluate(pass1, ctos(x))); },
+            [pass0](value_t x) { return stoc(evaluate(pass0, ctos(x))); },
     };
 }
 
 int main () {
 
-    string input = " 2 * x^3";
-    // Node *dx = derivate(parse(input));
-    cout << evaluate(parse(input), "(2,2)");
+    string input = "x^x";
+    Node *pass0 = parse(input);
+    Node *pass1 = derivate(pass0);
 
-    // showtree(dx);
+    showtree(pass1);
+    // cout << "\n" << evaluate(pass1);
+    //cout << evaluate(parse(input), "(2,2)");
 
 
 
-    // delete dx;
+
+    delete pass1;
+
 
     /*
        Let f be a function.
