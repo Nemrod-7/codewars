@@ -9,8 +9,14 @@ using namespace std;
 using value_t = complex<double>;
 using func_t = function<value_t(value_t)>;
 
+// Let f be a function.
+// The derivative function, denoted by f′, is the function whose domain consists of those values of x such that the following limit exists:
+//
+// f′(x) = lim h→0 of (f(x + h) − f(x)) / h.
+//
+// pow derivation : x^y => x^y . (y/x + y'.log(x))
+//
 
-//const double epsilon = 1e-8;
 struct node {
     string sym;
     node *t1, *t2;
@@ -19,18 +25,18 @@ struct node {
 
 };
 
-void shownode (const node *now) {
-    cout << "[" << now->sym;
-}
-void showtree (const node *now) {
-    if (now != nullptr) {
-        shownode (now);
-        showtree (now->t1);
-        showtree (now->t2);
-        cout << "]";
+void showtree(const node *node, bool isLeft = false, const string &prefix = "") {
+    if (node != nullptr) {
+        std::cout << prefix;
+
+        std::cout << (isLeft ? "├─" : "└─" );
+        // print the value of the node
+        std::cout << node->sym << std::endl;
+        // enter the next tree level - left and right branch
+        showtree(node->t1, true, prefix + (isLeft ? "│  " : "   "));
+        showtree(node->t2, false, prefix + (isLeft ? "│  " : "   "));
     }
 }
-//node zero = node{"0", nullptr}, one = node{"1", nullptr};
 
 double round(double x) {
     return floor(x * 1e8) / 1e8;
@@ -71,7 +77,10 @@ template<class T> T getstack (vector<T> &stack) {
     stack.pop_back();
     return val;
 }
-bool isfunc (const string &input) {
+
+bool is_term (const string &sym) { return sym == "+" || sym == "-"; }
+bool is_fact (const string &sym) { return sym == "*" || sym == "/"; }
+bool is_func (const string &input) {
     return input == "sin" || input == "cos" || input == "tan" || input == "log" || input == "cot";
 }
 bool is_number (const string &input) {
@@ -93,8 +102,9 @@ bool is_number (const string &input) {
     return true;
 }
 bool is_operator (const string &input) {
-    return input == "+" || input == "-" || input == "*" || input == "^" || input == "/";
+    return is_fact(input) || is_term(input) || input == "^";
 }
+
 string parenthesis(vector<string>::iterator &it) {
 
     it += 1;
@@ -195,7 +205,7 @@ node *sub(node *a, node *b) {
 node *mul(node *a, node *b) {
 
     if (is_number(a->sym) && is_number(b->sym)) return new node(ctos(round(stoc(a->sym) / stoc(b->sym))));
-    if (a->sym == b->sym) return new node ("^",a, new node("2"));
+    //if (a->sym == b->sym) return new node ("^",a, new node("2"));
     if (a->sym == "0" || b->sym == "0") return new node ("0");
     if (a->sym == "1") return b;
     if (b->sym == "1") return a;
@@ -237,7 +247,7 @@ node *parse (const string &input) {
             }
 
             oper.push_back(cell);
-        } else if (isfunc(cell)) {
+        } else if (is_func(cell)) {
             it++;
             node *next = new node(cell);
             next->t1 = parse(parenthesis(it));
@@ -266,11 +276,11 @@ string evaluate (node *node, string value = "") {
 
     string term = node->sym;
     string t1 = evaluate(node->t1, value), t2 = evaluate(node->t2, value);
-    // cout << "[" << t1 << "]" << term << "[" << t2 << "]\n";
 
     if (term == "x") {
         return value == "" ? term : value;
     } else if (is_operator(term)) {
+        //cout << "[" << t1 << "]" << term << "[" << t2 << "]\n";
         if (is_number(t1) && is_number(t2)) {
             return operate(t1,term,t2);
         }
@@ -297,6 +307,7 @@ node *derivate(node *curr) {
     //if (curr != nullptr) {
     string term = curr->sym;
     node *t1 = curr->t1, *t2 = curr->t2;
+    string e1 = evaluate(curr->t1), e2 = evaluate(curr->t2);
 
     if (term == "x") {
         return new node("1");
@@ -305,17 +316,20 @@ node *derivate(node *curr) {
     } else if (term == "+") {
         return add(derivate(t1), derivate(t2));
     } else if (term == "-") {
+        //cout << "-" << endl;
         return sub(derivate(t1), derivate(t2));
     } else if (term == "*") {
-        return add(mul(t1,derivate(t2)), mul(derivate(t1),t2));
+        node *a1 = mul(t1,derivate(t2)), *a2 = mul(derivate(t1),t2);
+        cout << "[" << evaluate(a1) << "](" << term << ")[" << evaluate(a2) << "]\n";
+        return add(a1, a2);
     } else if (term == "/") {
-        return div( sub(mul(derivate(t1),t2), mul(t1,derivate(t2))), mul(t2,t2)) ;
+        node *num = sub(mul(derivate(t1),t2),mul(t1,derivate(t2)));
+        node *den = mul(t2,t2);
+        //cout << "[" << evaluate(d1) << "](" << term << ")[" << evaluate(d2) << "]\n";
+        return div(num, den) ;
     } else if (term == "^") {
-        // return exp( mul(t2,t1), sub(t2, new node("1"))) ;
         node *a1 = exp(t1, t2);
         node *inner = add(div(t2,t1), mul(derivate(t2), new node("log", t1)));
-        // shownode(derivate(t2));
-
         return mul(a1,inner);
     } else if (term == "cos") {
         return sub(new node("0"), new node("sin", t1));
@@ -340,7 +354,7 @@ tuple<func_t,func_t,func_t> differential(const string &expression) {
 
     node *pass0 = parse(expression);
     node *pass1 = derivate(pass0);
-
+    node *pass2 = derivate(pass1);
 
     return {
         [pass0](value_t x) { return stoc(evaluate(pass0, ctos(x))); },
@@ -350,46 +364,44 @@ tuple<func_t,func_t,func_t> differential(const string &expression) {
 }
 string traverse (node *curr) {
 
-		if (curr != nullptr) {
-				string symbol = curr->sym;
-				string a = traverse(curr->t1), b = traverse(curr->t2);
+    if (curr != nullptr) {
+        string symbol = curr->sym;
+        string a = traverse(curr->t1), b = traverse(curr->t2);
 
-				cout << "[" << a << "](" << symbol << ")[" << b << "]\n";
+        if (is_operator(symbol)) {
+            cout << "[" << a << "](" << symbol << ")[" << b << "]\n";
+        }
 
-				return a + symbol + b;
-		}
+        return a + symbol + b;
+    }
 
-		return "";
+    return "";
 }
+
 
 int main () {
 
     string input = "2*x^3";
-    node *pass0 = parse(input);
-    node *pass1 = derivate(pass0);
-    node *pass2 = derivate(pass1);
 
-    traverse(pass2);
-    // cout << "\n" << evaluate(pass1);
-    //cout << evaluate(parse(input), "(2,2)");
+    //node *pass0 = parse(input);
+    //node *pass1 = derivate(pass0);
+    //node *pass2 = derivate(pass1);
+    node *pass1 = new node ("*",
+                new node("^", new node("x"), new node("3")),
+                new node("/", new node("3"), new node("x")));
 
+    node *pass2 = new node ("*",
+                new node("/", new node("3"), new node("x")),
+                new node("^", new node("x"), new node("3")));
 
+    node *pass3 = derivate(pass1);
+    cout << endl;
+    node *pass4 = derivate(pass2);
 
+    showtree(pass3);
+    showtree(pass4);
 
-    delete pass1;
-
-
-    /*
-       Let f be a function.
-       The derivative function, denoted by f′, is the function whose domain consists of those values of x such that the following limit exists:
-
-			 f′(x) = lim h→0 of (f(x + h) − f(x)) / h.
-
-simplified  : x^y => y.x^(y-1)
-generalized : x^y => x^y . (y/x + y'.log(x))
-
-x^(sin(x)) => x^(sin(x)) . log(x)
-
-*/
+    cout << evaluate(pass3, "(2,2)") << "\n";
+    cout << evaluate(pass4, "(2,2)") << "\n";
 
 }
