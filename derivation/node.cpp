@@ -74,7 +74,7 @@ template<class T> T getstack (vector<T> &stack) {
 bool isfunc (const string &input) {
     return input == "sin" || input == "cos" || input == "tan" || input == "log" || input == "cot";
 }
-bool isnum (const string &input) {
+bool is_number (const string &input) {
 
     if (input.size() == 0) return false;
     int i = 0, end = input.size();
@@ -167,7 +167,7 @@ string operate (const string &t1, const string &oper, const string &t2) {
 }
 node *div(node *a, node *b) {
 
-    if (isnum(a->sym) && isnum(b->sym)) return new node(ctos(round(stoc(a->sym) / stoc(b->sym))));
+    if (is_number(a->sym) && is_number(b->sym)) return new node(ctos(round(stoc(a->sym) / stoc(b->sym))));
     if (a->sym == b->sym) return new node ("1");
     if (a->sym == "0") return new node ("0");
     if (b->sym == "1") return a;
@@ -176,7 +176,7 @@ node *div(node *a, node *b) {
 }
 node *add(node *a, node *b) {
 
-    if (isnum(a->sym) && isnum(b->sym)) return new node(ctos(round(stoc(a->sym) + stoc(b->sym))));
+    if (is_number(a->sym) && is_number(b->sym)) return new node(ctos(round(stoc(a->sym) + stoc(b->sym))));
     if (a->sym == b->sym) return new node ("*",new node("2"),b);
     if (a->sym == "0") return b;
     if (b->sym == "0") return a;
@@ -185,7 +185,7 @@ node *add(node *a, node *b) {
 }
 node *sub(node *a, node *b) {
 
-    if (isnum(a->sym) && isnum(b->sym)) return new node(ctos(round(stoc(a->sym) - stoc(b->sym))));
+    if (is_number(a->sym) && is_number(b->sym)) return new node(ctos(round(stoc(a->sym) - stoc(b->sym))));
 
     if (a->sym == b->sym) return new node("0");
     if (b->sym == "0") return a;
@@ -194,7 +194,7 @@ node *sub(node *a, node *b) {
 }
 node *mul(node *a, node *b) {
 
-    if (isnum(a->sym) && isnum(b->sym)) return new node(ctos(round(stoc(a->sym) / stoc(b->sym))));
+    if (is_number(a->sym) && is_number(b->sym)) return new node(ctos(round(stoc(a->sym) / stoc(b->sym))));
     if (a->sym == b->sym) return new node ("^",a, new node("2"));
     if (a->sym == "0" || b->sym == "0") return new node ("0");
     if (a->sym == "1") return b;
@@ -204,7 +204,7 @@ node *mul(node *a, node *b) {
 }
 node *exp(node *a, node *b) {
 
-    if (isnum(a->sym) && isnum(b->sym))
+    if (is_number(a->sym) && is_number(b->sym))
         return new node(ctos(round(pow(stoc(a->sym), stoc(b->sym)))));
     if (a->sym == "1" || b->sym == "1") return a;
     if (b->sym == "0") return new node("1");
@@ -225,7 +225,7 @@ node *parse (const string &input) {
             tree.push_back( new node(cell));
         } else if (cell == "(") {
             tree.push_back(parse(parenthesis(it)));
-        } else if (isnum(cell)) {
+        } else if (is_number(cell)) {
             tree.push_back( new node(cell));
         } else if (is_operator(cell)) {
 
@@ -271,10 +271,10 @@ string evaluate (node *node, string value = "") {
     if (term == "x") {
         return value == "" ? term : value;
     } else if (is_operator(term)) {
-        if (isnum(t1) && isnum(t2)) {
+        if (is_number(t1) && is_number(t2)) {
             return operate(t1,term,t2);
         }
-    } else if (isnum(t1)) {
+    } else if (is_number(t1)) {
         value_t val = stoc(t1);
 
         if (term == "cos") {
@@ -300,7 +300,7 @@ node *derivate(node *curr) {
 
     if (term == "x") {
         return new node("1");
-    } else if (isnum(term)) {
+    } else if (is_number(term)) {
         return new node("0");
     } else if (term == "+") {
         return add(derivate(t1), derivate(t2));
@@ -355,7 +355,7 @@ string traverse (node *curr) {
 				string a = traverse(curr->t1), b = traverse(curr->t2);
 
 				cout << "[" << a << "](" << symbol << ")[" << b << "]\n";
-				
+
 				return a + symbol + b;
 		}
 
@@ -386,7 +386,7 @@ int main () {
 			 f′(x) = lim h→0 of (f(x + h) − f(x)) / h.
 
 simplified  : x^y => y.x^(y-1)
-generalized : x^y => x^y . (y/x + y'.log(x)) 
+generalized : x^y => x^y . (y/x + y'.log(x))
 
 x^(sin(x)) => x^(sin(x)) . log(x)
 
