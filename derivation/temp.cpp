@@ -49,47 +49,47 @@ bool is_operator (const string &input) {
 
 node *div(node *a, node *b) {
 
-    if (is_number(a->sym) && is_number(b->sym)) return new node(to_string(stoi(a->sym) / stoi(b->sym)));
     if (a->sym == b->sym) return new node ("1");
     if (a->sym == "0") return new node ("0");
     if (b->sym == "1") return a;
+    if (is_number(a->sym) && is_number(b->sym)) return new node(to_string(stoi(a->sym) / stoi(b->sym)));
 
     return new node ("/",a,b);
 }
 node *add(node *a, node *b) {
 
-    if (is_number(a->sym) && is_number(b->sym)) return new node(to_string(stoi(a->sym) + stoi(b->sym)));
-    if (a->sym == b->sym) return new node ("*",new node("2"),b);
+    // if (a->sym == b->sym && !is_operator(a->sym)) return new node ("*",new node("2"), a);
     if (a->sym == "0") return b;
     if (b->sym == "0") return a;
+    if (is_number(a->sym) && is_number(b->sym)) return new node(to_string(stoi(a->sym) + stoi(b->sym)));
 
     return new node ("+",a,b);
 }
 node *sub(node *a, node *b) {
 
-    if (is_number(a->sym) && is_number(b->sym)) return new node(to_string(stoi(a->sym) - stoi(b->sym)));
-
     if (a->sym == b->sym) return new node("0");
     if (b->sym == "0") return a;
+    if (is_number(a->sym) && is_number(b->sym)) return new node(to_string(stoi(a->sym) - stoi(b->sym)));
 
     return new node ("-",a,b);
 }
 node *mul(node *a, node *b) {
 
-    if (is_number(a->sym) && is_number(b->sym)) return new node(to_string(stoi(a->sym) * stoi(b->sym)));
-    if (a->sym == b->sym) return new node ("^",a, new node("2"));
+    // if (a->sym == b->sym) return new node ("*",a, b);
     if (a->sym == "0" || b->sym == "0") return new node ("0");
     if (a->sym == "1") return b;
     if (b->sym == "1") return a;
+    if (is_number(a->sym) && is_number(b->sym)) return new node(to_string(stoi(a->sym) * stoi(b->sym)));
 
     return new node ("*",a,b);
 }
 node *exp(node *a, node *b) {
 
-    if (is_number(a->sym) && is_number(b->sym)) return new node(to_string(pow(stoi(a->sym), stoi(b->sym))));
     if (a->sym == "1" || b->sym == "1") return a;
     if (b->sym == "0") return new node("1");
     if (a->sym == "0") return new node("0");
+    if (is_number(a->sym) && is_number(b->sym)) return new node(to_string(pow(stoi(a->sym), stoi(b->sym))));
+
     return new node("^",a,b);
 }
 
@@ -113,7 +113,7 @@ node *simplify(node *curr) {
                     *curr = *new node(t1->sym, mul(curr->t2, curr->t1->t1), curr->t1->t2);
                 } else if (is_number(t1->t2->sym)) {
                     *curr = *new node(t1->sym, mul(curr->t2, curr->t1->t1), curr->t1->t2);
-                } 
+                }
 
             } else if (is_operator(t1->sym) && is_operator(t2->sym)) {
                 string op1 = t1->sym, op2 = t2->sym;
@@ -125,7 +125,14 @@ node *simplify(node *curr) {
                         *t1 = *num;
                         *t2 = *exp(base, sub(ex, new node("1")));
                     }
+                } else if (op1 == "^" && op2 == "/") {
 
+                    node *num = t2->t1, *den = t2->t2, *base = t1->t1, *ex = t1->t2;
+
+                    if (den->sym == base->sym) {
+                        *t1 = *num;
+                        *t2 = *exp(base, sub(ex, new node("1")));
+                    }
                 }
             }
 
@@ -137,31 +144,13 @@ node *simplify(node *curr) {
 
 int main () {
 
-    node *pass1 = new node("*", new node("2"),
-            new node ("*",
-                new node("^", new node("x"), new node("3")),
-                new node("/", new node("3"), new node("x"))
-                )
-            );
+    node *t1 = new node("*", new node("x"), new node("3"));
+    node *t2 = new node("*", new node("4"), new node("5"));
+
+    // simplify(pass1);
 
 
-    // 4 * x / 4
-    // 4 * 5 / x
-    // 4 * x * 2
-    // 4 * 2 * x
-    //
-    // x/3 * x^x
-    // 3/x * x^x
-    //
-    // 3/x * x*5
-    // x/3 * x*5
+    cout << evaluate(add(t1,t2)) << "\n";
 
-
-    simplify(pass1);
-
-    cout << "\n";
-    cout << evaluate(pass1) << "\n";
-
-    delete pass1;
     cout << "end";
 }
