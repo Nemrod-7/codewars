@@ -17,18 +17,17 @@
 //  <func_call>  ::= <func_name> "(" <expression> ")"
 //  <basic>      ::= <constant> | <variable> | <func_call> | ( "(" <expression> ")" )
 
-//    con : cst   => 0
-//    lin : x     => 1
-//    add : a + b => a' + b'
-//    min : a - b => a' - b'
-//    mul : a * b => a.b' + a'.b
-//    div : a / b => (a'* b − b'* a) / (b * b)
-//    pow : x^a   => a.x^(a - 1)
-//    exp : a^x   => a^x . ln (a)
-//    log : ln(x) => x' / x
-//    sin : sin x => cos x
-//    cos : cos x => -sin x
-//    tan : tan x => 1 / (cos²(x))
+//  con : cst   => 0
+//  lin : x     => 1
+//  add : a + b => a' + b'
+//  min : a - b => a' - b'
+//  mul : a * b => a.b' + a'.b
+//  div : a / b => (a'* b − b'* a) / (b * b)
+//  exp : x^y   => x^y . (x'.(y/x) + y'.log(x))
+//  log : ln(x) => x' / x
+//  sin : sin x => cos x
+//  cos : cos x => -sin x
+//  tan : tan x => x' / (cos²(x))
 
 using namespace std;
 

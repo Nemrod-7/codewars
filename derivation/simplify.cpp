@@ -94,10 +94,10 @@ node *exp(node *a, node *b) {
     return new node("^",a,b);
 }
 
-node *simplify(node *curr) {
+node *simplify_proto(node *curr) {
 
     if (curr != nullptr) {
-        node *a = simplify(curr->t1), *b = simplify(curr->t2);
+        node *a = simplify_proto(curr->t1), *b = simplify_proto(curr->t2);
 
         if (curr->sym == "*") {
 
@@ -170,6 +170,31 @@ void showvect(const vector<string> &ve) {
     cout << endl;
 }
 
+void simplify(node *curr) {
+
+    if (curr != nullptr) {
+        simplify(curr->t1), simplify(curr->t2);
+
+        if (curr->sym == "*") {
+            node *a = curr->t1, *b = curr->t2; 
+
+            if (is_number(a->sym)) {
+                if (b->sym == "*" && is_number(b->t1->sym)) {                    
+                    *curr = *new node("*", mul(a, b->t1), b->t2);
+                }
+
+            } else if (a->sym == "/" && b->sym == "^") {
+                node *num = a->t1, *den = a->t2, *base = b->t1, *ex = b->t2;
+
+                if (den->sym == base->sym) {
+                    *a = *num;
+                    *b = *exp(base, sub(ex,new node("1")));
+                }
+            }
+        } 
+    }
+}
+
 int main () {
 
     node *tree = new node("*", new node("2"),
@@ -181,11 +206,11 @@ int main () {
     //vector<pair<string,string>> args;
     //cout << getarg(t2);
 
+
     simplify(tree);
     // showvect(num);
     // showvect(den);
 
-    //simplify(pass1);
 
     cout << evaluate(tree) << "\n";
 

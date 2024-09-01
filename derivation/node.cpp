@@ -4,6 +4,7 @@
 #include <tuple>
 #include <complex>
 #include <functional>
+// #include <tests>
 
 using namespace std;
 using value_t = complex<double>;
@@ -14,8 +15,17 @@ using func_t = function<value_t(value_t)>;
 // such that the following limit exists:
 // f′(x) = lim h→0 of (f(x + h) − f(x)) / h.
 //
-// ex : pow derivation : x^y => x^y . (y/x + y'.log(x))
-
+// con : cst   => 0
+// lin : x     => 1
+// add : a + b => a' + b'
+// min : a - b => a' - b'
+// mul : a * b => a.b' + a'.b
+// div : a / b => (a'* b − b'* a) / (b * b)
+// exp : x^y   => x^y . (x'.(y/x) + y'.log(x))
+// log : ln(x) => x' / x
+// sin : sin x => cos x
+// cos : cos x => -sin x
+// tan : tan x => x' / (cos²(x))
 
 struct node {
     string sym;
@@ -296,34 +306,27 @@ node *derivate(node *curr) {
 
     string term = curr->sym;
     node *t1 = curr->t1, *t2 = curr->t2;
-    // string e1 = evaluate(curr->t1), e2 = evaluate(curr->t2);
+
     if (term == "x") {
         return new node("1");
     } else if (is_number(term)) {
         return new node("0");
     } else if (term == "+") {
-        // node *d1 = derivate(t1), *d2 = derivate(t2);
-        // cout << "[" << evaluate(d1) << "](" << term << ")[" << evaluate(d2) << "]\n";
         return add(derivate(t1), derivate(t2));
     } else if (term == "-") {
-        //cout << "-" << endl;
         return sub(derivate(t1), derivate(t2));
     } else if (term == "*") {
         node *a1 = mul(t1,derivate(t2)), *a2 = mul(derivate(t1),t2);
-        // cout << "[" << evaluate(a1) << "](" << term << ")[" << evaluate(a2) << "]\n";
-        // cout << a1->sym << " " << a2->sym << "\n";
-        // cout << "[" << evaluate(add(a1,a2)) << "]\n";
         return add(a1, a2);
     } else if (term == "/") {
         node *num = sub(mul(derivate(t1),t2),mul(t1,derivate(t2)));
         node *den = mul(t2,t2);
-        // cout << "[" << evaluate(d1) << "](" << term << ")[" << evaluate(d2) << "]\n";
-        // cout << "[" << evaluate(num) << "](" << term << ")[" << evaluate(den) << "]\n";
         return div(num, den) ;
     } else if (term == "^") {
-        node *a1 = exp(t1, t2);
-        node *inner = add(div(t2,t1), mul(derivate(t2), new node("log", t1)));
-        return mul(a1,inner);
+        node *outer = exp(t1, t2);
+        node *inner = add( mul( derivate(t1), div(t2,t1) ), mul( derivate(t2), new node("log", t1) ));
+        //cout << "[" << evaluate(inner) << "](" << "*" << ")[" << evaluate(outer) << "]\n";
+        return mul(inner,outer);
     } else if (term == "cos") {
         return sub(new node("0"), new node("sin", t1));
     } else if (term == "sin") {
@@ -351,23 +354,6 @@ tuple<func_t,func_t,func_t> differential(const string &expression) {
             [pass0](value_t x) { return stoc(evaluate(pass0, ctos(x))); },
     };
 }
-string traverse (node *curr) {
-
-    if (curr != nullptr) {
-        string symbol = curr->sym;
-        string a = traverse(curr->t1), b = traverse(curr->t2);
-
-        if (is_operator(symbol)) {
-            // cout << "[" << a << "](" << symbol << ")[" << b << "]\n";
-        } else {
-            cout << "[" << symbol << "]";
-        }
-
-        return a + symbol + b;
-    }
-
-    return "";
-}
 
 int main () {
 
@@ -376,11 +362,13 @@ int main () {
     node *pass0 = parse(input);
     node *pass1 = derivate(pass0);
     node *pass2 = derivate(pass1);
-    // showtree(pass3);
+
+     showtree(pass2);
+
     // showtree(pass4);
-    // cout << evaluate(pass0, "(2,2)") << "\n";
-    // cout << evaluate(pass1, "(2,2)") << "\n";
-    // cout << evaluate(pass2, "(2,2)") << "\n";
+     //cout << evaluate(pass1) << "\n";
+     /*cout << evaluate(pass1, "(2,2)") << "\n";*/
+     /*cout << evaluate(pass2, "(2,2)") << "\n";*/
 
 
   cout << "\nend\n";
