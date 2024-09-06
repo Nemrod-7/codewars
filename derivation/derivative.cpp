@@ -1,66 +1,91 @@
 #include <iostream>
-#include <string>
 #include <vector>
+#include <cmath>
+#include <tuple>
 #include <complex>
 #include <functional>
-#include <cmath>
-//#include "tests"
-
-//  <variable>  ::= "x"
-//  <constant>  ::= [0-9]+(.[0-9]+)?
-//  <func_name> ::= "sin" | "cos" | "tan" | "cot" | "log"
-//
-//  <factor>     ::= <basic> ( "^" <basic> )*
-//  <expression> ::= <term> ( "+" | "-"  <term> )*
-//  <term>       ::= <factor> ( "*" | "/"  <factor> )*
-//
-//  <func_call>  ::= <func_name> "(" <expression> ")"
-//  <basic>      ::= <constant> | <variable> | <func_call> | ( "(" <expression> ")" )
-
-//  con : cst   => 0
-//  lin : x     => 1
-//  add : a + b => a' + b'
-//  min : a - b => a' - b'
-//  mul : a * b => a.b' + a'.b
-//  div : a / b => (a'* b − b'* a) / (b * b)
-//  exp : x^y   => x^y . (x'.(y/x) + y'.log(x))
-//  log : ln(x) => x' / x
-//  sin : sin x => cos x
-//  cos : cos x => -sin x
-//  tan : tan x => x' / (cos²(x))
+// #include <tests>
 
 using namespace std;
-
 using value_t = complex<double>;
 using func_t = function<value_t(value_t)>;
 
-struct Node {
-    string token;
-    Node *t1, *t2;
+// Let f be a function.
+// The derivative function, denoted by f′, is the function whose domain consists of those values of x
+// such that the following limit exists:
+// f′(x) = lim h→0 of (f(x + h) − f(x)) / h.
+//
+// con : cst   => 0
+// lin : x     => 1
+// add : a + b => a' + b'
+// min : a - b => a' - b'
+// mul : a * b => a.b' + a'.b
+// div : a / b => (a'* b − b'* a) / (b * b)
+// exp : x^y   => x^y . (x'.(y/x) + y'.log(x))
+// log : ln(x) => x' / x
+// sin : sin x => cos x
+// cos : cos x => -sin x
+// tan : tan x => x' / (cos(x))^2
+// cot = cot x = -1 / (sin(x))^2
 
-    Node (const string &label = "") : token (label), t1 (nullptr), t2 (nullptr) {}
+struct node {
+    string sym;
+    node *t1, *t2;
+
+    node (const string &label = "", node *t1 = nullptr, node *t2 = nullptr) : sym (label), t1 (t1), t2 (t2) {}
 };
 
-void show (const vector<string> &vs) {
+void showtree(const node *node, bool isLeft = false, const string &prefix = "") {
+    if (node != nullptr) {
+        cout << prefix;
+        cout << (isLeft ? "├─" : "└─" );
+        cout << "[" << node->sym << "]" << endl;
 
-    for (int i = 0; i < vs.size(); i++) {
-        cout << "[" << vs[i] << "]";
-    }
-    cout << endl;
-}
-void shownode (const Node *now) {
-    cout << "[" << now->token;
-}
-void showtree (const Node *now) {
-    if (now != nullptr) {
-        shownode (now);
-        showtree (now->t1);
-        showtree (now->t2);
-        cout << "]";
+        showtree(node->t1, true, prefix + (isLeft ? "│  " : "   "));
+        showtree(node->t2, false, prefix + (isLeft ? "│  " : "   "));
     }
 }
 
-bool isnum (const string &input) {
+double round(double x) {
+    return floor(x * 1e8) / 1e8;
+}
+complex<double> round(complex<double> x) {
+    return { round(x.real()),round(x.imag()) };
+}
+complex<double> power(complex<double> x, complex<double> y) {
+    return  exp(y * log(x));
+}
+
+complex<double> stoc (const string &input) {
+    istringstream iss(input);
+    complex<double> zx;
+    iss >> zx;
+    return zx;
+}
+string ctos(const complex<double> &zx) {
+    ostringstream oss;
+    zx.imag() == 0 ? oss << zx.real() : oss << zx;
+    return oss.str();
+}
+
+int order (const string &src) {
+    if (src == "+" || src == "-") return 1;
+    if (src == "*" || src == "/") return 2;
+    if (src == "^") return 3;
+    return 0;
+}
+template<class T> T getstack (vector<T> &stack) {
+    T val = stack.back();
+    stack.pop_back();
+    return val;
+}
+
+bool is_term (const string &sym) { return sym == "+" || sym == "-"; }
+bool is_fact (const string &sym) { return sym == "*" || sym == "/"; }
+bool is_func (const string &input) {
+    return input == "sin" || input == "cos" || input == "tan" || input == "log" || input == "cot";
+}
+bool is_number (const string &input) {
 
     if (input.size() == 0) return false;
     int i = 0, end = input.size();
@@ -78,20 +103,25 @@ bool isnum (const string &input) {
 
     return true;
 }
-bool isfunc (const string &input) {
-    return input == "sin" || input == "cos" || input == "tan" || input == "log" || input == "cot";
-}
 bool is_operator (const string &input) {
-    return input == "+" || input == "-" || input == "*" || input == "^" || input == "/";
-}
-int order (const string &src) {
-    if (src == "+" || src == "-") return 1;
-    if (src == "*" || src == "/") return 2;
-    if (src == "^") return 3;
-    return 0;
-
+    return is_fact(input) || is_term(input) || input == "^";
 }
 
+string parenthesis(vector<string>::iterator &it) {
+
+    it += 1;
+    int pile = 1;
+    string sub ;
+
+    while (true) {
+        pile += (*it == "(") - (*it == ")");
+        if (pile == 0) break;
+        sub += *it++;
+    }
+
+    // it++;
+    return sub;
+}
 vector<string> tokenize (const string &input) {
 
     vector<string> code;
@@ -127,85 +157,100 @@ vector<string> tokenize (const string &input) {
             } else {
                 code.push_back(string(1,input[i++]));
             }
-        }
-
-        else {
+        } else {
             code.push_back(string(1,input[i++]));
         }
     }
 
     return code;
 }
-string parenthesis(vector<string>::iterator &it) {
 
-    it += 1;
-    int pile = 1;
-    string sub ;
+string operate (const string &t1, const string &oper, const string &t2) {
 
-    while (true) {
-        pile += (*it == "(") - (*it == ")");
-        if (pile == 0) break;
-        sub += *it++;
+    switch (oper[0]) {
+        case '+' : return ctos (round(stoc(t1) + stoc(t2))) ; break;
+        case '-' : return ctos (round(stoc(t1) - stoc(t2))) ; break;
+        case '*' : return ctos (round(stoc(t1) * stoc(t2))) ; break;
+        case '/' : return ctos (round(stoc(t1) / stoc(t2))) ; break;
+        case '^' : return ctos (round(pow(stoc(t1), stoc(t2)))) ; break;
     }
 
-    // it++;
-    return sub;
+    return t1 + oper + t2;
 }
-template<class T> T getstack (vector<T> &stack) {
-    T val = stack.back();
-    stack.pop_back();
-    return val;
+node *div(node *a, node *b) {
+
+    if (a->sym == b->sym) return new node ("1");
+    if (a->sym == "0") return new node ("0");
+    if (b->sym == "1") return a;
+    if (is_number(a->sym) && is_number(b->sym)) return new node(ctos(round(stoc(a->sym) / stoc(b->sym))));
+
+    return new node ("/",a,b);
+}
+node *add(node *a, node *b) {
+
+    // if (a->sym == b->sym && !is_operator(a->sym)) return new node ("*",new node("2"), a);
+    if (a->sym == "0") return b;
+    if (b->sym == "0") return a;
+    if (is_number(a->sym) && is_number(b->sym)) return new node(ctos(round(stoc(a->sym) + stoc(b->sym))));
+
+    return new node ("+",a,b);
+}
+node *sub(node *a, node *b) {
+
+    if (a->sym == b->sym) return new node("0");
+    if (b->sym == "0") return a;
+    if (is_number(a->sym) && is_number(b->sym)) return new node(ctos(round(stoc(a->sym) - stoc(b->sym))));
+
+    return new node ("-",a,b);
+}
+node *mul(node *a, node *b) {
+
+    //if (a->sym == b->sym) return new node ("^",a, new node("2"));
+    if (a->sym == "0" || b->sym == "0") return new node ("0");
+    if (a->sym == "1") return b;
+    if (b->sym == "1") return a;
+    if (is_number(a->sym) && is_number(b->sym)) return new node(ctos(round(stoc(a->sym) / stoc(b->sym))));
+
+    return new node ("*",a,b);
+}
+node *exp(node *a, node *b) {
+
+    if (a->sym == "1" || b->sym == "1") return a;
+    if (b->sym == "0") return new node("1");
+    if (a->sym == "0") return new node("0");
+
+    if (is_number(a->sym) && is_number(b->sym)) return new node(ctos(round(pow(stoc(a->sym), stoc(b->sym)))));
+    return new node("^",a,b);
 }
 
-double dround (double num) { return floor(1e5 * num) / 1e5; }
-value_t cround (const value_t &zx) { return { dround(zx.real()), dround(zx.imag()) };}
-value_t stoc (const string &input) {
-    istringstream iss(input);
-    value_t zx;
-    iss >> zx;
-    return zx;
-}
-string ctos(const value_t &zx) {
-    ostringstream oss;
-
-    if (zx.imag() == 0) {
-        oss << zx.real();
-    } else {
-        oss << zx;
-    }
-    //zx.imag() == 0 ? oss << zx.real() : oss << zx;
-    return oss.str();
-}
-
-Node *parse (const string &input) {
+node *parse (const string &input) {
 
     vector<string> code = tokenize(input), oper;
     vector<string>::iterator it = code.begin();
-    vector<Node*> tree;
+    vector<node*> tree;
 
     while (it < code.end()) {
         string cell = *it;
 
         if (cell == "x") {
-            tree.push_back( new Node(cell));
+            tree.push_back( new node(cell));
         } else if (cell == "(") {
-            //cout << "[" << sub << "]";
             tree.push_back(parse(parenthesis(it)));
-        } else if (isnum(cell)) {
-            tree.push_back( new Node(cell));
+        } else if (is_number(cell)) {
+            tree.push_back( new node(cell));
         } else if (is_operator(cell)) {
 
             while(!oper.empty() && order(oper.back()) > order(cell)) {
-                Node *next = new Node(getstack(oper));
+                node *next = new node(getstack(oper));
                 next->t2 = getstack(tree);
                 next->t1 = getstack(tree);
                 tree.push_back(next);
             }
 
             oper.push_back(cell);
-        } else if (isfunc(cell)) {
+        } else if (is_func(cell)) {
             it++;
-            Node *next = new Node(cell);
+            node *next = new node(cell);
             next->t1 = parse(parenthesis(it));
             tree.push_back(next);
         } else {
@@ -217,236 +262,119 @@ Node *parse (const string &input) {
 
 
     while(!oper.empty()) {
-        Node *next = new Node(getstack(oper));
+        node *next = new node(getstack(oper));
         next->t2 = getstack(tree);
         next->t1 = getstack(tree);
         tree.push_back(next);
     }
 
-    //showtree(tree.back());
     return tree.back();
 }
 
-string operate (string a, string op, string b) {
+string evaluate (node *node, string value = "") {
 
-    if (isnum(a) && isnum(b)) {
-        value_t z1 = stoc(a), z2 = stoc(b);
-        value_t result;
+    if (node == nullptr) return "";
 
-        switch (op[0]) {
-            case '+' : result = cround(z1 + z2) ; break;
-            case '-' : result = cround(z1 - z2) ; break;
-            case '*' : result = cround(z1 * z2) ; break;
-            case '/' : result = cround(z1 / z2) ; break;
-            case '^' : result = cround(pow(z1, z2)) ; break;
-        }
-        //        cout << "[" << z1 << "] " << code[i]<< " [" << z2 << "]";
-        //        cout << " => " << result << "\n";
-        return ctos(result);
-    }
+    string term = node->sym;
+    string t1 = evaluate(node->t1, value), t2 = evaluate(node->t2, value);
 
-    if (op == "+") {
-        if (a == b) { op = "*", a = "2"; }
-        if (a == "0") return b;
-        if (b == "0") return a;
-    } else if (op == "-") {
-        if (a == b) return "0";
-        if (b == "0") return a;
-        // if (a == "0") return "-" + b;
-    } else if (op == "*") {
-        if (a == b) { op = "^", b = "2"; }
-        if (a == "0" || b == "0") return "0";
-        if (a == "1") return b;
-        if (b == "1") return a;
-    } else if (op == "/") {
-        if (a == b) return "1";
-        if (a == "0") return "0";
-        if (b == "1") return a;
-    } else if (op == "^") {
-        if (a == "1" || b == "1") return a;
-        if (b == "0") return "1";
-        if (a == "0") return "0";
-    }
-
-    return a + op + b;
-}
-string evaluate (Node *node, string value = "") {
-
-    if (node != nullptr) {
-        string term = node->token;
-        string t1 = evaluate(node->t1, value), t2 = evaluate(node->t2, value);
-        cout << "[" << t1 << "]" << term << "[" << t2 << "]\n";
-
-        if (term == "x") {
-            return value == "" ? term : value;
-        } else if (is_operator(term)) {
-            //cout << "[" << t1 << "]" << term << "[" << t2 << "] " << "\n";
+    if (term == "x") {
+        return value == "" ? term : value;
+    } else if (is_operator(term)) {
+        // cout << "[" << t1 << "]" << term << "[" << t2 << "]\n";
+        if (is_number(t1) && is_number(t2)) {
             return operate(t1,term,t2);
-        } else if (isfunc(term)) {
-
-            if (isnum(t1)) {
-                value_t val = stoc(t1);
-
-                if (term == "cos") {
-                    return ctos(cround(cos(val)));
-                } else if (term == "sin") {
-                    return ctos(cround(sin(val)));
-                } else if (term == "tan") {
-                    return ctos(cround(tan(val)));
-                } else if (term == "log") {
-                    return ctos(cround(log(val)));
-                } else if (term == "cot") { //cot(x) = cos(x)/sin(x) or cot(x) = 1 / tan(x)
-                    return ctos(cround( cos(val) / sin(val) ));
-                }
-
-            } else {
-                return term + "(" + t1 + ")";
-            }
         }
+    } else if (is_number(t1)) {
+        value_t val = stoc(t1);
 
-        return t1 + term + t2;
-    }
-
-    return "";
-}
-string derivate (Node *node) {
-
-    if (node != nullptr) {
-        string term = node->token;
-        string t1 = evaluate(node->t1), t2 = evaluate(node->t2);
-        /*cout << "[" << t1 << "]" << term << "[" << t2 << "] => " << result << "\n";*/
-        if (term == "x") {
-            return "1";
-        } else if (isnum(term)) {
-            return "0";
-        } else if (term == "+") { // a' + b'
-            string d1 = derivate(node->t1), d2 = derivate(node->t2);
-            string result = operate(d1,term,d2);
-
-            return result;
-        } else if (term == "-") { // a' - b'
-            string d1 = derivate(node->t1), d2 = derivate(node->t2);
-            string result = operate(d1,term,d2);
-
-            return result;
-        } else if (term == "*") { // a'.b + a.b'
-            string d1 = derivate(node->t1), d2 = derivate(node->t2);
-            string result;
-
-            return operate(operate(d1,"*",t2),"+",operate(t1,"*",d2));
-        } else if (term == "/") { // (a'.b - a.b') / (b.b)
-            string d1 = derivate(node->t1), d2 = derivate(node->t2);
-
-            string a1 = operate(operate(d1,"*",t2),"-",operate(t1,"*",d2));
-            string b1 = operate(t2,"*",t2);
-
-            return operate(a1,"/",b1);
-        } else if (term == "^") {
-            string d1 = derivate(node->t1);
-            /*cout << "[" << d1 << "]  \n";*/
-
-            if (t2 == "x") { //  exp : a^x   => a^x . ln (a)
-                string arg1 = operate(t1,"^",t2);
-                string arg2 = "(" + operate("log(" + t1 + ")","+",d1) + ")";
-
-                //cout << arg1 << " " << arg2 << '\n';
-                return operate(arg1,"*",arg2);
-            } else {
-                cout << "[" << t1 << "]" << term << "[" << t2 << "] => \n";
-
-                if (isnum(t2)) {
-                    string dx1 = derivate(node->t1);
-                    string exp = operate (t1, "^", operate (t2, "-", "1"));
-
-                    return operate (dx1, "*", operate (t2, "*", exp));
-                }
-            }
-
-        } else if (term == "cos") { // dx = -sin x
-            string exp = operate("0","-",derivate(node->t1));
-            string arg = "(sin (" + t1 + "))";
-            //cout << "[" << term << "] => " << t1 << '\n';
-
-            //cout << "cos => exp : " << exp << " = " << operate(exp, "*", arg) << "\n";
-            return operate(exp, "*", arg);
-        } else if (term == "sin") { // dx = cos x
-            string exp = derivate(node->t1);
-            string arg = "(cos (" + t1 + "))";
-            /*cout << "sin => exp : " << t1 << "\n";*/
-            /*cout << node->t1->token << "\n";*/
-            return operate(exp, "*", arg);
-        } else if (term == "tan") { 
-            // dx = 1 / (cos^2(x))
-            string dx1 = derivate(node->t1);
-            string den = "(" + t1 + ")";
-            // "cos (" + t1 + ")^2";
-            return operate(dx1,"/", "cos (" + t1 + ")^2");
-
-        } else if (term == "log") { // dx = x' / x
-            string dx1 = derivate(node->t1);
-            string den = "(" + t1 + ")";
-            return operate(dx1,"/", "(" + t1 + ")");
-        } else if (term == "cot") {
-
+        if (term == "cos") {
+            return ctos(round(cos(val)));
+        } else if (term == "sin") {
+            return ctos(round(sin(val)));
+        } else if (term == "tan") {
+            return ctos(round(tan(val)));
+        } else if (term == "log") {
+            return ctos(round(log(val)));
+        } else if (term == "cot") { //cot(x) = cos(x)/sin(x) or cot(x) = 1 / tan(x)
+            return ctos(round( cos(val) / sin(val) ));
         }
     }
 
-    return "";
+    return t1 + term + t2;
+}
+node *derivate(node *curr) {
+
+    string term = curr->sym;
+    node *t1 = curr->t1, *t2 = curr->t2;
+
+    if (term == "x") {
+        return new node("1");
+    } else if (is_number(term)) {
+        return new node("0");
+    } else if (term == "+") {
+        return add(derivate(t1), derivate(t2));
+    } else if (term == "-") {
+        return sub(derivate(t1), derivate(t2));
+    } else if (term == "*") {
+        return add(mul(t1,derivate(t2)), mul(derivate(t1),t2));
+    } else if (term == "/") {
+        node *num = sub(mul(derivate(t1),t2),mul(t1,derivate(t2)));
+        node *den = mul(t2,t2);
+        return div(num, den) ;
+    } else if (term == "^") {
+        if (t1->sym == "x" && is_number(t2->sym)) {
+            return mul(t2, exp( t1, sub(t2, new node("1")) ) ) ;
+        }
+        node *outer = exp(t1, t2);
+        node *inner = add( mul( derivate(t1), div(t2,t1) ), mul( derivate(t2), new node("log", t1) ));
+        //cout << "[" << evaluate(inner) << "](" << "*" << ")[" << evaluate(outer) << "]\n";
+        return mul(inner,outer);
+    } else if (term == "cos") {
+        return sub(new node("0"), new node("sin", t1));
+    } else if (term == "sin") {
+        return new node("cos", t1);
+    } else if (term == "tan") { // dx = 1 / (cos(x))^2
+        return div(derivate(t1), exp(new node("cos", t1), new node("2")) );
+    } else if (term == "log") { // dx = x' / x
+        return div(derivate(t1),t1);
+    } else if (term == "cot") {
+        return sub(new node("0"), div(derivate(t1), new node("^", new node("sin", t1), new node("2")))) ;
+    }
+
+    return nullptr;
 }
 
-tuple<func_t, func_t, func_t> differentiate(const string& eq) {
+tuple<func_t,func_t,func_t> differential(const string &expression) {
 
-    string pass0 = eq;
-    string pass1 = derivate(parse(pass0));
-    string pass2 = derivate(parse(pass1));
-
-    /*cout << "\nresult : \n";*/
-    /*cout << "pass0  : " << pass0 << "\n";*/
-    /*cout << "pass1  : " << pass1 << "\n";*/
-    /*cout << "pass2  : " << pass2 << "\n";*/
+    node *pass0 = parse(expression);
+    node *pass1 = derivate(pass0);
+    node *pass2 = derivate(pass1);
 
     return {
-        { [pass0](value_t x) { return stoc ( evaluate(parse(pass0), ctos(x))); } },
-            { [pass1](value_t x) { return stoc ( evaluate(parse(pass1), ctos(x))); } },
-            { [pass2](value_t x) { return stoc ( evaluate(parse(pass2), ctos(x))); } },
+        [pass0](value_t x) { return stoc(evaluate(pass0, ctos(x))); },
+            [pass1](value_t x) { return stoc(evaluate(pass1, ctos(x))); },
+            [pass0](value_t x) { return stoc(evaluate(pass0, ctos(x))); },
     };
 }
 
-
 int main () {
 
-    // string expression = "x^1";
-    // Node *tree = parse(expression);
-    // string pass1 = derivate(parse("x^4"));
+    string input = "x^x^2";
 
-    string term = "^";
-    string t1 = "x", t2 = "sin(x)";
-    string d1 = "1", d2 = "cos(x)";
+    node *pass0 = parse(input);
+    node *pass1 = derivate(pass0);
+    node *pass2 = derivate(pass1);
 
-    string a1 = operate(t1,"^",t2);
+    showtree(pass1);
 
-    string inner = "("
-+ operate(operate(t2,"/",t1),"+", operate(d2,"*","log(" + t1 + ")"))
+   cout << evaluate(pass0) << "\n";
+   cout << evaluate(pass1) << "\n";
+   cout << evaluate(pass2) << "\n";
 
-+
-    ")";
-    string a4 = operate(d2,"*","log(" + t1 + ")");
+    delete pass0;
+    delete pass1;
+    delete pass2;
 
-
-    cout << inner;
-    // // tree = parse(pass1);
-    // // showtree(tree);
-    // cout << endl;
-    // cout << " { " << pass1 << " } " << "\n";
-    // string pass2 = derivate(parse(pass1));
-    // const auto [f, df_dx, d2f_dx2] = differentiate("sin(cos(x^x^2))");
-    //value_t{ 0.839472, -0.0115338 })
-
-    // cout << f({1,1});
-    // cout << evaluate(tree, ctos({1,1}));
-
-    //show(token);
-    //cout << operate("x^x","^","2")t
-
-
+    cout << "\nend\n";
 }

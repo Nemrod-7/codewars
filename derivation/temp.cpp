@@ -94,83 +94,30 @@ node *exp(node *a, node *b) {
     return new node("^",a,b);
 }
 
-node *simplify(node *curr) {
+pair<vector<string>,vector<string>> getarg(node *curr) {
 
-    if (curr != nullptr) {
-        node *a = simplify(curr->t1), *b = simplify(curr->t2);
+    if (curr->sym == "x") {
+        return {{"x"},{"x"}};
+    } else if (is_number(curr->sym)) {
+        return {{curr->sym},{curr->sym}};
+    } else if (curr->sym == "*") {
+        pair<vector<string>,vector<string>> v1 = getarg(curr->t1), v2 = getarg(curr->t2);
 
-        if (curr->sym == "*") {
+        v1.first.insert( v1.first.end(), v2.first.begin(), v2.first.end() );
+        v1.second.insert( v1.second.end(), v2.second.begin(), v2.second.end() );
 
-            if (is_number(a->sym)) {
-                if (b->sym == "*") {
-                    //cout << a->sym << " " << b->t1->sym << "\n";
-                    if (is_number(b->t1->sym)) {                    
-                        *curr = *new node("*", mul(a, b->t1), b->t2);
-                    }
-                }
-            } else if (a->sym == "^") {
-                node *base = a->t1, *ex = a->t2;
-
-                if (b->sym == "/") {
-                    node *num = b->t1, *den = b->t2;
-
-                    if (den->sym == base->sym) {
-                        *ex = *sub(ex,new node("1"));
-                        *b = *num;
-                        swap(*a,*b);
-                    }
-                }
-            } else if (a->sym == "/") {
-                node *num = a->t1, *den = a->t2;
-
-                if (b->sym == "^") {
-                    node *base = b->t1, *ex = b->t2;
-
-                    if (den->sym == base->sym) {
-                        *ex = *sub(ex,new node("1"));
-                        *a = *num;
-                    }
-                }
-            } 
-
-        } else if (curr->sym == "/") {
-
-            if (a->sym == "^") { 
-                node *base = a->t1, *ex = a->t2;
-
-                if (b->sym == base->sym) {
-                    *ex = *sub(ex,new node("1"));
-                } else if (b->sym == "/") {
-                    node *num = b->t1, *den = b->t2;
-
-                    if (num->sym == base->sym) { // ex: (x^4) / (5/x)
-                        *ex = *sub(ex,new node("1"));
-                        *b = *den;
-                        swap(*a,*b);
-                        curr->sym = "*";
-                    } 
-                } 
-            } else if (b->sym == "^") {
-                node *base = a->t1, *ex = a->t2;
-
-                if (a->sym == base->sym) {
-                    *ex = *sub(ex,new node("1"));
-                }
-            }
-
-        }
+        return {v1};
+    } else if (curr->sym == "^") {
+        return {getarg(curr->t1).first,{}};
+    } else if (curr->sym == "/") {
+        return {getarg(curr->t1).first,getarg(curr->t2).second};
     }
 
-    return curr;
-}
-void showvect(const vector<string> &ve) {
-    for (auto &it : ve) {
-        cout << "[" << it << "]";
-    }
-    cout << endl;
+    return {};
 }
 
 int main () {
+
 
     node *tree = new node("*", new node("2"),
             new node("*",
@@ -178,16 +125,7 @@ int main () {
                 new node("^", new node("x"), new node("3"))
                 )) ;
 
-    //vector<pair<string,string>> args;
-    //cout << getarg(t2);
 
-    simplify(tree);
-    // showvect(num);
-    // showvect(den);
-
-    //simplify(pass1);
-
-    cout << evaluate(tree) << "\n";
 
     cout << "\nend\n";
 }
