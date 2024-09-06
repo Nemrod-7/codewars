@@ -159,67 +159,81 @@ void bak() {
 node *simplify (node *curr) {
 
     string hash = gethash(curr->t1) + curr->sym + gethash(curr->t2);
-    node *t1 = curr->t1, *t2 = curr->t2;
+    node *t1 = simplify(curr->t1), *t2 = simplify(curr->t2);
 
-    if (hash == "1*0*x*1") { // (5) * (x * 3) => [1*0*x*1]
-        return mul(mul(t1, t2->t2), t2->t1);
-    } else if (hash == "1*0*1*x") { // (5) * (3 * x) => [1*0*1*x]
-        return mul(mul(t1, t2->t1), t2->t2);
-    } else if (hash == "1*0*1/x") { // (5) * (4 / x) => [1*0*1/x]
-        return div(mul(t1, t2->t1), t2->t2);
-    }
+		cout << hash << "\n";
+//		if (hash == "1*0*x*1") { // (5) * (x * 3) 
+//				return mul(mul(t1, t2->t2), t2->t1);
+//		} else if (hash == "1*0*1*x") { // (5) * (3 * x)
+//				return mul(mul(t1, t2->t1), t2->t2);
+//		} else if (hash == "1*0*1/x") { // (5) * (4 / x)
+//				return div(mul(t1, t2->t1), t2->t2);
+//		}
+//
+//		else if (hash == "1/x*x/1") { // (5/x) * (x/2)
+//				return mul(div(t1->t1,t2->t2), div(t1->t2,t2->t1));
+//		}
+//		else if (hash == "x/1*1/x") { // (x/5) * (2/x)
+//				return mul(div(t1->t1,t2->t2), div(t1->t2,t2->t1));
+//		}
+//		else if (hash == "1/x*x*1") { // (5/x) * (x*4)
+//				return mul(mul(t1->t1,t2->t2), div(t1->t2,t2->t1));
+//		}
+//
+//		else if (hash == "1/x*x^1") { // (5/x) * (x^3)
+//																	//return mul(t1->t1, exp( t2->t1, sub(t2->t2, new node("1")) );
+//		}
+//
+//		else if (hash == "1*x*1*x") { // (5*x) * (4*x)
+//				return mul(mul(t1->t1,t2->t1), mul(t1->t2,t2->t2));
+//		} 
+//		else if (hash == "1*x*x*1") { // (5*x) * (x*4) 
+//				return mul(mul(t1->t1,t2->t2), mul(t1->t2,t2->t1));
+//		}
+//
+//		else if (hash == "1*x*1/x") { // (3*x) * (2/x) 
+//				return mul(mul(t1->t1,t2->t1), div(t1->t2,t2->t2)) ;
+//		}
+//		else if (hash == "x*1*1/x") {
+//				return mul(mul(t1->t2,t2->t1), div(t1->t1,t2->t2));
+//		}
+//
+//		else if (hash == "x^1*1/x") {
+//
+//		}
 
-    else if (hash == "1/x*x/1") { // (5/x) * (x/2)
-        return div(mul(t1->t1, t2->t2),mul(t1->t2,t2->t1));
-    }
-    else if (hash == "x/1*1/x") { // (x/5) * (2/x)
-        return div(mul(t1->t2, t2->t1),mul(t1->t1,t2->t2));
-    }
-    else if (hash == "1/x*x^1") { // (5/x) * (x^3)
 
-    }
-    return curr;
+		return curr;
 }
 
 int main () {
 
-// (5) * (x^3)   => [1*0*x^0]
-// (5) * (x / 2) => [1*0*x/1]
-//
-// (5) * (x * 3) => [1*0*x*1] : mul(mul(t1, t2->t2), t2->t1)
-// (5) * (3 * x) => [1*0*1*x] : mul(mul(t1, t2->t1), t2->t2)
-// (5) * (4 / x) => [1*0*1/x] : div(mul(t1, t2->t1), t2->t2)
-//
-// (5/x) * (x/2) => [1/x*x/1] : mul(t1->t1, t2->t2)
-// (x/5) * (2/x) => [x/1*1/x] : mul(t1->t2, t2->t1)
-// (5/x) * (x^3) => [1/x*x^1] : mul(t1->t1, exp( t2->t1, sub(t2->t2, new node("0")) )
-//
-// (x*5) * (x*4) => [x*1*x*0] :
-// (5*x) * (4*x) => [1*x*1*x] : mul(mul(t1->t1,t2->t1), mul(t1->t2,t2->t2))
-// (5*x) * (x*4) => [1*x*x*1] : mul(mul(t1->t1,t2->t2), mul(t1->t2,t2->t1))
-//
-// (x^3) / (x)   => [x^1/x*0] : exp(t1->t1,sub(t1->t2,new node("1")))
-// (x^3) / (2*x) => [x^1/1*x] : div(exp(t1->t1, sub(t1->t2,new node("1"))),t2->t2)
-// (3*x) * (2/x) => [1*x*1/x] : mul(t1->t1,t2->t1)
+		// (5) * (x^3)   => [1*0*x^0]
+		// (5) * (x / 2) => [1*0*x/1]
+		// (x*5) * (x*4) => [x*1*x*1] :
+		//
+		// (x^3) / (x)   => [x^1/x*0] : exp(t1->t1,sub(t1->t2,new node("1")))
+		// (x^3) / (2*x) => [x^1/1*x] : div(exp(t1->t1, sub(t1->t2,new node("1"))),t2->t2)
 
-    node *tree = mul(new node("2"),
-            mul(
-                exp(new node("x"),new node("3")),
-                div(new node("3"),new node("x"))
-               )
-            ) ;
+		node *tree = mul(new node("2"),
+						mul(
+								exp(new node("x"),new node("3")),
+								div(new node("3"),new node("x"))
+							 )
+						) ;
 
 
-    node *curr = tree->t2;
-    string hash = gethash(curr->t1) + curr->sym + gethash(curr->t2);
+		//simplify(tree);
 
 
-    // cout << evaluate(tree) << "\n";
+		cout << gethash(tree->t2->t1->t1);
+		cout << "\n";
+		//cout << evaluate(tree) << "\n";
 
 
-    //   vector<string> l2 = {get(curr->t1->t1), get(curr->t1->t2), get(curr->t2->t1), get(curr->t2->t2)};
+		//   vector<string> l2 = {get(curr->t1->t1), get(curr->t1->t2), get(curr->t2->t1), get(curr->t2->t2)};
 
-    delete tree;
+		delete tree;
 
-    cout << "\nend\n";
+		cout << "\nend\n";
 }
