@@ -179,36 +179,36 @@ string operate (const string &t1, const string &oper, const string &t2) {
 }
 node *div(node *a, node *b) {
 
-    if (a->sym == b->sym) return new node ("1");
     if (a->sym == "0") return new node ("0");
     if (b->sym == "1") return a;
+		if (a->sym == b->sym && !is_operator(a->sym)) return new node ("1");
     if (is_number(a->sym) && is_number(b->sym)) return new node(ctos(round(stoc(a->sym) / stoc(b->sym))));
 
     return new node ("/",a,b);
 }
 node *add(node *a, node *b) {
 
-    // if (a->sym == b->sym && !is_operator(a->sym)) return new node ("*",new node("2"), a);
     if (a->sym == "0") return b;
     if (b->sym == "0") return a;
+		if (a->sym == b->sym && !is_operator(a->sym)) return new node ("*",new node("2"), a);
     if (is_number(a->sym) && is_number(b->sym)) return new node(ctos(round(stoc(a->sym) + stoc(b->sym))));
 
     return new node ("+",a,b);
 }
 node *sub(node *a, node *b) {
 
-    if (a->sym == b->sym) return new node("0");
     if (b->sym == "0") return a;
+		if (a->sym == b->sym && !is_operator(a->sym)) return new node("0");
     if (is_number(a->sym) && is_number(b->sym)) return new node(ctos(round(stoc(a->sym) - stoc(b->sym))));
 
     return new node ("-",a,b);
 }
 node *mul(node *a, node *b) {
 
-    //if (a->sym == b->sym) return new node ("^",a, new node("2"));
-    if (a->sym == "0" || b->sym == "0") return new node ("0");
     if (a->sym == "1") return b;
     if (b->sym == "1") return a;
+		if (a->sym == "0" || b->sym == "0") return new node ("0");
+		if (a->sym == b->sym && !is_operator(a->sym)) return new node ("^",a, new node("2"));
     if (is_number(a->sym) && is_number(b->sym)) return new node(ctos(round(stoc(a->sym) / stoc(b->sym))));
 
     return new node ("*",a,b);
@@ -331,9 +331,9 @@ node *derivate(node *curr) {
         //cout << "[" << evaluate(inner) << "](" << "*" << ")[" << evaluate(outer) << "]\n";
         return mul(inner,outer);
     } else if (term == "cos") {
-        return sub(new node("0"), new node("sin", t1));
+        return sub(new node("0"), mul(derivate(t1), new node("sin", t1)));
     } else if (term == "sin") {
-        return new node("cos", t1);
+        return mul(derivate(t1), new node("cos", t1)) ;
     } else if (term == "tan") { // dx = 1 / (cos(x))^2
         return div(derivate(t1), exp(new node("cos", t1), new node("2")) );
     } else if (term == "log") { // dx = x' / x
@@ -345,6 +345,80 @@ node *derivate(node *curr) {
     return nullptr;
 }
 
+string gethash(node *curr) {
+
+    if (curr == nullptr) return "";
+    string hash;
+
+    if (is_number(curr->sym)) {
+        hash = "1*0";
+    } else if (is_operator(curr->sym)) {
+        hash += is_number(curr->t1->sym) ? '1' : 'x';
+        hash += curr->sym;
+        hash += is_number(curr->t2->sym) ? '1' : 'x';
+    } else {
+        hash = "x*0";
+    }
+
+    return hash;
+}
+
+node *simplify (node *curr) {
+
+    if (curr != nullptr) {
+        string hash = gethash(curr->t1) + curr->sym + gethash(curr->t2);
+				curr->t1 = simplify(curr->t1), curr->t2 = simplify(curr->t2);
+        node *a = curr->t1, *b = curr->t2;
+
+				if (hash == "1*0*x*1") { // (5) * (x * 3) 
+						return mul(mul(a, b->t2), b->t1);
+				} else if (hash == "1*0*1*x") { // (5) * (3 * x)
+				//cout << "[" << evaluate(a) <<  "]" << curr->sym << "[" << evaluate(b) << "]\n";
+						return mul(mul(a, b->t1), b->t2);
+				} else if (hash == "1*0*1/x") { // (5) * (4 / x)
+						return div(mul(a, b->t1), b->t2);
+				}
+				//    else if (hash == "1/x*x/1") { // (5/x) * (x/2)
+				//        return mul(div(t1->t1,t2->t2), div(t1->t2,t2->t1));
+				//    }
+				//    else if (hash == "x/1*1/x") { // (x/5) * (2/x)
+				//        return mul(div(t1->t1,t2->t2), div(t1->t2,t2->t1));
+				//    }
+				//    else if (hash == "1/x*x*1") { // (5/x) * (x*4)
+				//        return mul(mul(t1->t1,t2->t2), div(t1->t2,t2->t1));
+				//    }
+				//
+				//    else if (hash == "1/x*x^1") { // (5/x) * (x^3)
+				//                                  //return mul(t1->t1, exp( t2->t1, sub(t2->t2, new node("1")) );
+				//    }
+				//
+				//    else if (hash == "1*x*1*x") { // (5*x) * (4*x)
+				//        return mul(mul(t1->t1,t2->t1), mul(t1->t2,t2->t2));
+				//    } 
+				//    else if (hash == "1*x*x*1") { // (5*x) * (x*4) 
+				//        return mul(mul(t1->t1,t2->t2), mul(t1->t2,t2->t1));
+				//    }
+				//
+				//    else if (hash == "1*x*1/x") { // (3*x) * (2/x) 
+				//        return mul(mul(t1->t1,t2->t1), div(t1->t2,t2->t2)) ;
+				//    }
+				//    else if (hash == "x*1*1/x") {
+				//        return mul(mul(t1->t2,t2->t1), div(t1->t1,t2->t2));
+				//    }
+
+				if (hash == "x^1*1/x") {
+						if (a->t1->sym == b->t2->sym) {
+								return mul(exp(a->t1, sub(a->t2,new node("1"))), b->t1);
+						}
+				} else if (hash == "x^1/x*0") {
+						if (a->t1->sym == b->sym) {
+								return exp(a->t1, sub(a->t2,new node("1")));
+						}
+				}
+		}
+
+		return curr;
+}
 tuple<func_t,func_t,func_t> differential(const string &expression) {
 
     node *pass0 = parse(expression);
@@ -360,17 +434,20 @@ tuple<func_t,func_t,func_t> differential(const string &expression) {
 
 int main () {
 
-    string input = "x^x^2";
+    string input = "sin(cos(x^x^2))";
 
     node *pass0 = parse(input);
     node *pass1 = derivate(pass0);
     node *pass2 = derivate(pass1);
 
-    showtree(pass1);
+    //showtree(pass1);
+		//node *simpl = simplify(pass1);
 
-   cout << evaluate(pass0) << "\n";
-   cout << evaluate(pass1) << "\n";
-   cout << evaluate(pass2) << "\n";
+    //showtree(simpl);
+
+   cout << evaluate(pass0,"(1,1)") << "\n"; // EqualsAdaptive(value_t{ 0.839472, -0.0115338 })
+   cout << evaluate(pass1,"(1,1)") << "\n"; // EqualsAdaptive(value_t{ 0.0752251, -0.0149614 })
+   //cout << evaluate(pass2) << "\n";
 
     delete pass0;
     delete pass1;
