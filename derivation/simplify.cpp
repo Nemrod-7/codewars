@@ -100,18 +100,20 @@ void showvect(const vector<string> &ve) {
     cout << endl;
 }
 string get(node *curr) {
-  return curr == nullptr ? "" : curr->sym;
+    return curr == nullptr ? "" : curr->sym;
 }
 
 string gethash(node *curr) {
+
+    if (curr == nullptr) return "";
     string hash;
 
     if (is_number(curr->sym)) {
         hash = "1*0";
     } else if (is_operator(curr->sym)) {
-      hash += is_number(curr->t1->sym) ? '1' : 'x';
-      hash += curr->sym;
-      hash += is_number(curr->t2->sym) ? '1' : 'x';
+        hash += is_number(curr->t1->sym) ? '1' : 'x';
+        hash += curr->sym;
+        hash += is_number(curr->t2->sym) ? '1' : 'x';
     } else {
         hash = "x*0";
     }
@@ -120,120 +122,121 @@ string gethash(node *curr) {
 }
 
 void bak() {
-  // node *curr = tree->t2;
-  // node *t1 = curr->t1, *t2 = curr->t2;
-  //
-  // if (curr->sym == "/") {
-  //     if(t1->sym == "^") {
-  //         if (t1->t1->sym == t2->sym) { // (x^4) / (x)
-  //             *curr = *exp(t1->t1, sub(t1->t2,new node("1")) );
-  //         }
-  //     }
-  // } else if (curr->sym == "*") {
-  //     node *a = curr->t1, *b = curr->t2;
-  //
-  //     if (is_number(t1->sym)) { // (5) * (_)
-  //         if (is_number(t2->sym)) { // (5) * (3)
-  //             *curr = *new node(to_string(stoi(a->sym) * stoi(b->sym)));
-  //         } else if (t2->sym == "*") {        // (5) * (4*x)
-  //             if (is_number(t2->t1->sym)) {
-  //                 *curr = *mul(mul(t1, t2->t1), t2->t2);
-  //             } else if (t2->sym == "/") {    // (5) * (_/_)
-  //
-  //             }
-  //         }
-  //     }
-  //
-  //     if (a->sym == "/" && b->sym == "^") {
-  //         node *num = a->t1, *den = a->t2, *base = b->t1, *ex = b->t2;
-  //
-  //         if (den->sym == base->sym) {
-  //             *a = *num;
-  //             *b = *exp(base, sub(ex,new node("1")));
-  //         }
-  //     }
-  // }
+    // node *curr = tree->t2;
+    // node *t1 = curr->t1, *t2 = curr->t2;
+    //
+    // if (curr->sym == "/") {
+    //     if(t1->sym == "^") {
+    //         if (t1->t1->sym == t2->sym) { // (x^4) / (x)
+    //             *curr = *exp(t1->t1, sub(t1->t2,new node("1")) );
+    //         }
+    //     }
+    // } else if (curr->sym == "*") {
+    //     node *a = curr->t1, *b = curr->t2;
+    //
+    //     if (is_number(t1->sym)) { // (5) * (_)
+    //         if (is_number(t2->sym)) { // (5) * (3)
+    //             *curr = *new node(to_string(stoi(a->sym) * stoi(b->sym)));
+    //         } else if (t2->sym == "*") {        // (5) * (4*x)
+    //             if (is_number(t2->t1->sym)) {
+    //                 *curr = *mul(mul(t1, t2->t1), t2->t2);
+    //             } else if (t2->sym == "/") {    // (5) * (_/_)
+    //
+    //             }
+    //         }
+    //     }
+    //
+    //     if (a->sym == "/" && b->sym == "^") {
+    //         node *num = a->t1, *den = a->t2, *base = b->t1, *ex = b->t2;
+    //
+    //         if (den->sym == base->sym) {
+    //             *a = *num;
+    //             *b = *exp(base, sub(ex,new node("1")));
+    //         }
+    //     }
+    // }
 
 }
 
 node *simplify (node *curr) {
 
-    string hash = gethash(curr->t1) + curr->sym + gethash(curr->t2);
-    node *t1 = simplify(curr->t1), *t2 = simplify(curr->t2);
+    if (curr != nullptr) {
+        string hash = gethash(curr->t1) + curr->sym + gethash(curr->t2);
+        node *t1 = simplify(curr->t1), *t2 = simplify(curr->t2);
 
-		cout << hash << "\n";
-//		if (hash == "1*0*x*1") { // (5) * (x * 3) 
-//				return mul(mul(t1, t2->t2), t2->t1);
-//		} else if (hash == "1*0*1*x") { // (5) * (3 * x)
-//				return mul(mul(t1, t2->t1), t2->t2);
-//		} else if (hash == "1*0*1/x") { // (5) * (4 / x)
-//				return div(mul(t1, t2->t1), t2->t2);
-//		}
-//
-//		else if (hash == "1/x*x/1") { // (5/x) * (x/2)
-//				return mul(div(t1->t1,t2->t2), div(t1->t2,t2->t1));
-//		}
-//		else if (hash == "x/1*1/x") { // (x/5) * (2/x)
-//				return mul(div(t1->t1,t2->t2), div(t1->t2,t2->t1));
-//		}
-//		else if (hash == "1/x*x*1") { // (5/x) * (x*4)
-//				return mul(mul(t1->t1,t2->t2), div(t1->t2,t2->t1));
-//		}
-//
-//		else if (hash == "1/x*x^1") { // (5/x) * (x^3)
-//																	//return mul(t1->t1, exp( t2->t1, sub(t2->t2, new node("1")) );
-//		}
-//
-//		else if (hash == "1*x*1*x") { // (5*x) * (4*x)
-//				return mul(mul(t1->t1,t2->t1), mul(t1->t2,t2->t2));
-//		} 
-//		else if (hash == "1*x*x*1") { // (5*x) * (x*4) 
-//				return mul(mul(t1->t1,t2->t2), mul(t1->t2,t2->t1));
-//		}
-//
-//		else if (hash == "1*x*1/x") { // (3*x) * (2/x) 
-//				return mul(mul(t1->t1,t2->t1), div(t1->t2,t2->t2)) ;
-//		}
-//		else if (hash == "x*1*1/x") {
-//				return mul(mul(t1->t2,t2->t1), div(t1->t1,t2->t2));
-//		}
-//
-//		else if (hash == "x^1*1/x") {
-//
-//		}
+        cout << "[" << evaluate(t1) <<  "]" << curr->sym << "[" << evaluate(t2) << "]\n";
+        //cout << hash << "\n";
+        //    if (hash == "1*0*x*1") { // (5) * (x * 3) 
+        //        return mul(mul(t1, t2->t2), t2->t1);
+        //    } else if (hash == "1*0*1*x") { // (5) * (3 * x)
+        //        return mul(mul(t1, t2->t1), t2->t2);
+        //    } else if (hash == "1*0*1/x") { // (5) * (4 / x)
+        //        return div(mul(t1, t2->t1), t2->t2);
+        //    }
+        //
+        //    else if (hash == "1/x*x/1") { // (5/x) * (x/2)
+        //        return mul(div(t1->t1,t2->t2), div(t1->t2,t2->t1));
+        //    }
+        //    else if (hash == "x/1*1/x") { // (x/5) * (2/x)
+        //        return mul(div(t1->t1,t2->t2), div(t1->t2,t2->t1));
+        //    }
+        //    else if (hash == "1/x*x*1") { // (5/x) * (x*4)
+        //        return mul(mul(t1->t1,t2->t2), div(t1->t2,t2->t1));
+        //    }
+        //
+        //    else if (hash == "1/x*x^1") { // (5/x) * (x^3)
+        //                                  //return mul(t1->t1, exp( t2->t1, sub(t2->t2, new node("1")) );
+        //    }
+        //
+        //    else if (hash == "1*x*1*x") { // (5*x) * (4*x)
+        //        return mul(mul(t1->t1,t2->t1), mul(t1->t2,t2->t2));
+        //    } 
+        //    else if (hash == "1*x*x*1") { // (5*x) * (x*4) 
+        //        return mul(mul(t1->t1,t2->t2), mul(t1->t2,t2->t1));
+        //    }
+        //
+        //    else if (hash == "1*x*1/x") { // (3*x) * (2/x) 
+        //        return mul(mul(t1->t1,t2->t1), div(t1->t2,t2->t2)) ;
+        //    }
+        //    else if (hash == "x*1*1/x") {
+        //        return mul(mul(t1->t2,t2->t1), div(t1->t1,t2->t2));
+        //    }
 
+            if (hash == "x^1*1/x") {
+                if (t1->t1->sym == t2->t2->sym) {
+                    node *res = mul(exp(t1->t1, sub(t1->t2,new node("1"))), t2->t1);
 
-		return curr;
+                    return res;
+                }
+        
+            }
+    }
+
+    return curr;
 }
 
 int main () {
 
-		// (5) * (x^3)   => [1*0*x^0]
-		// (5) * (x / 2) => [1*0*x/1]
-		// (x*5) * (x*4) => [x*1*x*1] :
-		//
-		// (x^3) / (x)   => [x^1/x*0] : exp(t1->t1,sub(t1->t2,new node("1")))
-		// (x^3) / (2*x) => [x^1/1*x] : div(exp(t1->t1, sub(t1->t2,new node("1"))),t2->t2)
+    // (5) * (x^3)   => [1*0*x^0]
+    // (5) * (x / 2) => [1*0*x/1]
+    // (x*5) * (x*4) => [x*1*x*1] :
+    //
+    // (x^3) / (x)   => [x^1/x*0] : exp(t1->t1,sub(t1->t2,new node("1")))
+    // (x^3) / (2*x) => [x^1/1*x] : div(exp(t1->t1, sub(t1->t2,new node("1"))),t2->t2)
 
-		node *tree = mul(new node("2"),
-						mul(
-								exp(new node("x"),new node("3")),
-								div(new node("3"),new node("x"))
-							 )
-						) ;
-
-
-		//simplify(tree);
+    node *tree = mul(new node("2"),
+            mul(
+                exp(new node("x"),new node("3")),
+                div(new node("3"),new node("x"))
+               )
+            ) ;
 
 
-		cout << gethash(tree->t2->t1->t1);
-		cout << "\n";
-		//cout << evaluate(tree) << "\n";
+    tree = simplify(tree);
+
+    cout << evaluate(tree) << "\n";
 
 
-		//   vector<string> l2 = {get(curr->t1->t1), get(curr->t1->t2), get(curr->t2->t1), get(curr->t2->t2)};
-
-		delete tree;
-
-		cout << "\nend\n";
+    delete tree;
+    cout << "\nend\n";
 }
