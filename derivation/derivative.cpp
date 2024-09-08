@@ -4,7 +4,7 @@
 #include <tuple>
 #include <complex>
 #include <functional>
-// #include <tests>
+#include "tests.hpp"
 
 using namespace std;
 using value_t = complex<double>;
@@ -52,9 +52,6 @@ double round(double x) {
 complex<double> round(complex<double> x) {
     return { round(x.real()),round(x.imag()) };
 }
-complex<double> power(complex<double> x, complex<double> y) {
-    return  exp(y * log(x));
-}
 
 complex<double> stoc (const string &input) {
     istringstream iss(input);
@@ -64,7 +61,7 @@ complex<double> stoc (const string &input) {
 }
 string ctos(const complex<double> &zx) {
     ostringstream oss;
-    zx.imag() == 0 ? oss << zx.real() : oss << zx;
+    zx.imag() == 0 ? oss << fixed << zx.real() : oss << fixed << zx;
     return oss.str();
 }
 
@@ -181,7 +178,7 @@ node *div(node *a, node *b) {
 
     if (a->sym == "0") return new node ("0");
     if (b->sym == "1") return a;
-		if (a->sym == b->sym && !is_operator(a->sym)) return new node ("1");
+    if (a->sym == b->sym && !is_operator(a->sym)) return new node ("1");
     if (is_number(a->sym) && is_number(b->sym)) return new node(ctos(round(stoc(a->sym) / stoc(b->sym))));
 
     return new node ("/",a,b);
@@ -190,7 +187,7 @@ node *add(node *a, node *b) {
 
     if (a->sym == "0") return b;
     if (b->sym == "0") return a;
-		if (a->sym == b->sym && !is_operator(a->sym)) return new node ("*",new node("2"), a);
+    if (a->sym == b->sym && !is_operator(a->sym)) return new node ("*",new node("2"), a);
     if (is_number(a->sym) && is_number(b->sym)) return new node(ctos(round(stoc(a->sym) + stoc(b->sym))));
 
     return new node ("+",a,b);
@@ -198,7 +195,7 @@ node *add(node *a, node *b) {
 node *sub(node *a, node *b) {
 
     if (b->sym == "0") return a;
-		if (a->sym == b->sym && !is_operator(a->sym)) return new node("0");
+    if (a->sym == b->sym && !is_operator(a->sym)) return new node("0");
     if (is_number(a->sym) && is_number(b->sym)) return new node(ctos(round(stoc(a->sym) - stoc(b->sym))));
 
     return new node ("-",a,b);
@@ -207,14 +204,14 @@ node *mul(node *a, node *b) {
 
     if (a->sym == "1") return b;
     if (b->sym == "1") return a;
-		if (a->sym == "0" || b->sym == "0") return new node ("0");
-		if (a->sym == b->sym && !is_operator(a->sym)) return new node ("^",a, new node("2"));
+    if (a->sym == "0" || b->sym == "0") return new node ("0");
+    if (a->sym == b->sym && !is_operator(a->sym)) return new node ("^",a, new node("2"));
     if (is_number(a->sym) && is_number(b->sym)) return new node(ctos(round(stoc(a->sym) / stoc(b->sym))));
 
     return new node ("*",a,b);
 }
 node *exp(node *a, node *b) {
-
+    // frexp
     if (a->sym == "1" || b->sym == "1") return a;
     if (b->sym == "0") return new node("1");
     if (a->sym == "0") return new node("0");
@@ -270,21 +267,21 @@ node *parse (const string &input) {
 
     return tree.back();
 }
-
 string evaluate (node *node, string value = "") {
 
     if (node == nullptr) return "";
 
     string term = node->sym;
     string t1 = evaluate(node->t1, value), t2 = evaluate(node->t2, value);
+    // cout << "[" << t1 <<  "]" << term << "[" << t2 << "]\n";
 
     if (term == "x") {
         return value == "" ? term : value;
     } else if (is_operator(term)) {
-        // cout << "[" << t1 << "]" << term << "[" << t2 << "]\n";
         if (is_number(t1) && is_number(t2)) {
             return operate(t1,term,t2);
         }
+        cout << "[" << t1 << "]" << term << "[" << t2 << "]\n";
     } else if (is_number(t1)) {
         value_t val = stoc(t1);
 
@@ -344,82 +341,7 @@ node *derivate(node *curr) {
 
     return nullptr;
 }
-
-string gethash(node *curr) {
-
-    if (curr == nullptr) return "";
-    string hash;
-
-    if (is_number(curr->sym)) {
-        hash = "1*0";
-    } else if (is_operator(curr->sym)) {
-        hash += is_number(curr->t1->sym) ? '1' : 'x';
-        hash += curr->sym;
-        hash += is_number(curr->t2->sym) ? '1' : 'x';
-    } else {
-        hash = "x*0";
-    }
-
-    return hash;
-}
-
-node *simplify (node *curr) {
-
-    if (curr != nullptr) {
-        string hash = gethash(curr->t1) + curr->sym + gethash(curr->t2);
-				curr->t1 = simplify(curr->t1), curr->t2 = simplify(curr->t2);
-        node *a = curr->t1, *b = curr->t2;
-
-				if (hash == "1*0*x*1") { // (5) * (x * 3) 
-						return mul(mul(a, b->t2), b->t1);
-				} else if (hash == "1*0*1*x") { // (5) * (3 * x)
-				//cout << "[" << evaluate(a) <<  "]" << curr->sym << "[" << evaluate(b) << "]\n";
-						return mul(mul(a, b->t1), b->t2);
-				} else if (hash == "1*0*1/x") { // (5) * (4 / x)
-						return div(mul(a, b->t1), b->t2);
-				}
-				//    else if (hash == "1/x*x/1") { // (5/x) * (x/2)
-				//        return mul(div(t1->t1,t2->t2), div(t1->t2,t2->t1));
-				//    }
-				//    else if (hash == "x/1*1/x") { // (x/5) * (2/x)
-				//        return mul(div(t1->t1,t2->t2), div(t1->t2,t2->t1));
-				//    }
-				//    else if (hash == "1/x*x*1") { // (5/x) * (x*4)
-				//        return mul(mul(t1->t1,t2->t2), div(t1->t2,t2->t1));
-				//    }
-				//
-				//    else if (hash == "1/x*x^1") { // (5/x) * (x^3)
-				//                                  //return mul(t1->t1, exp( t2->t1, sub(t2->t2, new node("1")) );
-				//    }
-				//
-				//    else if (hash == "1*x*1*x") { // (5*x) * (4*x)
-				//        return mul(mul(t1->t1,t2->t1), mul(t1->t2,t2->t2));
-				//    } 
-				//    else if (hash == "1*x*x*1") { // (5*x) * (x*4) 
-				//        return mul(mul(t1->t1,t2->t2), mul(t1->t2,t2->t1));
-				//    }
-				//
-				//    else if (hash == "1*x*1/x") { // (3*x) * (2/x) 
-				//        return mul(mul(t1->t1,t2->t1), div(t1->t2,t2->t2)) ;
-				//    }
-				//    else if (hash == "x*1*1/x") {
-				//        return mul(mul(t1->t2,t2->t1), div(t1->t1,t2->t2));
-				//    }
-
-				if (hash == "x^1*1/x") {
-						if (a->t1->sym == b->t2->sym) {
-								return mul(exp(a->t1, sub(a->t2,new node("1"))), b->t1);
-						}
-				} else if (hash == "x^1/x*0") {
-						if (a->t1->sym == b->sym) {
-								return exp(a->t1, sub(a->t2,new node("1")));
-						}
-				}
-		}
-
-		return curr;
-}
-tuple<func_t,func_t,func_t> differential(const string &expression) {
+tuple<func_t,func_t,func_t> differentiate(const string &expression) {
 
     node *pass0 = parse(expression);
     node *pass1 = derivate(pass0);
@@ -428,30 +350,32 @@ tuple<func_t,func_t,func_t> differential(const string &expression) {
     return {
         [pass0](value_t x) { return stoc(evaluate(pass0, ctos(x))); },
             [pass1](value_t x) { return stoc(evaluate(pass1, ctos(x))); },
-            [pass0](value_t x) { return stoc(evaluate(pass0, ctos(x))); },
+            [pass2](value_t x) { return stoc(evaluate(pass2, ctos(x))); },
     };
 }
 
 int main () {
 
-    string input = "sin(cos(x^x^2))";
+    string input = "cot(x * 3)";
 
     node *pass0 = parse(input);
     node *pass1 = derivate(pass0);
-    node *pass2 = derivate(pass1);
+    // node *pass2 = derivate(pass1);
+    // showtree(pass1);
+    //node *simpl = simplify(pass1);
 
-    //showtree(pass1);
-		//node *simpl = simplify(pass1);
+    tests();
+    // showtree(pass0);
 
-    //showtree(simpl);
+    // cout << evaluate(pass0) << "\n";
+    // cout << evaluate(pass0,"(-1,1)") << "\n";
+    // cout << evaluate(pass1,"(-1,1)") << "\n";
+    // cout << evaluate(pass2,"(-1,1)") << "\n";
+    //cout << evaluate(pass2) << "\n";
 
-   cout << evaluate(pass0,"(1,1)") << "\n"; // EqualsAdaptive(value_t{ 0.839472, -0.0115338 })
-   cout << evaluate(pass1,"(1,1)") << "\n"; // EqualsAdaptive(value_t{ 0.0752251, -0.0149614 })
-   //cout << evaluate(pass2) << "\n";
-
-    delete pass0;
-    delete pass1;
-    delete pass2;
+    // delete pass0;
+    // delete pass1;
+    // delete pass2;
 
     cout << "\nend\n";
 }

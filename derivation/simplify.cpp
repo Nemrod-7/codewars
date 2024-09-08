@@ -4,6 +4,13 @@
 
 using namespace std;
 
+void showvect(const vector<string> &ve) {
+    for (auto &it : ve) {
+        cout << "[" << it << "]";
+    }
+    cout << endl;
+}
+
 struct node {
     string sym;
     node *t1, *t2;
@@ -94,12 +101,7 @@ node *div(node *a, node *b) {
     return new node ("/",a,b);
 }
 
-void showvect(const vector<string> &ve) {
-    for (auto &it : ve) {
-        cout << "[" << it << "]";
-    }
-    cout << endl;
-}
+
 string gethash(node *curr) {
 
     if (curr == nullptr) return "";
@@ -117,7 +119,6 @@ string gethash(node *curr) {
 
     return hash;
 }
-
 node *simplify (node *curr) {
 
     if (curr != nullptr) {
@@ -125,7 +126,7 @@ node *simplify (node *curr) {
 				curr->t1 = simplify(curr->t1), curr->t2 = simplify(curr->t2);
         node *a = curr->t1, *b = curr->t2;
 
-				if (hash == "1*0*x*1") { // (5) * (x * 3) 
+				if (hash == "1*0*x*1") { // (5) * (x * 3)
 						return mul(mul(a, b->t2), b->t1);
 				} else if (hash == "1*0*1*x") { // (5) * (3 * x)
 				//cout << "[" << evaluate(a) <<  "]" << curr->sym << "[" << evaluate(b) << "]\n";
@@ -149,12 +150,12 @@ node *simplify (node *curr) {
 				//
 				//    else if (hash == "1*x*1*x") { // (5*x) * (4*x)
 				//        return mul(mul(t1->t1,t2->t1), mul(t1->t2,t2->t2));
-				//    } 
-				//    else if (hash == "1*x*x*1") { // (5*x) * (x*4) 
+				//    }
+				//    else if (hash == "1*x*x*1") { // (5*x) * (x*4)
 				//        return mul(mul(t1->t1,t2->t2), mul(t1->t2,t2->t1));
 				//    }
 				//
-				//    else if (hash == "1*x*1/x") { // (3*x) * (2/x) 
+				//    else if (hash == "1*x*1/x") { // (3*x) * (2/x)
 				//        return mul(mul(t1->t1,t2->t1), div(t1->t2,t2->t2)) ;
 				//    }
 				//    else if (hash == "x*1*1/x") {

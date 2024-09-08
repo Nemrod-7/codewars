@@ -375,7 +375,7 @@ string derivate (Node *node) {
             /*cout << "sin => exp : " << t1 << "\n";*/
             /*cout << node->t1->token << "\n";*/
             return operate(exp, "*", arg);
-        } else if (term == "tan") { 
+        } else if (term == "tan") {
             // dx = 1 / (cos^2(x))
             string dx1 = derivate(node->t1);
             string den = "(" + t1 + ")";
