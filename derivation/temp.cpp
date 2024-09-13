@@ -4,18 +4,6 @@
 
 using namespace std;
 
-complex<double> stoc (const string &input) {
-    istringstream iss(input);
-    complex<double> zx;
-    iss >> zx;
-    return zx;
-}
-string ctos(const complex<double> &zx) {
-    ostringstream oss;
-    oss << fixed << setprecision(30) << zx;
-    return oss.str();
-}
-
 const complex<double> zero = {0.0,0.0}, one = {1.0,0.0};
 
 struct node {
@@ -53,7 +41,6 @@ bool is_number (const string &input) {
 }
 
 node *add(node *a, node *b) {
-
     // if (a->sym == b->sym && !is_operator(a->sym)) return new node ("*",new node("2"), a);
     if (a->sym == "" && a->val == zero) return b;
     if (b->sym == "" && b->val == zero) return a;
@@ -64,17 +51,15 @@ node *add(node *a, node *b) {
 node *sub(node *a, node *b) {
 
     //if (a->sym == b->sym) return new node("0");
-    if (b->sym == "0") return a;
-    if (is_number(a->sym) && is_number(b->sym)) return new node(to_string(stoi(a->sym) - stoi(b->sym)));
-
+    if (b->sym == "" && b->val == zero) return a;
+    if (a->sym == "" && b->sym == "") return new node(a->val - b->val);
     return new node ("-",a,b);
 }
 node *exp(node *a, node *b) {
 
-    if (a->sym == "1" || b->sym == "1") return a;
-    if (b->sym == "0") return new node("1");
-    if (a->sym == "0") return new node("0");
-    if (is_number(a->sym) && is_number(b->sym)) return new node(to_string(pow(stoi(a->sym), stoi(b->sym))));
+    if (a->val == one || b->val == one) return a;
+		if (b->sym == "" && b->val == zero) return new node(one);
+    if (a->sym == "" && b->sym == "") return new node(pow(a->val , b->val));
 
     return new node("^",a,b);
 }
@@ -82,70 +67,46 @@ node *exp(node *a, node *b) {
 node *div(node *a, node *b) {
 
     //if (a->sym == b->sym) return new node ("1");
-    if (a->sym == "0") return new node ("0");
-    if (b->sym == "1") return a;
-    if (is_number(a->sym) && is_number(b->sym)) return new node(to_string(stoi(a->sym) / stoi(b->sym)));
+    if (a->sym == "" && a->val == zero) return new node(zero);
+    if (b->sym == "" && b->val == one) return a;
+		if (a->sym == "" && b->sym == "") return new node(a->val / b->val);
 
     return new node ("/",a,b);
 }
 
-// complex<double> evaluate (node *node, complex<double> value) {
-//
-//     if (node == nullptr) return 0;
-//
-//     string term = node->sym;
-//     complex<double> a = evaluate(node->t1, value), b = evaluate(node->t2, value);
-//     // cout << "[" << t1 <<  "]" << term << "[" << t2 << "]\n";
-//
-//     if (term == "x") {
-//         return value;
-//     } else if (is_operator(term)) {
-//         switch (term[0]) {
-//             case '+' : return a + b; break;
-//             case '-' : return a - b; break;
-//             case '*' : return a * b; break;
-//             case '/' : return a / b; break;
-//             case '^' : return pow(a, b); break;
-//         }
-//     } else {
-//         complex<double> val = a;
-//
-//         if (term == "cos") {
-//             return cos(val);
-//         } else if (term == "sin") {
-//             return sin(val);
-//         } else if (term == "tan") {
-//             return tan(val);
-//         } else if (term == "log") {
-//             return log(val);
-//         } else if (term == "cot") { //cot(x) = cos(x)/sin(x) or cot(x) = 1 / tan(x)
-//             return cos(val) / sin(val);
-//         }
-//     }
-//
-//     return 0;
-// }
 node *mul(node *a, node *b) {
 
     if (a->val == one) return b;
     if (b->val == one) return a;
-
-    if (a->sym == "" && a->val == zero || b->val == zero) return new node (zero);
+    if (a->sym == "" && a->val == zero || b->sym == "" && b->val == zero) return new node (zero);
     if (a->sym == "" && b->sym == "") return new node(a->val * b->val);
     return new node ("*",a,b);
 }
 
+void showtree(const node *node, bool isLeft = false, const string &prefix = "") {
+    if (node != nullptr) {
+        cout << prefix;
+				cout << (isLeft ? "├─" : "└─" );
+
+				if (node->sym == "") {
+						cout << "[" << node->val << "]" << endl;
+				} else {
+
+						cout << "[" << node->sym << "]" << endl;
+				}
+
+				showtree(node->t1, true, prefix + (isLeft ? "│  " : "   "));
+				showtree(node->t2, false, prefix + (isLeft ? "│  " : "   "));
+		}
+}
 int main () {
 
-    // expr = "x^73.4+70.1^73.8*x^58.9";
-    complex<double> zx (-0.2,-0.5), zy (73.40,0);
+		node *tree = mul(new node(2), mul(new node(3), exp( new node("x"), new node(2)))) ;
 
-    string a = ctos(zx), b = ctos(zy);
-    complex<double> rx = pow(stoc(a), stoc(b));
+		showtree(tree);
+		//cout << curr->t2->sym;
 
-    node *tree = mul(new node(2), mul( new node(3), new node("x")) ) ;
 
-    // cout << rx << "\n";
-
-    cout << "\nend\n";
+		//showtree(tree);
+		cout << "\nend\n";
 }
