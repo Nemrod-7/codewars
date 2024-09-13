@@ -1,10 +1,12 @@
 #include <iostream>
+#include <iomanip>
 #include <vector>
 #include <regex>
 #include <cmath>
 #include <tuple>
 #include <complex>
 #include <functional>
+
 #include "tests.hpp"
 
 using namespace std;
@@ -12,6 +14,7 @@ using value_t = complex<double>;
 using func_t = function<value_t(value_t)>;
 
 const regex oper ("^[-+*/^]$");
+const regex trig ("^sin|cos|tan|cot|log$");
 const regex number ("^-?\\d+(.\\d+)?|\\(-?\\d+(.\\d+)?,-?\\d+(.\\d+)?\\)$");
 
 // Let f be a function.
@@ -41,7 +44,7 @@ struct node {
 ////////////////////////////////////////////////////////////////////////
 void show (const std::vector<std::string> &vs) {
 
-    for (int i = 0; i < vs.size(); i++) {
+    for (size_t i = 0; i < vs.size(); i++) {
         std::cout << "[" << vs[i] << "]";
     }
 
@@ -63,26 +66,18 @@ vector<string> tokenize(const string &input) {
     const regex oper ("^[-+*/^]$");
     sregex_token_iterator iter (input.begin (), input.end (), tokn);
     vector<string> temp (iter, sregex_token_iterator ()), code;
-    
-    for (int i = 0; i < temp.size(); i++) {
+
+    for (size_t i = 0; i < temp.size(); i++) {
         if (temp[i] == "-" && (i == 0 || regex_match(temp[i-1], oper))) {
             code.push_back("-" + temp[i + 1]);
             i += 2;
-        } 
+        }
         code.push_back(temp[i]);
     }
 
     return temp;
 
 }
-
-double round(double x) {
-    return floor(x * 1e8) / 1e8;
-}
-complex<double> round(complex<double> x) {
-    return { round(x.real()),round(x.imag()) };
-}
-
 complex<double> stoc (const string &input) {
     istringstream iss(input);
     complex<double> zx;
@@ -91,7 +86,7 @@ complex<double> stoc (const string &input) {
 }
 string ctos(const complex<double> &zx) {
     ostringstream oss;
-    zx.imag() == 0 ? oss << fixed << zx.real() : oss << fixed << zx;
+    oss << fixed << setprecision(30) << zx; // zx.imag() == 0 ? oss << fixed << zx.real() : oss << fixed << zx;
     return oss.str();
 }
 
@@ -100,6 +95,11 @@ int order (const string &src) {
     if (src == "*" || src == "/") return 2;
     if (src == "^") return 3;
     return 0;
+}
+bool precedence(vector<string> &stack, string cell) {
+    if (stack.empty()) return false;
+    // if (cell == "^") return order(stack.back()) > order(cell);
+    return order(stack.back()) >= order(cell);
 }
 template<class T> T getstack (vector<T> &stack) {
     T val = stack.back();
@@ -121,9 +121,73 @@ string parenthesis(vector<string>::iterator &it) {
 
     return sub;
 }
+
+bool operable(node *a, node *b) {
+    return regex_match(a->sym, number) && regex_match(b->sym, number);
+}
+string operate (const string &t1, const string &oper, const string &t2) {
+
+    switch (oper[0]) {
+        case '+' : return ctos (stoc(t1) + stoc(t2)) ; break;
+        case '-' : return ctos (stoc(t1) - stoc(t2)) ; break;
+        case '*' : return ctos (stoc(t1) * stoc(t2)) ; break;
+        case '/' : return ctos (stoc(t1) / stoc(t2)) ; break;
+        case '^' : return ctos (pow(stoc(t1), stoc(t2))) ; break;
+    }
+
+    return t1 + oper + t2;
+}
+node *div(node *a, node *b) {
+
+    if (a->sym == "0") return new node ("0");
+    if (b->sym == "1") return a;
+    if (a->sym == b->sym && !regex_match(a->sym, oper)) return new node ("1");
+    if (operable(a,b)) return new node(ctos(stoc(a->sym) / stoc(b->sym)));
+
+    return new node ("/",a,b);
+}
+node *add(node *a, node *b) {
+
+    if (a->sym == "0") return b;
+    if (b->sym == "0") return a;
+    if (a->sym == b->sym && !regex_match(a->sym, oper)) return new node ("*",new node("2"), a);
+    if (operable(a,b)) return new node(ctos(stoc(a->sym) + stoc(b->sym)));
+
+    return new node ("+",a,b);
+}
+node *sub(node *a, node *b) {
+
+    if (b->sym == "0") return a;
+    if (a->sym == b->sym && !regex_match(a->sym, oper)) return new node("0");
+    if (operable(a,b)) return new node(ctos(stoc(a->sym) - stoc(b->sym)));
+
+    return new node ("-",a,b);
+}
+node *mul(node *a, node *b) {
+
+    if (a->sym == "1") return b;
+    if (b->sym == "1") return a;
+    if (a->sym == b->sym && !regex_match(a->sym, oper)) return new node ("^",a, new node("2"));
+    if (a->sym == "0" || b->sym == "0") return new node ("0");
+    if (operable(a,b)) return new node(ctos(stoc(a->sym) * stoc(b->sym)));
+
+    return new node ("*",a,b);
+}
+node *exp(node *a, node *b) {
+    // frexp
+    if (a->sym == "1" || b->sym == "1") return a;
+    if (b->sym == "0") return new node("1");
+    if (a->sym == "0") return new node("0");
+
+    if (operable(a,b)) {
+        return new node(ctos(pow(stoc(a->sym), stoc(b->sym))));
+    }
+
+    return new node("^",a,b);
+}
+
 node *parse (const string &input) {
 
-    const regex trig ("^sin|cos|tan|cot|log$");
     vector<string> code = tokenize(input), stack;
     vector<string>::iterator it = code.begin();
     vector<node*> tree;
@@ -138,8 +202,7 @@ node *parse (const string &input) {
         } else if (regex_match(cell, number)) {
             tree.push_back( new node(cell));
         } else if (regex_match(cell, oper)) {
-
-            while(!stack.empty() && order(stack.back()) > order(cell)) {
+            while (precedence(stack,cell)) {
                 node *next = new node(getstack(stack));
                 next->t2 = getstack(tree);
                 next->t1 = getstack(tree);
@@ -169,100 +232,80 @@ node *parse (const string &input) {
 
     return tree.back();
 }
-
-bool full_number(node *a, node *b) { 
-    return regex_match(a->sym, number) && regex_match(b->sym, number); 
-}
-string operate (const string &t1, const string &oper, const string &t2) {
-
-    switch (oper[0]) {
-        case '+' : return ctos (round(stoc(t1) + stoc(t2))) ; break;
-        case '-' : return ctos (round(stoc(t1) - stoc(t2))) ; break;
-        case '*' : return ctos (round(stoc(t1) * stoc(t2))) ; break;
-        case '/' : return ctos (round(stoc(t1) / stoc(t2))) ; break;
-        case '^' : return ctos (round(pow(stoc(t1), stoc(t2)))) ; break;
-    }
-
-    return t1 + oper + t2;
-}
-node *div(node *a, node *b) {
-
-    if (a->sym == "0") return new node ("0");
-    if (b->sym == "1") return a;
-    if (a->sym == b->sym && !regex_match(a->sym, oper)) return new node ("1");
-    if (full_number(a,b)) return new node(ctos(round(stoc(a->sym) / stoc(b->sym))));
-
-    return new node ("/",a,b);
-}
-node *add(node *a, node *b) {
-
-    if (a->sym == "0") return b;
-    if (b->sym == "0") return a;
-    if (a->sym == b->sym && !regex_match(a->sym, oper)) return new node ("*",new node("2"), a);
-    if (full_number(a,b)) return new node(ctos(round(stoc(a->sym) + stoc(b->sym))));
-
-    return new node ("+",a,b);
-}
-node *sub(node *a, node *b) {
-
-    if (b->sym == "0") return a;
-    if (a->sym == b->sym && !regex_match(a->sym, oper)) return new node("0");
-    if (full_number(a,b)) return new node(ctos(round(stoc(a->sym) - stoc(b->sym))));
-
-    return new node ("-",a,b);
-}
-node *mul(node *a, node *b) {
-
-    if (a->sym == "1") return b;
-    if (b->sym == "1") return a;
-    if (a->sym == b->sym && !regex_match(a->sym, oper)) return new node ("^",a, new node("2"));
-    if (a->sym == "0" || b->sym == "0") return new node ("0");
-    if (full_number(a,b)) return new node(ctos(round(stoc(a->sym) / stoc(b->sym))));
-
-    return new node ("*",a,b);
-}
-node *exp(node *a, node *b) {
-    // frexp
-    if (a->sym == "1" || b->sym == "1") return a;
-    if (b->sym == "0") return new node("1");
-    if (a->sym == "0") return new node("0");
-
-    if (full_number(a,b)) return new node(ctos(round(pow(stoc(a->sym), stoc(b->sym)))));
-    return new node("^",a,b);
-}
-
 string evaluate (node *node, string value = "") {
 
     if (node == nullptr) return "";
 
     string term = node->sym;
     string a = evaluate(node->t1, value), b = evaluate(node->t2, value);
-    // cout << "[" << t1 <<  "]" << term << "[" << t2 << "]\n";
 
     if (term == "x") {
         return value == "" ? term : value;
+    } else if (regex_match(term,number)) {
+        return term;
     } else if (regex_match(term,oper)) {
         if (regex_match(a, number) && regex_match(b, number)) {
+            // cout << "[" << a <<  "]" << term << "[" << b << "] => " << operate(a,term,b);
+            // cout <<"\n";
             return operate(a,term,b);
         }
-        //cout << "[" << a << "]" << term << "[" << b << "]\n";
     } else if (regex_match(a, number)) {
         value_t val = stoc(a);
 
         if (term == "cos") {
-            return ctos(round(cos(val)));
+            return ctos(cos(val));
         } else if (term == "sin") {
-            return ctos(round(sin(val)));
+            return ctos(sin(val));
         } else if (term == "tan") {
-            return ctos(round(tan(val)));
+            return ctos(tan(val));
         } else if (term == "log") {
-            return ctos(round(log(val)));
+            return ctos(log(val));
         } else if (term == "cot") { //cot(x) = cos(x)/sin(x) or cot(x) = 1 / tan(x)
-            return ctos(round( cos(val) / sin(val) ));
+            return ctos( cos(val) / sin(val) );
         }
     }
 
     return a + term + b;
+}
+complex<double> evaluate2 (node *node, complex<double> value) {
+
+    if (node == nullptr) return 0;
+
+    string term = node->sym;
+    complex<double> a = evaluate2(node->t1, value), b = evaluate2(node->t2, value);
+    // cout << "[" << a <<  "]" << term << "[" << b << "]\n";
+    if (term == "x") {
+        return value;
+    } else if (regex_match(term,number)) {
+        return stoc(term);
+    } else if (regex_match(term,oper)) {
+        switch (term[0]) {
+            case '+' : return a + b; break;
+            case '-' : return a - b; break;
+            case '*' : return a * b; break;
+            case '/' : return a / b; break;
+            case '^' : return pow(a, b); break;
+        }
+    } else {
+        complex<double> val = a;
+
+        if (term == "cos") {
+            return cos(val);
+        } else if (term == "sin") {
+            return sin(val);
+        } else if (term == "tan") {
+            return tan(val);
+        } else if (term == "log") {
+            return log(val);
+        } else if (term == "cot") { //cot(x) = cos(x)/sin(x) or cot(x) = 1 / tan(x)
+            return cos(val) / sin(val);
+        } else {
+            cout << "Invalid operator\n";
+        }
+
+    }
+
+    return 0;
 }
 node *derivate(node *curr) {
 
@@ -313,23 +356,36 @@ tuple<func_t,func_t,func_t> differentiate(const string &expression) {
 
     return {
         [pass0](value_t x) { return stoc(evaluate(pass0, ctos(x))); },
-            [pass1](value_t x) { return stoc(evaluate(pass1, ctos(x))); },
-            [pass2](value_t x) { return stoc(evaluate(pass2, ctos(x))); },
+        [pass1](value_t x) { return stoc(evaluate(pass1, ctos(x))); },
+        [pass2](value_t x) { return stoc(evaluate(pass2, ctos(x))); },
     };
 }
 
 
 int main () {
 
-    //showtree(parse("4 * log(x) + x^2 / 2^x"));
-    //showtree(parse("(tan(2 * x) + 1) / (cot(x * 3) - 1)"));
+  complex<double> x (3.41,-8.97);
+  string expr = "x^x-x/x^91.1-22.9^x";
 
-    //showtree(parse("-2.508 -85 * x^3"));
-    //showtree(parse("2 * x^3"));
-    //showtree(parse("sin(cos(x^x^2))"));
-    //showtree(parse("4 * log(x) + x^2 / 2^x"));
-    //showtree(parse("(tan(2 * x) + 1) / (cot(x * 3) - 1)"));
+  node *pass0 = parse(expr);
+  node *pass1 = derivate(pass0);
+  node *pass2 = derivate(pass1);
 
-    tests();
+  // showtree(pass1);
+  cout << evaluate(pass2, ctos(x)) << "\n";
+  cout << evaluate2(pass2, x) << "\n";
+/*
+
+The first derivative failed! f(x) = "x^73.4+70.1^73.8*x^58.9", x = "(-0.2,-0.5)"
+
+Expected: equal to (2.61549e+122,3.07174e+121) (+/- (8.06953e+118,1.00869e+118))
+Actual: (0,0)
+
+
+
+*/
+
+
+
     cout << "\nend\n";
 }
