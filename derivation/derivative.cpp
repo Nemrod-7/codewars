@@ -255,120 +255,121 @@ complex<double> evaluate (const node *node, const complex<double> &value) {
 
     string term = node->sym;
     complex<double> a = evaluate(node->t1, value), b = evaluate(node->t2, value);
-    if (term == "x") {
-        return value;
-    } else if (term == "") {
-        return node->val;
-    } else if (is_operator(term)) {
-        complex<double> xz;
 
-        switch (term[0]) {
-            case '+' : xz = a + b; break;
-            case '-' : xz = a - b; break;
-            case '*' : xz = a * b; break;
-            case '/' :
-                       {
-                       xz = a / b;
-                       cout << "[" << a <<  "]" << term << "[" << b << "] => ";
-                       cout << xz << "\n";
-break;
-                       }
-            case '^' : xz = pow(a, b); break;
-        }
-    } else {
-        complex<double> val = a;
+		if (term == "x") {
+				return value;
+		} else if (term == "") {
+				return node->val;
+		} else if (is_operator(term)) {
+				complex<double> xz;
 
-        if (term == "cos") {
-            return cos(val);
-        } else if (term == "sin") {
-            return sin(val);
-        } else if (term == "tan") {
-            return tan(val);
-        } else if (term == "log") {
-            return log(val);
-        } else if (term == "cot") { //cot(x) = cos(x)/sin(x) or cot(x) = 1 / tan(x)
-            return cos(val) / sin(val);
-        } else {
-            cout << "Invalid operator\n";
-        }
+				switch (term[0]) {
+						case '+' : xz = a + b; break;
+						case '-' : xz = a - b; break;
+						case '*' : xz = a * b; break;
+						case '/' : xz = a / b; break;
+						case '^' : xz = pow(a, b); break;
+				}
+				//cout << "[" << a <<  "]" << term << "[" << b << "] => ";
+				//cout << xz << "\n";
+				return xz;
+		} else {
+				complex<double> val = a;
 
-    }
+				if (term == "cos") {
+						return cos(val);
+				} else if (term == "sin") {
+						return sin(val);
+				} else if (term == "tan") {
+						return tan(val);
+				} else if (term == "log") {
+						return log(val);
+				} else if (term == "cot") { //cot(x) = cos(x)/sin(x) or cot(x) = 1 / tan(x)
+						cout << "cot : " << val << "\n";
+						return cos(val) / sin(val);
+				} else {
+						cout << "Invalid operator\n";
+				}
 
-    return 0;
+		}
+
+		return 0;
 }
 node *derivate (const node *curr) {
 
-    string term = curr->sym;
-    node *t1 = curr->t1, *t2 = curr->t2;
+		string term = curr->sym;
+		node *t1 = curr->t1, *t2 = curr->t2;
 
-    //cout << "[" << term << "|" << curr->val << "]" << "\n" << flush;
-    if (term == "x") {
-        return new node(one);
-    } else if (term == "") {
-        return new node(zero);
-    } else if (term == "+") {
-        return add(derivate(t1), derivate(t2));
-    } else if (term == "-") {
-        return sub(derivate(t1), derivate(t2));
-    } else if (term == "*") {
-        return add(mul(t1,derivate(t2)), mul(derivate(t1),t2));
-    } else if (term == "/") {
-        node *num = sub(mul(derivate(t1),t2),mul(t1,derivate(t2)));
-        node *den = mul(t2,t2);
-        return div(num, den) ;
-    } else if (term == "^") {
-        if (t1->sym == "x" && t2->sym == "") {
-            return mul(t2, exp( t1, sub(t2, new node(one)) ) ) ;
-        }
-        node *outer = exp(t1, t2);
-        node *inner = add( mul( derivate(t1), div(t2,t1) ), mul( derivate(t2), new node("log", t1) ));
-        return mul(inner,outer);
-    } else if (term == "cos") {
-        return sub(new node(zero), mul(derivate(t1), new node("sin", t1)));
-    } else if (term == "sin") {
-        return mul(derivate(t1), new node("cos", t1)) ;
-    } else if (term == "tan") { // dx = 1 / (cos(x))^2
-        return div(derivate(t1), exp(new node("cos", t1), new node(two)));
-    } else if (term == "log") { // dx = x' / x
-        return div(derivate(t1),t1);
-    } else if (term == "cot") {
-        return sub(new node(zero), div(derivate(t1), new node("^", new node("sin", t1), new node(two)))) ;
-    }
+		//cout << "[" << term << "|" << curr->val << "]" << "\n" << flush;
+		if (term == "x") {
+				return new node(one);
+		} else if (term == "") {
+				return new node(zero);
+		} else if (term == "+") {
+				return add(derivate(t1), derivate(t2));
+		} else if (term == "-") {
+				return sub(derivate(t1), derivate(t2));
+		} else if (term == "*") {
+				return add(mul(t1,derivate(t2)), mul(derivate(t1),t2));
+		} else if (term == "/") {
+				node *num = sub(mul(derivate(t1),t2),mul(t1,derivate(t2)));
+				node *den = mul(t2,t2);
+				return div(num, den) ;
+		} else if (term == "^") {
+				if (t1->sym == "x" && t2->sym == "") {
+						return mul(t2, exp( t1, sub(t2, new node(one)) ) ) ;
+				}
+				node *outer = exp(t1, t2);
+				node *inner = add( mul( derivate(t1), div(t2,t1) ), mul( derivate(t2), new node("log", t1) ));
+				return mul(inner,outer);
+		} else if (term == "cos") {
+				return sub(new node(zero), mul(derivate(t1), new node("sin", t1)));
+		} else if (term == "sin") {
+				return mul(derivate(t1), new node("cos", t1)) ;
+		} else if (term == "tan") { // dx = 1 / (cos(x))^2
+				return div(derivate(t1), exp(new node("cos", t1), new node(two)));
+		} else if (term == "log") { // dx = x' / x
+				return div(derivate(t1),t1);
+		} else if (term == "cot") {
+				return sub(new node(zero), div(derivate(t1), new node("^", new node("sin", t1), new node(two)))) ;
+		}
 
-    return nullptr;
+		return nullptr;
 }
 
 tuple<func_t,func_t,func_t> differentiate (const string &expression) {
 
-    node *pass0 = parse(expression);
-    node *pass1 = derivate(pass0);
-    node *pass2 = derivate(pass1);
+		node *pass0 = parse(expression);
+		node *pass1 = derivate(pass0);
+		node *pass2 = derivate(pass1);
 
-    return {
-        [pass0](value_t x) { return evaluate(pass0, x); },
-        [pass1](value_t x) { return evaluate(pass1, x); },
-        [pass2](value_t x) { return evaluate(pass2, x); },
-    };
+		return {
+				[pass0](value_t x) { return evaluate(pass0, x); },
+						[pass1](value_t x) { return evaluate(pass1, x); },
+						[pass2](value_t x) { return evaluate(pass2, x); },
+		};
 }
 
 int main () {
 
-    // The second derivative failed! f(x) = tan(8.1+81.5^x+87.5*x)^94.1, x = (-4.87,-7.25)
-    // Expected: equal to (0,0) (+/- (0.001,0.001))
-    // Actual: (-nan,-nan)
+		// The second derivative failed! f(x) = tan(8.1+81.5^x+87.5*x)^94.1, x = (-4.87,-7.25)
+		// Expected: equal to (0,0) (+/- (0.001,0.001))
+		// Actual: (-nan,-nan)
 
-//The function failed! f(x) = cot(39.6^11.5*42.3/x+93.7^73.3), x = (-8.34,-4.4)
-//Expected: equal to (0,-1) (+/- (0.001,0.001))
-//Actual: (-nan,-nan)
-    complex<double> x (-4.87,-7.25);
-    string expr = "cot(39.6^11.5*42.3/x+93.7^73.3)";
+		//The function failed! f(x) = cot(39.6^11.5*42.3/x+93.7^73.3), x = (-8.34,-4.4)
+		//Expected: equal to (0,-1) (+/- (0.001,0.001))
+		//Actual: (-nan,-nan)
+		complex<double> x (-4.87,-7.25);
+		string expr = "cot(39.6^11.5*42.3/x+93.7^73.3)";
 
-    node *pass0 = parse(expr);
-    // node *pass1 = derivate(pass0);
-    // node *pass2 = derivate(pass1);
+		node *pass0 = parse(expr);
+		// node *pass1 = derivate(pass0);
+		// node *pass2 = derivate(pass1);
 
-    showtree(pass0);
-    cout << evaluate(pass0,x) << "\n";
-    //tests();
-    cout << "\nend\n";
+		//showtree(pass0);
+		cout << evaluate(pass0,x) << "\n";
+
+		
+		//tests();
+		cout << "\nend\n";
 }
