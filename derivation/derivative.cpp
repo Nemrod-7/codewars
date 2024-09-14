@@ -25,7 +25,7 @@ using namespace std;
 
 using value_t = complex<double>;
 using func_t = function<value_t(value_t)>;
-const complex<double> zero = {0.0,0.0}, one = {1.0,0.0};
+const complex<double> zero = {0.0,0.0}, one = {1.0,0.0}, two = {2.0,0.0};
 
 struct node {
     string sym;
@@ -170,7 +170,7 @@ node *exp(node *a, node *b) {
 }
 node *div(node *a, node *b) {
 
-    //if (a->sym == b->sym) return new node ("1");
+    //if (a->sym == b->sym) return new node (one);
     if (a->sym == "" && a->val == zero) return new node(zero);
     if (b->sym == "" && b->val == one) return a;
     if (a->sym == "" && b->sym == "") return new node(a->val / b->val);
@@ -197,7 +197,7 @@ template<class T> T getstack (vector<T> &stack) {
     stack.pop_back();
     return val;
 }
-bool precedence (vector<string> &stack, string cell) {
+bool precedence (const vector<string> &stack, const string &cell) {
     if (stack.empty()) return false;
     if (cell == "^") return order(stack.back()) > order(cell);
     return order(stack.back()) >= order(cell);
@@ -249,24 +249,31 @@ node *parse (const string &input) {
 
     return tree.back();
 }
-complex<double> evaluate (node *node, complex<double> value) {
+complex<double> evaluate (const node *node, const complex<double> &value) {
 
     if (node == nullptr) return 0;
 
     string term = node->sym;
     complex<double> a = evaluate(node->t1, value), b = evaluate(node->t2, value);
-    // cout << "[" << a <<  "]" << term << "[" << b << "]\n";
     if (term == "x") {
         return value;
     } else if (term == "") {
         return node->val;
     } else if (is_operator(term)) {
+        complex<double> xz;
+
         switch (term[0]) {
-            case '+' : return a + b; break;
-            case '-' : return a - b; break;
-            case '*' : return a * b; break;
-            case '/' : return a / b; break;
-            case '^' : return pow(a, b); break;
+            case '+' : xz = a + b; break;
+            case '-' : xz = a - b; break;
+            case '*' : xz = a * b; break;
+            case '/' :
+                       {
+                       xz = a / b;
+                       cout << "[" << a <<  "]" << term << "[" << b << "] => ";
+                       cout << xz << "\n";
+break;
+                       }
+            case '^' : xz = pow(a, b); break;
         }
     } else {
         complex<double> val = a;
@@ -289,7 +296,7 @@ complex<double> evaluate (node *node, complex<double> value) {
 
     return 0;
 }
-node *derivate (node *curr) {
+node *derivate (const node *curr) {
 
     string term = curr->sym;
     node *t1 = curr->t1, *t2 = curr->t2;
@@ -321,11 +328,11 @@ node *derivate (node *curr) {
     } else if (term == "sin") {
         return mul(derivate(t1), new node("cos", t1)) ;
     } else if (term == "tan") { // dx = 1 / (cos(x))^2
-        return div(derivate(t1), exp(new node("cos", t1), new node(complex<double> (2,0))));
+        return div(derivate(t1), exp(new node("cos", t1), new node(two)));
     } else if (term == "log") { // dx = x' / x
         return div(derivate(t1),t1);
     } else if (term == "cot") {
-        return sub(new node(zero), div(derivate(t1), new node("^", new node("sin", t1), new node(complex<double> (2,0))))) ;
+        return sub(new node(zero), div(derivate(t1), new node("^", new node("sin", t1), new node(two)))) ;
     }
 
     return nullptr;
@@ -339,25 +346,29 @@ tuple<func_t,func_t,func_t> differentiate (const string &expression) {
 
     return {
         [pass0](value_t x) { return evaluate(pass0, x); },
-            [pass1](value_t x) { return evaluate(pass1, x); },
-            [pass2](value_t x) { return evaluate(pass2, x); },
+        [pass1](value_t x) { return evaluate(pass1, x); },
+        [pass2](value_t x) { return evaluate(pass2, x); },
     };
 }
 
 int main () {
 
-    node *tree = mul(new node(2), mul(new node(3), exp( new node("x"), new node(2)))) ;
+    // The second derivative failed! f(x) = tan(8.1+81.5^x+87.5*x)^94.1, x = (-4.87,-7.25)
+    // Expected: equal to (0,0) (+/- (0.001,0.001))
+    // Actual: (-nan,-nan)
 
-
-    complex<double> x (3.41,-8.97);
-    string expr = "x^x-x/x^91.1-22.9^x";
+//The function failed! f(x) = cot(39.6^11.5*42.3/x+93.7^73.3), x = (-8.34,-4.4)
+//Expected: equal to (0,-1) (+/- (0.001,0.001))
+//Actual: (-nan,-nan)
+    complex<double> x (-4.87,-7.25);
+    string expr = "cot(39.6^11.5*42.3/x+93.7^73.3)";
 
     node *pass0 = parse(expr);
-    node *pass1 = derivate(pass0);
-    node *pass2 = derivate(pass1);
+    // node *pass1 = derivate(pass0);
+    // node *pass2 = derivate(pass1);
 
-    cout << evaluate(pass2,x) << "\n";
-    // showtree(pass1);
+    showtree(pass0);
+    cout << evaluate(pass0,x) << "\n";
     //tests();
     cout << "\nend\n";
 }
