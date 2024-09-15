@@ -351,6 +351,11 @@ tuple<func_t,func_t,func_t> differentiate (const string &expression) {
 
 int main () {
 
+//The function failed! f(x) = cot(x/45.3^x*x^32.3+x^85.1/x^20.9/x-5^45.3*86.2^67.6/x^x)^x, x = (-3.25,2.95)
+//Expected: equal to (39.3817,-95.0759) (+/- (0.015625,0.03125))
+//Actual: (nan,nan)
+
+
     //The second derivative failed! f(x) = tan(x-25.8-x*64.5), x = (2.32,9.61)
     //Expected: equal to (0,0) (+/- (0.001,0.001))
     //Actual: (-nan,-nan)
