@@ -25,7 +25,6 @@ using namespace std;
 
 using value_t = complex<double>;
 using func_t = function<value_t(value_t)>;
-const complex<double> zero = {0.0,0.0}, one = {1.0,0.0}, two = {2.0,0.0};
 
 struct node {
     string sym;
@@ -185,7 +184,6 @@ node *mul(node *a, node *b) {
     return new node ("*",a,b);
 }
 
-
 int order (const string &src) {
     if (src == "+" || src == "-") return 1;
     if (src == "*" || src == "/") return 2;
@@ -220,16 +218,13 @@ node *parse (const string &input) {
         } else if (is_number(curr)) {
             tree.push_back( new node(stoc(curr)));
         } else if (is_operator(curr)) {
-
             while (!oper.empty() && precedence(oper,curr)) {
                 node *next = getstack(oper);
                 next->t2 = getstack(tree);
                 next->t1 = getstack(tree);
                 tree.push_back(next);
             }
-
             oper.push_back(new node(curr));
-
         } else if (is_func(curr)) {
             it++;
             node *next = new node(curr);
@@ -272,8 +267,8 @@ complex<double> evaluate (const node *node, const complex<double> &value) {
             case '/' : xz = a / b; break;
             case '^' : xz = pow(a, b); break;
         }
-        // cout << "[" << a <<  "]" << term << "[" << b << "] => ";
-        // cout << xz << "\n";
+        cout << "[" << a <<  "]" << term << "[" << b << "] => ";
+        cout << xz << "\n";
         return xz;
     } else if (term == "cos") {
         return cos(a);
@@ -284,7 +279,7 @@ complex<double> evaluate (const node *node, const complex<double> &value) {
     } else if (term == "log") {
         return log(a);
     } else if (term == "cot") { //cot(x) = cos(x)/sin(x) or cot(x) = 1 / tan(x)
-        return one / tan(a);
+        return 1.0 / tan(a);
     } else {
         cout << "Invalid operator\n";
 
@@ -300,9 +295,9 @@ node *derivate (const node *curr) {
 
     //cout << "[" << term << "|" << curr->val << "]" << "\n" << flush;
     if (term == "x") {
-        return new node(one);
+        return new node(1.0);
     } else if (term == "") {
-        return new node(zero);
+        return new node(0.0);
     } else if (term == "+") {
         return add(derivate(t1), derivate(t2));
     } else if (term == "-") {
@@ -314,22 +309,22 @@ node *derivate (const node *curr) {
         node *den = mul(t2,t2);
         return div(num, den) ;
     } else if (term == "^") {
-        //        if (t1->sym == "x" && t2->sym == "") {
-        //            return mul(t2, exp( t1, sub(t2, new node(one)) ) ) ;
-        //        }
+         if (t1->sym == "x" && t2->sym == "") {
+             return mul(t2, exp( t1, sub(t2, new node(1.0)) ) ) ;
+         }
         node *outer = exp(t1, t2);
         node *inner = add( mul( derivate(t1), div(t2,t1) ), mul( derivate(t2), new node("log", t1) ));
         return mul(inner,outer);
     } else if (term == "cos") {
-        return sub(new node(zero), mul(derivate(t1), new node("sin", t1)));
+        return sub(new node(0.0), mul(derivate(t1), new node("sin", t1)));
     } else if (term == "sin") {
         return mul(derivate(t1), new node("cos", t1)) ;
     } else if (term == "tan") { // dx = 1 / (cos(x))^2
-        return div(derivate(t1), exp(new node("cos", t1), new node(two)));
+        return div(derivate(t1), exp(new node("cos", t1), new node(2.0)));
     } else if (term == "log") { // dx = x' / x
         return div(derivate(t1),t1);
     } else if (term == "cot") {
-        return sub(new node(zero), div(derivate(t1), new node("^", new node("sin", t1), new node(two)))) ;
+        return sub(new node(0.0), div(derivate(t1), new node("^", new node("sin", t1), new node(2.0)))) ;
     }
 
     return nullptr;
@@ -370,12 +365,14 @@ int main () {
     complex<double> x(-3.25,2.95);
     string expr = "cot(x/45.3^x*x^32.3+x^85.1/x^20.9/x-5^45.3*86.2^67.6/x^x)^x";
 
+    x = {9.9,-4.7};
+    expr = "x^23.6*x/x^94.6";
     node *pass0 = parse(expr);
-    // node *pass1 = derivate(pass0);
-    // node *pass2 = derivate(pass1);
+    node *pass1 = derivate(pass0);
+    node *pass2 = derivate(pass1);
 
-    // showtree(pass0);
-    cout << evaluate(pass0,x) << "\n";
+    showtree(pass2);
+    cout << evaluate(pass2,x) << "\n";
 
 
     //tests();
