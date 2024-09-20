@@ -4,7 +4,6 @@
 
 using namespace std;
 
-
 struct node {
     string sym;
     complex<double> val;
@@ -55,17 +54,37 @@ node *mul(node *a, node *b) {
     return new node ("*",a,b);
 }
 
+struct Data {
+    string arr;
+    int n;
+
+    Data (int input) : n(input), arr("") {}
+    Data (string input) : arr(input), n(0) {}
+    Data () : arr(""), n(0) {}
+};
+
 int main () {
 
-   string expr = "cot(39.6^11.5*42.3/x+93.7^73.3)";
-   complex<double> x (-4.87,-7.25);
+// exp : x^y   => x^y . (x'.(y/x) + y'.log(x))
+// x^63 => x^63 * (63/x)) => 63 * x^62
 
-   complex<double> a(39.6), b(11.5), c(42.3), d(93.7), e(73.3);
-   complex<double> val = pow(a,b) * c / x + pow(d,e);
+    // complex<double> x(-3.35,3.35);
+    // node *t1 = mul(new node(63.0), exp(new node(x), new node(62.0)));
+    // node *t2 = mul( exp(new node(x), new node(63.0)), div(new node(63.0),  new node(x)) );
 
-   cout << cos(val) << "\n";
-   cout << sin(val) << "\n";
-   cout << tan(val) << "\n";
+    // complex<double> x1 = pow(x, 3);
+    // complex<double> x2 = pow(x, 2);
+    // complex<double> ex = {-16, 16} ; // pow(x, 3.0);
+    // ex= pow(x, 3.0);
 
+    cout << fixed;
+
+    // double x = 3.75;
+    //
+    // cout << pow(x, 62.0) * 63.0 << "\n";
+    // cout << pow(x, 63.0) * 63.0 / x << "\n";
+    // cout << pow(x, 63.0) / x * 63.0 << "\n";
+
+    Data curr;
 
 }

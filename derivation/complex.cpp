@@ -134,7 +134,7 @@ node *add(node *a, node *b) {
 }
 node *sub(node *a, node *b) {
 
-    //if (a->sym == b->sym) return new node("0");
+    //if (a->sym == b->sym) return new node(0.0);
     if (b->sym == "" && b->val == 0.0) return a;
     if (a->sym == "" && b->sym == "") return new node(a->val - b->val);
     return new node ("-",a,b);
@@ -228,7 +228,7 @@ node *derivate (const node *curr) {
         return add(mul(t1,derivate(t2)), mul(derivate(t1),t2));
     } else if (term == "/") {
         node *num = sub(mul(derivate(t1),t2),mul(t1,derivate(t2)));
-        node *den = mul(t2,t2);
+        node *den = exp(t2,new node(2.0));
         return div(num, den) ;
     } else if (term == "^") {
         if (t1->sym == "x" && regex_match(t2->sym, number)) {

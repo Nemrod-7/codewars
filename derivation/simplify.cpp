@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
+#include <complex>
 
 using namespace std;
 
@@ -13,24 +14,58 @@ void showvect(const vector<string> &ve) {
 
 struct node {
     string sym;
+    complex<double> val;
     node *t1, *t2;
 
-    node (const string &label = "", node *t1 = nullptr, node *t2 = nullptr) : sym (label), t1 (t1), t2 (t2) {}
-
+    node (const string &label, node *t1 = nullptr, node *t2 = nullptr) : sym (label), val(0.0,0.0), t1 (t1), t2 (t2) {}
+    node (const complex<double> &value, node *t1 = nullptr, node *t2 = nullptr) : sym (""), val(value), t1 (t1), t2 (t2) {}
 };
 
-string evaluate (node *curr) {
+node *add(node *a, node *b) {
+    // if (a->sym == b->sym && !is_operator(a->sym)) return new node ("*",new node("2"), a);
+    if (a->sym == "" && a->val == 0.0) return b;
+    if (b->sym == "" && b->val == 0.0) return a;
+    if (a->sym == "" && b->sym == "") return new node(a->val + b->val);
 
-    if (curr != nullptr) {
-        string symbol = curr->sym;
-        string a = evaluate(curr->t1), b = evaluate(curr->t2);
-        //cout << "[" << a << "](" << symbol << ")[" << b << "]\n";
-        return a + symbol + b;
-    }
+    return new node ("+",a,b);
+}
+node *sub(node *a, node *b) {
 
-    return "";
+    //if (a->sym == b->sym) return new node("0");
+    if (b->sym == "" && b->val == 0.0) return a;
+    if (a->sym == "" && b->sym == "") return new node(a->val - b->val);
+    return new node ("-",a,b);
+}
+node *exp(node *a, node *b) {
+
+    if (a->val == 1.0 || b->val == 1.0) return a;
+    if (b->sym == "" && b->val == 0.0) return new node(1.0);
+    if (a->sym == "" && b->sym == "") return new node(pow(a->val , b->val));
+
+    return new node("^",a,b);
+}
+node *div(node *a, node *b) {
+
+    // cout << a->sym << "/" << b->sym << endl;
+    // if (a->sym == b->sym) return new node (1.0);
+    if (a->sym == "" && a->val == 0.0) return new node(0.0);
+    if (b->sym == "" && b->val == 1.0) return a;
+    if (a->sym == "" && b->sym == "") return new node(a->val / b->val);
+
+    return new node ("/",a,b);
+}
+node *mul(node *a, node *b) {
+
+    if (a->val == 1.0) return b;
+    if (b->val == 1.0) return a;
+    if ((a->sym == "" && a->val == 0.0) || (b->sym == "" && b->val == 0.0)) return new node (0.0);
+    if (a->sym == "" && b->sym == "") return new node(a->val * b->val);
+    return new node ("*",a,b);
 }
 
+bool is_func (const string &input) {
+    return input == "sin" || input == "cos" || input == "tan" || input == "log" || input == "cot";
+}
 bool is_term(const string &sym) { return sym == "+" || sym == "-"; }
 bool is_fact(const string &sym) { return sym == "*" || sym == "/"; }
 bool is_number (const string &input) {
@@ -55,50 +90,31 @@ bool is_operator (const string &input) {
     return is_fact(input) || is_term(input) || input == "^";
 }
 
-node *add(node *a, node *b) {
-
-    // if (a->sym == b->sym && !is_operator(a->sym)) return new node ("*",new node("2"), a);
-    if (a->sym == "0") return b;
-    if (b->sym == "0") return a;
-    if (is_number(a->sym) && is_number(b->sym)) return new node(to_string(stoi(a->sym) + stoi(b->sym)));
-
-    return new node ("+",a,b);
+template<class T> T get(node* curr) {
+    if (curr->sym == "") return curr->val;
+    return curr->sym;
 }
-node *sub(node *a, node *b) {
+string evaluate (node *node) {
 
-    //if (a->sym == b->sym) return new node("0");
-    if (b->sym == "0") return a;
-    if (is_number(a->sym) && is_number(b->sym)) return new node(to_string(stoi(a->sym) - stoi(b->sym)));
+      if (node != nullptr) {
+          string term = node->sym;
 
-    return new node ("-",a,b);
-}
-node *exp(node *a, node *b) {
+          if (is_func(term)) {
+              cout << term << "(";
+              evaluate(node->t1);
+              cout << ")";
+          } else {
+              evaluate(node->t1);
 
-    if (a->sym == "1" || b->sym == "1") return a;
-    if (b->sym == "0") return new node("1");
-    if (a->sym == "0") return new node("0");
-    if (is_number(a->sym) && is_number(b->sym)) return new node(to_string(pow(stoi(a->sym), stoi(b->sym))));
-
-    return new node("^",a,b);
-}
-node *mul(node *a, node *b) {
-
-    // if (a->sym == b->sym) return new node ("*",a, b);
-    if (a->sym == "0" || b->sym == "0") return new node ("0");
-    if (a->sym == "1") return b;
-    if (b->sym == "1") return a;
-
-    if (is_number(a->sym) && is_number(b->sym)) return new node(to_string(stoi(a->sym) * stoi(b->sym)));
-    return new node ("*",a,b);
-}
-node *div(node *a, node *b) {
-
-    //if (a->sym == b->sym) return new node ("1");
-    if (a->sym == "0") return new node ("0");
-    if (b->sym == "1") return a;
-    if (is_number(a->sym) && is_number(b->sym)) return new node(to_string(stoi(a->sym) / stoi(b->sym)));
-
-    return new node ("/",a,b);
+                if (term == "") {
+                    cout << node->val;
+                } else {
+                    cout << term;
+                }
+              evaluate(node->t2);
+          }
+      }
+    return "";
 }
 
 
@@ -164,13 +180,22 @@ node *simplify (node *curr) {
 
 				if (hash == "x^1*1/x") {
 						if (a->t1->sym == b->t2->sym) {
-								return mul(exp(a->t1, sub(a->t2,new node("1"))), b->t1);
+								return mul(exp(a->t1, sub(a->t2,new node(1.0))), b->t1);
 						}
 				} else if (hash == "x^1/x*0") {
 						if (a->t1->sym == b->sym) {
-								return exp(a->t1, sub(a->t2,new node("1")));
+								return exp(a->t1, sub(a->t2,new node(1.0)));
 						}
-				}
+				} else if (hash == "x^x/x*0") {
+            if (a->t1->sym == b->sym) {
+                return exp(a->t1, sub(a->t2, new node(1.0)));
+            }
+        } else if (hash == "x*0/x^x") {
+            if (a->sym == b->t1->sym) {
+                // cout << a->sym << "\n";
+                return exp(a, sub(new node(1.0), a) );
+            }
+        }
 		}
 
 		return curr;
@@ -185,13 +210,12 @@ int main () {
 		// (x^3) / (x)   => [x^1/x*0] : exp(t1->t1,sub(t1->t2,new node("1")))
 		// (x^3) / (2*x) => [x^1/1*x] : div(exp(t1->t1, sub(t1->t2,new node("1"))),t2->t2)
 
-		node *tree = mul(new node("2"),
-						mul( new node("3"), new node("x"))
-						) ;
-
+		node *tree = div(
+      exp( new node("x"), new node("x")),
+      new node("x")
+  ) ;
 
 		tree = simplify(tree);
-
 		cout << evaluate(tree) << "\n";
 
 
