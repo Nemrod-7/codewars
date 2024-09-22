@@ -31,7 +31,6 @@ void tests() {
 
     {
         const auto [f, df_dx, d2f_dx2] = differentiate("2 * x^3");
-        std::cout << "2 * x^3";
 
         Assert::That(f({ 2, 2 }),       EqualsAdaptive(value_t{ -32, 32 }), ExtraMessage("The function failed! f(x) = 2 * x^3, x = (2, 2)"));
         Assert::That(df_dx({ 2, 2 }),   EqualsAdaptive(value_t{   0, 48 }), ExtraMessage("The first derivative failed! f(x) = 2 * x^3, x = (2, 2)"));
@@ -61,4 +60,10 @@ void tests() {
        Assert::That(df_dx({ 3, 1 }),   EqualsAdaptive(value_t{ -0.022166,  0.117662  }), ExtraMessage("The first derivative failed! f(x) = (tan(2 * x) + 1) / (cot(x * 3) - 1), x = (3, 1)"));
        Assert::That(d2f_dx2({ 3, 1 }), EqualsAdaptive(value_t{ -0.493051, -0.0891051 }), ExtraMessage("The second derivative failed! f(x) = (tan(2 * x) + 1) / (cot(x * 3) - 1), x = (3, 1)"));
    }
+
+   {
+        const auto [f, df_dx, d2f_dx2] = differentiate("x^63+58.5+19.2*38*55.2");
+        Assert::That(df_dx({-3.35,3.35}),       EqualsAdaptive(value_t{8.7584e+29,4.83113e+43}), ExtraMessage("The function failed!"));
+   }
+
 }

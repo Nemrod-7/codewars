@@ -1,4 +1,5 @@
 #include <iostream>
+#include <memory>
 #include <vector>
 #include <complex>
 #include <functional>
@@ -21,63 +22,60 @@
 // tan : tan x => x' / (cos(x))^2
 // cot = cot x = -x' / (sin(x))^2
 
-using namespace std;
+struct ast {
+    std::string sym;
+    std::complex<double> val;
+    std::shared_ptr<ast> t1, t2;
 
-using value_t = complex<double>;
-using func_t = function<value_t(value_t)>;
-
-struct node {
-    string sym;
-    complex<double> val;
-    node *t1, *t2;
-
-    node (const string &label, node *t1 = nullptr, node *t2 = nullptr) : sym (label), val(0.0,0.0), t1 (t1), t2 (t2) {}
-    node (const complex<double> &value, node *t1 = nullptr, node *t2 = nullptr) : sym (""), val(value), t1 (t1), t2 (t2) {}
+    ast(const std::string &src, std::shared_ptr<ast> a = nullptr, std::shared_ptr<ast> b = nullptr) : sym(src), val(0.0), t1 (a), t2 (b) {}
+    ast(std::complex<double> src, std::shared_ptr<ast> a = nullptr, std::shared_ptr<ast> b = nullptr) : sym(""), val(src), t1 (a), t2 (b) {}
 };
 
-node *add(node *a, node *b) {
-    // if (a->sym == b->sym && !is_operator(a->sym)) return new node ("*",new node("2"), a);
+using namespace std;
+using value_t = complex<double>;
+using func_t = function<value_t(value_t)>;
+using node = std::shared_ptr<ast>;
+
+node add(node a, node b) {
+
     if (a->sym == "" && a->val == 0.0) return b;
     if (b->sym == "" && b->val == 0.0) return a;
-    if (a->sym == "" && b->sym == "") return new node(a->val + b->val);
+    if (a->sym == "" && b->sym == "") return make_shared<ast>(a->val + b->val);
 
-    return new node ("+",a,b);
+    return make_shared<ast> ("+",a,b);
 }
-node *sub(node *a, node *b) {
+node sub(node a, node b) {
 
-    //if (a->sym == b->sym) return new node("0");
     if (b->sym == "" && b->val == 0.0) return a;
-    if (a->sym == "" && b->sym == "") return new node(a->val - b->val);
-    return new node ("-",a,b);
+    if (a->sym == "" && b->sym == "") return make_shared<ast>(a->val - b->val);
+    return make_shared<ast> ("-",a,b);
 }
-node *exp(node *a, node *b) {
+node exp(node a, node b) {
 
     if (a->val == 1.0 || b->val == 1.0) return a;
-    if (b->sym == "" && b->val == 0.0) return new node(1.0);
-    if (a->sym == "" && b->sym == "") return new node(pow(a->val , b->val));
+    if (b->sym == "" && b->val == 0.0) return make_shared<ast>(1.0);
+    if (a->sym == "" && b->sym == "") return make_shared<ast>(pow(a->val , b->val));
 
-    return new node("^",a,b);
+    return make_shared<ast>("^",a,b);
 }
-node *div(node *a, node *b) {
+node div(node a, node b) {
 
-    // cout << a->sym << "/" << b->sym << endl;
-    // if (a->sym == b->sym) return new node (1.0);
-    if (a->sym == "" && a->val == 0.0) return new node(0.0);
+    if (a->sym == "" && a->val == 0.0) return make_shared<ast>(0.0);
     if (b->sym == "" && b->val == 1.0) return a;
-    if (a->sym == "" && b->sym == "") return new node(a->val / b->val);
+    if (a->sym == "" && b->sym == "") return make_shared<ast>(a->val / b->val);
 
-    return new node ("/",a,b);
+    return make_shared<ast> ("/",a,b);
 }
-node *mul(node *a, node *b) {
+node mul(node a, node b) {
 
     if (a->val == 1.0) return b;
     if (b->val == 1.0) return a;
-    if ((a->sym == "" && a->val == 0.0) || (b->sym == "" && b->val == 0.0)) return new node (0.0);
-    if (a->sym == "" && b->sym == "") return new node(a->val * b->val);
-    return new node ("*",a,b);
-}
+    if ((a->sym == "" && a->val == 0.0) || (b->sym == "" && b->val == 0.0)) return make_shared<ast> (0.0);
+    if (a->sym == "" && b->sym == "") return make_shared<ast>(a->val * b->val);
 
-void showtree(const node *node, bool isLeft = false, const string &prefix = "") {
+    return make_shared<ast> ("*",a,b);
+}
+void showtree(const node &node, bool isLeft = false, const std::string &prefix = "") {
     if (node != nullptr) {
         cout << prefix;
         cout << (isLeft ? "├─" : "└─" );
@@ -92,7 +90,7 @@ void showtree(const node *node, bool isLeft = false, const string &prefix = "") 
         showtree(node->t2, false, prefix + (isLeft ? "│  " : "   "));
     }
 }
-void showflat(const node *node) {
+void showflat(const node &node) {
 
     bool is_func (const string &);
 
@@ -214,43 +212,43 @@ int order (const string &src) {
     return 0;
 }
 
-node *getstack (vector<node*> &stack) {
-    node *val = stack.back();
+node getstack (vector<node> &stack) {
+    node val = stack.back();
     stack.pop_back();
     return val;
 }
-bool precedence (const vector<node*> &stack, const string &cell) {
+bool precedence (const vector<node> &stack, const string &cell) {
     if (stack.empty()) return false;
     if (cell == "^") return order(stack.back()->sym) > order(cell);
     return order(stack.back()->sym) >= order(cell);
 }
 
-node *parse (const string &input) {
+node parse (const string &input) {
 
     vector<string> code = tokenize(input);
     vector<string>::iterator it = code.begin();
-    vector<node*> tree, oper;
+    vector<node> tree, oper;
 
     while (it < code.end()) {
         string curr = *it;
 
         if (curr == "x") {
-            tree.push_back( new node(curr));
+            tree.push_back( make_shared<ast>(curr));
         } else if (curr == "(") {
             tree.push_back(parse(parenthesis(it)));
         } else if (is_number(curr)) {
-            tree.push_back( new node(stoc(curr)));
+            tree.push_back( make_shared<ast>(stoc(curr)));
         } else if (is_operator(curr)) {
             while (!oper.empty() && precedence(oper,curr)) {
-                node *next = getstack(oper);
+                node next = getstack(oper);
                 next->t2 = getstack(tree);
                 next->t1 = getstack(tree);
                 tree.push_back(next);
             }
-            oper.push_back(new node(curr));
+            oper.push_back(make_shared<ast>(curr));
         } else if (is_func(curr)) {
             it++;
-            node *next = new node(curr);
+            node next = make_shared<ast>(curr);
             next->t1 = parse(parenthesis(it));
             tree.push_back(next);
         } else {
@@ -261,7 +259,7 @@ node *parse (const string &input) {
     }
 
     while(!oper.empty()) {
-        node *next = getstack(oper);
+        node next = getstack(oper);
         next->t2 = getstack(tree);
         next->t1 = getstack(tree);
         tree.push_back(next);
@@ -269,7 +267,44 @@ node *parse (const string &input) {
 
     return tree.back();
 }
-complex<double> evaluate (const node *node, const complex<double> &value) {
+node derivate (const node curr) {
+
+    string term = curr->sym;
+    node t1 = curr->t1, t2 = curr->t2;
+    //cout << "[" << term << "|" << curr->val << "]" << "\n" << flush;
+    if (term == "x") {
+        return make_shared<ast>(1.0);
+    } else if (term == "") {
+        return make_shared<ast>(0.0);
+    } else if (term == "+") {
+        return add(derivate(t1), derivate(t2));
+    } else if (term == "-") {
+        return sub(derivate(t1), derivate(t2));
+    } else if (term == "*") {
+        return add(mul(t1,derivate(t2)), mul(derivate(t1),t2));
+    } else if (term == "/") {
+        node num = sub(mul(derivate(t1),t2),mul(t1,derivate(t2)));
+        node den = exp(t2,make_shared<ast>(2.0));
+        return div(num, den) ;
+    } else if (term == "^") {
+        node outer = exp(t1, t2);
+        node inner = add( mul( derivate(t1), div(t2,t1) ), mul( derivate(t2), make_shared<ast>("log", t1) ));
+        return mul(inner,outer);
+    } else if (term == "cos") {
+        return sub(make_shared<ast>(0.0), mul(derivate(t1), make_shared<ast>("sin", t1)));
+    } else if (term == "sin") {
+        return mul(derivate(t1), make_shared<ast>("cos", t1)) ;
+    } else if (term == "tan") { // dx = x' / (cos(x))^2
+        return div(derivate(t1), exp(make_shared<ast>("cos", t1), make_shared<ast>(2.0)));
+    } else if (term == "log") { // dx = x' / x
+        return div(derivate(t1),t1);
+    } else if (term == "cot") {
+        return sub(make_shared<ast>(0.0), div(derivate(t1), make_shared<ast>("^", make_shared<ast>("sin", t1), make_shared<ast>(2.0)))) ;
+    }
+
+    return nullptr;
+}
+complex<double> evaluate (const node node, const complex<double> &value) {
 
     if (node == nullptr) return 0;
 
@@ -290,8 +325,8 @@ complex<double> evaluate (const node *node, const complex<double> &value) {
             case '/' : xz = a / b; break;
             case '^' : xz = pow(a, b); break;
         }
-        cout << "[" << a <<  "]" << term << "[" << b << "] => ";
-        cout << xz << "\n";
+       // cout << "[" << a <<  "]" << term << "[" << b << "] => ";
+       // cout << xz << "\n";
         return xz;
     } else if (term == "cos") {
         return cos(a);
@@ -305,59 +340,97 @@ complex<double> evaluate (const node *node, const complex<double> &value) {
         return 1.0 / tan(a);
     } else {
         cout << "Invalid operator\n";
-
-
     }
 
     return 0;
 }
-node *derivate (const node *curr) {
 
-    string term = curr->sym;
-    node *t1 = curr->t1, *t2 = curr->t2;
+string gethash(node curr) {
 
-    //cout << "[" << term << "|" << curr->val << "]" << "\n" << flush;
-    if (term == "x") {
-        return new node(1.0);
-    } else if (term == "") {
-        return new node(0.0);
-    } else if (term == "+") {
-        return add(derivate(t1), derivate(t2));
-    } else if (term == "-") {
-        return sub(derivate(t1), derivate(t2));
-    } else if (term == "*") {
-        return add(mul(t1,derivate(t2)), mul(derivate(t1),t2));
-    } else if (term == "/") {
-        node *num = sub(mul(derivate(t1),t2),mul(t1,derivate(t2)));
-        node *den = exp(t2,new node(2.0));
-        return div(num, den) ;
-    } else if (term == "^") {
-         // if (t1->sym == "x" && t2->sym == "") {
-         //     return mul(t2, exp( t1, sub(t2, new node(1.0)) ) ) ;
-         // }
-        node *outer = exp(t1, t2);
-        node *inner = add( mul( derivate(t1), div(t2,t1) ), mul( derivate(t2), new node("log", t1) ));
-        return mul(inner,outer);
-    } else if (term == "cos") {
-        return sub(new node(0.0), mul(derivate(t1), new node("sin", t1)));
-    } else if (term == "sin") {
-        return mul(derivate(t1), new node("cos", t1)) ;
-    } else if (term == "tan") { // dx = x' / (cos(x))^2
-        return div(derivate(t1), exp(new node("cos", t1), new node(2.0)));
-    } else if (term == "log") { // dx = x' / x
-        return div(derivate(t1),t1);
-    } else if (term == "cot") {
-        return sub(new node(0.0), div(derivate(t1), new node("^", new node("sin", t1), new node(2.0)))) ;
+    if (curr == nullptr) return "";
+    string hash;
+
+    if (curr->sym == "") {
+        hash = "1*0";
+    } else if (is_operator(curr->sym)) {
+        hash += curr->t1->sym == "" ? '1' : curr->t1->sym[0];
+        hash += curr->sym;
+        hash += curr->t2->sym == "" ? '1' : curr->t2->sym[0];
+    } else {
+        hash = "x*0";
     }
 
-    return nullptr;
+    return hash;
 }
+node simplify (node curr) {
 
+    if (curr != nullptr) {
+        curr->t1 = simplify(curr->t1), curr->t2 = simplify(curr->t2);
+        string hash = gethash(curr->t1) + curr->sym + gethash(curr->t2);
+        node a = curr->t1, b = curr->t2;
+
+        if (hash == "1*0*x*1") { // (5) * (x * 3)
+            return mul(mul(a, b->t2), b->t1);
+        } else if (hash == "1*0*1*x") { // (5) * (3 * x)
+            return mul(mul(a, b->t1), b->t2);
+        } else if (hash == "1*0*1/x") { // (5) * (4 / x)
+            return div(mul(a, b->t1), b->t2);
+        } else if (hash == "1/x*x/1") { // (5/x) * (x/2)
+            return mul(div(a->t1,b->t2), div(a->t2,b->t1));
+        } else if (hash == "x/1*1/x") { // (x/5) * (2/x)
+            return mul(div(a->t1,b->t2), div(a->t2,b->t1));
+        } else if (hash == "1/x*x*1") { // (5/x) * (x*4)
+            return mul(mul(a->t1,b->t2), div(a->t2,b->t1));
+        } else if (hash == "1/x*x^1") { // (5/x) * (x^3)
+            cout << "[" << hash << "]\n";
+            
+            cout << "[";
+            showflat(a);
+            cout << "][";
+            showflat(b);
+            cout << "]\n";
+
+            //return mul(a->t1, exp( b->t1, sub(b->t2, make_shared<ast>(1.0))));
+        } else if (hash == "1*x*1*x") { // (5*x) * (4*x)
+            return mul(mul(a->t1,b->t1), mul(a->t2,b->t2));
+        } else if (hash == "1*x*x*1") { // (5*x) * (x*4)
+            return mul(mul(a->t1,b->t2), mul(a->t2,b->t1));
+        } else if (hash == "1*x*1/x") { // (3*x) * (2/x)
+            return mul(mul(a->t1,b->t1), div(a->t2,b->t2)) ;
+        } else if (hash == "x*1*1/x") {
+            return mul(mul(a->t2,b->t1), div(a->t1,b->t2));
+        } else if (hash == "x^1*1/x") {
+            if (a->t1->sym == b->t2->sym) {
+                return mul(exp(a->t1, sub(a->t2,make_shared<ast>(1.0))), b->t1);
+            }
+        }
+
+        else if (hash == "x^1/x*0") {
+            if (a->t1->sym == b->sym) {
+                return exp(a->t1, sub(a->t2,make_shared<ast>(1.0)));
+            }
+        } else if (hash == "x^x/x*0") {
+            if (a->t1->sym == b->sym) {
+                return exp(a->t1, sub(a->t2, make_shared<ast>(1.0)));
+            }
+        } else if (hash == "x*0/x^x") {
+            if (a->sym == b->t1->sym) {
+                return exp(a, sub(make_shared<ast>(1.0), a) );
+            }
+        }
+
+
+    }
+
+
+
+    return curr;
+}
 tuple<func_t,func_t,func_t> differentiate (const string &expression) {
 
-    node *pass0 = parse(expression);
-    node *pass1 = derivate(pass0);
-    node *pass2 = derivate(pass1);
+    node pass0 = simplify( parse(expression)) ;
+    node pass1 = simplify( derivate(pass0)) ;
+    node pass2 = simplify( derivate(pass1)) ;
 
     return {
         [pass0](value_t x) { return evaluate(pass0, x); },
@@ -368,23 +441,27 @@ tuple<func_t,func_t,func_t> differentiate (const string &expression) {
 
 int main () {
 
-    // The second derivative failed! f(x) = tan(x/x^x*8.5), x = (2.66,6.12)
-    // Expected: equal to (-1.10793e-312,-2.27125e-312) (+/- (0.001,0.001))
-    // Actual: (-nan,-nan)
-    complex<double> x(-3.35,3.35) ;
-    string expr = "x^63+58.5+19.2*38*55.2";
+    //The function failed! f(x) = 92.6/x^2.1*x^67.3+x, x = (3.82,4.56)
+    //Expected: equal to (2.64517e+52,1.12433e+52) (+/- (1.1692e+49,2.923e+48))
+    //Actual: (4.22107e+52,1.99943e+53)
 
-    // The first derivative failed! f(x) = x^63+58.5+19.2*38*55.2, x = (-3.35,3.35)
-    // Expected: equal to (8.7584e+29,4.83113e+43) (+/- (3.09485e+26,2.17781e+40))
-    // Actual: (-1.03987e+29,4.83113e+43)
+    complex<double> x = {3.82,4.56};
+    //auto [dfx,dx1,dx2] = differentiate( "92.6/x^2.1*x^67.3+x");
 
-    node *pass0 = parse(expr);
-    node *pass1 = derivate(pass0);
+    //cout << "\nresult : " << dfx(x);
+
+    string fx = "92.6/x^2.1*x^67.3+x";
+
+    node pass0 = parse(fx);
+    showtree(pass0);
+
+    node pass1 = simplify(pass0);
+    showtree(pass1);
     // node *pass2 = derivate(pass1);
 
-    showtree(pass1);
-    showflat(pass1);
-    cout << evaluate(pass1,x) << "\n";
+    //showflat(pass0);
+    //cout << "\nresult : " << evaluate(pass0,x) << "\n";
+    //cout << "\nresult : " << evaluate(pass1,x) << "\n";
     //tests();
     cout << "\nend\n";
 }
