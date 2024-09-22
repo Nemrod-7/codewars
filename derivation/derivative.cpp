@@ -8,7 +8,7 @@
 // such that the following limit exists:
 // f′(x) = lim h→0 of (f(x + h) − f(x)) / h.
 //
-// con : cst   => 0
+// cst : 1     => 0
 // lin : x     => 1
 // add : a + b => a' + b'
 // min : a - b => a' - b'
@@ -206,8 +206,6 @@ vector<string> tokenize (const string &input) {
 
     return code;
 }
-
-
 
 int order (const string &src) {
     if (src == "+" || src == "-") return 1;

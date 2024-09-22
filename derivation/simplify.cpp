@@ -72,7 +72,7 @@ node *exp(node *a, node *b) {
     return new node("^",a,b);
 }
 node *div(node *a, node *b) {
-    
+
     if (a->sym == "" && a->val == 0.0) return new node(0.0);
     if (b->sym == "" && b->val == 1.0) return a;
     if (a->sym == "" && b->sym == "") return new node(a->val / b->val);
