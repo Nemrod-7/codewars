@@ -65,5 +65,9 @@ void tests() {
         const auto [f, df_dx, d2f_dx2] = differentiate("x^63+58.5+19.2*38*55.2");
         Assert::That(df_dx({-3.35,3.35}),       EqualsAdaptive(value_t{8.7584e+29,4.83113e+43}), ExtraMessage("The function failed!"));
    }
-
+   {
+       const auto [f, df_dx, d2f_dx2] = differentiate("92.6/x^2.1*x^67.3+x");
+       Assert::That(f({3.82,4.56}),       EqualsAdaptive(value_t{2.64517e+52,1.12433e+52}), ExtraMessage(""));
+   }
+   
 }

@@ -103,7 +103,6 @@ void showflat(const node &node) {
             cout << ")";
         } else {
             showflat(node->t1);
-
             if (term == "") {
                 cout << node->val;
             } else {
@@ -382,15 +381,7 @@ node simplify (node curr) {
         } else if (hash == "1/x*x*1") { // (5/x) * (x*4)
             return mul(mul(a->t1,b->t2), div(a->t2,b->t1));
         } else if (hash == "1/x*x^1") { // (5/x) * (x^3)
-            cout << "[" << hash << "]\n";
-            
-            cout << "[";
-            showflat(a);
-            cout << "][";
-            showflat(b);
-            cout << "]\n";
-
-            //return mul(a->t1, exp( b->t1, sub(b->t2, make_shared<ast>(1.0))));
+            return mul(a->t1, exp( b->t1, sub(b->t2, make_shared<ast>(1.0))));
         } else if (hash == "1*x*1*x") { // (5*x) * (4*x)
             return mul(mul(a->t1,b->t1), mul(a->t2,b->t2));
         } else if (hash == "1*x*x*1") { // (5*x) * (x*4)
@@ -419,9 +410,7 @@ node simplify (node curr) {
             }
         }
 
-
     }
-
 
 
     return curr;
@@ -441,26 +430,13 @@ tuple<func_t,func_t,func_t> differentiate (const string &expression) {
 
 int main () {
 
-    //The function failed! f(x) = 92.6/x^2.1*x^67.3+x, x = (3.82,4.56)
-    //Expected: equal to (2.64517e+52,1.12433e+52) (+/- (1.1692e+49,2.923e+48))
-    //Actual: (4.22107e+52,1.99943e+53)
 
     complex<double> x = {3.82,4.56};
-    //auto [dfx,dx1,dx2] = differentiate( "92.6/x^2.1*x^67.3+x");
-
-    //cout << "\nresult : " << dfx(x);
-
     string fx = "92.6/x^2.1*x^67.3+x";
-
-    node pass0 = parse(fx);
-    showtree(pass0);
-
-    node pass1 = simplify(pass0);
-    showtree(pass1);
-    // node *pass2 = derivate(pass1);
+    node pass0 = simplify(parse(fx));
 
     //showflat(pass0);
-    //cout << "\nresult : " << evaluate(pass0,x) << "\n";
+    cout << "\nresult : " << evaluate(pass0,x) << "\n";
     //cout << "\nresult : " << evaluate(pass1,x) << "\n";
     //tests();
     cout << "\nend\n";
