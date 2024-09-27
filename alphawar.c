@@ -1,13 +1,13 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-
-char *strike (const char *src) {
+char *strike (const char *src, const char *attak) {
     char *field = strdup(src);
-    const size_t end = strlen(src);
+    const size_t end = strlen(attak);
 
     for (size_t i = 0; i < end; i++) {
-        if (src[i] == '*') {
+        if (attak[i] == '*') {
             field[i] = '_';
 
             if (i == 0) {
@@ -49,19 +49,54 @@ const char *count (const char *src) {
 
 const char *alphabet_war(const char *src) {
 
-    const char *field = strike(src);
+    const char *field = strike(src, src);
     printf("%s\n", field);
-    return count(src);
+    return count(field);
 }
 
 int main () {
 
-    const char *res;
+  const int nforce = 10, nattak = 9;
+  const char *force[10] =
+          {"g964xxxxxxxx", "myjinxin2015", "steffenvogel", "smile67xxxxx", "giacomosorbi",
+           "freywarxxxxx", "bkaesxxxxxxx", "vadimbxxxxxx", "zozofouchtra", "colbydauphxx" };
+  const char *attak[10] =
+     {"* *** ** ***", " ** * * * **", " * *** * ***", " **  * * ** ",
+      "* ** *   ***", "***   ", "**", "*", "*" };
 
-    alphabet_war("s*zz");          /* => Right side wins!  */
-    alphabet_war("*zd*qm*wp*bs*"); /* => Let's fight again! */
-    alphabet_war("zzzz*s*");       /* => Right side wins!  */
-    alphabet_war("www*www****z");  /* => Left side wins!  */
+  const int size = strlen(force[0]);
+
+   char *field = malloc(size * sizeof(char));
+   memset (field,'_',size);
+
+   char *forc2[nforce];
+
+    // memcpy(forc2, force, nforce *  sizeof())
+
+    for (int i = 0; i < nforce; i++){
+
+
+        // for (int j = 0; force[i][j] != '\0'; j++) {
+        //     if (force[i][j] != '_' && field[j] == '_') {
+        //         field[j] = force[i][j];
+        //         // force[i][j] = '_';
+        //     }
+        // }
+        printf("%s\n", force[i]);
+    }
+
+    for (int i = 0; i < nattak; i++) {
+
+        field = strike (field, attak[0]);
+    }
+
+
+    printf("%s\n", field);
+
+    // alphabet_war("s*zz");          /* => Right side wins!  */
+    // alphabet_war("*zd*qm*wp*bs*"); /* => Let's fight again! */
+    // alphabet_war("zzzz*s*");       /* => Right side wins!  */
+    // alphabet_war("www*www****z");  /* => Left side wins!  */
 
 
 }
