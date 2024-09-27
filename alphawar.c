@@ -47,56 +47,65 @@ const char *count (const char *src) {
     }
 }
 
-const char *alphabet_war(const char *src) {
+void reinforce(char *field, int nforce, char *force[nforce]) {
 
-    const char *field = strike(src, src);
-    printf("%s\n", field);
-    return count(field);
+		const int size = strlen(force[0]);
+
+    for (int i = 0; i < nforce; i++){
+         for (int j = 0; j < size; j++) {
+             if (force[i][j] != '_' && field[j] == '_') {
+                 field[j] = force[i][j];
+                 force[i][j] = '_';
+             }
+         }
+    }
+
+}
+const char *alphabet_war(const char **force, const char **attak, int nforce, int nattak) {
+
+		const int size = strlen(force[0]);
+
+		char *field = malloc(size * sizeof(char));
+		memset (field,'_',size);
+
+		char *forc2[nforce];
+
+		for (int i = 0; i < nforce; i++){
+				forc2[i] = malloc(size * sizeof(char));
+				memcpy(forc2[i], force[i], size * sizeof(char));
+		}
+
+
+		for (int i = 0; i < nattak; i++) {
+				reinforce(field, nforce, forc2);
+				field = strike (field, attak[i]);
+		}
+
+		reinforce(field, nforce, forc2);
+
+		printf("%s\n", field);
+		return field;
 }
 
 int main () {
 
-  const int nforce = 10, nattak = 9;
-  const char *force[10] =
-          {"g964xxxxxxxx", "myjinxin2015", "steffenvogel", "smile67xxxxx", "giacomosorbi",
-           "freywarxxxxx", "bkaesxxxxxxx", "vadimbxxxxxx", "zozofouchtra", "colbydauphxx" };
-  const char *attak[10] =
-     {"* *** ** ***", " ** * * * **", " * *** * ***", " **  * * ** ",
-      "* ** *   ***", "***   ", "**", "*", "*" };
+		const int nforce = 10, nattak = 9;
+		const char *force[10] =
+		{"g964xxxxxxxx", "myjinxin2015", "steffenvogel", "smile67xxxxx", "giacomosorbi",
+				"freywarxxxxx", "bkaesxxxxxxx", "vadimbxxxxxx", "zozofouchtra", "colbydauphxx" };
+		const char *attak[10] =
+		{"* *** ** ***", 
+				" ** * * * **",
+				" * *** * ***",
+				" **  * * ** ",
+				"* ** *   ***",
+				"***         ",
+				"**          ",
+				"*           ",
+				"*           " };
 
-  const int size = strlen(force[0]);
-
-   char *field = malloc(size * sizeof(char));
-   memset (field,'_',size);
-
-   char *forc2[nforce];
-
-    // memcpy(forc2, force, nforce *  sizeof())
-
-    for (int i = 0; i < nforce; i++){
+		alphabet_war(force, attak, 10, 9); /* => codewarsxxxx */
 
 
-        // for (int j = 0; force[i][j] != '\0'; j++) {
-        //     if (force[i][j] != '_' && field[j] == '_') {
-        //         field[j] = force[i][j];
-        //         // force[i][j] = '_';
-        //     }
-        // }
-        printf("%s\n", force[i]);
-    }
-
-    for (int i = 0; i < nattak; i++) {
-
-        field = strike (field, attak[0]);
-    }
-
-
-    printf("%s\n", field);
-
-    // alphabet_war("s*zz");          /* => Right side wins!  */
-    // alphabet_war("*zd*qm*wp*bs*"); /* => Let's fight again! */
-    // alphabet_war("zzzz*s*");       /* => Right side wins!  */
-    // alphabet_war("www*www****z");  /* => Left side wins!  */
-
-
+		printf("\nexit\n");
 }
