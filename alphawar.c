@@ -23,7 +23,7 @@ char *strike (string src, string attak) {
 
     return field;
 }
-string count (string src) {
+char *count (string src) {
     int lfs = 0, rfs = 0;
 
     for (int i = 0; src[i] != '\0'; i++) {
@@ -126,20 +126,79 @@ char *alphabet_war3(string field) { // nuclear strike
     return res;
 }
 
+char *alphabet_war(string src) {
+
+    int size = strlen(src);
+    char *field = strdup(src);
+
+    const char mage[2] = {'t', 'j'};
+    string side[2] = {"sbpw", "zdqm"};
+    int flat[2] = {-2, +2};
+
+    for (int i = 0; i < size; i++) { // iterate string
+
+        for (int j = 0; j < 2; j++) { // side1 side 2
+            int m1 = j, m2 = 1-j;
+
+            if (field[i] == mage[m1]) {
+                for (int k = 0; k < 4; k++) { // iterate warriors 
+                    if (((i-2) >= 0) && (field[i-2] == mage[m2])) {
+
+                    } else if (((i-1) >= 0) && (field[i-1] == side[m2][k])) {
+                        field[i-1] = side[m1][k];
+                    }
+
+                    if ((i+2 <= size) && (field[i+2] == mage[m2])) {
+
+                    } else if (((i+1) <= size) & (field[i+1] == side[m2][k])) {
+                        field[i+1] = side[m1][k];
+                    }
+                }
+            }
+        }
+    }
+
+    return count(field);
+}
+
+void do_test (const char *fight, const char *expected) {
+    const char *actual = alphabet_war(fight);
+
+    if (strcmp(actual, expected) != 0) {
+        printf("error: [%s] == [%s]\n", actual, expected);
+    }
+}
+
+
+
 int main () {
-
-    const int nforce = 10, nattak = 9;
-    const char *force[10] =
-    {"g964xxxxxxxx", "myjinxin2015", "steffenvogel", "smile67xxxxx", "giacomosorbi",
-        "freywarxxxxx", "bkaesxxxxxxx", "vadimbxxxxxx", "zozofouchtra", "colbydauphxx" };
-    const char *attak[10] =
-    {"* *** ** ***", " ** * * * **", " * *** * ***", " **  * * ** ", "* ** *   ***",
-        "***", "**", "*", "*" };
-
-    alphabet_war2(force, attak, 10, 9); /* => codewarsxxxx */
 
     int hash[20] = {[0 ... 19] = 2};
 
+     do_test("z",          "Right side wins!");
+     do_test("tz",         "Left side wins!");
+     do_test("jbdt",       "Let's fight again!");
+     do_test("jz",         "Right side wins!");
+     do_test("zt",         "Left side wins!");
+     do_test("sj",         "Right side wins!");
+     do_test("azt",        "Left side wins!");
+     do_test("wololooooo", "Left side wins!");
+     do_test("zdqmwpbs",   "Let's fight again!");
+     do_test("ztztztzs",   "Left side wins!");   
 
-    printf("\nexit\n");
+    //do_test("tzj",        "Right side wins!");
+
+    //for (int l = 0; l < 2; l++) {
+    //    int i1 = i + flat[l], i2 = i + flat[l] / 2;
+
+    //    //printf("[%c]", field[i2]);
+    //    if ((i1 >= 0) && (i1 <= size) && field[i1] == mage[m2]) {
+
+    //    } else if (((i2 >= 0) && (i2 <= size) &&  field[i2]) == side[m2][k]) {
+    //        //printf("[%c]", i1);
+    //       field[i2] = side[m1][k];
+    //    }
+    //}
+
+     printf("\nexit\n");
 }
