@@ -3,18 +3,18 @@
 #include <stdlib.h>
 #include <string.h>
 
-char *strike (const char *src, const char *attak) {
+typedef const char* string;
+
+char *strike (string src, string attak) {
     char *field = strdup(src);
     const size_t end = strlen(attak);
-
+    printf("[%i]", end);
     for (size_t i = 0; i < end; i++) {
         if (attak[i] == '*') {
             field[i] = '_';
 
             if (i == 0) {
                 field[i+1] = '_';
-            } else if (i == end - 1) {
-                field[i-1] = '_';
             } else {
                 field[i-1] = field[i+1] = '_';
             }
@@ -23,7 +23,7 @@ char *strike (const char *src, const char *attak) {
 
     return field;
 }
-const char *count (const char *src) {
+string count (string src) {
     int lfs = 0, rfs = 0;
 
     for (int i = 0; src[i] != '\0'; i++) {
@@ -62,30 +62,68 @@ void reinforce(char *field, int nforce, char *force[nforce]) {
     }
 
 }
-const char *alphabet_war(const char **force, const char **attak, int nforce, int nattak) {
+string alphabet_war2(string *force, string *attak, int nforce, int nattak) { // reinforces massacre
 
     const int size = strlen(force[0]);
-
-    char *field = malloc(size * sizeof(char));
+    char *field = malloc((size + 1) * sizeof(char)), *forc2[nforce];
     memset (field,'_',size);
-
-    char *forc2[nforce];
 
     for (int i = 0; i < nforce; i++){
         forc2[i] = malloc(size * sizeof(char));
         memcpy(forc2[i], force[i], size * sizeof(char));
     }
 
-
     for (int i = 0; i < nattak; i++) {
         reinforce(field, nforce, forc2);
         field = strike (field, attak[i]);
     }
 
+    field[size] = '\0';
     reinforce(field, nforce, forc2);
 
-    printf("%s\n", field);
+    printf("[%s]\n", field);
     return field;
+}
+char *alphabet_war3(string field) { // nuclear strike
+
+    const int size = strlen(field);
+    char *res = malloc(size * sizeof(char)), *ptr = res;
+
+    int point[size];
+    bool shelter = false;
+
+    for (int i = 0; i < size; i++) {
+        if (field[i] == '[') shelter = true;
+        point[i] = shelter == true ? 3 : 1;
+        if (field[i] == ']') shelter = false;
+    }
+
+    for (int i = 0; i < size; i++) {
+        if (field[i] == '#') {
+            for (int j = i + 1; j < size; j++) {
+                point[j]--;
+                if (field[j] == ']') break;
+            }
+
+            for (int j = i - 1; j >= 0; j--) {
+                point[j]--;
+                if (field[j] == '[') break;
+            }
+
+            for (int j = 0; j < size; j++) {
+                if (point[j] < 2) point[j] = 0;
+            }
+        }
+    }
+
+    for (int i = 0; i < size; i++) {
+        if (point[i] > 0 && field[i] >= 'a' && field[i] <= 'z') {
+            *ptr++ = field[i];
+        }
+        // printf("%i ", point[i]);
+    }
+    *ptr++ = '\0';
+    return res;
 }
 
 int main () {
@@ -96,50 +134,12 @@ int main () {
         "freywarxxxxx", "bkaesxxxxxxx", "vadimbxxxxxx", "zozofouchtra", "colbydauphxx" };
     const char *attak[10] =
     {"* *** ** ***", " ** * * * **", " * *** * ***", " **  * * ** ", "* ** *   ***",
-        "***         ", "**          ", "*           ", "*           " };
+        "***", "**", "*", "*" };
 
-    //alphabet_war(force, attak, 10, 9); /* => codewarsxxxx */
+    alphabet_war2(force, attak, 10, 9); /* => codewarsxxxx */
 
-    char *field = strdup("abcde[fg]hi#jkl[m]nop");
+    int hash[20] = {[0 ... 19] = 2};
 
-
-    for (int i = 0; field[i]!= '\0'; i++) {
-        if (field[i] == '#') {
-            bool shelter = false;
-
-            for (int j = 0; field[j] != '\0'; j++) {
-                if (field[j] == '[') shelter = true;
-                if (shelter == false) field[j] = '_';
-                if (field[j] == ']') shelter = false;
-            }
-
-            int j = i;
-            while (j >= 0 ) {
-                if (field[j] == '[' || field[j] == ']') {
-                    field[j] = '_';
-                    break;
-                }
-                j--;
-            }
-            j = i;
-
-            while (field[j] != '\0') {
-                if (field[j] == '[' || field[j] == ']') {
-                    field[j] = '_';
-                    break;
-                }
-                j++;
-            }
-
-
-        }
-    }
-
-    for (int i = 0; field[i]!= '\0'; i++) {
-
-    }
-
-    printf("%s\n", field);
 
     printf("\nexit\n");
 }
