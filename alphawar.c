@@ -3,6 +3,21 @@
 #include <stdlib.h>
 #include <string.h>
 
+void show(const char *src) {
+  // printf("size : %i\n", size);
+    const int size = (strchr(src,'\n') - src);
+
+    printf("[");
+    for (int i = 0; i < size; i++) {
+        printf("%c", src[i]);
+    }
+    printf("]\n[");
+    for (int i = 0; i < size; i++) {
+        printf("%c", src[i + size + 1]);
+    }
+    printf("]\n");
+}
+
 int count (char ch) {
     switch(ch) {
         case 's': return - 1; break;
@@ -16,56 +31,83 @@ int count (char ch) {
     }
     return 0;
 }
-char *trench_assault(const char* battlefield) {
-    char *result = malloc(12);
-
-    return result;
-}
-
-void Tests() {
-    // check_solution("psbpww\n" "------", "LLLLLL");
-    // check_solution("dzm    qm\n" "---|dq|--", "RRR|RR|RR");
-    // check_solution("pbbzmq\n" "------", "LLLLLR");
-    // check_solution("     s\n" "mmmm|-", "RRRR|L");
-    // check_solution("  zb\n" "m|--", "R|RL");
-    // check_solution("sbbb  \n" "----|m", "LLLL|R");
-    // check_solution("m     \n" "-|pzzz", "R|LLLR");
-    // check_solution("pwss     s"   "\n" "----|qdd|-", "LLLL|LLR|L");
-}
-
-int main () {
-
-    // int hash[20] = {[0 ... 19] = 2};
-    const char *src = "pwss     s"   "\n" "----|qdd|-";
-    const int size = (strchr(src,'\n') - src) + 1;
+char *trench_assault(const char *src) {
+    const int size = (strchr(src,'\n') - src);
     char *res = malloc(size * sizeof(char)), *ptr = res;
-    int pts, cnt = 0;
+    _Bool trench = 0;
+    int up = 0, lo = 0;
+    int cnt = 0;
+    // printf("%s\n\n", src);
+
 
     for (int i = 0; i < size; i++) {
-        char up = src[i], lo = src[size+i];
-        pts = count(up) + count(lo);
+        up += count(src[i]);
+        lo += count(src[size+i+1]);
 
-        if (i > 0 && src[i-1] == '|' || src[size+i-1] == '|') {
-            pts *= 2;
+        if (i > 0 && src[size+i] == '|') {
+            trench ^= 1;
+
+            if (trench == 1) {
+                lo += count(src[size+i+1]);
+            }
         }
-        cnt += pts;
 
-        if (up == '|' || lo == '|') {
+        // if (trench == 1) {
+        //     cnt = up + lo;
+        // } else {
+        //     cnt = up;
+        // }
+
+        if (src[size+i+1] == '|') {
             *ptr++ = '|';
         } else if (cnt < 0) {
             *ptr++ = 'L';
         } else if (cnt > 0){
             *ptr++ = 'R';
         }
-        // printf("%c %c\n", up, lo);
+        // printf("%i %i => %i\n", lo, up, cnt);
+        // printf("[%c]", src[size+i+1]);
     }
 
-    *(ptr-1) = '\0';
+    *(ptr) = '\0';
+    return res;
+}
+void do_test (const char *source, const char *expected) {
+    const char *actual = trench_assault(source);
 
-    printf("%s\n", res);
-    // printf("%s %i\n", field, (search - field));
+    if (strcmp(actual, expected) != 0) {
+        show(source);
+        printf("error: expected [%s] actual [%s]\n", expected, actual);
+    }
+}
+void Tests() {
+    do_test("psbpww\n" "------", "LLLLLL");
+    do_test("dzm    qm\n" "---|dq|--", "RRR|RR|RR");
+    do_test("pbbzmq\n" "------", "LLLLLR");
+    do_test("sbbb  \n" "----|m", "LLLL|R");
+    do_test("pwss     s\n" "----|qdd|-", "LLLL|LLR|L");
+
+    do_test("     s\n" "mmmm|-", "RRRR|L");
+    // do_test("m     \n" "-|pzzz", "R|LLLR");
+    // do_test("  zb\n" "m|--", "R|RL");
+}
+
+int main () {
+
+    // int hash[20] = {[0 ... 19] = 2};
+
+    do_test("pwss     s\n" "----|qdd|-", "LLLL|LLR|L");
+    // do_test("psbpww\n" "------", "LLLLLL");
+    // do_test("dzm    qm\n" "---|dq|--", "RRR|RR|RR");
+    // do_test("sbbb  \n" "----|m", "LLLL|R");
+    // do_test("pbbzmq\n" "------", "LLLLLR");
 
 
+    // do_test("  zb\n" "m|--", "R|RL");
+    // do_test("     s\n" "mmmm|-", "RRRR|L");
+    // do_test("m     \n" "-|pzzz", "R|LLLR");
+
+    // Tests();
 
      printf("\nexit\n");
 }
