@@ -7,7 +7,7 @@ void show(const char *src) {
   // printf("size : %i\n", size);
     const int size = (strchr(src,'\n') - src);
 
-    printf("[");
+    printf("\n[");
     for (int i = 0; i < size; i++) {
         printf("%c", src[i]);
     }
@@ -32,31 +32,42 @@ int count (char ch) {
     return 0;
 }
 char *trench_assault(const char *src) {
+
     const int size = (strchr(src,'\n') - src);
     char *res = malloc(size * sizeof(char)), *ptr = res;
     _Bool trench = 0;
     int up = 0, lo = 0;
+    int uprev = 0, lprev = 0;
     int cnt = 0;
-    // printf("%s\n\n", src);
 
+
+    printf("[");
+    for (int i = 0; i < size; i++) {
+        printf("%2i ", count(src[i]));
+    }
+    printf("]\n[");
+    for (int i = 0; i < size; i++) {
+        printf("%2i ", count(src[size+i+1]));
+    }
+    printf("]\n\n");
 
     for (int i = 0; i < size; i++) {
-        up += count(src[i]);
-        lo += count(src[size+i+1]);
+        up = count(src[i]), lo = count(src[size+i+1]);
 
         if (i > 0 && src[size+i] == '|') {
             trench ^= 1;
 
-            if (trench == 1) {
-                lo += count(src[size+i+1]);
-            }
+            if (trench == 1) lo += count(src[size+i+1]);
+            if (trench == 0) lprev = 0;
         }
 
-        // if (trench == 1) {
-        //     cnt = up + lo;
-        // } else {
-        //     cnt = up;
-        // }
+
+
+        if (trench == 1) {
+            cnt = up + lo + uprev + lprev;
+        } else {
+            cnt = up + lo + uprev;
+        }
 
         if (src[size+i+1] == '|') {
             *ptr++ = '|';
@@ -65,8 +76,10 @@ char *trench_assault(const char *src) {
         } else if (cnt > 0){
             *ptr++ = 'R';
         }
-        // printf("%i %i => %i\n", lo, up, cnt);
-        // printf("[%c]", src[size+i+1]);
+
+
+        uprev += up, lprev += lo;
+        printf("%2i ", cnt);
     }
 
     *(ptr) = '\0';
@@ -96,7 +109,26 @@ int main () {
 
     // int hash[20] = {[0 ... 19] = 2};
 
-    do_test("pwss     s\n" "----|qdd|-", "LLLL|LLR|L");
+    const char *src = "pwss     s\n" "----|qdd|-";
+    const int size = (strchr(src,'\n') - src);
+    
+    int up[64] = {0}, lo[64] = {0};
+
+    printf("[");
+    for (int i = 0; i < size; i++) {
+        up[i] = count(src[i]);
+        lo[i] = count(src[size+i+1]);
+
+        printf("%2i ", up[i]);
+    }
+    printf("]\n[");
+    for (int i = 0; i < size; i++) {
+        printf("%2i ", lo[i] );
+    }
+    printf("]\n\n");
+
+
+    //do_test("pwss     s\n" "----|qdd|-", "LLLL|LLR|L");
     // do_test("psbpww\n" "------", "LLLLLL");
     // do_test("dzm    qm\n" "---|dq|--", "RRR|RR|RR");
     // do_test("sbbb  \n" "----|m", "LLLL|R");
@@ -109,5 +141,5 @@ int main () {
 
     // Tests();
 
-     printf("\nexit\n");
+    printf("\nexit\n");
 }
