@@ -95,6 +95,7 @@ char *trench_assault(const char *src) {
     *(ptr) = '\0';
     return res;
 }
+
 void do_test (const char *source, const char *expected) {
     const char *actual = trench_assault(source);
 
@@ -109,7 +110,7 @@ void Tests() {
     do_test("psbpww\n" "------", "LLLLLL");
     do_test("dzm    qm\n" "---|dq|--", "RRR|RR|RR");
     do_test("sbbb  \n" "----|m", "LLLL|R");
-    do_test("pbbzmq\n" "------", "LLLLLR");   
+    do_test("pbbzmq\n" "------", "LLLLLR");
 
 
     do_test("  zb\n" "m|--", "R|RL");
@@ -121,11 +122,34 @@ void Tests() {
 int main () {
 
     // int hash[20] = {[0 ... 19] = 2};
+      "pwss     s"
+      "----|qdd|-",
 
-    int a = -5, b = 6;
+      "psbpww"
+      "------",
 
-    Tests();
+      "dzm    qm"
+      "---|dq|--",
 
+      "sbbb  "
+      "----|m",
+
+      "pbbzmq"
+      "------",
+
+      "  zb"
+      "m|--",
+
+      "     s"
+      "mmmm|-",
+
+      "m     "
+      "-|pzzz",
+
+      "  zb"
+      "m|--",
+
+    // Tests();
 
     printf("\nexit\n");
 }
