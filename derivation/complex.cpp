@@ -7,6 +7,8 @@
 #include <complex>
 #include <functional>
 
+// use of regex
+
 // Let f be a function.
 // The derivative function, denoted by f′, is the function whose domain consists of those values of x
 // such that the following limit exists:
@@ -40,7 +42,7 @@ using func_t = std::function<value_t(value_t)>;
 using node = std::shared_ptr<ast>;
 
 const std::regex oper ("^[-+*/^]$");
-const std::regex trig ("^sin|cos|tan|cot|log$");
+const std::regex trigo ("^sin|cos|tan|cot|log$");
 const std::regex number ("^-?\\d+(.\\d+)?|\\(-?\\d+(.\\d+)?,-?\\d+(.\\d+)?\\)$");
 
 ////////////////////////////////////////////////////////////////////////
@@ -186,7 +188,7 @@ node parse (const string &input) {
                 tree.push_back(next);
             }
             stack.push_back(std::make_shared<ast>(cell));
-        } else if (regex_match(cell, trig)) {
+        } else if (regex_match(cell, trigo)) {
             it++;
             node next = std::make_shared<ast>(cell);
             next->t1 = parse(parenthesis(it));
@@ -199,9 +201,9 @@ node parse (const string &input) {
     }
 
     while(!stack.empty()) {
-                node next = getstack(stack);
-                next->t2 = getstack(tree), next->t1 = getstack(tree);
-                tree.push_back(next);
+        node next = getstack(stack);
+        next->t2 = getstack(tree), next->t1 = getstack(tree);
+        tree.push_back(next);
     }
 
     return tree.back();
@@ -368,7 +370,7 @@ int main () {
     auto [dfx,dx1,dx2] = differentiate( "92.6/x^2.1*x^67.3+x");
 
     cout << "\nresult : " << dfx(x);
-    
+
     string fx = "92.6/x^2.1*x^67.3+x";
 
     node pass0 = parse(fx);

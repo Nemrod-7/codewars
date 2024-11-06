@@ -4,6 +4,8 @@
 #include <complex>
 #include <functional>
 
+// without regex
+
 // Let f be a function.
 // The derivative function, denoted by f′, is the function whose domain consists of those values of x
 // such that the following limit exists:
