@@ -26,6 +26,15 @@
 using namespace std;
 using value_t = complex<double>;
 
+void showvect (const std::vector<std::string> &vs) {
+
+    for (size_t i = 0; i < vs.size(); i++) {
+        std::cout << "[" << vs[i] << "]";
+    }
+
+    std::cout << endl;
+}
+
 struct Token {
     std::string sym;
     std::complex<double> val;
@@ -33,6 +42,7 @@ struct Token {
     Token (const std::string &label) : sym (label), val(0.0,0.0) {}
     Token (const std::complex<double> &value) : sym (""), val(value) {}
 };
+
 bool is_term (const string &sym) { return sym == "+" || sym == "-"; }
 bool is_fact (const string &sym) { return sym == "*" || sym == "/"; }
 bool is_func (const string &input) {
@@ -125,6 +135,7 @@ std::string getsub (std::vector<std::string>::iterator &it, std::vector<std::str
         sub += *it + " ";
     }
 
+    if (sub.size() > 0) sub.pop_back();
     return sub;
 }
 
@@ -157,6 +168,9 @@ bool compare(string a, double b) {
     return stod(a) == b;
 }
 
+string mktoken(string sym) {
+    return "(" + sym + ")";
+}
 string add (string a, string b) {
 
     if (is_number(a) && is_number(b)) return to_string(stod(a) + stod(b));
@@ -172,7 +186,7 @@ string sub (string a, string b) {
     if (compare(b, 0)) return a;
 
     if (is_number(a) && is_number(b)) return to_string(stod(a) - stod(b));
-    return a + "-" + b;
+    return (a + "-" + b);
 }
 string mul (string a, string b) {
 
@@ -180,7 +194,7 @@ string mul (string a, string b) {
     if (compare(b, 1)) return a;
     if (compare(a, 0) || compare(b, 0)) return "0";
     if (is_number(a) && is_number(b)) return to_string(stod(a) * stod(b));
-    if (a == b) return ("2 ^ " + b);
+    //if (a == b) return (a + "^2");
 
     return (a + "*" + b);
 }
@@ -274,9 +288,6 @@ complex<double> evaluate (std::string input, complex<double> val) {
 }
 string derivate (string input) {
 
-    if (input == "x") return "1";
-    if (is_number(input)) return "0";
-
     auto expr = tokenize(input);
     vector<string>::iterator it = expr.begin(), end = expr.end(), start = expr.begin();
 
@@ -325,7 +336,8 @@ string derivate (string input) {
         auto [t2,d2] = vars.back(); vars.pop_back();
         auto [t1,d1] = vars.back(); vars.pop_back();
         string op = getstack(oper);
-        //cout << "[" << t1 << "]" << oper << "[" << t2 << "]" << "\n";
+
+        cout << "[" << t1 << "]" << op << "[" << t2 << "]" ;
         if (op == "+") {
             vars.push_back({add(t1, t2), add(d1, d2)}) ;    
         } else if (op == "-") {
@@ -334,22 +346,26 @@ string derivate (string input) {
             vars.push_back({mul(t1, t2),  add(mul(t1,d2), mul(d1,t2))}) ;    
         } else if (op == "/") {
             string num = sub(mul(d1,t2),mul(t1,d2));
-            string den = exp(t2, "2");
+            string den = mktoken(mul(t2, t2));
 
             vars.push_back({div(t1, t2), div(num, den)}) ;    
         } else if (op == "^") {
             string outer = exp(t1, t2);
-            string inner = "(" + add( mul( d1, div(t2,t1) ), mul(d2, "log (" +  t1 + ")")) + ")";
+            string inner = mktoken(add( mul( d1, div(t2,t1) ), mul(d2, "log (" +  t1 + ")")));
 
             vars.push_back({exp(t1, t2), mul(inner,outer)}) ;    
         }
+
+        cout << " => " << vars.back().second << "\n";
     }
 
+    auto [t1,d1] = getstack(vars);
+    //cout << "[" << t1 << "]";
     //cout << "size : " << dx.size() << "\n";
-    return vars.back().second;
+    return d1;
 }
 
-int main () {
+void differentiation(string input) {
 
     string pass0 = "2 * x^3"; // -32,32
     string pass1 = derivate(pass0); // 0,48
@@ -359,7 +375,20 @@ int main () {
 
     cout << pass0 << " => " << evaluate(pass0, val) <<  "\n";
     cout << pass1 << " => " << evaluate(pass1, val) <<  "\n";
-    cout << pass2 << " => " << evaluate(pass2, val) <<  "\n";
+}
+
+int main () {
+
+    string input = "2*(3/x)*x^3";
+
+    //string pass1 = derivate("2*x^3");
+    string pass2 = derivate("3/x");
+    auto code = tokenize(pass2);
+
+    showvect(code);
+    //cout << pass1 << " => " << "\n";
+    //cout << pass2 << " => " << "\n";
+    // << evaluate(pass2, val) <<  "\n";
     //cout << pass1 << "\n";
 
 
