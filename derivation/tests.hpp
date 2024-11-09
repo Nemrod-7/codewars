@@ -11,6 +11,7 @@ class Assert {
     public:
         static void That (value_t actual, value_t expect, const std::string &msg = "") {
             double epsilon = 1e-2;
+
             if (abs(actual - expect) > epsilon) {
                 std::cout << "\n" << msg;
                 std::cout << "\nexpect : " << expect ;
@@ -25,6 +26,31 @@ std::string ExtraMessage (const std::string &msg) { return msg; }
 using func_t = std::function<value_t(value_t)>;
 
 std::tuple<func_t,func_t,func_t> differentiate(const std::string &);
+
+void tests2() {
+    //do_test("x", "1");
+    //do_test("34", "0");
+
+    //do_test("x + x", "2 * x");
+    //do_test("2 + x", "2");
+
+    //do_test("x - x", "0");
+    //do_test("2 - x", "-1");
+
+    //do_test("x * x", "2");
+    //do_test("2 * x", "2");
+    //do_test("x * 3", "3");
+
+    //do_test("2 * x^3");
+    //cout << interpret("x * 0") << "\n";
+    //cout << interpret("x * 1") << "\n";
+    //cout << interpret("x * 2") << "\n";
+    //do_test("x ^ 0");
+    //do_test("x ^ 1");
+    //do_test("x ^ 2");
+    //do_test("x ^ 3");
+    //do_test("x ^ x");
+}
 
 void tests() {
 
@@ -70,4 +96,4 @@ void tests() {
        Assert::That(f({3.82,4.56}),       EqualsAdaptive(value_t{2.64517e+52,1.12433e+52}), ExtraMessage(""));
    }
    
-}
+}metal
