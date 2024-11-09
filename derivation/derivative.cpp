@@ -286,6 +286,33 @@ complex<double> evaluate (std::string input, complex<double> val) {
 
     return getstack(vars);
 }
+
+pair<string,string> diff (vector<pair<string,string>> &vars, vector<string> &oper) {
+        auto [t2,d2] = vars.back(); vars.pop_back();
+        auto [t1,d1] = vars.back(); vars.pop_back();
+        string op = getstack(oper);
+
+        cout << "[" << t1 << "]" << op << "[" << t2 << "]" ;
+        if (op == "+") {
+            return {add(t1, t2), add(d1, d2)} ;    
+        } else if (op == "-") {
+            return {sub(t1, t2), sub(d1, d2)} ;    
+        } else if (op == "*") {
+            return {mul(t1, t2),  add(mul(t1,d2), mul(d1,t2))} ;    
+        } else if (op == "/") {
+            string num = sub(mul(d1,t2),mul(t1,d2));
+            string den = mktoken(mul(t2, t2));
+
+            return {div(t1, t2), div(num, den)} ;    
+        } else if (op == "^") {
+            string outer = exp(t1, t2);
+            string inner = mktoken(add( mul( d1, div(t2,t1) ), mul(d2, "log (" +  t1 + ")")));
+
+            return {exp(t1, t2), mul(inner,outer)} ;    
+        }
+
+        return {"",""};
+}
 string derivate (string input) {
 
     auto expr = tokenize(input);
@@ -333,29 +360,7 @@ string derivate (string input) {
 
 
     while (!oper.empty()) {
-        auto [t2,d2] = vars.back(); vars.pop_back();
-        auto [t1,d1] = vars.back(); vars.pop_back();
-        string op = getstack(oper);
-
-        cout << "[" << t1 << "]" << op << "[" << t2 << "]" ;
-        if (op == "+") {
-            vars.push_back({add(t1, t2), add(d1, d2)}) ;    
-        } else if (op == "-") {
-            vars.push_back({sub(t1, t2), sub(d1, d2)}) ;    
-        } else if (op == "*") {
-            vars.push_back({mul(t1, t2),  add(mul(t1,d2), mul(d1,t2))}) ;    
-        } else if (op == "/") {
-            string num = sub(mul(d1,t2),mul(t1,d2));
-            string den = mktoken(mul(t2, t2));
-
-            vars.push_back({div(t1, t2), div(num, den)}) ;    
-        } else if (op == "^") {
-            string outer = exp(t1, t2);
-            string inner = mktoken(add( mul( d1, div(t2,t1) ), mul(d2, "log (" +  t1 + ")")));
-
-            vars.push_back({exp(t1, t2), mul(inner,outer)}) ;    
-        }
-
+        vars.push_back(diff(vars,oper));
         cout << " => " << vars.back().second << "\n";
     }
 
