@@ -26,13 +26,13 @@
 using namespace std;
 using value_t = complex<double>;
 
-void showvect (const std::vector<std::string> &vs) {
-
+string showvect (const std::vector<std::string> &vs) {
+    string os;
     for (size_t i = 0; i < vs.size(); i++) {
-        std::cout << "[" << vs[i] << "]";
+      os += "[" + vs[i] + "]";
     }
 
-    std::cout << endl;
+    return os;
 }
 
 struct Token {
@@ -43,6 +43,9 @@ struct Token {
     Token (const std::complex<double> &value) : sym (""), val(value) {}
 };
 
+complex<double> operator ^ (const complex<double> &a, const complex<double> &b) {
+    return pow(a,b);
+}
 bool is_term (const string &sym) { return sym == "+" || sym == "-"; }
 bool is_fact (const string &sym) { return sym == "*" || sym == "/"; }
 bool is_func (const string &input) {
@@ -177,10 +180,10 @@ string add (string a, string b) {
     if (compare(a, 0)) return b;
     if (compare(b, 0)) return a;
     if (a == b) return ( "2 * " + b);
-    
+
     return (a + "+" + b);
 }
-string sub (string a, string b) { 
+string sub (string a, string b) {
 
     if (a == b) return "0";
     if (compare(b, 0)) return a;
@@ -212,8 +215,36 @@ string exp (string a, string b) {
     return (a + "^" + b);
 }
 
-complex<double> operator ^ (const complex<double> &a, const complex<double> &b) {
-    return pow(a,b);
+pair<string,string> diff (vector<pair<string,string>> &vars, vector<string> &oper) {
+        auto [t2,d2] = vars.back(); vars.pop_back();
+        auto [t1,d1] = vars.back(); vars.pop_back();
+        string op = getstack(oper);
+
+        cout << "[" << t1 << "]" << op << "[" << t2 << "]" ;
+        if (op == "+") {
+            return {add(t1, t2), add(d1, d2)} ;
+        } else if (op == "-") {
+            return {sub(t1, t2), sub(d1, d2)} ;
+        } else if (op == "*") {
+            return {mul(t1, t2),  add(mul(t1,d2), mul(d1,t2))} ;
+        } else if (op == "/") {
+            string num = sub(mul(d1,t2),mul(t1,d2));
+            string den = mktoken(mul(t2, t2));
+
+            return {div(t1,t2), div(num,den)} ;
+        } else if (op == "^") {
+            string ex = exp(t1,t2), inner;
+
+            if (is_number(t2)) {
+                inner = exp(mul(t2,t1), sub(t2,"1"));
+                return {ex,inner};
+            } else {
+                inner = mktoken(add( mul( d1, div(t2,t1) ), mul(d2, "log (" +  t1 + ")")));
+                return {ex, mul(ex,inner)} ;
+            }
+        }
+
+        return {"",""};
 }
 complex<double> evaluate (std::string input, complex<double> val) {
 
@@ -286,33 +317,6 @@ complex<double> evaluate (std::string input, complex<double> val) {
 
     return getstack(vars);
 }
-
-pair<string,string> diff (vector<pair<string,string>> &vars, vector<string> &oper) {
-        auto [t2,d2] = vars.back(); vars.pop_back();
-        auto [t1,d1] = vars.back(); vars.pop_back();
-        string op = getstack(oper);
-
-        cout << "[" << t1 << "]" << op << "[" << t2 << "]" ;
-        if (op == "+") {
-            return {add(t1, t2), add(d1, d2)} ;    
-        } else if (op == "-") {
-            return {sub(t1, t2), sub(d1, d2)} ;    
-        } else if (op == "*") {
-            return {mul(t1, t2),  add(mul(t1,d2), mul(d1,t2))} ;    
-        } else if (op == "/") {
-            string num = sub(mul(d1,t2),mul(t1,d2));
-            string den = mktoken(mul(t2, t2));
-
-            return {div(t1, t2), div(num, den)} ;    
-        } else if (op == "^") {
-            string outer = exp(t1, t2);
-            string inner = mktoken(add( mul( d1, div(t2,t1) ), mul(d2, "log (" +  t1 + ")")));
-
-            return {exp(t1, t2), mul(inner,outer)} ;    
-        }
-
-        return {"",""};
-}
 string derivate (string input) {
 
     auto expr = tokenize(input);
@@ -358,7 +362,6 @@ string derivate (string input) {
         it++;
     }
 
-
     while (!oper.empty()) {
         vars.push_back(diff(vars,oper));
         cout << " => " << vars.back().second << "\n";
@@ -376,21 +379,35 @@ void differentiation(string input) {
     string pass1 = derivate(pass0); // 0,48
     string pass2 = derivate(pass1); // 24, 24
 
-    complex<double> val = {2,2};
+    complex<double> val = {2,2};    cout << " => ";
 
     cout << pass0 << " => " << evaluate(pass0, val) <<  "\n";
     cout << pass1 << " => " << evaluate(pass1, val) <<  "\n";
 }
-
+string showtransform(string t1, string op, string t2) {
+      string os = "[" + t1 + "]" + op + "[" + t2 + "]" ;
+      os += " => [";
+      // os += inner;
+      // os += showvect(code);
+      return os + "]";
+}
 int main () {
 
+    complex<double> val = {2,2};
     string input = "2*(3/x)*x^3";
 
-    //string pass1 = derivate("2*x^3");
-    string pass2 = derivate("3/x");
-    auto code = tokenize(pass2);
+    // string pass1 = derivate("2*x^3");
+    // string pass2 = derivate(input);
 
-    showvect(code);
+
+    // auto code = tokenize(inner);
+
+    // cout << "[" << t1 << "]" << op << "[" << t2 << "]" ;
+    // cout << " => [";
+    // cout << inner;
+    // // cout << showvect(code);
+    // cout << "]\n";
+
     //cout << pass1 << " => " << "\n";
     //cout << pass2 << " => " << "\n";
     // << evaluate(pass2, val) <<  "\n";
