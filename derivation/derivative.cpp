@@ -2,6 +2,10 @@
 #include <vector>
 #include <complex>
 #include <cmath>
+#include <tuple>
+#include <functional>
+
+#include "tests.hpp"
 
 // without regex
 
@@ -24,7 +28,8 @@
 // cot = cot x = -x' / (sin(x))^2
 
 using namespace std;
-using value_t = complex<double>;
+using value_t = std::complex<double>;
+using func_t = std::function<value_t(value_t)>;
 
 string showvect (const std::vector<std::string> &vs) {
     string os;
@@ -34,14 +39,13 @@ string showvect (const std::vector<std::string> &vs) {
 
     return os;
 }
-
-struct Token {
-    std::string sym;
-    std::complex<double> val;
-
-    Token (const std::string &label) : sym (label), val(0.0,0.0) {}
-    Token (const std::complex<double> &value) : sym (""), val(value) {}
-};
+string showtransform (string t1, string op, string t2, string res) {
+    string os = "[" + t1 + "]" + op + "[" + t2 + "]" ;
+    os += " => [";
+    os += res;
+    // os += showvect(code);
+    return os + "]";
+}
 
 complex<double> operator ^ (const complex<double> &a, const complex<double> &b) {
     return pow(a,b);
@@ -135,10 +139,10 @@ std::string getsub (std::vector<std::string>::iterator &it, std::vector<std::str
     for (it = it + 1; pile != 0 && it != nd ; it++) {
         pile += (*it == "(") - (*it == ")");
         if (pile == 0) break;
-        sub += *it + " ";
+        sub += *it ;
     }
 
-    if (sub.size() > 0) sub.pop_back();
+    //if (sub.size() && sub.back() == ' ') sub.pop_back();
     return sub;
 }
 
@@ -216,43 +220,48 @@ string exp (string a, string b) {
 }
 
 pair<string,string> diff (vector<pair<string,string>> &vars, vector<string> &oper) {
-        auto [t2,d2] = vars.back(); vars.pop_back();
-        auto [t1,d1] = vars.back(); vars.pop_back();
-        string op = getstack(oper);
+    auto [t2,d2] = vars.back(); vars.pop_back();
+    auto [t1,d1] = vars.back(); vars.pop_back();
+    string op = getstack(oper);
+    pair<string,string> res;
 
-        cout << "[" << t1 << "]" << op << "[" << t2 << "]" ;
-        if (op == "+") {
-            return {add(t1, t2), add(d1, d2)} ;
-        } else if (op == "-") {
-            return {sub(t1, t2), sub(d1, d2)} ;
-        } else if (op == "*") {
-            return {mul(t1, t2),  add(mul(t1,d2), mul(d1,t2))} ;
-        } else if (op == "/") {
-            string num = sub(mul(d1,t2),mul(t1,d2));
-            string den = mktoken(mul(t2, t2));
+    if (op == "+") {
+        res = {add(t1, t2), add(d1, d2)} ;
+    } else if (op == "-") {
+        res = {sub(t1, t2), sub(d1, d2)} ;
+    } else if (op == "*") {
+        res = {mul(t1, t2),  add(mul(t1,d2), mul(d1,t2))} ;
+    } else if (op == "/") {
+        string num = mktoken( sub(mul(d1,t2),mul(t1,d2))) ;
+        string den = mktoken( mul(t2, t2));
 
-            return {div(t1,t2), div(num,den)} ;
-        } else if (op == "^") {
-            string ex = exp(t1,t2), inner;
+        res = {div(t1,t2), div(num,den)} ;
+    } else if (op == "^") {
+        string ex = exp(t1,t2), inner;
 
-            if (is_number(t2)) {
-                inner = exp(mul(t2,t1), sub(t2,"1"));
-                return {ex,inner};
-            } else {
-                inner = mktoken(add( mul( d1, div(t2,t1) ), mul(d2, "log (" +  t1 + ")")));
-                return {ex, mul(ex,inner)} ;
-            }
+        if (is_number(t2)) {
+            inner = exp(mul(t2,t1), sub(t2,"1"));
+            res = {ex,inner};
+        } else {
+            inner = mktoken(add( mul( d1, div(t2,t1) ), mul(d2, "log(" +  t1 + ")")));
+            res = {ex, mul(ex,inner)} ;
         }
-
-        return {"",""};
+    }
+    
+    /*cout << "[" << t1 << "]" << op << "[" << t2 << "]" ;*/
+    /*cout << " => ";*/
+    /*cout << res.second << '\n';*/
+    return res;
 }
-complex<double> evaluate (std::string input, complex<double> val) {
+complex<double> evaluate (const std::string &input, complex<double> val) {
 
     auto expr = tokenize(input);
     vector<string>::iterator it = expr.begin(), end = expr.end(), start = expr.begin();
     vector<string> oper;
     vector<complex<double>> vars;
 
+    //cout << input << "\n";
+    //cout << showvect(expr) << '\n';
     while (it < end) {
         string cell = *it;
 
@@ -261,13 +270,14 @@ complex<double> evaluate (std::string input, complex<double> val) {
         } else if (is_number(cell)) {
             vars.push_back(stod(cell));
         } else if (cell == "(") {
-            vars.push_back(evaluate(getsub(it,end),val));
+            vars.push_back(evaluate(getsub(it,end), val));
         } else if (is_operator(cell)) {
 
             while (precedence(oper, cell)) {
                 complex<double> b = getstack(vars), a = getstack(vars);
                 string op = getstack(oper);
 
+                //cout << "[" << a << "]" << op << "[" << b << "]" ;
                 switch (op[0]) {
                     case '+' : vars.push_back(a + b); break;
                     case '-' : vars.push_back(a - b); break;
@@ -276,10 +286,11 @@ complex<double> evaluate (std::string input, complex<double> val) {
                     case '^' : vars.push_back(a ^ b); break;
                     default  : break;
                 }
+                //cout << " => " << vars.back() << "\n";
             }
-
             oper.push_back(cell);
         } else if (is_func(cell)) {
+            it++;
             complex<double> var = evaluate(getsub(it,end), val);
 
             if (cell == "cos") {
@@ -290,13 +301,11 @@ complex<double> evaluate (std::string input, complex<double> val) {
                 vars.push_back(tan(var));
             } else if (cell == "log") {
                 vars.push_back(log(var));
-            } else if (cell == "cot") {
-
+            } else if (cell == "cot") { //cot(x) = cos(x)/sin(x) or cot(x) = 1 / tan(x)
+                vars.push_back( 1.0 / tan(var));
             }
-
-        } else {
-
-        }
+            //cout << vars.back() << "  ";
+        } 
 
         it++;
     }
@@ -313,18 +322,20 @@ complex<double> evaluate (std::string input, complex<double> val) {
             case '^' : vars.push_back(a ^ b); break;
             default  : break;
         }
+        // cout << "[" << a << "]" << op << "[" << b << "]" ;
+        // cout << " => " << vars.back() << "\n";
     }
 
     return getstack(vars);
 }
-string derivate (string input) {
+string derivate (const string &input) {
 
     auto expr = tokenize(input);
     vector<string>::iterator it = expr.begin(), end = expr.end(), start = expr.begin();
 
-    vector<string> tx, dx, oper;
+    vector<string> oper;
     vector<pair<string,string>> vars;
-
+    //cout << showvect(expr) << "\n";
     while (it < end) {
         string cell = *it;
 
@@ -335,27 +346,29 @@ string derivate (string input) {
         } else if (cell == "(") {
             string sub = getsub(it,end), dub = derivate(sub);
             vars.push_back({sub,dub});
-        }
-        else if (is_operator(cell)) {
-            //while (precedence(oper, cell)) {
-            //
-            //}
+        } else if (is_operator(cell)) {
+            while (precedence(oper, cell)) {
+                vars.push_back(diff(vars,oper));
+            }
 
             oper.push_back(cell);
         } else if (is_func(cell)) {
-            string val = getsub(it,end);
-            string dx = derivate(val);
+            it++;
+            string t1 = getsub(it,end), dx = derivate(t1);
+            string f1 = cell + "(" + t1 + ")";
 
-            if (cell == "sin") {
-
+            if (cell == "log") {
+                vars.push_back( { f1 , div( dx, t1)});
+            } else if (cell == "sin") {
+                vars.push_back( { f1 , mul( dx,"cos(" + t1 + ")")});
             } else if (cell == "cos") {
-
+                vars.push_back( { f1 , mul( sub("0", dx), "sin(" + t1 + ")") });
             } else if (cell == "tan") {
-
-            } else if (cell == "log") {
-
+                string inner = "(cos(" + t1 + ")^2)";
+                vars.push_back( { f1 , div( dx, inner ) });
             } else if (cell == "cot") {
-
+                string inner = "(sin(" + dx + ")^2)";
+                vars.push_back( { f1 , div( sub("0", dx), inner) });
             }
         }
 
@@ -364,56 +377,37 @@ string derivate (string input) {
 
     while (!oper.empty()) {
         vars.push_back(diff(vars,oper));
-        cout << " => " << vars.back().second << "\n";
     }
 
-    auto [t1,d1] = getstack(vars);
-    //cout << "[" << t1 << "]";
-    //cout << "size : " << dx.size() << "\n";
-    return d1;
+    return  getstack(vars).second;
+}
+tuple<func_t,func_t,func_t> differentiate (const string &expression) {
+
+    string pass0 = expression;
+    string pass1 = derivate(pass0);
+    string pass2 = derivate(pass1);
+
+    return {
+        [pass0](value_t x) { return evaluate(pass0, x); },
+            [pass1](value_t x) { return evaluate(pass1, x); },
+            [pass2](value_t x) { return evaluate(pass2, x); },
+    };
 }
 
-void differentiation(string input) {
-
-    string pass0 = "2 * x^3"; // -32,32
-    string pass1 = derivate(pass0); // 0,48
-    string pass2 = derivate(pass1); // 24, 24
-
-    complex<double> val = {2,2};    cout << " => ";
-
-    cout << pass0 << " => " << evaluate(pass0, val) <<  "\n";
-    cout << pass1 << " => " << evaluate(pass1, val) <<  "\n";
-}
-string showtransform(string t1, string op, string t2) {
-      string os = "[" + t1 + "]" + op + "[" + t2 + "]" ;
-      os += " => [";
-      // os += inner;
-      // os += showvect(code);
-      return os + "]";
-}
 int main () {
 
-    complex<double> val = {2,2};
-    string input = "2*(3/x)*x^3";
+    complex<double> val = {3,1};
 
-    // string pass1 = derivate("2*x^3");
-    // string pass2 = derivate(input);
+    string expression = "(tan(2 * x) + 1) / (cot(x * 3) - 1)";
+    string pass1 = derivate(expression);
 
-
-    // auto code = tokenize(inner);
-
-    // cout << "[" << t1 << "]" << op << "[" << t2 << "]" ;
-    // cout << " => [";
-    // cout << inner;
-    // // cout << showvect(code);
-    // cout << "]\n";
-
-    //cout << pass1 << " => " << "\n";
-    //cout << pass2 << " => " << "\n";
-    // << evaluate(pass2, val) <<  "\n";
-    //cout << pass1 << "\n";
+    cout << "\nexpression : [" << expression << "]";
+    cout << " => ";
+    cout <<  evaluate(pass1, val) << "\n"; // -0.022166,0.117662 
 
 
+
+    tests();
 
     std::cout << "\nexit\n";
     return 0;

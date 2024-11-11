@@ -382,5 +382,6 @@ int main () {
     cout << "\nresult : " << evaluate(pass0,x) << "\n";
 
 
+    test();
     std::cout << "\nend\n";
 }
