@@ -6,7 +6,6 @@
 #include <functional>
 
 #include "tests.hpp"
-
 // without regex
 
 // Let f be a function.
@@ -50,6 +49,13 @@ string showtransform (string t1, string op, string t2, string res) {
 complex<double> operator ^ (const complex<double> &a, const complex<double> &b) {
     return pow(a,b);
 }
+complex<double> sec (const complex<double> &x) {
+    return 1.0 / cos(x);
+}
+complex<double> csc (complex<double> x) {
+    return 1.0 / sin(x);
+}
+
 bool is_term (const string &sym) { return sym == "+" || sym == "-"; }
 bool is_fact (const string &sym) { return sym == "*" || sym == "/"; }
 bool is_func (const string &input) {
@@ -209,7 +215,10 @@ string div (string a, string b) {
 
     if (a == b) return "1";
     if (compare(b, 1)) return a;
-    if (is_number(a) && is_number(b)) return to_string(stod(a) / stod(b));
+    if (is_number(a) && is_number(b)) {
+        //cout << "[" << a << "]" << "/" << "[" << b << "]"  << flush;
+        return to_string(stod(a) / stod(b));
+    }
     return (a + "/" + b);
 }
 string exp (string a, string b) {
@@ -220,35 +229,34 @@ string exp (string a, string b) {
 }
 
 pair<string,string> diff (vector<pair<string,string>> &vars, vector<string> &oper) {
-    auto [t2,d2] = vars.back(); vars.pop_back();
-    auto [t1,d1] = vars.back(); vars.pop_back();
+    auto [f2,d2] = vars.back(); vars.pop_back();
+    auto [f1,d1] = vars.back(); vars.pop_back();
     string op = getstack(oper);
     pair<string,string> res;
 
     if (op == "+") {
-        res = {add(t1, t2), add(d1, d2)} ;
+        res = {add(f1, f2), add(d1, d2)} ;
     } else if (op == "-") {
-        res = {sub(t1, t2), sub(d1, d2)} ;
+        res = {sub(f1, f2), sub(d1, d2)} ;
     } else if (op == "*") {
-        res = {mul(t1, t2),  add(mul(t1,d2), mul(d1,t2))} ;
+        res = {mul(f1, f2),  add(mul(f1,d2), mul(d1,f2))} ;
     } else if (op == "/") {
-        string num = mktoken( sub(mul(d1,t2),mul(t1,d2))) ;
-        string den = mktoken( mul(t2, t2));
+        string num = mktoken( sub(mul(d1,f2),mul(f1,d2))) ;
+        string den = mktoken( mul(f2, f2));
 
-        res = {div(t1,t2), div(num,den)} ;
+        res = {div(f1,f2), div(num,den)} ;
     } else if (op == "^") {
-        string ex = exp(t1,t2), inner;
+        string ex = exp(f1,f2), inner;
 
-        if (is_number(t2)) {
-            inner = exp(mul(t2,t1), sub(t2,"1"));
+        if (is_number(f2)) {
+            inner = exp(mul(f2,f1), sub(f2,"1"));
             res = {ex,inner};
         } else {
-            inner = mktoken(add( mul( d1, div(t2,t1) ), mul(d2, "log(" +  t1 + ")")));
+            inner = mktoken(add( mul( d1, div(f2,f1) ), mul(d2, "log(" +  f1 + ")")));
             res = {ex, mul(ex,inner)} ;
         }
     }
     
-    /*cout << "[" << t1 << "]" << op << "[" << t2 << "]" ;*/
     /*cout << " => ";*/
     /*cout << res.second << '\n';*/
     return res;
@@ -335,7 +343,7 @@ string derivate (const string &input) {
 
     vector<string> oper;
     vector<pair<string,string>> vars;
-    //cout << showvect(expr) << "\n";
+    //cout << showvect(expr) << "\n" << flush;
     while (it < end) {
         string cell = *it;
 
@@ -350,25 +358,30 @@ string derivate (const string &input) {
             while (precedence(oper, cell)) {
                 vars.push_back(diff(vars,oper));
             }
-
             oper.push_back(cell);
         } else if (is_func(cell)) {
             it++;
-            string t1 = getsub(it,end), dx = derivate(t1);
-            string f1 = cell + "(" + t1 + ")";
+            string var = getsub(it,end);
+            string fx = cell + "(" + var + ")", dx = derivate(var);
 
             if (cell == "log") {
-                vars.push_back( { f1 , div( dx, t1)});
+                vars.push_back( { fx , div( dx, var)});
             } else if (cell == "sin") {
-                vars.push_back( { f1 , mul( dx,"cos(" + t1 + ")")});
+                vars.push_back( { fx , mul( dx,"cos(" + var + ")")});
             } else if (cell == "cos") {
-                vars.push_back( { f1 , mul( sub("0", dx), "sin(" + t1 + ")") });
+                vars.push_back( { fx , mul( sub("0", dx), "sin(" + var + ")") });
             } else if (cell == "tan") {
-                string inner = "(cos(" + t1 + ")^2)";
-                vars.push_back( { f1 , div( dx, inner ) });
+                vars.push_back( { fx , div( dx, "(cos(" + var + "))^2" ) });
+                //vars.push_back( { fx , mul(dx, "(sec(" + var + "))^2") });
             } else if (cell == "cot") {
-                string inner = "(sin(" + dx + ")^2)";
-                vars.push_back( { f1 , div( sub("0", dx), inner) });
+                vars.push_back( { fx , div( sub("0", dx), "(sin(" + var + "))^2") });
+                //vars.push_back( { fx , mul(sub("0", dx), "(csc(" + var + "))^2") });
+            } 
+
+            else if (cell == "sec") {
+                vars.push_back( { fx , mul(dx, mul("(sec(" + var + "))", "(tan(" + var + "))")) });
+            } else if (cell == "csc") {
+                vars.push_back( { fx , mul(dx, mul("(cot(" + var + "))", "(csc(" + var + "))")) });
             }
         }
 
@@ -399,12 +412,14 @@ int main () {
     complex<double> val = {3,1};
 
     string expression = "(tan(2 * x) + 1) / (cot(x * 3) - 1)";
-    string pass1 = derivate(expression);
 
-    cout << "\nexpression : [" << expression << "]";
-    cout << " => ";
-    cout <<  evaluate(pass1, val) << "\n"; // -0.022166,0.117662 
+    expression = "6 / 4"; 
 
+    //string pass1 = derivate(expression);
+    //cout << "\nexpression : [" << expression << "]";
+    //cout << " => ";
+    //cout << pass1;
+    //cout <<  evaluate(pass1, val) << "\n"; // -0.022166,0.117662 
 
 
     tests();
