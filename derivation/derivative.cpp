@@ -1,12 +1,10 @@
 #include <iostream>
+
 #include <vector>
 #include <complex>
 #include <cmath>
 #include <tuple>
 #include <functional>
-
-#include "tests.hpp"
-// without regex
 
 // Let f be a function.
 // The derivative function, denoted by f′, is the function whose domain consists of those values of x
@@ -29,7 +27,7 @@
 using namespace std;
 using value_t = std::complex<double>;
 using func_t = std::function<value_t(value_t)>;
-
+/////////////////////////////////////////////////////////////////////////////////////////
 string showvect (const std::vector<std::string> &vs) {
     string os;
     for (size_t i = 0; i < vs.size(); i++) {
@@ -45,32 +43,34 @@ string showtransform (string t1, string op, string t2, string res) {
     // os += showvect(code);
     return os + "]";
 }
-
+/////////////////////////////////////////////////////////////////////////////////////////
 complex<double> operator ^ (const complex<double> &a, const complex<double> &b) {
     return pow(a,b);
 }
 complex<double> sec (const complex<double> &x) {
     return 1.0 / cos(x);
 }
-complex<double> csc (complex<double> x) {
+complex<double> csc (const complex<double> &x) {
     return 1.0 / sin(x);
 }
+complex<double> sqr (const complex<double> &x) {
+    return x * x;
+}
 
-bool is_term (const string &sym) { return sym == "+" || sym == "-"; }
-bool is_fact (const string &sym) { return sym == "*" || sym == "/"; }
+bool is_term (const string &src) { 
+    return src == "+" || src == "-"; 
+}
+bool is_fact (const string &src) { 
+    return src == "*" || src == "/"; 
+}
 bool is_func (const string &input) {
     return input == "sin" || input == "cos" || input == "tan" || input == "log" || input == "cot";
 }
 bool is_number (const string &input) {
 
     if (input.size() == 0) return false;
-    int i = 0, end = input.size();
 
-    if (input.front() == '(' && input.back() == ')') {
-        i += 1, end -= 1;
-    }
-
-    for (; i < end; i++) {
+    for (size_t i = 0; i < input.size(); i++) {
         if (input[i] == '-' && isdigit(input[i+1])) continue;
         if (input[i] != '.' && input[i] != ',' && !isdigit(input[i])) {
             return false;
@@ -86,7 +86,7 @@ bool is_operator (const string &input) {
 vector<string> tokenize (const string &input) {
 
     vector<string> code;
-    int i = 0;
+    size_t i = 0;
 
     while (i < input.size()) {
 
@@ -132,12 +132,6 @@ complex<double> stoc (const string &input) {
     return zx;
 }
 
-int order (const string &src) {
-    if (src == "+" || src == "-") return 1;
-    if (src == "*" || src == "/") return 2;
-    if (src == "^") return 3;
-    return 0;
-}
 std::string getsub (std::vector<std::string>::iterator &it, std::vector<std::string>::iterator nd) {
     int pile = 1;
     std::string sub;
@@ -158,74 +152,83 @@ template<class T> T getstack (vector<T> &stack) {
     stack.pop_back();
     return val;
 }
+
+int order (const string &src) {
+    if (src == "+" || src == "-") return 1;
+    if (src == "*" || src == "/") return 2;
+    if (src == "^") return 3;
+    return 0;
+}
 bool precedence (const vector<string> &stack, const string &cell) {
     if (stack.empty()) return false;
     if (cell == "^") return order(stack.back()) > order(cell);
     return order(stack.back()) >= order(cell);
 }
-
-string join (vector<string>::iterator &fs, vector<string>::iterator &nd) {
-
-    string os;
-
-    for (auto it = fs; it != nd; it++) {
-        os += *it + " ";
-    }
-
-    if (os.size() > 0) os.pop_back();
-    return os;
-}
-
-bool compare(string a, double b) {
+bool compare (string a, double b) {
     if (!is_number(a)) return false;
     return stod(a) == b;
 }
 
-string mktoken(string sym) {
-    return "(" + sym + ")";
+string mktok (string src) {
+    if (is_number(src) || src == "x") return src;
+    return "(" + src + ")";
 }
+
 string add (string a, string b) {
 
+    if (a == "inf" || b == "inf") return "inf";
     if (is_number(a) && is_number(b)) return to_string(stod(a) + stod(b));
     if (compare(a, 0)) return b;
     if (compare(b, 0)) return a;
     if (a == b) return ( "2 * " + b);
 
-    return (a + "+" + b);
+    return mktok(a) + "+" + mktok(b);
 }
 string sub (string a, string b) {
 
     if (a == b) return "0";
+    if (a == "inf") return "inf";
+    if (b == "inf") return "-inf";
+
     if (compare(b, 0)) return a;
 
     if (is_number(a) && is_number(b)) return to_string(stod(a) - stod(b));
-    return (a + "-" + b);
+    return mktok(a) + "-" + mktok(b);
 }
 string mul (string a, string b) {
 
+    if (a == "inf" || b == "inf") return "inf";
     if (compare(a, 1)) return b;
     if (compare(b, 1)) return a;
     if (compare(a, 0) || compare(b, 0)) return "0";
     if (is_number(a) && is_number(b)) return to_string(stod(a) * stod(b));
     //if (a == b) return (a + "^2");
 
-    return (a + "*" + b);
+    return mktok(a) + "*" + mktok(b);
 }
 string div (string a, string b) {
 
     if (a == b) return "1";
+    if (a == "inf") return "inf";
+    if (b == "inf") return "0";
     if (compare(b, 1)) return a;
+
     if (is_number(a) && is_number(b)) {
-        //cout << "[" << a << "]" << "/" << "[" << b << "]"  << flush;
         return to_string(stod(a) / stod(b));
     }
-    return (a + "/" + b);
+
+    return mktok(a) + "/" + mktok(b);
 }
 string exp (string a, string b) {
 
     if (compare(b, 1)) return a;
     if (compare(a, 1) || compare(b, 0)) return "1";
-    return (a + "^" + b);
+
+    if (is_number(a) && is_number(b)) {
+        return to_string(pow(stod(a),  stod(b)));
+    }
+
+    return mktok(a) + "^" + mktok(b);
 }
 
 pair<string,string> diff (vector<pair<string,string>> &vars, vector<string> &oper) {
@@ -234,6 +237,7 @@ pair<string,string> diff (vector<pair<string,string>> &vars, vector<string> &ope
     string op = getstack(oper);
     pair<string,string> res;
 
+
     if (op == "+") {
         res = {add(f1, f2), add(d1, d2)} ;
     } else if (op == "-") {
@@ -241,30 +245,34 @@ pair<string,string> diff (vector<pair<string,string>> &vars, vector<string> &ope
     } else if (op == "*") {
         res = {mul(f1, f2),  add(mul(f1,d2), mul(d1,f2))} ;
     } else if (op == "/") {
-        string num = mktoken( sub(mul(d1,f2),mul(f1,d2))) ;
-        string den = mktoken( mul(f2, f2));
-
+        string num =  sub(mul(d1,f2),mul(f1,d2)) ;
+        string den =  exp(f2, "2");
+        //cout << "\n\nden : " << "[" << den << "]" << "\n";
         res = {div(f1,f2), div(num,den)} ;
+
+       // cout << op << "\n";
+       // cout << "fx1 : " << f1 << " dx1 : " << d1 << "\n";
+       // cout << "fx2 : " << f2 << " dx2 : " << d2 << "\n";
+       // cout << "\n";
+       // cout << fixed << "[" << num << "]" << "/" << "[" << den << "]"  << flush;
+
+        //cout << "[" << res.first << "][" << res.second << "]"  << flush;
+
     } else if (op == "^") {
         string ex = exp(f1,f2), inner;
-
-        if (is_number(f2)) {
-            inner = exp(mul(f2,f1), sub(f2,"1"));
-            res = {ex,inner};
-        } else {
-            inner = mktoken(add( mul( d1, div(f2,f1) ), mul(d2, "log(" +  f1 + ")")));
-            res = {ex, mul(ex,inner)} ;
-        }
+        inner = add( mul( d1, div(f2,f1) ), mul(d2, "log(" +  f1 + ")"));
+        res = {ex, mul(ex,inner)} ;
     }
-    
+
+
+
     /*cout << " => ";*/
-    /*cout << res.second << '\n';*/
     return res;
 }
 complex<double> evaluate (const std::string &input, complex<double> val) {
 
     auto expr = tokenize(input);
-    vector<string>::iterator it = expr.begin(), end = expr.end(), start = expr.begin();
+    vector<string>::iterator it = expr.begin(), end = expr.end(); 
     vector<string> oper;
     vector<complex<double>> vars;
 
@@ -339,7 +347,7 @@ complex<double> evaluate (const std::string &input, complex<double> val) {
 string derivate (const string &input) {
 
     auto expr = tokenize(input);
-    vector<string>::iterator it = expr.begin(), end = expr.end(), start = expr.begin();
+    vector<string>::iterator it = expr.begin(), end = expr.end();
 
     vector<string> oper;
     vector<pair<string,string>> vars;
@@ -396,6 +404,7 @@ string derivate (const string &input) {
 }
 tuple<func_t,func_t,func_t> differentiate (const string &expression) {
 
+    cout << "expression : [" <<  expression << "]\n" << flush;
     string pass0 = expression;
     string pass1 = derivate(pass0);
     string pass2 = derivate(pass1);
@@ -407,23 +416,55 @@ tuple<func_t,func_t,func_t> differentiate (const string &expression) {
     };
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
+#include "tests.hpp"
+
 int main () {
 
-    complex<double> val = {3,1};
+    complex<double> x = {-4.76,-9.88};
+    string pass0 = "95.6^9.4/x^98.4/x^x-27.5^x*x/x-2.8/0.7^32.2";
 
-    string expression = "(tan(2 * x) + 1) / (cot(x * 3) - 1)";
+    pass0 = "2.8/0.7^32.2";
+    pass0 = "3.14 * (1 + 5 * x) / log(x)";
 
-    expression = "6 / 4"; 
-
-    //string pass1 = derivate(expression);
-    //cout << "\nexpression : [" << expression << "]";
-    //cout << " => ";
-    //cout << pass1;
-    //cout <<  evaluate(pass1, val) << "\n"; // -0.022166,0.117662 
+    string pass1 = derivate(pass0);
+    cout << " => " << pass1 << "\n";
+    //cout << " = " << evaluate(pass1, x) << "\n\n"; 
 
 
-    tests();
+    /*
+       The second derivative failed! f(x) = 17.4^77.4/x^83.2*36.9^x+87.7^49.2-x, x = (-4.76,-9.88)
+Expected: equal to (4397.53,-9026.63) (+/- (2,4))
+Actual: (-nan,-nan)
+
+
+string pass2 = derivate(pass1);
+cout << " => " << pass2 << "\n";
+cout << " = " << evaluate(pass2, x) << "\n\n"; 
+
+auto [fx,dx,dx2] = differentiate("1/x^(1/2)");
+
+complex<double> x = {4};
+Assert::That(dx2(x),value_t{0.0234375,0} );
+
+*/
+    //tests();
 
     std::cout << "\nexit\n";
     return 0;
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+string join (vector<string>::iterator &fs, vector<string>::iterator &nd) {
+
+    string os;
+
+    for (auto it = fs; it != nd; it++) {
+        os += *it + " ";
+    }
+
+    if (os.size() > 0) os.pop_back();
+    return os;
+}
+
+
