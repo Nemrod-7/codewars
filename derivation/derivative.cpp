@@ -250,11 +250,11 @@ pair<string,string> diff (vector<pair<string,string>> &vars, vector<string> &ope
         //cout << "\n\nden : " << "[" << den << "]" << "\n";
         res = {div(f1,f2), div(num,den)} ;
 
-       // cout << op << "\n";
-       // cout << "fx1 : " << f1 << " dx1 : " << d1 << "\n";
-       // cout << "fx2 : " << f2 << " dx2 : " << d2 << "\n";
-       // cout << "\n";
-       // cout << fixed << "[" << num << "]" << "/" << "[" << den << "]"  << flush;
+        cout << op << "\n";
+        cout << "fx1 : " << f1 << " dx1 : " << d1 << "\n";
+        cout << "fx2 : " << f2 << " dx2 : " << d2 << "\n";
+        cout << "\n";
+        cout << fixed << "[" << num << "]" << "/" << "[" << den << "]"  << flush;
 
         //cout << "[" << res.first << "][" << res.second << "]"  << flush;
 
@@ -422,16 +422,22 @@ tuple<func_t,func_t,func_t> differentiate (const string &expression) {
 int main () {
 
     complex<double> x = {-4.76,-9.88};
-    string pass0 = "95.6^9.4/x^98.4/x^x-27.5^x*x/x-2.8/0.7^32.2";
+    string expression;
 
-    pass0 = "2.8/0.7^32.2";
-    pass0 = "(91.2^21/x^87.1)^x";
+    expression = "x^x/x+98^x-68.9^26.6/x", x = {4.53,4.53};
 
-    string pass1 = derivate(pass0);
-    string pass2 = derivate(pass1);
+    expression = "x/x";
+    //expression = "x ^ 3";
+    auto pass0 = expression;
+    auto pass1 = derivate(pass0);
 
-    cout << " => " << pass1 << "\n";
-    //cout << " = " << evaluate(pass1, x) << "\n\n"; 
+    //cout << "[" << pass1 << "]";
+    //auto pass2 = derivate(pass1); 
+    
+    //cout << showvect(pass1);
+
+
+
 
 
     /*
