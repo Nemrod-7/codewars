@@ -27,12 +27,17 @@
 
 using namespace std;
 using value_t = std::complex<double>;
-using func_t = std::function<value_t(value_t)>;
+using func_t = std::function<value_t(value_t)>; 
+
+const std::regex trigon ("^sin|cos|tan|cot|log$");
+const std::regex operat ("^[-+*/^]$");
+const std::regex number ("^-?\\d+(.\\d+)?|\\(-?\\d+(.\\d+)?,-?\\d+(.\\d+)?\\)$");
+
 /////////////////////////////////////////////////////////////////////////////////////////
 string showvect (const std::vector<std::string> &vs) {
     string os;
     for (size_t i = 0; i < vs.size(); i++) {
-      os += "[" + vs[i] + "]";
+        os += "[" + vs[i] + "]";
     }
 
     return os;
@@ -48,91 +53,25 @@ string showtransform (string t1, string op, string t2, string res) {
 complex<double> operator ^ (const complex<double> &a, const complex<double> &b) {
     return pow(a,b);
 }
-complex<double> sec (const complex<double> &x) {
-    return 1.0 / cos(x);
-}
-complex<double> csc (const complex<double> &x) {
-    return 1.0 / sin(x);
-}
-complex<double> sqr (const complex<double> &x) {
-    return x * x;
-}
-
-bool is_term (const string &src) { 
-    return src == "+" || src == "-"; 
-}
-bool is_fact (const string &src) { 
-    return src == "*" || src == "/"; 
-}
-bool is_func (const string &input) {
-    return input == "sin" || input == "cos" || input == "tan" || input == "log" || input == "cot";
-}
-bool is_number (const string &input) {
-
-    if (input.size() == 0) return false;
-
-    for (size_t i = 0; i < input.size(); i++) {
-        if (input[i] == '-' && isdigit(input[i+1])) continue;
-        if (input[i] != '.' && input[i] != ',' && !isdigit(input[i])) {
-            return false;
-        }
-    }
-
-    return true;
-}
-bool is_operator (const string &input) {
-    return is_fact(input) || is_term(input) || input == "^";
-}
 
 vector<string> tokenize (const string &input) {
 
-    vector<string> code;
-    size_t i = 0;
+    const regex tokn ("([0-9]+(\\.[0-9]+)?)|x|[-+*/^()]|(sin|cos|tan|cot|log)");
+    const regex oper ("^[-+*/^]$");
+    sregex_token_iterator iter (input.begin (), input.end (), tokn);
+    vector<string> temp (iter, sregex_token_iterator ()), code;
 
-    while (i < input.size()) {
+    for (size_t i = 0; i < temp.size(); i++) {
+        if (temp[i] == "-" && (i == 0 || regex_match(temp[i-1], oper))) {
+            code.push_back("-" + temp[i + 1]);
 
-        if (isdigit(input[i])) {
-            string buffer;
-
-            while (isdigit(input[i]) || input[i] == '.') buffer += input[i++];
-            code.push_back(buffer);
-        } else if (isspace(input[i])) {
-            while (isspace(input[i])) i++;
-        } else if (input[i] == '+') {
-            code.push_back(string(1,input[i++]));
-        } else if (input[i] == '*' || input[i] == '/') {
-            code.push_back(string(1,input[i++]));
-        } else if (input[i] == '^') {
-            code.push_back(string(1,input[i++]));
-        } else if (isalpha(input[i])) {
-            string buffer;
-
-            while (isalpha(input[i])) buffer += input[i++];
-            code.push_back(buffer);
-        } else if (input[i] == '-') {
-            if (code.size() == 0 || is_operator(code.back())) {
-                string buffer = "-";
-                i++;
-
-                while (isdigit(input[i]) || input[i] == '.') buffer += input[i++];
-                code.push_back(buffer);
-            } else {
-                code.push_back(string(1,input[i++]));
-            }
-        } else {
-            code.push_back(string(1,input[i++]));
+            if (i + 2 < temp.size()) i += 2;
         }
+        code.push_back(temp[i]);
     }
 
     return code;
 }
-complex<double> stoc (const string &input) {
-    istringstream iss(input);
-    complex<double> zx;
-    iss >> zx;
-    return zx;
-}
-
 std::string getsub (std::vector<std::string>::iterator &it, std::vector<std::string>::iterator nd) {
     int pile = 1;
     std::string sub;
@@ -146,7 +85,6 @@ std::string getsub (std::vector<std::string>::iterator &it, std::vector<std::str
     //if (sub.size() && sub.back() == ' ') sub.pop_back();
     return sub;
 }
-
 template<class T> T getstack (vector<T> &stack) {
     if (stack.empty()) throw::exception();
     const T val = stack.back();
@@ -166,21 +104,21 @@ bool precedence (const vector<string> &stack, const string &cell) {
     return order(stack.back()) >= order(cell);
 }
 bool compare (string a, double b) {
-    if (!is_number(a)) return false;
+    if (!regex_match(a, number)) return false;
     return stod(a) == b;
 }
 
 string mktok (string src) {
-    if (is_number(src) || src == "x") return src;
+    if (regex_match(src, number) || src == "x") return src;
     return "(" + src + ")";
 }
 
 string add (string a, string b) {
 
     if (a == "inf" || b == "inf") return "inf";
-    if (is_number(a) && is_number(b)) return to_string(stod(a) + stod(b));
     if (compare(a, 0)) return b;
     if (compare(b, 0)) return a;
+    if (regex_match(a, number) && regex_match(b, number)) return to_string(stod(a) + stod(b));
     if (a == b) return ( "2 * " + b);
 
     return mktok(a) + "+" + mktok(b);
@@ -193,7 +131,7 @@ string sub (string a, string b) {
 
     if (compare(b, 0)) return a;
 
-    if (is_number(a) && is_number(b)) return to_string(stod(a) - stod(b));
+    if (regex_match(a, number) && regex_match(b, number)) return to_string(stod(a) - stod(b));
     return mktok(a) + "-" + mktok(b);
 }
 string mul (string a, string b) {
@@ -202,9 +140,8 @@ string mul (string a, string b) {
     if (compare(a, 1)) return b;
     if (compare(b, 1)) return a;
     if (compare(a, 0) || compare(b, 0)) return "0";
-    if (is_number(a) && is_number(b)) return to_string(stod(a) * stod(b));
     //if (a == b) return (a + "^2");
-
+    if (regex_match(a, number) && regex_match(b, number)) return to_string(stod(a) * stod(b));
     return mktok(a) + "*" + mktok(b);
 }
 string div (string a, string b) {
@@ -214,10 +151,7 @@ string div (string a, string b) {
     if (b == "inf") return "0";
     if (compare(b, 1)) return a;
 
-    if (is_number(a) && is_number(b)) {
-        return to_string(stod(a) / stod(b));
-    }
-
+    if (regex_match(a, number) && regex_match(b, number)) return to_string(stod(a) / stod(b));
     return mktok(a) + "/" + mktok(b);
 }
 string exp (string a, string b) {
@@ -225,37 +159,33 @@ string exp (string a, string b) {
     if (compare(b, 1)) return a;
     if (compare(a, 1) || compare(b, 0)) return "1";
 
-    if (is_number(a) && is_number(b)) {
-        return to_string(pow(stod(a),  stod(b)));
-    }
-
+    if (regex_match(a, number) && regex_match(b, number)) return to_string(pow(stod(a),  stod(b)));
     return mktok(a) + "^" + mktok(b);
 }
 
-pair<string,string> diff (vector<pair<string,string>> &vars, vector<string> &oper) {
+pair<string,string> operate (vector<pair<string,string>> &vars, vector<string> &oper) {
+
     auto [f2,d2] = vars.back(); vars.pop_back();
     auto [f1,d1] = vars.back(); vars.pop_back();
     string op = getstack(oper);
-    pair<string,string> res;
 
     if (op == "+") {
-        res = {add(f1, f2), add(d1, d2)} ;
+        return {add(f1, f2), add(d1, d2)} ;
     } else if (op == "-") {
-        res = {sub(f1, f2), sub(d1, d2)} ;
+        return {sub(f1, f2), sub(d1, d2)} ;
     } else if (op == "*") {
-        res = {mul(f1, f2),  add(mul(f1,d2), mul(d1,f2))} ;
+        return {mul(f1, f2),  add(mul(f1,d2), mul(d1,f2))} ;
     } else if (op == "/") {
-        string num =  sub(mul(d1,f2),mul(f1,d2)) ;
-        string den =  exp(f2, "2");
-        res = {div(f1,f2), div(num,den)} ;
+        string num = sub(mul(d1,f2),mul(f1,d2)), den = exp(f2, "2");
 
+        return {div(f1,f2), div(num,den)} ;
     } else if (op == "^") {
-        string ex = exp(f1,f2), inner;
-        inner = add( mul( d1, div(f2,f1) ), mul(d2, "log(" +  f1 + ")"));
-        res = {ex, mul(ex,inner)} ;
+        string ex = exp(f1,f2), inner = add( mul( d1, div(f2,f1) ), mul(d2, "log(" +  f1 + ")"));
+
+        return {ex, mul(ex,inner)} ;
     }
 
-    return res;
+    return {};
 }
 complex<double> evaluate (const std::string &input, complex<double> val) {
 
@@ -269,11 +199,11 @@ complex<double> evaluate (const std::string &input, complex<double> val) {
 
         if (cell == "x") {
             vars.push_back(val);
-        } else if (is_number(cell)) {
+        } else if (regex_match(cell, number)) {
             vars.push_back(stod(cell));
         } else if (cell == "(") {
             vars.push_back(evaluate(getsub(it,end), val));
-        } else if (is_operator(cell)) {
+        } else if (regex_match(cell, operat)) {
 
             while (precedence(oper, cell)) {
                 complex<double> b = getstack(vars), a = getstack(vars);
@@ -289,7 +219,7 @@ complex<double> evaluate (const std::string &input, complex<double> val) {
                 }
             }
             oper.push_back(cell);
-        } else if (is_func(cell)) {
+        } else if (regex_match(cell, trigon)) {
             it++;
             complex<double> var = evaluate(getsub(it,end), val);
 
@@ -327,7 +257,7 @@ complex<double> evaluate (const std::string &input, complex<double> val) {
 }
 string derivate (const string &input) {
 
-    auto expr = tokenize(input);
+    auto expr = tokenize (input);
     vector<string>::iterator it = expr.begin(), end = expr.end();
 
     vector<string> oper;
@@ -338,17 +268,17 @@ string derivate (const string &input) {
 
         if (cell == "x") {
             vars.push_back({cell,"1"});
-        } else if (is_number(cell)) {
+        } else if (regex_match(cell, number)) {
             vars.push_back({cell,"0"});
         } else if (cell == "(") {
             string sub = getsub(it,end), dub = derivate(sub);
             vars.push_back({sub,dub});
-        } else if (is_operator(cell)) {
+        } else if (regex_match(cell, operat)) {
             while (precedence(oper, cell)) {
-                vars.push_back(diff(vars,oper));
+                vars.push_back(operate(vars,oper));
             }
             oper.push_back(cell);
-        } else if (is_func(cell)) {
+        } else if (regex_match(cell, trigon)) {
             it++;
             string var = getsub(it,end);
             string fx = cell + "(" + var + ")", dx = derivate(var);
@@ -378,14 +308,14 @@ string derivate (const string &input) {
     }
 
     while (!oper.empty()) {
-        vars.push_back(diff(vars,oper));
+        vars.push_back(operate(vars,oper));
     }
 
     return  getstack(vars).second;
 }
 tuple<func_t,func_t,func_t> differentiate (const string &expression) {
 
-    cout << "expression : [" <<  expression << "]\n" << flush;
+    //cout << "expression : [" <<  expression << "]\n" << flush;
     string pass0 = expression;
     string pass1 = derivate(pass0);
     string pass2 = derivate(pass1);
@@ -400,28 +330,30 @@ tuple<func_t,func_t,func_t> differentiate (const string &expression) {
 /////////////////////////////////////////////////////////////////////////////////////////////////
 #include "tests.hpp"
 
+complex<double> sec (const complex<double> &x) {
+    return 1.0 / cos(x);
+}
+complex<double> csc (const complex<double> &x) {
+    return 1.0 / sin(x);
+}
+complex<double> sqr (const complex<double> &x) {
+    return x * x;
+}
+
 int main () {
 
     complex<double> x = {-4.76,-9.88};
-    string expression;
+    string expression = "(x + 3) / (1 - x)";
+
+    //auto pass0 = expression;
+    //auto pass1 = derivate(pass0);
+    //auto pass2 = derivate(pass1);
+    
+
+    expression = "(x+3)*-1.000000";
 
     tests();
 
     std::cout << "\nexit\n";
     return 0;
 }
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-string join (vector<string>::iterator &fs, vector<string>::iterator &nd) {
-
-    string os;
-
-    for (auto it = fs; it != nd; it++) {
-        os += *it + " ";
-    }
-
-    if (os.size() > 0) os.pop_back();
-    return os;
-}
-
-

@@ -1,0 +1,5565 @@
+
+#include <complex>
+#include <limits>
+#include <tuple>
+#include <cmath>
+#include <memory>
+#include <functional>
+#include <random>
+#include <sstream>
+#include <string>
+
+using value_t = std::complex<double>;
+
+void Tests() {
+    {
+        const auto [f, df_dx, d2f_dx2] = differentiate("2 * x^3");
+        
+        Assert::That(f(2),       EqualsAdaptive(value_t{ 16 }), ExtraMessage("The function failed! f(x) = 2 * x^3, x = 2"));
+        Assert::That(df_dx(2),   EqualsAdaptive(value_t{ 24 }), ExtraMessage("The first derivative failed! f(x) = 2 * x^3, x = 2"));
+        Assert::That(d2f_dx2(2), EqualsAdaptive(value_t{ 24 }), ExtraMessage("The second derivative failed! f(x) = 2 * x^3, x = 2"));
+    }
+  
+    {
+        const auto [f, df_dx, d2f_dx2] = differentiate("sin(cos(x^x^2))");
+      
+        Assert::That(f({ 1, 1 }),       EqualsAdaptive(value_t{ 0.839472, -0.0115338 }), ExtraMessage("The function failed! f(x) = sin(cos(x^x^2)), x = (1, 1)"));
+        Assert::That(df_dx({ 1, 1 }),   EqualsAdaptive(value_t{ 0.0752251, -0.0149614 }), ExtraMessage("The first derivative failed! f(x) = sin(cos(x^x^2)), x = (1, 1)"));
+        Assert::That(d2f_dx2({ 1, 1 }), EqualsAdaptive(value_t{ 0.12722, 0.402059 }), ExtraMessage("The second derivative failed! f(x) = sin(cos(x^x^2)), x = (1, 1)"));
+    }
+  
+    {
+        const auto [f, df_dx, d2f_dx2] = differentiate("4 * log(x) + x^2 / 2^x");
+      
+        Assert::That(f({ -1, 1 }),       EqualsAdaptive(value_t{ -1.16955,   6.34782 }), ExtraMessage("The function failed! f(x) = 4 * log(x) + x^2 / 2^x, x = (-1, 1)"));
+        Assert::That(df_dx({ -1, 1 }),   EqualsAdaptive(value_t{ -0.749534,  5.76558 }), ExtraMessage("The first derivative failed! f(x) = 4 * log(x) + x^2 / 2^x, x = (-1, 1)"));
+        Assert::That(d2f_dx2({ -1, 1 }), EqualsAdaptive(value_t{  2.5714,  -13.8429 }), ExtraMessage("The second derivative failed! f(x) = 4 * log(x) + x^2 / 2^x, x = (-1, 1)"));
+    }
+  
+    {
+        const auto [f, df_dx, d2f_dx2] = differentiate("(tan(2 * x) + 1) / (cot(x * 3) - 1)");
+      
+        Assert::That(f({ 3, 1 }),       EqualsAdaptive(value_t{ -0.971754,  0.0055383 }), ExtraMessage("The function failed! f(x) = (tan(2 * x) + 1) / (cot(x * 3) - 1), x = (3, 1)"));
+        Assert::That(df_dx({ 3, 1 }),   EqualsAdaptive(value_t{ -0.022166,  0.117662  }), ExtraMessage("The first derivative failed! f(x) = (tan(2 * x) + 1) / (cot(x * 3) - 1), x = (3, 1)"));
+        Assert::That(d2f_dx2({ 3, 1 }), EqualsAdaptive(value_t{ -0.493051, -0.0891051 }), ExtraMessage("The second derivative failed! f(x) = (tan(2 * x) + 1) / (cot(x * 3) - 1), x = (3, 1)"));
+    }
+    
+    {
+        const auto [f, df_dx, d2f_dx2] = differentiate("13.37");
+        
+        Assert::That(f(0),       EqualsAdaptive(value_t{ 13.37 }), ExtraMessage("The function failed! f(x) = 13.37, x = 0"));
+        Assert::That(df_dx(0),   EqualsAdaptive(value_t{     0 }), ExtraMessage("The first derivative failed! f(x) = 13.37, x = 0"));
+        Assert::That(d2f_dx2(0), EqualsAdaptive(value_t{     0 }), ExtraMessage("The second derivative failed! f(x) = 13.37, x = 0"));
+    }
+  
+    {
+        const auto [f, df_dx, d2f_dx2] = differentiate("x ^ x ^ x");
+      
+        Assert::That(f(2),       EqualsAdaptive(value_t{      16 }), ExtraMessage("The function failed! f(x) = x ^ x ^ x, x = 2"));
+        Assert::That(df_dx(2),   EqualsAdaptive(value_t{  107.11 }), ExtraMessage("The first derivative failed! f(x) = x ^ x ^ x, x = 2"));
+        Assert::That(d2f_dx2(2), EqualsAdaptive(value_t{ 958.755 }), ExtraMessage("The second derivative failed! f(x) = x ^ x ^ x, x = 2"));
+    }
+
+    {
+        {
+            const auto [f, df_dx, d2f_dx2] = differentiate("0 * x");
+            
+            Assert::That(f(1),       EqualsAdaptive(value_t{ 0 }), ExtraMessage("The function failed! f(x) = 0 * x, x = 1"));
+            Assert::That(df_dx(1),   EqualsAdaptive(value_t{ 0 }), ExtraMessage("The first derivative failed! f(x) = 0 * x, x = 1"));
+            Assert::That(d2f_dx2(1), EqualsAdaptive(value_t{ 0 }), ExtraMessage("The second derivative failed! f(x) = 0 * x, x = 1"));
+        }
+      
+        {
+            const auto [f, df_dx, d2f_dx2] = differentiate("x^0");
+            
+            Assert::That(f(2),       EqualsAdaptive(value_t{ 1 }), ExtraMessage("The function failed! f(x) = x^0, x = 2"));
+            Assert::That(df_dx(2),   EqualsAdaptive(value_t{ 0 }), ExtraMessage("The first derivative failed! f(x) = x^0, x = 2"));
+            Assert::That(d2f_dx2(2), EqualsAdaptive(value_t{ 0 }), ExtraMessage("The second derivative failed! f(x) = x^0, x = 2"));
+        }
+
+        {
+            const auto [f, df_dx, d2f_dx2] = differentiate("cos(x * 0)");
+            
+            Assert::That(f(2),       EqualsAdaptive(value_t{ 1 }), ExtraMessage("The function failed! f(x) = cos(x * 0), x = 2"));
+            Assert::That(df_dx(2),   EqualsAdaptive(value_t{ 0 }), ExtraMessage("The first derivative failed! f(x) = cos(x * 0), x = 2"));
+            Assert::That(d2f_dx2(2), EqualsAdaptive(value_t{ 0 }), ExtraMessage("The second derivative failed! f(x) = cos(x * 0), x = 2"));
+        }      
+    }
+  
+    {
+        const auto [f, df_dx, d2f_dx2] = differentiate("100 - 4.9 * x^2");
+        
+        Assert::That(f(2),       EqualsAdaptive(value_t{  80.4 }), ExtraMessage("The function failed! f(x) = 100 - 4.9 * x^2, x = 2"));
+        Assert::That(df_dx(2),   EqualsAdaptive(value_t{ -19.6 }), ExtraMessage("The first derivative failed! f(x) = 100 - 4.9 * x^2, x = 2"));
+        Assert::That(d2f_dx2(2), EqualsAdaptive(value_t{  -9.8 }), ExtraMessage("The second derivative failed! f(x) = 100 - 4.9 * x^2, x = 2"));
+    }
+  
+    {
+        const auto [f, df_dx, d2f_dx2] = differentiate("3.14 * x^2");
+        
+        Assert::That(f(3),       EqualsAdaptive(value_t{ 28.26 }), ExtraMessage("The function failed! f(x) = 3.14 * x^2, x = 3"));
+        Assert::That(df_dx(3),   EqualsAdaptive(value_t{ 18.84 }), ExtraMessage("The first derivative failed! f(x) = 3.14 * x^2, x = 3"));
+        Assert::That(d2f_dx2(3), EqualsAdaptive(value_t{  6.28 }), ExtraMessage("The second derivative failed! f(x) = 3.14 * x^2, x = 3"));
+    }
+  
+    {
+        const auto [f, df_dx, d2f_dx2] = differentiate("1 / x^(1/2)");
+        
+        Assert::That(f(4),       EqualsAdaptive(value_t{  0.5 }), ExtraMessage("The function failed! f(x) = 1 / x^(1/2), x = 4"));
+        Assert::That(df_dx(4),   EqualsAdaptive(value_t{ -0.0625 }), ExtraMessage("The first derivative failed! f(x) = 1 / x^(1/2), x = 4"));
+        Assert::That(d2f_dx2(4), EqualsAdaptive(value_t{  0.0234375 }), ExtraMessage("The second derivative failed! f(x) = 1 / x^(1/2), x = 4"));
+    }
+  
+    {
+        const auto [f, df_dx, d2f_dx2] = differentiate("cos(x) + 4 * sin(x * 2)");
+        
+        Assert::That(f(3.14),       EqualsAdaptive(value_t{ -1.01274 }), ExtraMessage("The function failed! f(x) = cos(x) + 4 * sin(x * 2), x = 3.14"));
+        Assert::That(df_dx(3.14),   EqualsAdaptive(value_t{  7.99837 }), ExtraMessage("The first derivative failed! f(x) = cos(x) + 4 * sin(x * 2), x = 3.14"));
+        Assert::That(d2f_dx2(3.14), EqualsAdaptive(value_t{  1.05096 }), ExtraMessage("The second derivative failed! f(x) = cos(x) + 4 * sin(x * 2), x = 3.14"));
+    }
+  
+    {
+        const auto [f, df_dx, d2f_dx2] = differentiate("(x + 3) / (1 - x)");
+        
+        Assert::That(f(-2),       EqualsAdaptive(value_t{ 1. / 3  }), ExtraMessage("The function failed! f(x) = (x + 3) / (1 - x), x = -2"));
+        Assert::That(df_dx(-2),   EqualsAdaptive(value_t{ 4. / 9  }), ExtraMessage("The first derivative failed! (x + 3) / (1 - x), x = -2"));
+        Assert::That(d2f_dx2(-2), EqualsAdaptive(value_t{ 8. / 27 }), ExtraMessage("The second derivative failed! (x + 3) / (1 - x), x = -2"));
+    }
+  
+    {
+        const auto [f, df_dx, d2f_dx2] = differentiate("3^x * log(x)");
+        
+        Assert::That(f({ 1.6, -1.6 }),       EqualsAdaptive(value_t{ -5.35592, -3.80648 }), ExtraMessage("The function failed! f(x) = 3^x * log(x), x = (1.6, -1.6)"));
+        Assert::That(df_dx({ 1.6, -1.6 }),   EqualsAdaptive(value_t{ -4.44022, -6.29953 }), ExtraMessage("The first derivative failed! 3^x * log(x), x = (1.6, -1.6)"));
+        Assert::That(d2f_dx2({ 1.6, -1.6 }), EqualsAdaptive(value_t{ -4.40482, -9.03668 }), ExtraMessage("The second derivative failed! 3^x * log(x), x = (1.6, -1.6)"));
+    }
+  
+    {
+        const auto [f, df_dx, d2f_dx2] = differentiate("3.14 * (1 + 5 * x) / log(x)");
+        
+        Assert::That(f({ 0, 1 }),       EqualsAdaptive(value_t{  9.99493, -1.99899 }), ExtraMessage("The function failed! f(x) = 3.14 * (1 + 5 * x) / log(x), x = (0, 1)"));
+        Assert::That(df_dx({ 0, 1 }),   EqualsAdaptive(value_t{  6.36297, -11.2675 }), ExtraMessage("The first derivative failed! 3.14 * (1 + 5 * x) / log(x), x = (0, 1)"));
+        Assert::That(d2f_dx2({ 0, 1 }), EqualsAdaptive(value_t{  9.37418, -7.98329 }), ExtraMessage("The second derivative failed! 3.14 * (1 + 5 * x) / log(x), x = (0, 1)"));
+    }
+}
+
+Describe(RandomTests)
+{
+private:
+    static bool isnan(const value_t val)
+    {
+        if (std::isinf(val.real()) || std::isnan(val.real()))
+            return true;
+        if (std::isinf(val.imag()) || std::isnan(val.imag()))
+            return true;
+        return false;
+    }
+
+    static constexpr value_t vnan{ std::numeric_limits<double>::quiet_NaN(),
+        std::numeric_limits<double>::quiet_NaN() };
+
+    struct MathNode
+    {
+        typedef std::shared_ptr<const MathNode> csptr_t;
+        virtual ~MathNode() = default;
+        virtual value_t val(value_t) const = 0;
+        virtual value_t der(value_t) const = 0;
+        virtual value_t der2(value_t) const = 0;
+        virtual bool has_x() const = 0;
+    };
+
+    struct Const : MathNode
+    {
+        const double value;
+        Const(const double val)
+            : value{ val }
+        {
+        }
+        value_t val(value_t) const
+        {
+            return value;
+        }
+        value_t der(value_t) const
+        {
+            return 0;
+        }
+        value_t der2(value_t) const
+        {
+            return 0;
+        }
+        bool has_x() const
+        {
+            return false;
+        }
+    };
+
+    struct Var : MathNode
+    {
+        value_t val(const value_t val) const
+        {
+            return val;
+        }
+        value_t der(value_t) const
+        {
+            return 1;
+        }
+        value_t der2(value_t) const
+        {
+            return 0;
+        }
+        bool has_x() const
+        {
+            return true;
+        }
+    };
+
+    struct Add : MathNode
+    {
+        const MathNode::csptr_t left;
+        const MathNode::csptr_t right;
+
+        Add(const MathNode::csptr_t l, const MathNode::csptr_t r)
+            : left{ l }
+            , right{ r }
+        {
+        }
+        value_t val(const value_t val) const
+        {
+            const auto l = left->val(val);
+            if (isnan(l))
+                return vnan;
+            const auto r = right->val(val);
+            if (isnan(r))
+                return vnan;
+            return l + r;
+        }
+        value_t der(const value_t val) const
+        {
+            const auto l = left->der(val);
+            if (isnan(l))
+                return vnan;
+            const auto r = right->der(val);
+            if (isnan(r))
+                return vnan;
+            return l + r;
+        }
+        value_t der2(const value_t val) const
+        {
+            const auto l = left->der2(val);
+            if (isnan(l))
+                return vnan;
+            const auto r = right->der2(val);
+            if (isnan(r))
+                return vnan;
+            return l + r;
+        }
+        bool has_x() const
+        {
+            return left->has_x() || right->has_x();
+        }
+    };
+
+    struct Sub : MathNode
+    {
+        const MathNode::csptr_t left;
+        const MathNode::csptr_t right;
+
+        Sub(const MathNode::csptr_t l, const MathNode::csptr_t r)
+            : left{ l }
+            , right{ r }
+        {
+        }
+        value_t val(const value_t val) const
+        {
+            const auto l = left->val(val);
+            if (isnan(l))
+                return vnan;
+            const auto r = right->val(val);
+            if (isnan(r))
+                return vnan;
+            return l - r;
+        }
+        value_t der(const value_t val) const
+        {
+            const auto l = left->der(val);
+            if (isnan(l))
+                return vnan;
+            const auto r = right->der(val);
+            if (isnan(r))
+                return vnan;
+            return l - r;
+        }
+        value_t der2(const value_t val) const
+        {
+            const auto l = left->der2(val);
+            if (isnan(l))
+                return vnan;
+            const auto r = right->der2(val);
+            if (isnan(r))
+                return vnan;
+            return l - r;
+        }
+        bool has_x() const
+        {
+            return left->has_x() || right->has_x();
+        }
+    };
+
+    struct Mul : MathNode
+    {
+        const MathNode::csptr_t left;
+        const MathNode::csptr_t right;
+
+        Mul(const MathNode::csptr_t l, const MathNode::csptr_t r)
+            : left{ l }
+            , right{ r }
+        {
+        }
+        value_t val(const value_t val) const
+        {
+            const auto l = left->val(val);
+            if (isnan(l))
+            {
+                return vnan;
+            }
+            const auto r = right->val(val);
+            if (isnan(r))
+            {
+                return vnan;
+            }
+            return l * r;
+        }
+        value_t der(const value_t val) const
+        {
+            const auto[l, dl] = std::make_tuple(left->val(val), left->der(val));
+            if (isnan(l) || isnan(dl))
+            {
+                return vnan;
+            }
+            const auto[r, dr] = std::make_tuple(right->val(val), right->der(val));
+            if (isnan(r) || isnan(dr))
+            {
+                return vnan;
+            }
+            return l * dr + r * dl;
+        }
+        value_t der2(const value_t val) const
+        {
+            const auto[l, dl, d2l] = std::make_tuple(left->val(val), left->der(val), left->der2(val));
+            if (isnan(l) || isnan(dl) || isnan(d2l))
+                return vnan;
+            const auto[r, dr, d2r]
+                = std::make_tuple(right->val(val), right->der(val), right->der2(val));
+            if (isnan(r) || isnan(dr) || isnan(d2r))
+                return vnan;
+            return r * d2l + value_t{ 2 } * dl * dr + l * d2r;
+        }
+        bool has_x() const
+        {
+            return left->has_x() || right->has_x();
+        }
+    };
+
+    struct Div : MathNode
+    {
+        const MathNode::csptr_t left;
+        const MathNode::csptr_t right;
+
+        Div(const MathNode::csptr_t l, const MathNode::csptr_t r)
+            : left{ l }
+            , right{ r }
+        {
+        }
+        value_t val(const value_t val) const
+        {
+            const auto l = left->val(val);
+            if (isnan(l))
+                return vnan;
+            const auto r = right->val(val);
+            if (isnan(r))
+                return vnan;
+            return l / r;
+        }
+        value_t der(const value_t val) const
+        {
+            const auto[f, df] = std::make_tuple(left->val(val), left->der(val));
+            if (isnan(f) || isnan(df))
+            {
+                return vnan;
+            }
+            const auto[g, dg] = std::make_tuple(right->val(val), right->der(val));
+            if (isnan(g) || isnan(dg))
+            {
+                return vnan;
+            }
+
+            const auto g2 = g * g;
+            if (isnan(g2))
+            {
+                return vnan;
+            }
+
+            return (g * df - f * dg) / (g2);
+        }
+        value_t der2(const value_t val) const
+        {
+            const auto[f, df, d2f] = std::make_tuple(left->val(val), left->der(val), left->der2(val));
+            if (isnan(f) || isnan(df) || isnan(d2f))
+                return vnan;
+            const auto[g, dg, d2g]
+                = std::make_tuple(right->val(val), right->der(val), right->der2(val));
+            if (isnan(g) || isnan(dg) || isnan(d2g))
+                return vnan;
+
+            const auto g3 = g * g * g;
+            if (isnan(g3))
+            {
+                return vnan;
+            }
+
+            return (g * g * d2f - g * (value_t{ 2 } * df * dg + f * d2g) + value_t{ 2 } * f * dg * dg)
+                / g3;
+        }
+        bool has_x() const
+        {
+            return left->has_x() || right->has_x();
+        }
+    };
+
+    struct Pow : MathNode
+    {
+        const MathNode::csptr_t base;
+        const MathNode::csptr_t powr;
+
+        Pow(const MathNode::csptr_t b, const MathNode::csptr_t p)
+            : base{ b }
+            , powr{ p }
+        {
+        }
+        value_t val(const value_t val) const
+        {
+            const auto l = base->val(val);
+            if (isnan(l))
+                return vnan;
+            const auto r = powr->val(val);
+            if (isnan(r))
+                return vnan;
+            return std::pow(l, r);
+        }
+        value_t der(const value_t val) const
+        {
+            const auto[fx, gx] = std::make_tuple(base->has_x(), powr->has_x());
+            if (!fx && !gx)
+                return 0;
+
+            const auto[f, g] = std::make_tuple(base->val(val), powr->val(val));
+            const auto df = base->der(val);
+            if (fx && !gx)
+            {
+                if (isnan(f) || isnan(g) || isnan(df))
+                    return vnan;
+                return g * std::pow(f, g - value_t{ 1 }) * df;
+            }
+            const auto dg = powr->der(val);
+            if (!fx && gx)
+            {
+                if (isnan(f) || isnan(g) || isnan(dg))
+                    return vnan;
+                return std::log(f) * std::pow(f, g) * dg;
+            }
+
+            if (isnan(f) || isnan(g) || isnan(dg) || isnan(df))
+                return vnan;
+            return std::pow(f, g - value_t{ 1 }) * (g * df + f * std::log(f) * dg);
+        }
+
+        value_t der2(const value_t val) const
+        {
+            const auto[fx, gx] = std::make_tuple(base->has_x(), powr->has_x());
+            if (!fx && !gx)
+                return 0;
+
+            const auto[f, g] = std::make_tuple(base->val(val), powr->val(val));
+            const auto[df, d2f] = std::make_tuple(base->der(val), base->der2(val));
+            if (fx && !gx)
+            {
+                if (isnan(f) || isnan(g) || isnan(df) || isnan(d2f))
+                    return vnan;
+                return g * std::pow(f, g - value_t{ 2 }) * (f * d2f + (g - value_t{ 1 }) * df * df);
+            }
+
+            const auto[dg, d2g] = std::make_tuple(powr->der(val), powr->der2(val));
+            const auto logf = std::log(f);
+            if (!fx && gx)
+            {
+                if (isnan(f) || isnan(g) || isnan(dg) || isnan(d2g) || isnan(logf))
+                    return vnan;
+                return logf * std::pow(f, g) * (logf * dg * dg + d2g);
+            }
+
+            if (isnan(f) || isnan(g) || isnan(df) || isnan(dg) || isnan(d2f) || isnan(d2g)
+                || isnan(logf))
+                return vnan;
+            const auto f2 = f * f;
+            if (isnan(f2))
+                return vnan;
+            return std::pow(f, g) * std::pow((g * df) / f + std::log(f) * dg, 2)
+                + std::pow(f, g) * ((g * d2f) / f + (value_t{ 2 } * df * dg) / f - (g * df * df) / f2
+                                       + std::log(f) * d2g);
+        }
+        bool has_x() const
+        {
+            return base->has_x() || powr->has_x();
+        }
+    };
+
+    struct Log : MathNode
+    {
+        const MathNode::csptr_t in;
+
+        Log(const MathNode::csptr_t in)
+            : in{ in }
+        {
+        }
+        value_t val(const value_t val) const
+        {
+            const auto f = in->val(val);
+            if (isnan(f))
+                return vnan;
+            return std::log(f);
+        }
+        value_t der(const value_t val) const
+        {
+            const auto[f, df] = std::make_tuple(in->val(val), in->der(val));
+            if (isnan(f) || isnan(df))
+                return vnan;
+            return df / f;
+        }
+        value_t der2(const value_t val) const
+        {
+            const auto[f, df, d2f] = std::make_tuple(in->val(val), in->der(val), in->der2(val));
+            if (isnan(f) || isnan(df) || isnan(d2f))
+                return vnan;
+            const auto f2 = f * f;
+            if (isnan(f2))
+                return vnan;
+            return (f * d2f - df * df) / f2;
+        }
+        bool has_x() const
+        {
+            return in->has_x();
+        }
+    };
+
+    struct Sin : MathNode
+    {
+        const MathNode::csptr_t in;
+
+        Sin(const MathNode::csptr_t in)
+            : in{ in }
+        {
+        }
+        value_t val(const value_t val) const
+        {
+            const auto f = in->val(val);
+            if (isnan(f))
+                return vnan;
+            return std::sin(f);
+        }
+        value_t der(const value_t val) const
+        {
+            const auto[f, df] = std::make_tuple(in->val(val), in->der(val));
+            if (isnan(f) || isnan(df))
+                return vnan;
+            return df * std::cos(f);
+        }
+        value_t der2(const value_t val) const
+        {
+            const auto[f, df, d2f] = std::make_tuple(in->val(val), in->der(val), in->der2(val));
+            if (isnan(f) || isnan(df) || isnan(d2f))
+                return vnan;
+            return d2f * std::cos(f) - df * df * std::sin(f);
+        }
+        bool has_x() const
+        {
+            return in->has_x();
+        }
+    };
+
+    struct Cos : MathNode
+    {
+        const MathNode::csptr_t in;
+
+        Cos(const MathNode::csptr_t in)
+            : in{ in }
+        {
+        }
+        value_t val(const value_t val) const
+        {
+            const auto f = in->val(val);
+            if (isnan(f))
+                return vnan;
+            return std::cos(f);
+        }
+        value_t der(const value_t val) const
+        {
+            const auto[f, df] = std::make_tuple(in->val(val), in->der(val));
+            if (isnan(f) || isnan(df))
+                return vnan;
+            return -df * std::sin(f);
+        }
+        value_t der2(const value_t val) const
+        {
+            const auto[f, df, d2f] = std::make_tuple(in->val(val), in->der(val), in->der2(val));
+            if (isnan(f) || isnan(df) || isnan(d2f))
+                return vnan;
+            return -df * df * std::cos(f) - d2f * std::sin(f);
+        }
+        bool has_x() const
+        {
+            return in->has_x();
+        }
+    };
+
+    struct Tan : MathNode
+    {
+        const MathNode::csptr_t in;
+
+        Tan(const MathNode::csptr_t in)
+            : in{ in }
+        {
+        }
+        value_t val(const value_t val) const
+        {
+            const auto f = in->val(val);
+            if (isnan(f))
+                return vnan;
+            return std::tan(f);
+        }
+        value_t der(const value_t val) const
+        {
+            const auto[f, df] = std::make_tuple(in->val(val), in->der(val));
+            if (isnan(f) || isnan(df))
+                return vnan;
+            const auto cos = std::cos(f);
+            const auto sec = value_t{ 1 } / cos;
+            if (isnan(cos) || isnan(sec))
+                return vnan;
+            return df * sec * sec;
+        }
+        value_t der2(const value_t val) const
+        {
+            const auto[f, df, d2f] = std::make_tuple(in->val(val), in->der(val), in->der2(val));
+            if (isnan(f) || isnan(df) || isnan(d2f))
+                return vnan;
+            const auto cos = std::cos(f);
+            const auto sec = value_t{ 1 } / cos;
+            if (isnan(cos) || isnan(sec))
+                return vnan;
+            return sec * sec * (d2f + value_t{ 2 } * df * df * std::tan(f));
+        }
+        bool has_x() const
+        {
+            return in->has_x();
+        }
+    };
+
+    struct Cot : MathNode
+    {
+        const MathNode::csptr_t in;
+
+        Cot(const MathNode::csptr_t in)
+            : in{ in }
+        {
+        }
+        value_t val(const value_t val) const
+        {
+            const auto f = in->val(val);
+            if (isnan(f))
+                return vnan;
+            const auto tan = std::tan(f);
+            if (isnan(tan))
+            {
+                return vnan;
+            }
+            return value_t{ 1 } / tan;
+        }
+        value_t der(const value_t val) const
+        {
+            const auto[f, df] = std::make_tuple(in->val(val), in->der(val));
+            if (isnan(f) || isnan(df))
+            {
+                return vnan;
+            }
+            const auto sin = std::sin(f);
+            const auto csc = value_t{ 1 } / sin;
+            if (isnan(sin) || isnan(csc))
+            {
+                return vnan;
+            }
+            return -df * csc * csc;
+        }
+        value_t der2(const value_t val) const
+        {
+            const auto[f, df, d2f] = std::make_tuple(in->val(val), in->der(val), in->der2(val));
+            if (isnan(f) || isnan(df) || isnan(d2f))
+                return vnan;
+            const auto sin = std::sin(f);
+            const auto csc = value_t{ 1 } / sin;
+            if (isnan(sin) || isnan(csc))
+            {
+                return vnan;
+            }
+            return csc * csc * (value_t{ 2 } * df * df * std::cos(f) / sin - d2f);
+        }
+        bool has_x() const
+        {
+            return in->has_x();
+        }
+    };
+  
+    std::mt19937 engine{ std::random_device{}() };
+    std::function<int()> rand_i = std::bind(std::uniform_int_distribution<int>{ 1, 1000 }, engine);
+    std::function<bool()> rand_b = std::bind(std::uniform_int_distribution<short>{ 0, 1 }, engine);
+    double rand_d() { return rand_i() / (rand_b() ? 100. : -100.); }
+    value_t rand_c() { return value_t{ rand_d(), rand_d() }; }
+  
+    MathNode::csptr_t rand_math_const(std::ostream& os)
+    {
+        const auto val = rand_i() / 10.;
+        os << val;
+        return std::make_shared<Const>(val);
+    }
+
+    MathNode::csptr_t rand_math_var(std::ostream& os)
+    {
+        os << 'x';
+        return std::make_shared<Var>();
+    }
+  
+    MathNode::csptr_t rand_math_expression(std::ostream& os, const char depth)
+    {
+        static std::uniform_int_distribution<int> dist{ 0, 2 };
+      
+        const auto len = dist(engine);
+        auto res = rand_math_term(os, len != 0 ? depth - 1 : depth);
+        
+        for(int i = 0; i < len; ++i)
+        {
+            const auto is_add = rand_b();
+            os << (is_add ? '+' : '-');
+            if(is_add) res = std::make_shared<Add>(res, rand_math_term(os, depth - 1));
+            else       res = std::make_shared<Sub>(res, rand_math_term(os, depth - 1));
+        }
+      
+        return res;
+    }
+  
+    MathNode::csptr_t rand_math_term(std::ostream& os, const char depth)
+    {
+        static std::uniform_int_distribution<int> dist{ 0, 2 };
+
+        const auto len = dist(engine);
+        auto res = rand_math_factor(os, len != 0 ? depth - 1 : depth);
+        
+        for(int i = 0; i < len; ++i)
+        {
+            const auto is_mul = rand_b();
+            os << (is_mul ? '*' : '/');
+            if(is_mul) res = std::make_shared<Mul>(res, rand_math_factor(os, depth - 1));
+            else       res = std::make_shared<Div>(res, rand_math_factor(os, depth - 1));
+        }
+      
+        return res;
+    }
+  
+    MathNode::csptr_t rand_math_factor(std::ostream& os, const char depth)
+    {
+        const auto l = rand_math_basic(os, depth);
+        if(rand_b()) return l;
+        os << '^';
+        return std::make_shared<Pow>(l, rand_math_basic(os, depth - 1));
+    }
+  
+    MathNode::csptr_t rand_math_func_call(std::ostream& os, const char depth)
+    {
+        static std::uniform_int_distribution<int> dist{ 0, 4 };
+        constexpr const char* fnames[5] = { "sin", "cos", "tan", "cot", "log" };
+        const auto n = dist(engine);
+        os << fnames[n] << '(';
+        const auto in = rand_math_expression(os, depth - 1);
+        os << ')';
+        switch(n) {
+            case  0: return std::make_shared<Sin>(in);
+            case  1: return std::make_shared<Cos>(in);
+            case  2: return std::make_shared<Tan>(in);
+            case  3: return std::make_shared<Cot>(in);
+            default: return std::make_shared<Log>(in);
+        }
+    }
+  
+    MathNode::csptr_t rand_math_basic(std::ostream& os, const char depth)
+    {
+        static std::uniform_int_distribution<int> dist{ 0, 3 };
+        switch(depth > 1 ? dist(engine) : rand_b())
+        {
+            case 0: return rand_math_const(os);
+            case 1: return rand_math_var(os);
+            case 2: return rand_math_func_call(os, depth - 1);
+            default: {
+                os << '(';
+                const auto res = rand_math_expression(os, depth - 1);
+                os << ')';
+                return res;
+            }
+        }
+    }
+  
+    std::pair<MathNode::csptr_t, std::string> generate_problem(const bool is_short)
+    {
+        std::ostringstream prob;
+        const auto sol = rand_math_expression(prob, is_short ? 2 : 8);
+        return { sol, prob.str() };
+    }
+  
+    static std::string to_string(const value_t& val)
+    {
+        std::ostringstream res;
+        res << val;
+        return res.str();
+    }
+  
+    void run_tests(const size_t N, const bool isshort)
+    {
+        for(size_t i = 0; i < N; ++i)
+        {
+            const auto [sol, prob] = generate_problem(isshort);
+            const auto [f, df, d2f] = differentiate(prob);
+            
+            for(int j = 0; j < 10; ++j)
+            {
+                const auto x = rand_c();
+                const auto expected = sol->val(x);
+              
+                if(std::isnan(expected.real()) || std::isnan(expected.imag())) continue;
+                if(std::isinf(expected.real()) || std::isinf(expected.imag())) continue;
+
+                const auto msg = [&x, &prob = prob]
+                {
+                    return "The function failed! f(x) = " + prob + ", x = " + to_string(x);
+                };
+                Assert::That(f(x), EqualsAdaptive(expected), msg);
+            }
+          
+            for(int j = 0; j < 10; ++j)
+            {
+                const auto x = rand_c();
+                const auto expected = sol->der(x);
+
+                if(std::isnan(expected.real()) || std::isnan(expected.imag())) continue;
+                if(std::isinf(expected.real()) || std::isinf(expected.imag())) continue;
+
+                const auto msg = [&x, &prob = prob]
+                {
+                    return "The first derivative failed! f(x) = " + prob + ", x = " + to_string(x);
+                };
+                Assert::That(df(x), EqualsAdaptive(expected), msg);
+            }
+          
+            for(int j = 0; j < 10; ++j)
+            {
+                const auto x = rand_c();
+                const auto expected = sol->der2(x);
+              
+                if(std::isnan(expected.real()) || std::isnan(expected.imag())) continue;
+                if(std::isinf(expected.real()) || std::isinf(expected.imag())) continue;
+
+                const auto msg = [&x, &prob = prob]
+                {
+                    return "The second derivative failed! f(x) = " + prob + ", x = " + to_string(x);
+                };
+                Assert::That(d2f(x), EqualsAdaptive(expected), msg);
+            }
+        }
+    }
+  
+public:
+    It(should_pass_short_random_tests)
+    {
+        run_tests(50, true);
+    }
+
+    It(should_pass_long_random_tests)
+    {
+        run_tests(200, false);
+    }
+};
+
+Suggest test case edits
+View
+Sort By
+monadius
+
+#include <functional>
+#include <string>
+#include <complex>
+#include <tuple>
+#include <vector>
+#include <stack>
+#include <regex>
+#include <unordered_map>
+
+using value_t = std::complex<double>;
+using func_t = std::function<value_t(value_t)>;
+
+const std::unordered_map<std::string, int> priorities = {
+  {"+", 1}, {"-", 1},
+  {"*", 2}, {"/", 2},
+  {"^", 4},
+  {"log", 5}, {"sin", 5}, {"cos", 5}, {"tan", 5}, {"cot", 5}
+};
+
+std::vector<std::string> parse(const std::string& input) {
+  std::regex toks("\\d+(?:\\.\\d+)?|[-+*/()^]|x|log|sin|cos|tan|cot|[^\\s]+");
+  std::vector<std::string> output;
+  std::stack<std::pair<int, std::string>> ops;
+
+  for (auto it = std::sregex_iterator(input.begin(), input.end(), toks); it != std::sregex_iterator(); ++it) {
+    std::string tok = it->str();
+    if (('0' <= tok[0] && tok[0] <= '9') || tok == "x") {
+      output.push_back(tok);
+    }
+    else if (tok == "(") {
+      ops.emplace(0, "(");
+    }
+    else if (tok == ")") {
+      while (!ops.empty() && ops.top().second != "(") {
+        output.push_back(ops.top().second);
+        ops.pop();
+      }
+      if (!ops.empty()) ops.pop();
+    }
+    else {
+      const int p = priorities.at(tok);
+      while (!ops.empty() && ops.top().first >= p) {
+        output.push_back(ops.top().second);
+        ops.pop();
+      }
+      ops.emplace(tok == "^" ? p - 1 : p, tok);
+    }
+  }
+
+  while (!ops.empty()) {
+    output.push_back(ops.top().second);
+    ops.pop();
+  }
+
+  return output;
+}
+
+struct ad {
+  value_t f, df, ddf;
+  ad(value_t f, value_t df = 0, value_t ddf = 0) : f(f), df(df), ddf(ddf) {}
+};
+
+ad operator + (const ad& a, const ad& b) {
+  return {a.f + b.f, a.df + b.df, a.ddf + b.ddf};
+}
+
+ad operator - (const ad& a, const ad& b) {
+  return {a.f - b.f, a.df - b.df, a.ddf - b.ddf};
+}
+
+ad operator * (const ad& a, const ad& b) {
+  return {a.f * b.f, a.df * b.f + a.f * b.df, a.ddf * b.f + 2.0 * a.df * b.df + a.f * b.ddf};
+}
+
+ad operator / (const ad& a, const ad& b) {
+  value_t b2 = b.f * b.f;
+  return {a.f / b.f, (a.df * b.f - a.f * b.df) / b2, 
+      (b.f * (a.ddf * b.f - a.f * b.ddf - 2.0 * a.df * b.df) + 2.0 * a.f * b.df * b.df) / (b2 * b.f)};
+}
+
+ad exp(const ad& a) {
+  value_t e = std::exp(a.f);
+  return {e, e * a.df, e * (a.df * a.df + a.ddf)};
+}
+
+ad log(const ad& a) {
+  return {std::log(a.f), a.df / a.f, (a.ddf * a.f - a.df * a.df) / (a.f * a.f)};
+}
+
+ad sin(const ad& a) {
+  value_t s = std::sin(a.f);
+  value_t c = std::cos(a.f);
+  return {s, c * a.df, c * a.ddf - s * a.df * a.df};
+}
+
+ad cos(const ad& a) {
+  value_t s = -std::sin(a.f);
+  value_t c = std::cos(a.f);
+  return {c, s * a.df, s * a.ddf - c * a.df * a.df};
+}
+
+ad tan(const ad& a) {
+  value_t t = std::tan(a.f);
+  value_t c = std::cos(a.f);
+  return {t, a.df / (c * c), (a.ddf + 2.0 * a.df * a.df * t) / (c * c)};
+}
+
+ad cot(const ad& a) {
+  value_t t = 1.0 / std::tan(a.f);
+  value_t s = std::sin(a.f);
+  return {t, -a.df / (s * s), (2.0 * a.df * a.df * t - a.ddf) / (s * s)};
+}
+
+ad eval(const std::vector<std::string>& cmds, const value_t x) {
+  std::stack<ad> stack;
+  
+  for (const auto& cmd : cmds) {
+    if ('0' <= cmd[0] && cmd[0] <= '9') {
+      stack.push(value_t(std::stod(cmd)));
+    }
+    else if (cmd == "x") {
+      stack.push({x, 1});
+    }
+    else if (cmd == "+" || cmd == "-" || cmd == "*" || cmd == "/" || cmd == "^") {
+      if (stack.size() < 2) throw std::exception();
+      auto b = stack.top(); 
+      stack.pop();
+      auto a = stack.top(); 
+      stack.pop();
+      stack.push(cmd == "+" ? a + b : 
+                 cmd == "-" ? a - b : 
+                 cmd == "*" ? a * b : 
+                 cmd == "/" ? a / b : exp(b * log(a)));
+    }
+    else {
+      if (stack.empty()) throw std::exception();
+      auto a = stack.top();
+      stack.pop();
+      stack.push(cmd == "log" ? log(a) :
+                 cmd == "sin" ? sin(a) :
+                 cmd == "cos" ? cos(a) :
+                 cmd == "tan" ? tan(a) : cot(a));
+    }
+  }
+
+  return stack.top();
+}
+
+std::tuple<func_t, func_t, func_t> differentiate(const std::string& eq) {
+  auto cmds = parse(eq);
+  eval(cmds, 0);
+  return {
+      [cmds](value_t x) { return eval(cmds, x).f; },
+      [cmds](value_t x) { return eval(cmds, x).df; },
+      [cmds](value_t x) { return eval(cmds, x).ddf; }
+  };
+}
+
+        Best Practices0
+        Clever3
+    0
+    Fork
+    Compare with your solution
+    Link
+
+Nemrod7
+
+#include <vector>
+#include <cmath>
+#include <tuple>
+#include <complex>
+#include <functional>
+
+using namespace std;
+using value_t = std::complex<double>;
+using func_t = std::function<value_t(value_t)>;
+
+struct Token {
+    complex<double> num;
+    string sym;
+
+    Token (string s) : num(0), sym(s) {}
+    Token (double n) : num(n), sym("") {}
+    Token (complex<double> n) : num(n), sym("") {}
+};
+
+const vector<Token> zero = {Token(0.0)}, one {Token(1.0)}, two = {Token(2.0)};
+
+bool operator == (const vector<Token> &a, const vector<Token> &b) {
+
+    if (a.size() != b.size()) return false;
+
+    for (size_t i = 0; i < a.size(); i++) {
+        if (a[i].num != b[i].num || a[i].sym != b[i].sym) return false;
+    }
+
+    return true;
+}
+
+string showarm (const vector<Token> &x) {
+    stringstream os;
+    os << "[";
+    for (auto &tok : x) {
+        if (tok.sym == "") {
+            os << tok.num;
+        } else {
+            os << tok.sym;
+        }
+    }
+    os << "]";
+
+    return os.str();
+}
+complex<double> operator ^ (const complex<double> &a, const complex<double> &b) {
+    return pow(a,b);
+}
+template<class T> T getstack(vector<T> &stack) {
+    T top = stack.back();
+    stack.pop_back();
+    return top;
+}
+
+bool isnum (const vector<Token> &term) {
+    return term.size() == 1 && term[0].sym == "";
+}
+
+bool is_term (const string &src) { 
+    return src == "+" || src == "-"; 
+}
+bool is_fact (const string &src) { 
+    return src == "*" || src == "/"; 
+}
+bool is_func (const string &src) {
+    return src == "sin" || src == "cos" || src == "tan" || src == "log" || src == "cot";
+}
+bool is_operator (const string &src) { 
+    return is_term(src) || is_fact(src) || src == "^";
+}
+
+int order (const string &src) {
+    if (src == "+" || src == "-") return 1;
+    if (src == "*" || src == "/") return 2;
+    if (src == "^") return 3;
+    return 0;
+}
+bool precedence (const vector<string> &stack, const string &cell) {
+    if (stack.empty()) return false;
+    if (cell == "^") return order(stack.back()) > order(cell);
+    return order(stack.back()) >= order(cell);
+}
+
+vector<Token> tokenize (const string &src) {
+
+    vector<Token> code;
+    size_t i = 0;
+
+    while (i < src.size()) {
+        if (isdigit(src[i])) {
+            string buffer;
+
+            while (isdigit(src[i]) || src[i] == '.') buffer += src[i++];
+            code.push_back(stod(buffer));
+        } else if (isspace(src[i])) {
+            while (isspace(src[i])) i++;
+        } else if (src[i] == '+') {
+            code.push_back(string(1,src[i++]));
+        } else if (src[i] == '*' || src[i] == '/') {
+            code.push_back(string(1,src[i++]));
+        } else if (src[i] == '^') {
+            code.push_back(string(1,src[i++]));
+        } else if (isalpha(src[i])) {
+            string buffer;
+
+            while (isalpha(src[i])) buffer += src[i++];
+            code.push_back(buffer);
+        } else if (src[i] == '-') {
+            if (code.size() == 0 || is_operator(code.back().sym)) {
+                string buffer = "-";
+                i++;
+
+                while (isdigit(src[i]) || src[i] == '.') buffer += src[i++];
+                code.push_back(buffer);
+            } else {
+                code.push_back(string(1,src[i++]));
+            }
+        } else {
+            code.push_back(string(1,src[i++]));
+        }
+    }
+
+    return code;
+}
+vector<Token> getsub (vector<Token>::iterator &it, vector<Token>::iterator nd) {
+    int pile = 1;
+    vector<Token> sub;
+
+    for (it = it + 1; pile != 0 && it != nd ; it++) {
+        Token curr = *it;
+        pile += (curr.sym == "(") - (curr.sym == ")");
+        if (pile == 0) break;
+        sub.push_back(curr);
+    }
+
+    return sub;
+}
+
+vector<Token> calc (const vector<Token> &a, const string &op, const vector<Token> &b) {
+
+    vector<Token> arm;
+
+    if (a.size() > 1) arm.push_back(Token("("));
+    for (auto &tok : a) arm.push_back(tok);
+    if (a.size() > 1) arm.push_back(Token(")"));
+
+    arm.push_back(Token(op));
+
+    if (b.size() > 1) arm.push_back(Token("("));
+    for (auto &tok : b) arm.push_back(tok);
+    if (b.size() > 1) arm.push_back(Token(")"));
+
+    return arm;
+}
+vector<Token> join (const vector<Token> &a, const vector<Token> &b) {
+    vector<Token> arm = a;
+
+    for (auto &tok : b) arm.push_back(tok);
+
+    return arm;
+
+
+}
+vector<Token> mkfunc (string fn, vector<Token> x) {
+
+    vector<Token> arm = {Token(fn), Token("(")};
+
+    for (auto &it : x) arm.push_back(it);
+
+    arm.push_back(Token(")"));
+    return arm;
+}
+
+vector<Token> add (const vector<Token> &a, const vector<Token> &b) {
+
+    if (a == zero) return b;
+    if (b == zero) return a;
+    if (isnum(a) && isnum(b)) return { Token(a[0].num + b[0].num) };
+
+
+    return calc(a,"+",b);
+}
+vector<Token> sub (const vector<Token> &a, const vector<Token> &b) {
+
+    if (isnum(a) && isnum(b)) return { Token(a[0].num - b[0].num) };
+
+
+    return calc(a,"-",b);
+}
+vector<Token> mul (const vector<Token> &a, const vector<Token> &b) {
+
+    if (a == zero || b == zero) return zero;
+    if (a == one) return b;
+    if (b == one) return a;
+    if (isnum(a) && isnum(b)) return { Token(a[0].num * b[0].num) };
+
+    return calc(a,"*",b);
+}
+vector<Token> div (const vector<Token> &a, const vector<Token> &b) {
+    
+    if (a == b) return one; 
+    if (isnum(a) && isnum(b)) return { Token(a[0].num / b[0].num) };
+
+    return calc(a,"/",b);
+}
+vector<Token> exp (const vector<Token> &a, const vector<Token> &b) {
+
+    if (a == one || b == zero) return one;
+    if (b == one) return a;
+    if (isnum(a) && isnum(b)) return { Token(a[0].num ^ b[0].num) };
+
+    return calc(a,"^",b);
+}
+
+pair<vector<Token>,vector<Token>> diff (vector<pair<vector<Token>,vector<Token>>> &vars, vector<string> &oper) {
+
+    auto [f2, d2] = getstack(vars);
+    auto [f1, d1] = getstack(vars);
+    string op = getstack(oper);
+    pair<vector<Token>,vector<Token>> res;
+
+    if (op == "+") {
+        res = {add(f1, f2), add(d1, d2)} ;
+    } else if (op == "-") {
+        res = {sub(f1, f2), sub(d1, d2)} ;
+    } else if (op == "*") {
+        res = {mul(f1, f2), add(mul(f1,d2), mul(d1,f2))} ;
+    } else if (op == "/") {
+        vector<Token> num =  sub(mul(d1,f2),mul(f1,d2)) ;
+        vector<Token> den =  exp(f2, two);
+
+        res = {div(f1,f2), div(num,den)} ;
+    } else if (op == "^") {
+        vector<Token> log = mkfunc("log", f1);//join(join(tokenize("log("), f1), tokenize(")"));
+        vector<Token> inner = add( mul( d1, div(f2,f1) ), mul(d2, log));
+
+        res = {exp(f1,f2), mul(exp(f1,f2), inner)} ;
+    } else {
+        throw exception();
+    }
+
+    //        cout << op << '\n';
+    //        cout << "f1: " << showarm(f1) << " d1 : " << showarm(d1) << '\n';
+    //        cout << "f2: " << showarm(f2) << " d2 : " << showarm(d2) << '\n';
+    //        cout << " = " << showarm( mul(f1, f2));
+    //        cout << "\n";
+
+    return res;
+}
+vector<Token> derivate (vector<Token> code) {
+
+    vector<Token>::iterator it = code.begin(), end = code.end();
+    vector<string> oper;
+    vector<pair<vector<Token>,vector<Token>>> vars;
+
+    //showarm(code);
+    //cout << "\n";
+
+    while (it < end) {
+        Token curr = *it;
+
+        if (curr.sym == "x") {
+            vars.push_back({{curr}, {Token(1.0)}});
+        } else if (curr.sym == "") {
+            vars.push_back({{curr}, {Token(0.0)}});
+        } else if (curr.sym == "(") {
+            vector<Token> sub = getsub(it,end);
+            vars.push_back({ sub, derivate(sub) });
+        } else if (is_operator(curr.sym)) {
+            while (precedence(oper, curr.sym)) {
+                vars.push_back(diff(vars,oper));
+            }
+
+            oper.push_back(curr.sym);
+        } else if (is_func(curr.sym)) {
+            it++;
+            vector<Token> var = getsub(it,end);
+            vector<Token> fx = mkfunc(curr.sym, var), dx = derivate(var);
+
+            if (curr.sym == "log") {
+                vars.push_back( { fx , div( dx, var)});
+            } else if (curr.sym == "sin") {
+                vars.push_back( { fx , mul( dx, mkfunc("cos", var))});
+            } else if (curr.sym == "cos") {
+                vars.push_back( { fx , mul( sub(zero, dx), mkfunc("sin", var)) });
+            } else if (curr.sym == "tan") {
+                vars.push_back( { fx , div( dx, exp(mkfunc("cos", var), two)) });
+                //vars.push_back( { fx , mul(dx, exp(mkfunc("sec", var), two)) });
+            } else if (curr.sym == "cot") {
+                vars.push_back( { fx , div( sub(zero, dx), exp(mkfunc("sin", var), two) ) });
+                //vars.push_back( { fx , div( sub(zero, dx),exp(mkfunc("csc", var), two) ) });
+            }
+
+            else if (curr.sym == "sec") {
+                vars.push_back( { fx , mul(dx, mul( mkfunc("sec", var), mkfunc("tan", var))) });
+            } else if (curr.sym == "csc") {
+                vars.push_back( { fx , mul(dx, mul( mkfunc("cot", var), mkfunc("csc", var))) });
+            }
+        }
+
+        it++;
+    }
+
+    while (!oper.empty()) {
+        vars.push_back(diff(vars,oper));
+    }
+
+    return getstack(vars).second;
+}
+complex<double> evaluate (vector<Token> expr, const complex<double> &val) {
+
+    vector<Token>::iterator it = expr.begin(), end = expr.end(); 
+    vector<string> oper;
+    vector<complex<double>> vars;
+
+    while (it < end) {
+        Token cell = *it;
+
+        if (cell.sym == "x") {
+            vars.push_back(val);
+        } else if (cell.sym == "") {
+            vars.push_back(cell.num);
+        } else if (cell.sym == "(") {
+            vars.push_back(evaluate(getsub(it,end), val));
+        } else if (is_operator(cell.sym)) {
+
+            while (precedence(oper, cell.sym)) {
+                complex<double> b = getstack(vars), a = getstack(vars);
+                string op = getstack(oper);
+
+                //cout << "[" << a << "]" << op << "[" << b << "]" ;
+                switch (op[0]) {
+                    case '+' : vars.push_back(a + b); break;
+                    case '-' : vars.push_back(a - b); break;
+                    case '*' : vars.push_back(a * b); break;
+                    case '/' : vars.push_back(a / b); break;
+                    case '^' : vars.push_back(a ^ b); break;
+                    default  : break;
+                }
+                //cout << " => " << vars.back() << "\n";
+            }
+            oper.push_back(cell.sym);
+        } else if (is_func(cell.sym)) {
+            it++;
+            complex<double> var = evaluate(getsub(it,end), val);
+
+            if (cell.sym == "cos") {
+                vars.push_back(cos(var));
+            } else if (cell.sym == "sin") {
+                vars.push_back(sin(var));
+            } else if (cell.sym == "tan") {
+                vars.push_back(tan(var));
+            } else if (cell.sym == "log") {
+                vars.push_back(log(var));
+            } else if (cell.sym == "cot") { //cot(x) = cos(x)/sin(x) or cot(x) = 1 / tan(x)
+                vars.push_back( 1.0 / tan(var));
+            }
+            //cout << vars.back() << "  ";
+        } 
+
+        it++;
+    }
+
+    while (!oper.empty()) {
+        complex<double> b = getstack(vars), a = getstack(vars);
+        string op = getstack(oper);
+
+        switch (op[0]) {
+            case '+' : vars.push_back(a + b); break;
+            case '-' : vars.push_back(a - b); break;
+            case '*' : vars.push_back(a * b); break;
+            case '/' : vars.push_back(a / b); break;
+            case '^' : vars.push_back(a ^ b); break;
+            default  : break;
+        }
+        // cout << "[" << a << "]" << op << "[" << b << "]" ;
+        // cout << " => " << vars.back() << "\n";
+    }
+
+    return getstack(vars);
+}
+tuple<func_t,func_t,func_t> differentiate (const string &expression) {
+
+    cout << "expression : [" <<  expression << "]\n" << flush;
+    vector<Token> pass0 = tokenize(expression);
+    vector<Token> pass1 = derivate(pass0);
+    vector<Token> pass2 = derivate(pass1);
+
+    return {
+        [pass0](value_t x) { return evaluate(pass0, x); },
+            [pass1](value_t x) { return evaluate(pass1, x); },
+            [pass2](value_t x) { return evaluate(pass2, x); },
+    };
+}
+
+        Best Practices0
+        Clever0
+    0
+    Fork
+    Compare with your solution
+    Link
+
+ExplosiveEnd
+
+#include <iostream>
+#include <functional>
+#include <complex>
+#include <tuple>
+#include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+#include <variant>
+#include <memory>
+
+using value_t = std::complex<double>;
+using func_t = std::function<value_t(value_t)>;
+
+enum class TokenType {
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Cos,
+    Sin,
+    Tan,
+    Cot,
+    Log,
+    LParen,
+    RParen,
+    Identifier,
+    Number,
+    Pow,
+    EOS,
+};
+
+std::string to_string(TokenType type) {
+    switch (type) {
+        case TokenType::Add:
+            return "TokenType::Add";
+        case TokenType::Sub:
+            return "TokenType::Sub";
+        case TokenType::Mul:
+            return "TokenType::Mul";
+        case TokenType::Div:
+            return "TokenType::Div";
+        case TokenType::Cos:
+            return "TokenType::Cos";
+        case TokenType::Sin:
+            return "TokenType::Sin";
+        case TokenType::Tan:
+            return "TokenType::Tan";
+        case TokenType::Cot:
+            return "TokenType::Cot";
+        case TokenType::Log:
+            return "TokenType::Log";
+        case TokenType::LParen:
+            return "TokenType::LParen";
+        case TokenType::RParen:
+            return "TokenType::RParen";
+        case TokenType::Identifier:
+            return "TokenType::Ident";
+        case TokenType::Number:
+            return "TokenType::Number";
+        case TokenType::Pow:
+            return "TokenType::Pow";
+        case TokenType::EOS:
+            return "TokenType::EOS";
+        default:
+            return "Enum variant not implemented!";
+    }
+}
+
+std::ostream& operator<<(std::ostream& os, const TokenType& t) {
+    os << to_string(t);
+    return os;
+}
+
+class Token {
+public:
+    TokenType type;
+    std::variant<std::string, std::complex<double>> value;
+
+    Token(TokenType type, std::string c) : type(type), value(c) {}
+    Token(TokenType type, std::complex<double> c) : type(type), value(c) {}
+};
+
+struct make_string_functor {
+    std::string operator()(const std::string &x) const { return x; }
+    std::string operator()(const double x) const { if (static_cast<double>(static_cast<int>(x)) == x) { return std::to_string(static_cast<int>(x)); } return std::to_string(x); }
+    std::string operator()(std::complex<double> x) const { return std::to_string(x.real()) + " + " + std::to_string(x.imag()); }
+};
+
+std::ostream& operator<<(std::ostream& os, const Token& t) {
+    os << "Token { type: " << t.type << ", " << "value: " << std::visit(make_string_functor(), t.value) << "} ";
+    return os;
+}
+
+class Lexer {
+public:
+    explicit Lexer(std::string src) : src(std::move(src)) {}
+
+    std::unordered_map<std::string, TokenType> keywords = {
+            {"cos", TokenType::Cos},
+            {"sin", TokenType::Sin},
+            {"tan", TokenType::Tan},
+            {"cot", TokenType::Cot},
+            {"log", TokenType::Log}
+    };
+
+    std::vector<Token> tokens;
+    std::string src;
+    int current = 0;
+    int start = 0;
+
+    std::vector<Token> scan() {
+        while (!at_end()) {
+            start = current;
+
+            switch (char c = advance()) {
+                case '(':
+                    tokens.emplace_back(TokenType::LParen, "(");
+                    break;
+                case ')':
+                    tokens.emplace_back(TokenType::RParen, ")");
+                    break;
+                case '^':
+                    tokens.emplace_back(TokenType::Pow, "^");
+                    break;
+                case '+':
+                    tokens.emplace_back(TokenType::Add, "+");
+                    break;
+                case '-':
+                    tokens.emplace_back(TokenType::Sub, "-");
+                    break;
+                case '*':
+                    tokens.emplace_back(TokenType::Mul, "*");
+                    break;
+                case '/':
+                    tokens.emplace_back(TokenType::Div, "/");
+                    break;
+                default:
+                    if (std::isalpha(c)) {
+                        build_string();
+                    } else if (std::isdigit(c)) {
+                        build_number();
+                    }
+            }
+        }
+        tokens.emplace_back(TokenType::EOS, "EOS");
+        return tokens;
+    }
+
+    void build_string() {
+        while(std::isalpha(peek()) && !at_end()) {
+            current++;
+        }
+        std::string tmp = src.substr(start, current - start);
+        if (keywords.count(tmp) == 1) {
+            tokens.emplace_back(keywords.at(tmp), tmp);
+        }
+        else {
+            tokens.emplace_back(TokenType::Identifier, tmp);
+        }
+    }
+
+    void build_number() {
+        while(std::isdigit(peek()) && !at_end()) {
+            current++;
+        }
+        // Catches decimal
+        if(peek() == '.') {
+            current++;
+            while(std::isdigit(peek()) && !at_end()) {
+                current++;
+            }
+        }
+
+        const std::string tmp = src.substr(start, current - start);
+        tokens.emplace_back(TokenType::Number, std::stod(tmp));
+    }
+
+    char advance() {
+        return src[current++];
+    }
+
+    [[nodiscard]] bool at_end() const {
+        return current >= src.length();
+    }
+
+    [[nodiscard]] char peek() const {
+        return src[current];
+    }
+};
+
+
+
+struct Node {
+    virtual ~Node() = default;
+    virtual auto Diff() -> Node* = 0;
+    virtual auto ToString() -> std::string = 0;
+    virtual auto Eval(std::complex<double> c) -> std::complex<double> = 0;
+};
+
+// Forward declarations
+struct Binary final : Node {
+    Node* left;
+    Token op;
+    Node* right;
+
+    Binary(Node* left, Token op, Node* right) : left(left), op(std::move(op)), right(right) {}
+
+    auto Diff() -> Node* override;
+    auto ToString() -> std::string override;
+    auto Eval(std::complex<double> complex) -> std::complex<double> override;
+};
+
+struct Log final : Node {
+    Node* inner;
+
+    explicit Log(Node* inner) : inner(inner) {}
+
+    auto Diff() -> Node* override {
+        return new Binary(inner->Diff(), Token(TokenType::Div, "/"), inner);
+    }
+
+    auto ToString() -> std::string override {
+        return "Log { " + inner->ToString() + "} ";
+    }
+
+    auto Eval(std::complex<double> complex) -> std::complex<double> override {
+        return std::log(inner->Eval(complex));
+    }
+};
+
+struct Literal final : Node {
+    std::complex<double> c;
+
+    explicit Literal(std::complex<double> c) : c(c) {}
+    auto Diff() -> Node* override {
+        return new Literal(0);
+    }
+
+    auto ToString() -> std::string override {
+        return "Literal { " + std::to_string(c.real()) + " + " + std::to_string(c.imag()) + " } ";
+    }
+
+    auto Eval(std::complex<double> complex) -> std::complex<double> override {
+        return c;
+    }
+};
+
+struct Variable;
+struct Grouping;
+struct Trig;
+struct Log;
+
+struct Pow final : Node {
+    Node* base;
+    Node* pow;
+
+    Pow(Node* base, Node* pow): base(base), pow(pow) {}
+
+    auto Diff() -> Node* override;
+    auto ToString() -> std::string override;
+    auto Eval(std::complex<double> complex) -> std::complex<double> override;
+};
+
+// d/dx(base^exp) = (exp * d/dx(base) + base * ln(base) * d/dx(exp)) * base^(exp - 1)
+auto Pow::Diff() -> Node* {
+    return new Binary(
+            new Binary(
+                    new Binary(
+                            pow,
+                            Token(TokenType::Mul, "*"),
+                            base->Diff()
+                    ),
+                    Token(TokenType::Add, "+"),
+                    new Binary(
+                            base,
+                            Token(TokenType::Mul, "*"),
+                            new Binary(
+                                    new Log(base),
+                                    Token(TokenType::Mul, "*"),
+                                    pow->Diff()
+                            )
+                    )
+            ),
+            Token(TokenType::Mul, "*"),
+            new Pow(
+                    base,
+                    new Binary(
+                            pow,
+                            Token(TokenType::Sub, "-"),
+                            new Literal(1)
+                    )
+            )
+    );
+}
+
+auto Pow::ToString() -> std::string {
+    return "Pow { " + base->ToString() + " ^ " + pow->ToString() + " } ";
+}
+
+auto Pow::Eval(std::complex<double> complex) -> std::complex<double> {
+    return std::pow(base->Eval(complex), pow->Eval(complex));
+}
+
+auto Binary::Diff() -> Node* {
+    switch (op.type) {
+        case TokenType::Add: case TokenType::Sub:
+            return new Binary(left->Diff(), op, right->Diff());
+        case TokenType::Mul:
+            return new Binary(
+                new Binary(
+                        left->Diff(),
+                        Token(TokenType::Mul, "*"),
+                        right
+                ),
+                Token(TokenType::Add, "+"),
+                new Binary(
+                        left,
+                        Token(TokenType::Mul, "*"),
+                        right->Diff()
+                        )
+                );
+        case TokenType::Div:
+            return new Binary(
+                new Binary(
+                    new Binary(
+                            left->Diff(),
+                            Token(TokenType::Mul, "*"),
+                            right
+                    ),
+                    Token(TokenType::Sub, "-"),
+                    new Binary (
+                            left,
+                            Token(TokenType::Mul, "*"),
+                            right->Diff()
+                    )
+                    ),
+                Token(TokenType::Div, "/"),
+                new Pow(right, new Literal(2)));
+    }
+}
+
+auto Binary::ToString() -> std::string {
+    return "Binary { left: " + left->ToString() + ", op: " + to_string(op.type) + ", right: " + right->ToString() + " } ";
+}
+
+auto Binary::Eval(std::complex<double> complex) -> std::complex<double> {
+    switch (op.type) {
+        case TokenType::Add:
+            return left->Eval(complex) + right->Eval(complex);
+        case TokenType::Sub:
+            return left->Eval(complex) - right->Eval(complex);
+        case TokenType::Mul:
+            return left->Eval(complex) * right->Eval(complex);
+        case TokenType::Div:
+            return left->Eval(complex) / right->Eval(complex);
+        default:
+            break;
+    }
+}
+
+struct Variable final : Node {
+    std::string term;
+
+    explicit Variable(std::string term) : term(std::move(term)) {}
+
+    auto Diff() -> Node* override {
+        return new Literal(1);
+    }
+
+    auto ToString() -> std::string override {
+        return "Ident { " + term + " }";
+    }
+
+    auto Eval(std::complex<double> complex) -> std::complex<double> override {
+        return complex;
+    }
+};
+
+struct Grouping final : Node {
+    Node* value;
+
+    explicit Grouping(Node* value) : value(value) {}
+
+    auto Diff() -> Node* override {
+        return value->Diff();
+    }
+
+    auto ToString() -> std::string override {
+        return "Grouping { " + value->ToString() + " } ";
+    }
+
+    auto Eval(std::complex<double> complex) -> std::complex<double> override {
+        return value->Eval(complex);
+    }
+};
+
+
+struct Trig final : Node {
+    TokenType type;
+    Node* inner;
+
+    Trig(TokenType type, Node* inner) : type(type), inner(inner) {}
+
+    auto Diff() -> Node* override {
+        switch (type){
+            case TokenType::Tan:
+                return new Binary(inner->Diff(),
+                    Token(TokenType::Mul, "*") ,
+                    new Binary(new Literal(1),
+                        Token(TokenType::Div, "/"),
+                        new Pow(new Trig(
+                            TokenType::Cos,
+                            inner
+                            ),
+                            new Literal(2))));
+            case TokenType::Sin:
+                return new Binary(inner->Diff(), Token(TokenType::Mul, "*"), new Trig(TokenType::Cos, inner));
+            case TokenType::Cos:
+                return new Binary(inner->Diff(),Token(TokenType::Mul, "*"), new Binary(new Literal(-1), Token(TokenType::Mul, "*"), new Trig(TokenType::Sin, inner)));
+            case TokenType::Cot:
+                return new Binary(inner->Diff(), Token(TokenType::Mul, "*"), new Binary(new Literal(-1), Token(TokenType::Div, "/"), new Pow(new Trig(TokenType::Sin, inner), new Literal(2))));
+            default:
+                break;
+        }
+      std::cout << "SHOULDNT REACH THIS FAR!!!\n";
+        return nullptr;
+    }
+
+    auto ToString() -> std::string override {
+        return "Trig { type: " + to_string(type) + ", inner: " + inner->ToString() + " } ";
+    }
+
+    auto Eval(std::complex<double> complex) -> std::complex<double> override {
+        switch (type) {
+            case TokenType::Sin:
+                return std::sin(inner->Eval(complex));
+            case TokenType::Cos:
+                return std::cos(inner->Eval(complex));
+            case TokenType::Tan:
+                return std::tan(inner->Eval(complex));
+            case TokenType::Cot:
+                return 1.0 / std::tan(inner->Eval(complex));
+        }
+    }
+};
+
+
+class Parser {
+    int current = 0;
+
+public:
+    std::vector<Token> tokens;
+    explicit Parser(std::vector<Token> tokens) : tokens(std::move(tokens)) {}
+
+    auto parse() -> Node* {
+        return expression();
+    }
+
+    // <expression> ::= <term> ( ( "+" | "-" ) <term> )*
+    auto expression() -> Node* {
+        auto expr = term();
+        while (match({TokenType::Add, TokenType::Sub})) {
+            auto op = previous();
+            auto right = term();
+            expr = new Binary(expr, op, right);
+        }
+        return expr;
+    }
+
+    // <term> ::= <factor> ( ( "*" | "/" ) <factor> )*
+    auto term() -> Node* {
+        auto expr = factor();
+        while(match({TokenType::Mul, TokenType::Div})) {
+            auto op = previous();
+            auto right = factor();
+            expr = new Binary(expr, op, right);
+        }
+        return expr;
+    }
+
+    // <factor>     ::= <basic> ( "^" <basic> )*
+    auto factor() -> Node* {
+        auto expr = basic();
+        while (match({TokenType::Pow})) {
+            const auto op = previous();
+            auto right = factor();
+            expr = new Pow(expr, right);
+        }
+        return expr;
+    }
+
+    // <basic>      ::= <constant> | <variable> | <func_call> | ( "(" <expression> ")" )
+    auto basic() -> Node* {
+        //std::cout << "current: " << peek() << std::endl;
+        if (match({TokenType::Identifier})) {
+            return new Variable(std::get<std::string>(previous().value));
+        }
+        if (match({TokenType::Number})) {
+            return new Literal(std::get<std::complex<double>>(previous().value));
+        }
+        if (match({TokenType::Sin, TokenType::Cos, TokenType::Tan, TokenType::Cot})) {
+            auto t = previous().type;
+            consume(TokenType::LParen);
+            auto expr = expression();
+            consume(TokenType::RParen);
+            return new Trig(t, expr);
+        }
+        if (match({TokenType::LParen})) {
+            auto expr = expression();
+            consume(TokenType::RParen);
+            return new Grouping(expr);
+        }
+
+        if (match({TokenType::Log})) {
+            consume(TokenType::LParen);
+            auto expr = expression();
+            consume(TokenType::RParen);
+            return new Log(expr);
+        }
+
+        // Error parsing
+        return {};
+    }
+
+    //
+    // Helper functions
+    //
+
+    bool match(const std::vector<TokenType>& arr) {
+        for (auto& t : arr) {
+            if (check(t)) {
+                advance();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool check(TokenType type) {
+        if (at_end()) {
+            return false;
+        }
+        return peek().type == type;
+    }
+
+    Token advance() {
+        if (!at_end()) {
+            current++;
+        }
+        return previous();
+    }
+
+    Token previous() {
+        return tokens.at(current - 1);
+    }
+
+    Token peek() {
+        return tokens[current];
+    }
+
+    bool at_end() {
+        return peek().type == TokenType::EOS;
+    }
+
+    Token consume(TokenType type) {
+        if (check(type))
+            return advance();
+        std::cout << "ERROR CONSUMING!!!\n";
+        return {TokenType::EOS, std::string("ERROR")};
+    }
+};
+
+auto very_close(double value) -> double {
+    if (std::abs(value) < 1e-14) {
+        return 0.0;
+    }
+    return value;
+}
+
+auto very_close(std::complex<double> complex) -> std::complex<double> {
+    return {very_close(complex.real()), very_close(complex.imag())};
+}
+
+std::tuple<func_t, func_t, func_t> differentiate(const std::string& eq) {
+  auto lexer = Lexer(eq);
+  std::cout << lexer.src << "\n";
+  
+  const auto scanned = lexer.scan();
+  
+  auto parser = Parser(scanned);
+  
+  auto sol = parser.parse();
+  
+  auto first = sol->Diff();
+  
+  auto second = first->Diff();
+  
+  
+    return {
+        [sol](value_t inp) { 
+          auto first_eval = sol->Eval(inp);
+          std::cout << " ==== First eval ==== " << very_close(first_eval) << "\n";
+          return first_eval; },
+        [first](value_t inp) { 
+          auto second_eval = first->Eval(inp);
+          std::cout << " ==== Second eval ==== " << very_close(second_eval) << "\n";
+          return second_eval; },
+        [second](value_t inp) { 
+          auto third_eval = second->Eval(inp);
+          std::cout << " ==== Third eval ==== " << very_close(third_eval) << "\n";
+          return third_eval; }
+    };
+}
+
+        Best Practices0
+        Clever0
+    0
+    Fork
+    Compare with your solution
+    Link
+
+JarnaChao09
+
+#include <iostream>
+#include <functional>
+#include <complex>
+#include <tuple>
+#include <string>
+#include <vector>
+
+enum class TokenType : std::int8_t {
+    NUM = 0,
+    VAR = 1,
+    ADD = 2,
+    SUB = 3,
+    MUL = 4,
+    DIV = 5,
+    POW = 6,
+    LOG = 7,
+    SIN = 8,
+    COS = 9,
+    TAN = 10,
+    COT = 11,
+    LPR = 12,
+    RPR = 13,
+    EOL = 14,
+};
+
+struct Token {
+    TokenType type;
+    std::string slice;
+};
+
+static bool is_digit(char c) {
+    return c >= '0' && c <= '9';
+}
+
+static bool is_alpha(char c) {
+    return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c == '_';
+}
+
+static bool is_alpha_numeric(char c) {
+    return is_digit(c) || is_alpha(c);
+}
+
+struct Lexer {
+    const char* start;
+    const char* current;
+
+    explicit Lexer(const std::string& source) {
+        const char* source_c = source.c_str();
+        this->start = source_c;
+        this->current = source_c;
+    }
+
+    ~Lexer() {
+        this->start = nullptr;
+        this->current = nullptr;
+    }
+
+    auto scan_token() -> Token {
+        this->skip_whitespace();
+
+        this->start = this->current;
+
+        if (this->is_at_end()) {
+            return this->make_token(TokenType::EOL);
+        }
+
+        char c = this->advance();
+
+        if (is_digit(c)) {
+            return this->number_literal();
+        }
+
+        if (is_alpha(c)) {
+            return this->identifier();
+        }
+
+        switch (c) {
+            case '(':
+                return this->make_token(TokenType::LPR);
+            case ')':
+                return this->make_token(TokenType::RPR);
+            case '+':
+                return this->make_token(TokenType::ADD);
+            case '-':
+                return this->make_token(TokenType::SUB);
+            case '*':
+                return this->make_token(TokenType::MUL);
+            case '/':
+                return this->make_token(TokenType::DIV);
+            case '^':
+                return this->make_token(TokenType::POW);
+            default:
+                throw std::domain_error("Unexpected character '" + std::string(1, c) + "'");
+        }
+    }
+
+    void skip_whitespace() {
+        for(;;) {
+            switch(this->peek()) {
+                case ' ':
+                    this->advance();
+                    break;
+                default:
+                    return;
+            }
+        }
+    }
+
+    auto advance() -> char {
+        return *this->current++;
+    }
+
+    [[nodiscard]] auto is_at_end() const -> bool {
+        return *this->current == '\0';
+    }
+
+    auto number_literal() -> Token {
+        while (is_digit(this->peek())) this->advance();
+
+        if (this->peek() == '.' && is_digit(this->peek_next())) {
+            this->advance();
+
+            while (is_digit(this->peek())) this->advance();
+        }
+
+        return this->make_token(TokenType::NUM);
+    }
+
+    auto identifier() -> Token {
+        while (is_alpha_numeric(this->peek())) this->advance();
+
+        return this->make_token(this->identifier_type());
+    }
+
+    [[nodiscard]] auto identifier_type() const -> TokenType {
+        switch (this->start[0]) {
+            case 'l':
+                return this->check_keyword(1, "og", TokenType::LOG);
+            case 's':
+                return this->check_keyword(1, "in", TokenType::SIN);
+            case 'c':
+                if (this->current - this->start > 1 && this->start[1] == 'o') {
+                    if (this->current - this->start > 2) {
+                        switch (this->start[2]) {
+                            case 's':
+                                return TokenType::COS;
+                            case 't':
+                                return TokenType::COT;
+                            default:
+                                break;
+                        }
+                    }
+                }
+                break;
+            case 't':
+                return this->check_keyword(1, "an", TokenType::TAN);
+            default:
+                break;
+        }
+        return TokenType::VAR;
+    }
+
+    [[nodiscard]] auto check_keyword(int start_index, const std::string &rest, TokenType return_type) const -> TokenType {
+        std::size_t length = rest.length();
+        if (this->current - this->start == start_index + length && rest.compare(0, length, this->start + start_index, start_index, length)) {
+            return return_type;
+        }
+
+        return TokenType::VAR;
+    }
+
+    [[nodiscard]] auto make_token(TokenType type) const -> Token {
+        return Token {
+            .type = type,
+            .slice = std::string(this->start, static_cast<std::size_t>(this->current - this->start)),
+        };
+    }
+
+    [[nodiscard]] auto peek() const -> char {
+        return *this->current;
+    }
+
+    [[nodiscard]] auto peek_next() const -> char {
+        return this->is_at_end() ? '\0' : this->current[1];
+    }
+};
+
+auto lex(const std::string& expression) -> std::vector<Token> {
+    std::vector<Token> ret{};
+
+    auto lexer = Lexer(expression);
+
+    while(true) {
+        auto curr = lexer.scan_token();
+
+        if(curr.type == TokenType::EOL) {
+            break;
+        }
+
+        ret.emplace_back(curr);
+    }
+    return ret;
+}
+
+enum class ASTType : std::int8_t {
+    NUM = 0,
+    VAR = 1,
+    ADD = 2,
+    SUB = 3,
+    MUL = 4,
+    DIV = 5,
+    POW = 6,
+    LOG = 7,
+    SIN = 8,
+    COS = 9,
+    TAN = 10,
+    COT = 11,
+};
+
+struct AST;
+
+struct unop {
+  AST* child;
+};
+
+struct binop {
+  AST* left;
+  AST* right;
+};
+
+struct AST {
+    ASTType type;
+    union {
+        std::complex<double> num;
+        std::string* ident{};
+        unop un;
+        binop bin;
+    } as;
+
+    [[nodiscard]] auto diff() const -> AST* {
+        if (this->type == ASTType::NUM) {
+            return new AST {
+                .type = ASTType::NUM,
+                .as = {
+                    .num = 0,
+                }
+            };
+        }
+        if (this->type == ASTType::VAR) {
+            return new AST {
+                .type = ASTType::NUM,
+                .as = {
+                    .num = 1,
+                }
+            };
+        }
+        if (this->type == ASTType::ADD) {
+            return new AST {
+                .type = ASTType::ADD,
+                .as = {
+                    .bin = {
+                        .left = this->as.bin.left->diff(),
+                        .right = this->as.bin.right->diff(),
+                    }
+                }
+            };
+        }
+        if (this->type == ASTType::SUB) {
+            return new AST {
+                .type = ASTType::SUB,
+                .as = {
+                    .bin = {
+                        .left = this->as.bin.left->diff(),
+                        .right = this->as.bin.right->diff(),
+                    }
+                }
+            };
+        }
+        if (this->type == ASTType::MUL) {
+            return new AST {
+                .type = ASTType::ADD,
+                .as = {
+                    .bin = {
+                        .left = new AST {
+                            .type = ASTType::MUL,
+                            .as = {
+                                .bin = {
+                                    .left = this->as.bin.left->diff(),
+                                    .right = this->as.bin.right,
+                                }
+                            }
+                        },
+                        .right = new AST {
+                            .type = ASTType::MUL,
+                            .as = {
+                                .bin = {
+                                    .left = this->as.bin.left,
+                                    .right = this->as.bin.right->diff(),
+                                }
+                            }
+                        },
+                    }
+                }
+            };
+        }
+        if (this->type == ASTType::DIV) {
+            return new AST {
+                .type = ASTType::DIV,
+                .as = {
+                    .bin = {
+                        .left = new AST {
+                            .type = ASTType::SUB,
+                            .as = {
+                                .bin = {
+                                    .left = new AST {
+                                        .type = ASTType::MUL,
+                                        .as = {
+                                            .bin = {
+                                                .left = this->as.bin.right,
+                                                .right = this->as.bin.left->diff(),
+                                            }
+                                        }
+                                    },
+                                    .right = new AST {
+                                        .type = ASTType::MUL,
+                                        .as = {
+                                            .bin = {
+                                                .left = this->as.bin.left,
+                                                .right = this->as.bin.right->diff(),
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                        },
+                        .right = new AST {
+                            .type = ASTType::POW,
+                            .as = {
+                                .bin = {
+                                    .left = this->as.bin.right,
+                                    .right = new AST {
+                                        .type = ASTType::NUM,
+                                        .as = {
+                                            .num = 2,
+                                        },
+                                    },
+                                }
+                            }
+                        },
+                    }
+                }
+            };
+        }
+        if (this->type == ASTType::POW) {
+            if (this->as.bin.left->type == ASTType::NUM) {
+                // this * Ln(this.base) * this.exponent.diff(by)
+                return new AST {
+                    .type = ASTType::MUL,
+                    .as = {
+                        .bin = {
+                            .left = new AST {
+                                .type = ASTType::MUL,
+                                .as = {
+                                    .bin = {
+                                        .left = const_cast<AST*>(this),
+                                        .right = new AST {
+                                            .type = ASTType::LOG,
+                                            .as = {
+                                                .un = {
+                                                    .child = this->as.bin.left,
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            .right = this->as.bin.right->diff(),
+                        }
+                    }
+                };
+            }
+            if (this->as.bin.left->type != ASTType::NUM && this->as.bin.right->type == ASTType::NUM) {
+                if (this->as.bin.right->as.num == 1.0) {
+                    // this.base.diff(by)
+                    return this->as.bin.left->diff();
+                }
+                // this.exponent * (this.base pow (this.exponent.value - 1)) * this.base.diff(by)
+                return new AST {
+                    .type = ASTType::MUL,
+                    .as = {
+                        .bin = {
+                            .left = new AST {
+                                .type = ASTType::MUL,
+                                .as = {
+                                    .bin = {
+                                        .left = this->as.bin.right,
+                                        .right = new AST {
+                                            .type = ASTType::POW,
+                                            .as = {
+                                                .bin = {
+                                                    .left = this->as.bin.left,
+                                                    .right = new AST {
+                                                        .type = ASTType::SUB,
+                                                        .as = {
+                                                            .bin = {
+                                                                .left = this->as.bin.right,
+                                                                .right = new AST {
+                                                                    .type = ASTType::NUM,
+                                                                    .as = {
+                                                                        .num = 1,
+                                                                    }
+                                                                },
+                                                            }
+                                                        }
+                                                    },
+                                                }
+                                            }
+                                        },
+                                    }
+                                }
+                            },
+                            .right = this->as.bin.left->diff(),
+                        }
+                    }
+                };
+            }
+            // (this.base pow (this.exponent - 1)) * (this.exponent * this.base.diff(by) + this.base * Ln(this.base) * this.exponent.diff(by))
+            return new AST {
+                .type = ASTType::MUL,
+                .as = {
+                    .bin = {
+                        .left = new AST {
+                            .type = ASTType::POW,
+                            .as = {
+                                .bin = {
+                                    .left = this->as.bin.left,
+                                    .right = new AST {
+                                        .type = ASTType::SUB,
+                                        .as = {
+                                            .bin = {
+                                                .left = this->as.bin.right,
+                                                .right = new AST {
+                                                    .type = ASTType::NUM,
+                                                    .as = {
+                                                        .num = 1,
+                                                    }
+                                                },
+                                            }
+                                        }
+                                    },
+                                }
+                            }
+                        },
+                        .right = new AST {
+                            .type = ASTType::ADD,
+                            .as = {
+                                .bin = {
+                                    .left = new AST {
+                                        .type = ASTType::MUL,
+                                        .as = {
+                                            .bin = {
+                                                .left = this->as.bin.right,
+                                                .right = this->as.bin.left->diff(),
+                                            }
+                                        }
+                                    },
+                                    .right = new AST {
+                                        .type = ASTType::MUL,
+                                        .as = {
+                                            .bin = {
+                                                .left = new AST {
+                                                    .type = ASTType::MUL,
+                                                    .as = {
+                                                        .bin = {
+                                                            .left = this->as.bin.left,
+                                                            .right = new AST {
+                                                                .type = ASTType::LOG,
+                                                                .as = {
+                                                                    .un = {
+                                                                        .child = this->as.bin.left,
+                                                                    }
+                                                                }
+                                                            },
+                                                        }
+                                                    }
+                                                },
+                                                .right = this->as.bin.right->diff(),
+                                            }
+                                        }
+                                    },
+                                }
+                            }
+                        },
+                    }
+                }
+            };
+        }
+        if (this->type == ASTType::LOG) {
+            return new AST {
+                .type = ASTType::DIV,
+                .as = {
+                    .bin = {
+                        .left = this->as.un.child->diff(),
+                        .right = this->as.un.child,
+                    }
+                }
+            };
+        }
+        if (this->type == ASTType::SIN) {
+            return new AST {
+                .type = ASTType::MUL,
+                .as = {
+                    .bin = {
+                        .left = this->as.un.child->diff(),
+                        .right = new AST {
+                            .type = ASTType::COS,
+                            .as = {
+                                .un = {
+                                    .child = this->as.un.child,
+                                }
+                            }
+                        },
+                    }
+                }
+            };
+        }
+        if (this->type == ASTType::COS) {
+            return new AST {
+                .type = ASTType::MUL,
+                .as = {
+                    .bin = {
+                        .left = this->as.un.child->diff(),
+                        .right = new AST {
+                            .type = ASTType::MUL,
+                            .as = {
+                                .bin = {
+                                    .left = new AST {
+                                        .type = ASTType::NUM,
+                                        .as = {
+                                            .num = -1,
+                                        }
+                                    },
+                                    .right = new AST {
+                                        .type = ASTType::SIN,
+                                        .as = {
+                                            .un = {
+                                                .child = this->as.un.child,
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                    }
+                }
+            };
+        }
+        if (this->type == ASTType::TAN) {
+            return new AST {
+                .type = ASTType::DIV,
+                .as = {
+                    .bin = {
+                        .left = this->as.un.child->diff(),
+                        .right = new AST {
+                            .type = ASTType::POW,
+                            .as = {
+                                .bin = {
+                                    .left = new AST {
+                                        .type = ASTType::COS,
+                                        .as = {
+                                            .un = {
+                                                .child = this->as.un.child,
+                                            }
+                                        }
+                                    },
+                                    .right = new AST {
+                                        .type = ASTType::NUM,
+                                        .as = {
+                                            .num = 2,
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+        }
+        if (this->type == ASTType::COT) {
+            return new AST {
+                .type = ASTType::MUL,
+                .as = {
+                    .bin = {
+                        .left = new AST {
+                            .type = ASTType::NUM,
+                            .as = {
+                                .num = -1,
+                            }
+                        },
+                        .right = new AST {
+                            .type = ASTType::DIV,
+                            .as = {
+                                .bin = {
+                                    .left = this->as.un.child->diff(),
+                                    .right = new AST {
+                                        .type = ASTType::POW,
+                                        .as = {
+                                            .bin = {
+                                                .left = new AST {
+                                                    .type = ASTType::SIN,
+                                                    .as = {
+                                                        .un = {
+                                                            .child = this->as.un.child,
+                                                        }
+                                                    }
+                                                },
+                                                .right = new AST {
+                                                    .type = ASTType::NUM,
+                                                    .as = {
+                                                        .num = 2,
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                }
+                            }
+                        },
+                    }
+                }
+            };
+        }
+        throw std::domain_error("invalid derivative");
+    }
+
+    auto eval(std::complex<double> variable_value) -> std::complex<double> {
+        switch (this->type) {
+            case ASTType::NUM:
+                return this->as.num;
+            case ASTType::VAR:
+                return variable_value;
+            case ASTType::ADD:
+                return this->as.bin.left->eval(variable_value) + this->as.bin.right->eval(variable_value);
+            case ASTType::SUB:
+                return this->as.bin.left->eval(variable_value) - this->as.bin.right->eval(variable_value);
+            case ASTType::MUL:
+                return this->as.bin.left->eval(variable_value) * this->as.bin.right->eval(variable_value);
+            case ASTType::DIV:
+                return this->as.bin.left->eval(variable_value) / this->as.bin.right->eval(variable_value);
+            case ASTType::POW:
+                return std::pow(this->as.bin.left->eval(variable_value), this->as.bin.right->eval(variable_value));
+            case ASTType::LOG:
+                return std::log(this->as.un.child->eval(variable_value));
+            case ASTType::SIN:
+                return std::sin(this->as.un.child->eval(variable_value));
+            case ASTType::COS:
+                return std::cos(this->as.un.child->eval(variable_value));
+            case ASTType::TAN:
+                return std::tan(this->as.un.child->eval(variable_value));
+            case ASTType::COT:
+                return 1.0 / std::tan(this->as.un.child->eval(variable_value));
+
+        }
+    }
+
+    auto infixString() -> std::string {
+        if (this->type == ASTType::NUM) {
+            std::string real = std::to_string(this->as.num.real());
+            std::string imag = std::to_string(this->as.num.imag());
+            real.erase(real.find_last_not_of('0') + 1, std::string::npos);
+            if (real[real.size()-1] == '.') {
+                real.erase(real.size()-1);
+            }
+            imag.erase(imag.find_last_not_of('0') + 1, std::string::npos);
+            if (imag[imag.size()-1] == '.') {
+                imag.erase(imag.size()-1);
+            }
+
+            return "(" + real + " + " + imag + "i)";
+        }
+        if (this->type == ASTType::VAR) {
+            return *this->as.ident;
+        }
+        if (this->type == ASTType::ADD) {
+            return "(" + this->as.bin.left->infixString() + " + " + this->as.bin.right->infixString() + ")";
+        }
+        if (this->type == ASTType::SUB) {
+            return "(" + this->as.bin.left->infixString() + " - " + this->as.bin.right->infixString() + ")";
+        }
+        if (this->type == ASTType::MUL) {
+            return "(" + this->as.bin.left->infixString() + " * " + this->as.bin.right->infixString() + ")";
+        }
+        if (this->type == ASTType::DIV) {
+            return "(" + this->as.bin.left->infixString() + " / " + this->as.bin.right->infixString() + ")";
+        }
+        if (this->type == ASTType::POW) {
+            return "(" + this->as.bin.left->infixString() + " ^ " + this->as.bin.right->infixString() + ")";
+        }
+        if (this->type == ASTType::LOG) {
+            return "ln(" + this->as.un.child->infixString() + ")";
+        }
+        if (this->type == ASTType::SIN) {
+            return "sin(" + this->as.un.child->infixString() + ")";
+        }
+        if (this->type == ASTType::COS) {
+            return "cos(" + this->as.un.child->infixString() + ")";
+        }
+        if (this->type == ASTType::TAN) {
+            return "tan(" + this->as.un.child->infixString() + ")";
+        }
+        if (this->type == ASTType::COT) {
+            return "cot(" + this->as.un.child->infixString() + ")";
+        }
+        std::cout << "reached todo: " << static_cast<std::int32_t>(this->type) << "\n";
+        return "todo";
+    }
+
+    auto simplify() -> AST* {
+        switch (this->type) {
+            case ASTType::NUM:
+            case ASTType::VAR:
+                return this;
+            case ASTType::ADD:
+            case ASTType::SUB:
+            case ASTType::MUL:
+            case ASTType::DIV:
+            case ASTType::POW:
+                return this->simplify_binary();
+            case ASTType::LOG:
+            case ASTType::SIN:
+            case ASTType::COS:
+            case ASTType::TAN:
+            case ASTType::COT:
+                return this->simplify_unary();
+        }
+        return nullptr;
+    }
+
+    [[nodiscard]] auto simplify_binary() const -> AST* {
+        auto l = this->as.bin.left->simplify();
+        auto r = this->as.bin.right->simplify();
+
+        if (l->type == ASTType::NUM && r->type == ASTType::NUM) {
+            std::complex<double> res = 0;
+            switch (this->type) {
+                case ASTType::ADD:
+                    res = l->as.num + r->as.num;
+                    break;
+                case ASTType::SUB:
+                    res = l->as.num - r->as.num;
+                    break;
+                case ASTType::MUL:
+                    res = l->as.num * r->as.num;
+                    break;
+                case ASTType::DIV:
+                    res = l->as.num / r->as.num;
+                    break;
+                case ASTType::POW:
+                    res = std::pow(l->as.num, r->as.num);
+                    break;
+                default:
+                    break;
+            }
+
+            return new AST {
+                .type = ASTType::NUM,
+                .as = {
+                    .num = res,
+                }
+            };
+        }
+        if (this->type == ASTType::ADD && l->type == ASTType::NUM && l->as.num == 0.0) {
+            return r;
+        }
+        if (this->type == ASTType::ADD && r->type == ASTType::NUM && r->as.num == 0.0) {
+            return l;
+        }
+        if (this->type == ASTType::MUL && l->type == ASTType::NUM && l->as.num == 1.0) {
+            return r;
+        }
+        if (this->type == ASTType::MUL && r->type == ASTType::NUM && r->as.num == 1.0) {
+            return l;
+        }
+        if (this->type == ASTType::MUL && ((l->type == ASTType::NUM && l->as.num == 0.0) || (r->type == ASTType::NUM && r->as.num == 0.0))) {
+            return new AST {
+                .type = ASTType::NUM,
+                .as = {
+                    .num = 0.
+                }
+            };
+        }
+        if (this->type == ASTType::POW && r->type == ASTType::NUM && r->as.num == 1.0) {
+            return l;
+        }
+        return new AST {
+            .type = this->type,
+            .as = {
+                .bin = {
+                    .left = l,
+                    .right = r,
+                }
+            }
+        };
+    }
+
+    [[nodiscard]] auto simplify_unary() const -> AST* {
+        auto c = this->as.un.child->simplify();
+
+        if (c->type == ASTType::NUM) {
+            switch (this->type) {
+                case ASTType::LOG:
+                    return new AST {
+                        .type = ASTType::NUM,
+                        .as = {
+                            .num = std::log(c->as.num),
+                        }
+                    };
+                case ASTType::SIN:
+                    return new AST {
+                        .type = ASTType::NUM,
+                        .as = {
+                            .num = std::sin(c->as.num),
+                        }
+                    };
+                case ASTType::COS:
+                    return new AST {
+                        .type = ASTType::NUM,
+                        .as = {
+                            .num = std::cos(c->as.num),
+                        }
+                    };
+                case ASTType::TAN:
+                    return new AST {
+                        .type = ASTType::NUM,
+                        .as = {
+                            .num = std::tan(c->as.num),
+                        }
+                    };
+                case ASTType::COT:
+                    return new AST {
+                        .type = ASTType::NUM,
+                        .as = {
+                            .num = 1.0 / std::tan(c->as.num),
+                        }
+                    };
+                default:
+                    break;
+            }
+        }
+
+        return new AST {
+            .type = this->type,
+            .as = {
+                .un = {
+                    .child = c,
+                }
+            }
+        };
+    }
+};
+
+struct Parser {
+    std::vector<Token> token_stream;
+    std::size_t current;
+
+    explicit Parser(const std::vector<Token>& stream) {
+        this->token_stream = stream;
+        this->current = 0;
+    }
+
+    auto parse() -> AST* {
+        return this->expression();
+    }
+
+    auto expression() -> AST* {
+        return this->term();
+    }
+
+    auto term() -> AST* {
+        auto ret = this->factor();
+
+        auto current = this->get_current();
+
+        while (current.type == TokenType::ADD || current.type == TokenType::SUB) {
+            this->advance_current();
+            const auto op = static_cast<ASTType>(current.type);
+            const auto right = this->factor();
+            ret = new AST {
+                .type = op,
+                .as = {
+                    .bin = {
+                        .left = ret,
+                        .right = right,
+                    }
+                }
+            };
+            current = this->get_current();
+        }
+
+        return ret;
+    }
+
+    auto factor() -> AST* {
+        auto ret = this->power();
+
+        auto current = this->get_current();
+
+        while (current.type == TokenType::MUL || current.type == TokenType::DIV) {
+            this->advance_current();
+            const auto op = static_cast<ASTType>(current.type);
+            const auto right = this->power();
+            ret = new AST {
+                .type = op,
+                .as = {
+                    .bin = {
+                        .left = ret,
+                        .right = right,
+                    }
+                }
+            };
+            current = this->get_current();
+        }
+
+        return ret;
+    }
+
+    auto power() -> AST* {
+        auto ret = this->atom();
+
+        if (auto [type, slice] = this->get_current(); type == TokenType::POW) {
+            this->advance_current();
+            ret = new AST {
+                .type = ASTType::POW,
+                .as = {
+                    .bin = {
+                        .left = ret,
+                        .right = this->power(),
+                    }
+                }
+            };
+        }
+
+        return ret;
+    }
+
+    auto atom() -> AST* {
+        switch (auto [type, slice] = this->get_current(); type) {
+            case TokenType::NUM: {
+                this->advance_current();
+                const double value = std::stod(slice);
+                return new AST {
+                    .type = ASTType::NUM,
+                    .as = {
+                        .num = value,
+                    }
+                };
+            }
+            case TokenType::VAR: {
+                this->advance_current();
+                return new AST {
+                    .type = ASTType::VAR,
+                    .as = {
+                        .ident = new std::string(slice),
+                    }
+                };
+            }
+            case TokenType::LPR: {
+                this->advance_current();
+                const auto ret = this->expression();
+                if (this->get_current().type != TokenType::RPR) {
+                    throw std::domain_error("Expected ')' after expression");
+                }
+                this->advance_current();
+                return ret;
+            }
+            case TokenType::SIN:
+            case TokenType::COS:
+            case TokenType::TAN:
+            case TokenType::COT:
+            case TokenType::LOG: {
+                this->advance_current();
+                if (this->get_current().type == TokenType::LPR) {
+                    this->advance_current();
+                    const auto argument = this->expression();
+                    if (this->get_current().type != TokenType::RPR) {
+                        throw std::domain_error("Expected ')' after function call argument");
+                    }
+                    this->advance_current();
+                    return new AST {
+                        .type = create_call_type(type),
+                        .as = {
+                            .un = {
+                                .child = argument,
+                            }
+                        }
+                    };
+                }
+                throw std::domain_error("Expected '(' to invoke function");
+            }
+            default:
+                throw std::domain_error("invalid expression");
+        }
+    }
+
+    static auto create_call_type(const TokenType type) -> ASTType {
+        switch (type) {
+            case TokenType::SIN:
+                return ASTType::SIN;
+            case TokenType::COS:
+                return ASTType::COS;
+            case TokenType::TAN:
+                return ASTType::TAN;
+            case TokenType::COT:
+                return ASTType::COT;
+            case TokenType::LOG:
+                return ASTType::LOG;
+            default:
+                throw std::domain_error("Invalid call type");
+        }
+    }
+
+    auto get_current() -> Token {
+        if(this->current < this->token_stream.size()) {
+            return this->token_stream[this->current];
+        }
+        return Token {
+            .type = TokenType::EOL,
+            .slice = ""
+        };
+    }
+
+    auto advance_current() -> void {
+        this->current += this->current < this->token_stream.size() ? 1 : 0;
+    }
+};
+
+auto parse(const std::vector<Token> &tokens) -> AST* {
+    return Parser(tokens).parse();
+}
+
+using value_t = std::complex<double>;
+using func_t = std::function<value_t(value_t)>;
+
+auto epsilon_zero(const double value) -> double {
+    return std::abs(value) < 1e-14 ? 0.0 : value;
+}
+
+auto epsilon_zero(const std::complex<double> value) -> std::complex<double> {
+    return {epsilon_zero(value.real()), epsilon_zero(value.imag())};
+}
+
+std::tuple<func_t, func_t, func_t> differentiate(const std::string& eq) {
+    const auto lexed = lex(eq);
+    // std::cout << "lexed\n";
+    const auto f = parse(lexed)->simplify();
+//     std::cout << f->infixString() << "\n";
+    // std::cout << "parsed and simplified\n";
+    // std::cout << f->diff()->prefixString() << "\n";
+    // std::cout << f->diff()->infixString() << "\n";
+    const auto dfdx = f->diff()->simplify();
+    // std::cout << "simplified first derivative\n";
+    const auto d2fdx2 = dfdx->diff()->simplify();
+    // std::cout << "simplified second derivative\n";
+
+    // std::cout << f->prefixString() << "\n";
+    // std::cout << dfdx->prefixString() << "\n";
+    // std::cout << d2fdx2->prefixString() << "\n";
+
+    return {
+        [f](const value_t x) {
+            return epsilon_zero(f->eval(x));
+        },
+        [dfdx](const value_t x) {
+            return epsilon_zero(dfdx->eval(x));
+        },
+        [d2fdx2](const value_t x) {
+            return epsilon_zero(d2fdx2->eval(x));
+        }
+    };
+}
+
+        Best Practices0
+        Clever0
+    0
+    Fork
+    Compare with your solution
+    Link
+
+K01egA
+
+#include <functional>
+#include <complex>
+#include <tuple>
+#include <string>
+#include <memory>
+#include <cmath>
+
+////
+using value_t = std::complex<double>;
+using func_t = std::function<value_t(value_t)>;
+
+enum class TokenType { CONSTANT, VARIABLE, PLUS, MINUS, MUL, DIV, POW, LPAREN, RPAREN, FUNC, END };
+
+struct Token {
+    TokenType type;
+    std::string value;
+};
+
+class Tokenizer {
+public:
+    Tokenizer(const std::string& s) : input(s), pos(0) {}
+    Token next_token() {
+        while (pos < input.size() && std::isspace(input[pos])) ++pos;
+        if (pos == input.size()) return {TokenType::END, ""};
+        char ch = input[pos];
+        if (std::isdigit(ch) || ch == '.') {  // numbers (constants)
+            std::string num;
+            while (pos < input.size() && (std::isdigit(input[pos]) || input[pos] == '.')) {
+                num += input[pos++];
+            }
+            return {TokenType::CONSTANT, num};
+        }
+        if (ch == 'x') {  // variable (x)
+            ++pos;
+            return {TokenType::VARIABLE, "x"};
+        }
+        switch (ch) {  // operators and parentheses
+            case '+': ++pos; return {TokenType::PLUS, "+"};
+            case '-': ++pos; return {TokenType::MINUS, "-"};
+            case '*': ++pos; return {TokenType::MUL, "*"};
+            case '/': ++pos; return {TokenType::DIV, "/"};
+            case '^': ++pos; return {TokenType::POW, "^"};
+            case '(': ++pos; return {TokenType::LPAREN, "("};
+            case ')': ++pos; return {TokenType::RPAREN, ")"};
+            default: break;
+        }
+        if (std::isalpha(ch)) {  // functions (sin, cos, tan, cot, log)
+            std::string func;
+            while (pos < input.size() && std::isalpha(input[pos])) {
+                func += input[pos++];
+            }
+            return {TokenType::FUNC, func};
+        }
+        throw std::runtime_error("Unexpected character in input '" + input + "'at " + std::to_string(pos));
+    }
+private:
+    std::string input;
+    size_t pos;
+};
+
+class ConstNode;
+class Node {
+public:
+    virtual ~Node() = default;
+    virtual value_t evaluate(value_t x) const = 0;
+    virtual bool isConst() const = 0;
+    virtual std::unique_ptr<Node> derivative() const = 0;
+    virtual std::unique_ptr<Node> clone() const = 0;
+};
+
+class ConstNode : public Node {
+public:
+    ConstNode(value_t value) : value(value) {}
+    value_t evaluate(value_t) const override { return value; }
+    bool isConst() const override { return true; }
+    std::unique_ptr<Node> derivative() const override {
+        return std::make_unique<ConstNode>(0.0);
+    }
+    std::unique_ptr<Node> clone() const override {
+        return std::make_unique<ConstNode>(value);
+    }
+private:
+    value_t value;
+};
+
+class VarNode : public Node {
+public:
+    VarNode() {}
+    value_t evaluate(value_t x) const override { return x; }
+    bool isConst() const override { return false; }
+    std::unique_ptr<Node> derivative() const override {
+        return std::make_unique<ConstNode>(1.0);
+    }
+    std::unique_ptr<Node> clone() const override {
+        return std::make_unique<VarNode>();
+    }
+};
+
+class NegNode : public Node {
+public:
+    explicit NegNode(std::unique_ptr<Node> expr) : expr(std::move(expr)) {}
+    value_t evaluate(value_t x) const override {
+        return -expr->evaluate(x);
+    }
+    bool isConst() const override { return expr->isConst(); }
+    std::unique_ptr<Node> derivative() const override {
+        return std::make_unique<NegNode>(expr->derivative());
+    }
+    std::unique_ptr<Node> clone() const override {
+        return std::make_unique<NegNode>(expr->clone());
+    }
+private:
+    std::unique_ptr<Node> expr;
+};
+
+class AddNode : public Node {
+public:
+    AddNode(std::unique_ptr<Node> left, std::unique_ptr<Node> right)
+        : left(std::move(left)), right(std::move(right)) {}
+    value_t evaluate(value_t x) const override {
+        return left->evaluate(x) + right->evaluate(x);
+    }
+    bool isConst() const override { return left->isConst() && right->isConst(); }
+    std::unique_ptr<Node> derivative() const override {
+        if (isConst()) return std::make_unique<ConstNode>(0.0);
+        return std::make_unique<AddNode>(left->derivative(), right->derivative());
+    }
+    std::unique_ptr<Node> clone() const override {
+        return std::make_unique<AddNode>(left->clone(), right->clone());
+    }
+private:
+    std::unique_ptr<Node> left, right;
+};
+
+class SubNode : public Node {
+public:
+    SubNode(std::unique_ptr<Node> left, std::unique_ptr<Node> right)
+        : left(std::move(left)), right(std::move(right)) {}
+
+    value_t evaluate(value_t x) const override {
+        return left->evaluate(x) - right->evaluate(x);
+    }
+    bool isConst() const override { return left->isConst() && right->isConst(); }
+    std::unique_ptr<Node> derivative() const override {
+        if (isConst()) return std::make_unique<ConstNode>(0.0);
+        return std::make_unique<SubNode>(left->derivative(), right->derivative());
+    }
+    std::unique_ptr<Node> clone() const override {
+        return std::make_unique<SubNode>(left->clone(), right->clone());
+    }
+private:
+    std::unique_ptr<Node> left, right;
+};
+
+class MultNode : public Node {
+public:
+    MultNode(std::unique_ptr<Node> left, std::unique_ptr<Node> right)
+        : left(std::move(left)), right(std::move(right)) {}
+    value_t evaluate(value_t x) const override {
+        auto a = left->evaluate(x), b = right->evaluate(x);
+        if (a == value_t(0) || b == value_t(0)) return 0;
+        return a * b;
+    }
+    bool isConst() const override { return left->isConst() && right->isConst(); }
+    std::unique_ptr<Node> derivative() const override {
+        if (isConst()) return std::make_unique<ConstNode>(0.0);
+        return std::make_unique<AddNode>(
+            std::make_unique<MultNode>(left->derivative(), right->clone()),
+            std::make_unique<MultNode>(left->clone(), right->derivative())
+        );
+    }
+    std::unique_ptr<Node> clone() const override {
+        return std::make_unique<MultNode>(left->clone(), right->clone());
+    }
+private:
+    std::unique_ptr<Node> left, right;
+};
+
+class PowNode;
+class DivNode : public Node {
+public:
+    DivNode(std::unique_ptr<Node> num, std::unique_ptr<Node> den)
+        : num(std::move(num)), den(std::move(den)) {}
+    value_t evaluate(value_t x) const override {
+        return num->evaluate(x) / den->evaluate(x);
+    }
+    bool isConst() const override { return num->isConst() && den->isConst(); }
+    std::unique_ptr<Node> derivative() const override {  // (f/g)' = (f'g - fg') / (g^2)
+        if (isConst()) return std::make_unique<ConstNode>(0.0);
+        return std::make_unique<DivNode>(
+            std::make_unique<SubNode>(
+                std::make_unique<MultNode>(num->derivative(), den->clone()),
+                std::make_unique<MultNode>(num->clone(), den->derivative())
+            ),
+            std::make_unique<PowNode>(den->clone(), std::make_unique<ConstNode>(2))
+        );
+    }
+    std::unique_ptr<Node> clone() const override {
+        return std::make_unique<DivNode>(num->clone(), den->clone());
+    }
+private:
+    std::unique_ptr<Node> num, den;
+};
+
+class LogNode;
+class PowNode : public Node {
+public:
+    PowNode(std::unique_ptr<Node> base, std::unique_ptr<Node> exponent)
+        : base(std::move(base)), exponent(std::move(exponent)) {}
+    value_t evaluate(value_t x) const override {
+        return std::pow(base->evaluate(x), exponent->evaluate(x));
+    }
+    bool isConst() const override { return base->isConst() && exponent->isConst(); }
+    std::unique_ptr<Node> derivative() const override {  // (u^v)' = u^v * (v' * log(u) + v * u'/u)
+        if (isConst()) return std::make_unique<ConstNode>(0.0);
+        return std::make_unique<MultNode>(
+            std::make_unique<PowNode>(base->clone(), exponent->clone()),
+            std::make_unique<AddNode>(
+                std::make_unique<MultNode>(exponent->derivative(),
+                    std::make_unique<LogNode>(base->clone())),
+                std::make_unique<MultNode>(exponent->clone(),
+                    std::make_unique<DivNode>(base->derivative(), base->clone()))
+        ));
+    }
+    std::unique_ptr<Node> clone() const override {
+        return std::make_unique<PowNode>(base->clone(), exponent->clone());
+    }
+private:
+    std::unique_ptr<Node> base, exponent;
+};
+
+class CosNode;
+class SinNode : public Node {
+public:
+    SinNode(std::unique_ptr<Node> arg) : arg(std::move(arg)) {}
+    value_t evaluate(value_t x) const override {
+        return std::sin(arg->evaluate(x));
+    }
+    bool isConst() const override { return arg->isConst(); }
+    std::unique_ptr<Node> derivative() const override {
+        if (isConst()) return std::make_unique<ConstNode>(0.0);
+        return std::make_unique<MultNode>(
+            std::make_unique<CosNode>(arg->clone()),
+            arg->derivative()
+        );
+    }
+    std::unique_ptr<Node> clone() const override {
+        return std::make_unique<SinNode>(arg->clone());
+    }
+private:
+    std::unique_ptr<Node> arg;
+};
+
+class CosNode : public Node {
+public:
+    CosNode(std::unique_ptr<Node> arg) : arg(std::move(arg)) {}
+    value_t evaluate(value_t x) const override {
+        return std::cos(arg->evaluate(x));
+    }
+    bool isConst() const override { return arg->isConst(); }
+    std::unique_ptr<Node> derivative() const override {
+        if (isConst()) return std::make_unique<ConstNode>(0.0);
+        return std::make_unique<MultNode>(
+            std::make_unique<NegNode>(std::make_unique<SinNode>(arg->clone())),
+            arg->derivative()
+        );
+    }
+    std::unique_ptr<Node> clone() const override {
+        return std::make_unique<CosNode>(arg->clone());
+    }
+private:
+    std::unique_ptr<Node> arg;
+};
+
+class TanNode : public Node {
+public:
+    TanNode(std::unique_ptr<Node> arg) : arg(std::move(arg)) {}
+    value_t evaluate(value_t x) const override {
+        return std::tan(arg->evaluate(x));
+    }
+    bool isConst() const override { return arg->isConst(); }
+    std::unique_ptr<Node> derivative() const override {
+        if (isConst()) return std::make_unique<ConstNode>(0.0);
+        return std::make_unique<DivNode>(
+            arg->derivative(),
+            std::make_unique<PowNode>(
+                std::make_unique<CosNode>(arg->clone()), std::make_unique<ConstNode>(2)
+            )
+        );
+    }
+    std::unique_ptr<Node> clone() const override {
+        return std::make_unique<TanNode>(arg->clone());
+    }
+private:
+    std::unique_ptr<Node> arg;
+};
+
+class CotNode : public Node {
+public:
+    CotNode(std::unique_ptr<Node> arg) : arg(std::move(arg)) {}
+    value_t evaluate(value_t x) const override {
+        return 1. / std::tan(arg->evaluate(x));
+    }
+    bool isConst() const override { return arg->isConst(); }
+    std::unique_ptr<Node> derivative() const override {
+        if (isConst()) return std::make_unique<ConstNode>(0.0);
+        return std::make_unique<DivNode>(
+            arg->derivative(),
+            std::make_unique<NegNode>(std::make_unique<PowNode>(
+                std::make_unique<SinNode>(arg->clone()), std::make_unique<ConstNode>(2)
+            ))
+        );
+    }
+    std::unique_ptr<Node> clone() const override {
+        if (isConst()) return std::make_unique<ConstNode>(0.0);
+        return std::make_unique<CotNode>(arg->clone());
+    }
+private:
+    std::unique_ptr<Node> arg;
+};
+
+class LogNode : public Node {
+public:
+    LogNode(std::unique_ptr<Node> arg) : arg(std::move(arg)) {}
+    value_t evaluate(value_t x) const override {
+        return std::log(arg->evaluate(x));
+    }
+    bool isConst() const override { return arg->isConst(); }
+    std::unique_ptr<Node> derivative() const override {
+        if (isConst()) return std::make_unique<ConstNode>(0.0);
+        return std::make_unique<DivNode>(arg->derivative(), arg->clone());
+    }
+    std::unique_ptr<Node> clone() const override {
+        return std::make_unique<LogNode>(arg->clone());
+    }
+private:
+    std::unique_ptr<Node> arg;
+};
+
+class Parser {
+public:
+    Parser(const std::string& s) : tokenizer(s), token(tokenizer.next_token()) {}
+    std::unique_ptr<Node> parse() {
+        auto res = parse_expression();
+        if (token.type != TokenType::END) {
+            throw std::runtime_error("Expected end of expression");
+        }
+        return res;
+    }
+private:
+    Tokenizer tokenizer;
+    Token token;
+    void consume(TokenType expected_type) {
+        if (token.type == expected_type) token = tokenizer.next_token();
+        else throw std::runtime_error("Unexpected token");
+    }
+    std::unique_ptr<Node> parse_basic();
+    std::unique_ptr<Node> parse_factor();
+    std::unique_ptr<Node> parse_term();
+    std::unique_ptr<Node> parse_expression();
+};
+
+std::unique_ptr<Node> Parser::parse_basic() {  // constants, variables, negative, parentheses, functions
+    if (token.type == TokenType::CONSTANT) {
+        double value = std::stod(token.value);
+        consume(TokenType::CONSTANT);
+        return std::make_unique<ConstNode>(value);
+    }
+    if (token.type == TokenType::VARIABLE) {
+        consume(TokenType::VARIABLE);
+        return std::make_unique<VarNode>();
+    }
+    if (token.type == TokenType::MINUS) {
+        consume(TokenType::MINUS);
+        return std::make_unique<NegNode>(parse_basic());
+    }
+    if (token.type == TokenType::LPAREN) {
+        consume(TokenType::LPAREN);
+        auto expr = parse_expression();
+        consume(TokenType::RPAREN);
+        return expr;
+    }
+    if (token.type == TokenType::FUNC) {
+        std::string name = token.value;
+        consume(TokenType::FUNC);
+        consume(TokenType::LPAREN);
+        auto arg = parse_expression();
+        consume(TokenType::RPAREN);
+        if      (name == "sin") return std::make_unique<SinNode>(std::move(arg));
+        else if (name == "cos") return std::make_unique<CosNode>(std::move(arg));
+        else if (name == "tan") return std::make_unique<TanNode>(std::move(arg));
+        else if (name == "cot") return std::make_unique<CotNode>(std::move(arg));
+        else if (name == "log") return std::make_unique<LogNode>(std::move(arg));
+        else throw std::runtime_error("Unknown function: " + name);
+    }
+    throw std::runtime_error("Unexpected token at " + std::to_string((int)token.type));
+}
+
+std::unique_ptr<Node> Parser::parse_factor() {  // power (right associative)
+    auto left = parse_basic();
+    if (token.type == TokenType::POW) {
+        consume(TokenType::POW);
+        auto right = parse_factor();
+        return std::make_unique<PowNode>(std::move(left), std::move(right));
+    }
+    return left;
+}
+
+std::unique_ptr<Node> Parser::parse_term() {  // multiplication and division
+    auto left = parse_factor();
+    while (token.type == TokenType::MUL || token.type == TokenType::DIV) {
+        if (token.type == TokenType::MUL) {
+            consume(TokenType::MUL);
+            auto right = parse_factor();
+            left = std::make_unique<MultNode>(std::move(left), std::move(right));
+        } else if (token.type == TokenType::DIV) {
+            consume(TokenType::DIV);
+            auto right = parse_factor();
+            left = std::make_unique<DivNode>(std::move(left), std::move(right));
+        }
+    }
+    return left;
+}
+
+std::unique_ptr<Node> Parser::parse_expression() {  // addition and subtraction
+    auto left = parse_term();
+    while (token.type == TokenType::PLUS || token.type == TokenType::MINUS) {
+        if (token.type == TokenType::PLUS) {
+            consume(TokenType::PLUS);
+            auto right = parse_term();
+            left = std::make_unique<AddNode>(std::move(left), std::move(right));
+        } else if (token.type == TokenType::MINUS) {
+            consume(TokenType::MINUS);
+            auto right = parse_term();
+            left = std::make_unique<SubNode>(std::move(left), std::move(right));
+        }
+    }
+    return left;
+}
+
+std::tuple<func_t, func_t, func_t> differentiate(const std::string& eq) {
+    Parser parser(eq);
+    const std::shared_ptr<Node> func = parser.parse();
+    const std::shared_ptr<Node> df_dx = func->derivative();
+    const std::shared_ptr<Node> d2f_dx2 = df_dx->derivative();
+    return {
+        [func]   (value_t x) { return func->evaluate(x); },
+        [df_dx]  (value_t x) { return df_dx->evaluate(x); },
+        [d2f_dx2](value_t x) { return d2f_dx2->evaluate(x); }
+    };
+}
+
+        Best Practices0
+        Clever0
+    0
+    Fork
+    Compare with your solution
+    Link
+
+maelhos
+
+#include <functional>
+#include <complex>
+#include <tuple>
+#include <string>
+#include <iostream>
+#include <assert.h>
+#include <cfloat>
+
+using value_t = std::complex<double>;
+using func_t = std::function<value_t(value_t)>;
+
+enum class NodeType {Constant, Function, X, Operator};
+enum class FuncType {Sin, Cos, Tan, Cot, Log};
+enum class OperatorType {Add, Sub, Mul, Div, Pow};
+
+enum class TokenType {X, Lpar, Rpar, Constant, Operator, Function};
+
+class Token {
+public:
+    TokenType type;
+
+    FuncType fun;
+    OperatorType op;
+
+    value_t cst;
+
+    Token(value_t cst) : type(TokenType::Constant), cst(cst) {}
+    Token(FuncType fun) : type(TokenType::Function), fun(fun) {}
+    Token(OperatorType op) : type(TokenType::Operator), op(op) {}
+    Token(TokenType t) : type(t) {}
+    Token() {}
+    ~Token() {}
+};
+
+class Node {
+private:
+    NodeType type;
+
+    FuncType fun;
+    OperatorType op;
+
+    value_t cst;
+
+    Node* left;
+    Node* right;
+
+public:
+    Node(value_t cst) : type(NodeType::Constant), cst(cst) {}
+    Node(FuncType fun, Node* expr) : type(NodeType::Function), fun(fun), left(expr) {}
+    Node(Node* left, OperatorType op, Node* right) : type(NodeType::Operator), op(op), left(left), right(right) {}
+    Node() : type(NodeType::X) {}
+
+    void print(){
+        if (type == NodeType::Constant){
+            std::cout << cst;
+            return;
+        }
+        
+        if (type == NodeType::Function){
+            if (fun == FuncType::Sin) std::cout << "sin(";
+            if (fun == FuncType::Cos) std::cout << "cos(";
+            if (fun == FuncType::Tan) std::cout << "tan(";
+            if (fun == FuncType::Cot) std::cout << "cot(";
+            if (fun == FuncType::Log) std::cout << "log(";
+
+            left->print();
+            std::cout << ")";
+
+            return;
+        }
+
+        if (type == NodeType::X){
+            std::cout << "x";
+            return;
+        }
+
+        if (type == NodeType::Operator){
+            std::cout << "(";
+            left->print();
+            std::cout << " ";
+
+            if (op == OperatorType::Add) std::cout << "+";
+            if (op == OperatorType::Div) std::cout << "/";
+            if (op == OperatorType::Mul) std::cout << "*";
+            if (op == OperatorType::Pow) std::cout << "^";
+            if (op == OperatorType::Sub) std::cout << "-";
+
+            std::cout << " ";
+            right->print();
+            std::cout << ")";
+
+        }
+
+    }
+    
+    func_t toFunc(){
+        
+        if (type == NodeType::Constant)
+            return [=](value_t) { return cst; };
+        
+        
+        if (type == NodeType::Function){
+            if (fun == FuncType::Sin) return [=](value_t x) { return std::sin(left->toFunc()(x)); };
+            if (fun == FuncType::Cos) return [=](value_t x) { return std::cos(left->toFunc()(x)); };
+            if (fun == FuncType::Tan) return [=](value_t x) { return std::tan(left->toFunc()(x)); };
+            if (fun == FuncType::Cot) return [=](value_t x) { return value_t{1.0, 0} / std::tan(left->toFunc()(x)); };
+            if (fun == FuncType::Log) return [=](value_t x) { return std::log(left->toFunc()(x)); };
+        }
+
+        if (type == NodeType::X)
+            return [](value_t x){ return x; };
+        
+        if (type == NodeType::Operator){
+
+            if (op == OperatorType::Add) return [=](value_t x) { return left->toFunc()(x) + right->toFunc()(x); };
+            if (op == OperatorType::Div) return [=](value_t x) { return left->toFunc()(x) / right->toFunc()(x); };
+            if (op == OperatorType::Mul) return [=](value_t x) { return left->toFunc()(x) * right->toFunc()(x); };
+            if (op == OperatorType::Pow) return [=](value_t x) { return std::pow(left->toFunc()(x), right->toFunc()(x)); };
+            if (op == OperatorType::Sub) return [=](value_t x) { return left->toFunc()(x) - right->toFunc()(x); };
+        }
+
+        assert(0 == 1);
+    }
+
+    Node* simplify() {
+        if (type == NodeType::Operator){
+            Node* left_simpl = left->simplify();
+            Node* right_simpl = right->simplify();
+
+            //if (left_simpl->type == NodeType::Constant && right_simpl->type == NodeType::Constant)
+            //    return new Node(toFunc()(256));
+            
+            if (op == OperatorType::Add){
+                if (left_simpl->type == NodeType::Constant && left_simpl->cst == value_t{0, 0}) 
+                    return right_simpl;
+
+                if (right_simpl->type == NodeType::Constant && right_simpl->cst == value_t{0, 0}) 
+                    return left_simpl;
+            }
+
+            if (op == OperatorType::Sub){
+                if (right_simpl->type == NodeType::Constant && right_simpl->cst == value_t{0, 0}) 
+                    return left_simpl;
+            }
+
+            if (op == OperatorType::Mul){
+                if (left_simpl->type == NodeType::Constant && left_simpl->cst == value_t{1, 0}) 
+                    return right_simpl;
+
+                if (right_simpl->type == NodeType::Constant && right_simpl->cst == value_t{1, 0}) 
+                    return left_simpl;
+
+                if ((right_simpl->type == NodeType::Constant && right_simpl->cst == value_t{0, 0}) ||
+                    (left_simpl->type == NodeType::Constant && left_simpl->cst == value_t{0, 0}) ) 
+                    return new Node(value_t{0, 0});
+            }
+
+            if (op == OperatorType::Div || op == OperatorType::Pow){
+                if (right_simpl->type == NodeType::Constant && right_simpl->cst == value_t{1, 0}) 
+                    return left_simpl;
+            }
+
+            if (op == OperatorType::Pow && right_simpl->type == NodeType::Constant && right_simpl->cst == value_t{0, 0})
+                return new Node(value_t{1, 0});
+            
+
+            if (op == OperatorType::Div && left_simpl->type == NodeType::Constant && left_simpl->cst == value_t{0, 0})
+                return new Node(value_t{0, 0});
+
+            right = right_simpl;
+            left = left_simpl;
+        }
+
+        if (type == NodeType::Function){
+            Node* left_simpl = left->simplify();
+
+            if (left_simpl->type == NodeType::Constant)
+                return new Node(toFunc()(0));
+
+            left = left_simpl;
+        }
+
+        // worst case no opti...
+        return this;
+    }
+
+    Node* differentiate(){
+        if (type == NodeType::Constant)
+            return new Node(value_t{0, 0});
+        
+        if (type == NodeType::Function){
+            if (fun == FuncType::Sin)
+                return new Node(left->differentiate(), OperatorType::Mul, new Node(FuncType::Cos, left));
+            
+            if (fun == FuncType::Cos)
+                return new Node(new Node(left->differentiate(), OperatorType::Mul, new Node(FuncType::Sin, left)),
+                    OperatorType::Mul,
+                    new Node(value_t{-1, 0}));
+
+            if (fun == FuncType::Tan) 
+                return new Node(left->differentiate(), OperatorType::Mul, 
+                    new Node(new Node(value_t{1, 0}), OperatorType::Div, 
+                        new Node(new Node(FuncType::Cos, left), OperatorType::Pow, new Node(value_t{2, 0}))));
+
+
+            if (fun == FuncType::Cot)
+                return new Node(new Node(value_t{-1, 0}), OperatorType::Mul, 
+                    new Node(left->differentiate(), OperatorType::Mul, 
+                        new Node(new Node(value_t{1, 0}), OperatorType::Div, 
+                            new Node(new Node(FuncType::Sin, left), OperatorType::Pow, new Node(value_t{2, 0})))));
+
+            if (fun == FuncType::Log)
+                return new Node(left->differentiate(), OperatorType::Div, left);
+        }
+
+        if (type == NodeType::X)
+            return new Node(value_t{1, 0});
+        
+        if (type == NodeType::Operator){
+
+            if (op == OperatorType::Add || op == OperatorType::Sub)
+                return new Node(left->differentiate(), op, right->differentiate());
+
+            if (op == OperatorType::Div)
+                return new Node(new Node(new Node(left->differentiate(), OperatorType::Mul, right), 
+                    OperatorType::Sub, 
+                    new Node(left, OperatorType::Mul, right->differentiate())), OperatorType::Div, 
+                        new Node(right, OperatorType::Pow, new Node(value_t{2, 0})));
+
+
+            if (op == OperatorType::Mul)
+                return new Node(new Node(left->differentiate(), OperatorType::Mul, right),
+                                OperatorType::Add,
+                                new Node(left, OperatorType::Mul, right->differentiate()));
+            
+            if (op == OperatorType::Pow){
+                Node* f = left;
+                Node* g = right;
+                Node* h = new Node(f, OperatorType::Pow, g);
+
+                Node* A = new Node(g->differentiate(), OperatorType::Mul, 
+                    new Node(FuncType::Log, f));
+                
+                Node* B = new Node(new Node(g, OperatorType::Mul, f->differentiate()), OperatorType::Div, f);
+
+                return new Node(h, OperatorType::Mul, new Node(A, OperatorType::Add, B));
+            }
+        }
+
+        assert(0 == 1);
+    }
+    ~Node() {
+        if (type == NodeType::Function) left->~Node();
+        if (type == NodeType::Operator) {left->~Node(); right->~Node(); };
+    };
+};
+
+class Parser {
+private:
+    const std::string src;
+    int index;
+    Token current_token;
+
+    void next_token(){
+        do { index++; } while (src[index] == ' ');
+        if (index >= (int)src.size()) return;
+
+        if (src[index] == 'x'){
+            current_token = Token(TokenType::X);
+            return;
+        }
+
+        if ('0' <= src[index] && src[index] <= '9'){
+            std::string nb(1, src[index]);
+            while (index + 1 < (int)src.size() && (('0' <= src[index + 1] && src[index + 1] <= '9') || src[index + 1] == '.')){
+                index++;
+                nb += src[index];
+            }
+
+            current_token = Token(value_t{stod(nb), 0});
+            return;
+        }
+        
+        if (src[index] == '('){
+            current_token = Token(TokenType::Lpar);
+            return;
+        }
+
+        if (src[index] == ')'){
+            current_token = Token(TokenType::Rpar);
+            return;
+        }
+
+        if (src[index] == '+'){
+            current_token = Token(OperatorType::Add);
+            return;
+        }
+
+        if (src[index] == '-'){
+            current_token = Token(OperatorType::Sub);
+            return;
+        }
+
+        if (src[index] == '*'){
+            current_token = Token(OperatorType::Mul);
+            return;
+        }
+
+        if (src[index] == '/'){
+            current_token = Token(OperatorType::Div);
+            return;
+        }  
+
+        if (src[index] == '^'){
+            current_token = Token(OperatorType::Pow);
+            return;
+        }  
+
+        if (index + 2 < (int)src.size()){
+            std::string fun = src.substr(index, 3);
+
+            FuncType tp;
+            if (fun == "sin") tp = FuncType::Sin;
+            if (fun == "cos") tp = FuncType::Cos;
+            if (fun == "tan") tp = FuncType::Tan;
+            if (fun == "cot") tp = FuncType::Cot;
+            if (fun == "log") tp = FuncType::Log;
+            index += 2;
+
+            current_token = Token(tp);
+            return;
+        }
+    }
+
+    Node* parseExpr(){
+        Node* ast_left = parseTerm();
+        while (current_token.type == TokenType::Operator 
+            && (current_token.op == OperatorType::Add || current_token.op == OperatorType::Sub)){
+                Token opTok = current_token;
+                next_token();
+                Node* ast_right = parseTerm();
+
+                ast_left = new Node(ast_left, opTok.op, ast_right);
+        }
+        return ast_left;
+    }
+
+    Node* parseTerm(){
+        Node* ast_left = parseFactor();
+        while (current_token.type == TokenType::Operator 
+            && (current_token.op == OperatorType::Mul || current_token.op == OperatorType::Div)){
+                Token opTok = current_token;
+                next_token();
+                Node* ast_right = parseFactor();
+
+                ast_left = new Node(ast_left, opTok.op, ast_right);
+        }
+        return ast_left;
+    }
+
+    Node* parseFactor(){
+        std::vector<Node*> nodes{};
+        nodes.push_back(parseBasic());
+
+        while (current_token.type == TokenType::Operator 
+            && (current_token.op == OperatorType::Pow)){
+                next_token();
+                nodes.push_back(parseBasic());
+        }
+        if (nodes.size() == 1)
+            return nodes[0];
+
+        Node* ret = new Node(nodes[nodes.size() - 2], OperatorType::Pow, nodes[nodes.size() - 1]);
+        
+        nodes.pop_back();
+        nodes.pop_back();
+
+        while (!nodes.empty()){
+            ret = new Node(nodes[nodes.size() - 1], OperatorType::Pow, ret);
+            nodes.pop_back();
+        }
+        return ret;
+    }
+
+    Node* parseBasic(){
+        Token tok = current_token;
+        next_token();
+
+        if (tok.type == TokenType::Constant)
+            return new Node(tok.cst);
+
+        if (tok.type == TokenType::X)
+            return new Node();
+
+        if (tok.type == TokenType::Function){
+            assert(current_token.type == TokenType::Lpar);
+            next_token();
+            Node* arg = parseExpr();
+            assert(current_token.type == TokenType::Rpar);
+            next_token();
+
+            return new Node(tok.fun, arg);
+        }
+
+        if (tok.type == TokenType::Lpar){
+            Node* expr = parseExpr();
+            assert(current_token.type == TokenType::Rpar);
+            next_token();
+
+            return expr;
+        }
+
+        assert(0 == 1);
+    }
+
+
+public:
+    Parser(const std::string& eq) : src(eq), index(-1) {
+        next_token();
+    }
+
+    Node* parse(){
+        return parseExpr();
+    }
+
+    ~Parser() {};
+};
+
+
+std::tuple<func_t, func_t, func_t> differentiate(const std::string& eq) {
+    Parser parser(eq);
+    Node* ast = parser.parse();
+    std::cout << "f(x) original : " << eq << "\nf(x) = "; ast->print(); std::cout << std::endl;
+
+    ast = ast->simplify();
+    //std::cout << "simplified f(x) : "; ast->print(); std::cout << std::endl;
+
+    Node* ast_ = ast->differentiate();
+    //std::cout << "f'(x) : "; ast_->print(); std::cout << std::endl << std::endl;
+
+    ast_ = ast_->simplify();
+    //std::cout << "simplified f'(x) : "; ast_->print(); std::cout << std::endl << std::endl;
+
+    Node* ast__ = ast_->differentiate();
+    //std::cout << "f''(x) : "; ast__->print(); std::cout << std::endl << std::endl;
+
+    ast__ = ast__->simplify();
+    //std::cout << "simplified f''(x) : "; ast__->print(); std::cout << std::endl << std::endl;
+
+    return {
+        [=](value_t x){return ast->toFunc()(x); },
+        [=](value_t x){return ast_->toFunc()(x); },
+        [=](value_t x){return ast__->toFunc()(x); }
+    };
+}
+
+        Best Practices0
+        Clever0
+    0
+    Fork
+    Compare with your solution
+    Link
+
+cshw89
+
+#include <functional>
+#include <complex>
+#include <tuple>
+#include <string>
+#include <regex>
+#include <queue>
+#include <stack>
+#include <unordered_map>
+
+using value_t = std::complex<double>;
+using func_t = std::function<value_t(value_t)>;
+using tokens_t = std::queue<std::string>;
+
+class Expr {
+  public:
+    virtual value_t eval(value_t x) = 0;
+    virtual Expr* diff() = 0;
+};
+
+class Const : public Expr {
+  public:
+    value_t value;
+    Const(value_t value) {
+      this->value = value;
+    }
+    value_t eval(value_t) { return value; }
+    Expr* diff() { return new Const(0); }
+};
+
+class VarX : public Expr {
+  public:
+    value_t eval(value_t x) { return x; }
+    Expr* diff() { return new Const(1); }
+};
+
+class Oper : public Expr {
+  public:
+    Oper(Expr* left, Expr* right) {
+      this->left = left;
+      this->right = right;
+    }
+    Expr* left;
+    Expr* right;
+};
+
+class Add : public Oper {
+  public:
+    Add(Expr* left, Expr* right) : Oper(left, right) { }
+    value_t eval(value_t x) { return left->eval(x) + right->eval(x); }
+    Expr* diff() { return new Add(left->diff(), right->diff()); }
+};
+
+class Sub : public Oper {
+  public:
+    Sub(Expr* left, Expr* right) : Oper(left, right) { }
+    value_t eval(value_t x) { return left->eval(x) - right->eval(x); }
+    Expr* diff() { return new Sub(left->diff(), right->diff()); }
+};
+
+class Mul : public Oper {
+  public:
+    Mul(Expr* left, Expr* right) : Oper(left, right) { }
+    value_t eval(value_t x) { return left->eval(x) * right->eval(x); }
+    Expr* diff() {
+      return new Add(new Mul(left->diff(), right), new Mul(left, right->diff()));
+    }
+};
+
+class Div : public Oper {
+  public:
+    Div(Expr* left, Expr* right) : Oper(left, right) { }
+    value_t eval(value_t x) { return left->eval(x) / right->eval(x); }
+    Expr* diff() {
+      return new Div(
+        new Sub(new Mul(left->diff(), right), new Mul(left, right->diff())),
+        new Mul(right, right));
+    }
+};
+
+class Func : public Expr {
+  public:
+    Expr* arg;
+    Func(Expr* arg) {
+      this->arg = arg;
+    }
+    virtual Expr* diffFunc() = 0;
+    Expr* diff() { return new Mul(this->diffFunc(), arg->diff()); }
+};
+
+class Cos : public Func {
+  public:
+    Cos(Expr* arg) : Func(arg) { }
+    value_t eval(value_t x) { return cos(arg->eval(x)); }
+    Expr* diffFunc();
+};
+
+class Sin : public Func {
+  public:
+    Sin(Expr* arg) : Func(arg) { }
+    value_t eval(value_t x) { return sin(arg->eval(x)); }
+    Expr* diffFunc() { return new Cos(arg); }
+};
+
+Expr* Cos::diffFunc() { return new Sub(new Const(0.), new Sin(arg)); }
+
+class Tan : public Func {
+  public:
+    Tan(Expr* arg) : Func(arg) { }
+    value_t eval(value_t x) { return tan(arg->eval(x)); }
+    Expr* diffFunc() { return new Div(new Const(1.), new Mul(new Cos(arg), new Cos(arg))); }
+};
+
+class Cot : public Func {
+  public:
+    Cot(Expr* arg) : Func(arg) { }
+    value_t eval(value_t x) { return ((value_t)1.) / tan(arg->eval(x)); }
+    Expr* diffFunc() { return new Div(new Const(-1.), new Mul(new Sin(arg), new Sin(arg))); }
+};
+
+class Log : public Func {
+  public:
+    Log(Expr* arg) : Func(arg) { }
+    value_t eval(value_t x) { return log(arg->eval(x)); }
+    Expr* diffFunc() { return new Div(new Const(1.), arg); }
+};
+
+class Pow : public Oper {
+  public:
+    Pow(Expr* left, Expr* right) : Oper(left, right) { }
+    value_t eval(value_t x) { return pow(left->eval(x), right->eval(x)); }
+    Expr* diff() {
+      return new Mul(
+        new Pow(left, new Sub(right, new Const(1.))),
+        new Add(new Mul(right, left->diff()), new Mul(new Mul(left, new Log(left)), right->diff())));
+    }
+};
+
+
+std::queue<std::string> tokenize(const std::string& eq) {
+  tokens_t result;
+  
+  std::regex rgx("[-+*/^\\(\\)]|[0-9]*(\\.?[0-9]+)|[a-zA-Z]+");
+  auto begin = std::sregex_iterator(eq.begin(), eq.end(), rgx);
+  auto end = std::sregex_iterator();
+  
+  for (std::sregex_iterator i = begin; i != end; ++i) {
+    std::smatch match = *i;
+    std::string match_str = match.str();
+    result.push(match_str);
+  }
+  return result;
+}
+
+
+Expr* consumeBasic(tokens_t& tokens);
+
+
+Expr* consumeFactor(tokens_t& tokens) {
+  Expr* expr = consumeBasic(tokens);
+  if (tokens.empty())
+    return expr;
+  std::string token = tokens.front();
+  if (token == "^") {
+    tokens.pop();
+    Expr* other = consumeFactor(tokens);
+    expr = new Pow(expr, other);
+  }
+  return expr;
+}
+
+
+Expr* consumeTerm(tokens_t& tokens) {
+  Expr* expr = consumeFactor(tokens);
+  while (true) {
+    if (tokens.empty())
+      return expr;
+    std::string token = tokens.front();
+    if (token == "*" || token == "/") {
+      tokens.pop();
+      Expr* other = consumeFactor(tokens);
+      if (token == "*")
+        expr = new Mul(expr, other);
+      else
+        expr = new Div(expr, other);
+    }
+    else {
+      return expr;
+    }
+  }
+}
+
+
+Expr* consumeExpr(tokens_t& tokens) {
+  Expr* expr = consumeTerm(tokens);
+  while (true) {
+    if (tokens.empty())
+      return expr;
+    std::string token = tokens.front();
+    if (token == "+" || token == "-") {
+      tokens.pop();
+      Expr* other = consumeTerm(tokens);
+      if (token == "+")
+        expr = new Add(expr, other);
+      else
+        expr = new Sub(expr, other);
+    }
+    else {
+      return expr;
+    }
+  }
+}
+
+
+Expr* consumeExprAndParenth(tokens_t& tokens) {
+  Expr* expr = consumeExpr(tokens);
+  if (tokens.empty() || tokens.front() != ")")
+    throw std::invalid_argument("')' is expected");
+  tokens.pop();
+  return expr;
+}
+
+
+Expr* consumeFuncCall(tokens_t& tokens, std::string name) {
+  if (tokens.empty() || tokens.front() != "(")
+    throw std::invalid_argument("'(' is expected");
+  tokens.pop();
+  Expr* a = consumeExprAndParenth(tokens);
+  if (name == "sin") return new Sin(a);
+  if (name == "cos") return new Cos(a);
+  if (name == "tan") return new Tan(a);
+  if (name == "cot") return new Cot(a);
+  if (name == "log") return new Log(a);
+  throw std::invalid_argument("wrong func name error");
+}
+
+
+Expr* consumeBasic(tokens_t& tokens) {
+  if (tokens.empty())
+    throw std::invalid_argument("basic is expected");
+  
+  std::string token = tokens.front();
+  tokens.pop();
+  char st = token[0];
+  
+  if (isdigit(st) || st == '.') {
+    return new Const(stod(token));
+  }
+  else if (isalpha(st)) {
+    if (token == "x")
+      return new VarX();
+    else
+      return consumeFuncCall(tokens, token);
+  }
+  else if (st == '(') {
+    return consumeExprAndParenth(tokens);
+  }
+  throw std::invalid_argument("basic is expected");
+}
+
+
+Expr* parseExpression(const std::string& eq) {
+  tokens_t tokens = tokenize(eq);
+  return consumeExpr(tokens);
+}
+
+
+std::tuple<func_t, func_t, func_t> differentiate(const std::string& eq) {
+  Expr* expr = parseExpression(eq);
+  Expr* diff1 = expr->diff();
+  Expr* diff2 = diff1->diff();
+  return {
+    [expr](value_t x) { return expr->eval(x); },
+    [diff1](value_t x) { return diff1->eval(x); },
+    [diff2](value_t x) { return diff2->eval(x); }
+  };
+}
+
+        Best Practices0
+        Clever0
+    0
+    Fork
+    Compare with your solution
+    Link
+
+Vinterion
+
+#include <functional>
+#include <complex>
+#include <tuple>
+#include <string>
+#include <memory>
+#include <variant>
+
+using value_t = std::complex<double>;
+using func_t = std::function<value_t(value_t)>;
+
+struct variable{};
+
+struct e_add {
+    value_t operator()(value_t a,value_t b){
+        return a+b;
+    }
+};
+
+struct e_mul {
+    value_t operator()(value_t a,value_t b){
+        return a*b;
+    }
+};
+
+struct e_div {
+    value_t operator()(value_t a,value_t b){
+        return a/b;
+    }
+};
+
+struct e_sub {
+    value_t operator()(value_t a,value_t b){
+        return a-b;
+    }
+};
+
+struct e_pow {
+    value_t operator()(value_t a,value_t b){
+        return std::pow(a,b);
+    }
+};
+
+struct e_tan {
+    value_t operator()(value_t a){
+        return std::tan(a);
+    }
+};
+
+struct e_cot {
+    value_t operator()(value_t a){
+        return std::complex(1.0)/std::tan(a);
+    }
+};
+
+struct e_sin {
+    value_t operator()(value_t a){
+        return std::sin(a);
+    }
+};
+
+struct e_cos {
+    value_t operator()(value_t a){
+        return std::cos(a);
+    }
+};
+
+struct e_log {
+    value_t operator()(value_t a){
+        return std::log(a);
+    }
+};
+
+using expr_t = std::variant<e_add,e_mul,e_div,e_sub,e_pow,e_tan,e_cot,e_sin,e_cos,e_log,value_t,variable>;
+
+struct expr {
+    using ptr = std::shared_ptr<expr>;
+    expr_t type = 0;
+
+    ptr A = nullptr;
+    ptr B = nullptr;
+
+    value_t get_value(value_t x){
+        switch(type.index()){
+            case 0 : return std::get<0>(type)(A->get_value(x),B->get_value(x));
+            case 1 : return std::get<1>(type)(A->get_value(x),B->get_value(x));
+            case 2 : return std::get<2>(type)(A->get_value(x),B->get_value(x));
+            case 3 : return std::get<3>(type)(A->get_value(x),B->get_value(x));
+            case 4 : return std::get<4>(type)(A->get_value(x),B->get_value(x));
+            case 5 : return std::get<5>(type)(A->get_value(x));
+            case 6 : return std::get<6>(type)(A->get_value(x));
+            case 7 : return std::get<7>(type)(A->get_value(x));
+            case 8 : return std::get<8>(type)(A->get_value(x));
+            case 9 : return std::get<9>(type)(A->get_value(x));
+            case 10 : return std::get<10>(type);
+            case 11 : return x;
+        }
+    }
+
+};
+
+inline auto make_constant(double c){
+    return std::make_shared<expr>(expr{std::complex(c)});
+} 
+
+inline auto make_variable(void){
+    return std::make_shared<expr>(expr{variable{}});
+}
+
+inline auto make_expr(expr_t&& type,expr::ptr A,expr::ptr B){
+    return std::make_shared<expr>(expr{type,std::move(A),std::move(B)});
+}
+
+inline expr::ptr make_deriv(expr::ptr e){
+    switch(e->type.index()){
+         case 0 : return make_expr(e_add{},make_deriv(e->A),make_deriv(e->B));
+         case 1 : {
+            auto A = make_expr(e_mul{},make_deriv(e->A),e->B);
+            auto B = make_expr(e_mul{},e->A,make_deriv(e->B));
+            return make_expr(e_add{},A,B);
+         }
+         case 2 : {
+            auto A0 = make_expr(e_mul{},make_deriv(e->A),e->B);
+            auto B0 = make_expr(e_mul{},e->A,make_deriv(e->B));
+            auto A = make_expr(e_sub{},A0,B0);
+            auto B = make_expr(e_pow{},e->B,make_constant(2)); 
+            return make_expr(e_div{},A,B);
+         }
+         case 3 : return make_expr(e_sub{},make_deriv(e->A),make_deriv(e->B));
+         case 4 : {
+                auto B0 = make_expr(e_log{},e->A,nullptr);
+                auto B1 = make_expr(e_mul{},make_deriv(e->B),B0);
+                auto B2 = make_expr(e_mul{},make_deriv(e->A),e->B);
+                auto B3 = make_expr(e_div{},B2,e->A);
+                auto B = make_expr(e_add{},B1,B3);
+
+                return make_expr(e_mul{},e,B);
+         }
+         case 5 : {
+            auto A0 = make_expr(e_pow{},e,make_constant(2));
+            auto A = make_expr(e_add{},make_constant(1),A0);
+            return make_expr(e_mul{},make_deriv(e->A),A);
+         }
+         case 6 : {
+            auto B0 = make_expr(e_sin{},e->A,nullptr);
+            auto B = make_expr(e_pow{},B0,make_constant(2));
+            auto A =  make_expr(e_mul{},make_constant(-1),make_deriv(e->A));
+
+            return make_expr(e_div{},A,B);        
+         }
+         case 7 : {
+            auto B = make_expr(e_cos{},e->A,nullptr);
+            return make_expr(e_mul{},make_deriv(e->A),B);
+         }
+         case 8 : {
+            auto B = make_expr(e_sin{},e->A,nullptr);
+            auto A = make_expr(e_mul{},make_constant(-1),make_deriv(e->A));
+            return make_expr(e_mul{},A,B);
+         }
+         case 9 : return make_expr(e_div{},make_deriv(e->A),e->A);
+         case 10 : return make_constant(0);
+         case 11 : return make_constant(1);  
+    }
+}
+
+using iter = std::string::const_iterator;
+
+struct parser{
+    iter it;
+    iter end;
+    
+    int get_token_pred(const expr_t& t){
+        static int is_power_tower = 0;
+        if(is_power_tower && t.index()==4) {
+            is_power_tower += 5;
+            return 25 +  is_power_tower;
+        }
+        else is_power_tower = 0;
+        switch(t.index()){
+            case 0 : return 1;
+            case 1 : return 10;
+            case 2 : return 15;
+            case 3 : return 1;
+            case 4 : {
+                is_power_tower = 5;
+                return 25;
+            }
+            default: return -1;
+        }
+    }
+
+    expr_t get_token(){
+        while(it != end && isspace(*it)) ++it;
+        
+        if(it == end) return variable{};
+        else if(*it == 'x') {
+            ++it;
+            return variable{};
+        }
+        else if(isdigit(*it)) {
+            const auto begin = it;
+            while(it != end && (isdigit(*it) || *it == '.')){
+                ++it;
+            }
+            return std::complex(stod(std::string(begin,it)));
+        }
+        switch(*it){
+            case '+' : {
+                ++it;
+                return e_add{};
+            }
+            case '-' : {
+                ++it;
+                return e_sub{};
+            }
+            case '*' : {
+                ++it;
+                return e_mul{};
+            }
+            case '/' : {
+                ++it;
+                return e_div{};
+            }
+            case '^' : {
+                ++it;
+                return e_pow{};
+            }
+            case 't' : {
+                it += 3;
+                return e_tan{};
+            }
+            case 's' : {
+                it += 3;
+                return e_sin{};
+            }
+            case 'l' : {
+                it += 3;
+                return e_log{};
+            }
+            case 'c' : {
+                it+=2;
+                expr_t tmp;
+                if(*it == 's') tmp = e_cos{};
+                else tmp = e_cot{};
+                ++it;
+                return tmp;
+            }
+            default:
+                return variable{};
+        }
+        
+    }
+    expr::ptr parse_expresion();
+    expr::ptr parse_primary();
+    expr::ptr parse_binop(int pred,expr::ptr A,expr_t&& token);
+    expr::ptr parse_parenthis();
+};
+
+expr::ptr parser::parse_expresion(){
+        if(auto A = parse_primary()){
+            return parse_binop(0,A,get_token());
+        }
+        else return nullptr; 
+
+}
+
+expr::ptr parser::parse_binop(int pred,expr::ptr A,expr_t&& token){
+    while (true) {
+        int token_pred = get_token_pred(token);
+        if (token_pred < pred) return A;
+
+        auto B = parse_primary();
+        if (!B) return nullptr;
+        
+        auto binop = token;
+
+        token = get_token();
+        int next_token_pred = get_token_pred(token);
+        if (token_pred < next_token_pred) {
+            B = parse_binop(token_pred + 1, std::move(B),std::move(token));
+            if (!B)return nullptr;
+         }
+
+        A = make_expr(std::move(binop), A, B);
+        if(it==end) return A;
+    }
+}
+
+
+expr::ptr parser::parse_parenthis(){
+    auto e = ++it;
+    int p = 1;
+    while(e != end && p > 0 ){
+        if(*e == '(') ++p;
+        else if(*e == ')') --p;
+        ++e;
+    }
+    parser tmp{it,e};
+    auto A = tmp.parse_expresion();
+    it = e;
+    return A;
+}
+
+expr::ptr parser::parse_primary(){
+    auto token = get_token();
+    switch(token.index()){
+        case 11 : {
+            if(*it == '(') return parse_parenthis();
+            //if(it == end) return nullptr;
+            else make_expr(std::move(token),nullptr,nullptr);
+        }
+        case 10 : return make_expr(std::move(token),nullptr,nullptr);
+        case 5 ... 9 : {
+            auto A = parse_parenthis();
+            return make_expr(std::move(token),A,nullptr);
+        }
+        default : return nullptr;
+    }
+
+}
+
+std::tuple<func_t, func_t, func_t> differentiate(const std::string& eq) {
+    parser p{eq.begin(),eq.end()};
+    auto f = p.parse_expresion();
+    auto f_d = make_deriv(f);
+    auto f_dd = make_deriv(f_d);
+    return {
+        [F = std::move(f)](value_t v) { return F->get_value(v); },
+        [F = std::move(f_d)](value_t v) { return F->get_value(v); },
+        [F = std::move(f_dd)](value_t v) { return F->get_value(v); }
+    };
+}
+
+        Best Practices0
+        Clever0
+    0
+    Fork
+    Compare with your solution
+    Link
+
+Bararide
+
+#include <functional>
+#include <complex>
+#include <tuple>
+#include <string>
+#include <type_traits>
+#include <memory>
+#include <stack>
+#include <vector>
+#include <map>
+#include <typeinfo>
+
+using value_t = std::complex<double>;
+using func_t = std::function<value_t(value_t)>;
+
+namespace AST {
+    class ASTNode {
+    public:
+        virtual ~ASTNode() = default;
+        virtual std::string toString() const = 0;
+        
+        virtual long double evaluate(const std::map<std::string, long double>& variables) const = 0;
+        virtual value_t evaluateComplex(const std::map<std::string, value_t>& variables) const = 0;
+
+        virtual std::shared_ptr<ASTNode> derivative(const std::string& var) const = 0;
+        virtual std::shared_ptr<ASTNode> clone() const = 0;
+    };
+
+    class NumberNode : public ASTNode {
+        long double value;
+    public:
+        NumberNode(long double val) : value(val) {}
+        std::string toString() const override {
+            return std::to_string(value);
+        }
+        long double evaluate(const std::map<std::string, long double>& variables) const override {
+            return value;
+        }
+        value_t evaluateComplex(const std::map<std::string, value_t>& variables) const override {
+            return value_t(value, 0.L);
+        }
+
+        std::shared_ptr<ASTNode> derivative(const std::string& var) const override {
+            return std::make_shared<NumberNode>(0.L);
+        }
+
+        std::shared_ptr<ASTNode> clone() const override {
+            return std::make_shared<NumberNode>(value);
+        }
+    };
+
+    class VariableNode : public ASTNode {
+        std::string name;
+    public:
+        VariableNode(const std::string& n) : name(n) {}
+        std::string toString() const override {
+            return name;
+        }
+
+        long double evaluate(const std::map<std::string, long double>& variables) const override {
+            auto it = variables.find(name);
+            if (it == variables.end()) {
+                throw std::runtime_error("Undefined variable: " + name);
+            }
+            return it->second;
+        }
+
+        value_t evaluateComplex(const std::map<std::string, value_t>& variables) const override {
+            auto it = variables.find(name);
+            if (it == variables.end()) {
+                throw std::runtime_error("Undefined variable: " + name);
+            }
+            return it->second;
+        }
+
+        std::shared_ptr<ASTNode> derivative(const std::string& var) const override {
+            if (name == var) {
+                return std::make_shared<NumberNode>(1.L);
+            } else {
+                return std::make_shared<NumberNode>(0.L);
+            }
+        }
+
+        std::shared_ptr<ASTNode> clone() const override {
+            return std::make_shared<VariableNode>(name);
+        }
+    };
+
+    class OpNode : public ASTNode {
+        std::string op;
+        std::shared_ptr<ASTNode> operand1;
+        std::shared_ptr<ASTNode> operand2;
+
+    public:
+        OpNode(const std::string& o, std::shared_ptr<ASTNode> node1)
+            : op(o), operand1(std::move(node1)), operand2(nullptr) {}
+
+        OpNode(const std::string& o, std::shared_ptr<ASTNode> node1, std::shared_ptr<ASTNode> node2)
+            : op(o), operand1(std::move(node1)), operand2(std::move(node2)) {}
+
+        std::string toString() const override {
+            if (operand2) {
+                return "(" + operand1->toString() + " " + op + " " + operand2->toString() + ")";
+            } else {
+                return op + "(" + operand1->toString() + ")";
+            }
+        }
+
+        long double evaluate(const std::map<std::string, long double>& variables) const override {
+            long double val1 = operand1->evaluate(variables);
+            if (operand2) {
+                long double val2 = operand2->evaluate(variables);
+                if (op == "+") return val1 + val2;
+                if (op == "-") return val1 - val2;
+                if (op == "*") return val1 * val2;
+                if (op == "/") return val1 / val2;
+                if (op == "^") return std::pow(val1, val2);
+                throw std::runtime_error("Unknown binary operator: " + op);
+            } else {
+                if (op == "sin")  return std::sin(val1);
+                if (op == "cos")  return std::cos(val1);
+                if (op == "tan")  return std::tan(val1);
+                if (op == "sqrt") return std::sqrt(val1);
+                if (op == "log")  return std::log(val1);
+                if (op == "cot")  return 1.0L / std::tan(val1);
+                if (op == "ln")   return std::log1pl(val1);
+                throw std::runtime_error("Unknown unary operator: " + op);
+            }
+        }
+
+        value_t evaluateComplex(const std::map<std::string, value_t>& variables) const override {
+            value_t val1 = operand1->evaluateComplex(variables);
+            if (operand2) {
+                value_t val2 = operand2->evaluateComplex(variables);
+                if (op == "+") return val1 + val2;
+                if (op == "-") return val1 - val2;
+                if (op == "*") return val1 * val2;
+                if (op == "/") return val1 / val2;
+                if (op == "^") return std::pow(val1, val2);
+                throw std::runtime_error("Unknown binary operator: " + op);
+            } else {
+                if (op == "sin")  return std::sin(val1);
+                if (op == "cos")  return std::cos(val1);
+                if (op == "tan")  return std::tan(val1);
+                if (op == "sqrt") return std::sqrt(val1);
+                if (op == "log")  return std::log(val1);
+                if (op == "cot")  return 1.0 / std::tan(val1);
+                throw std::runtime_error("Unknown unary operator: " + op);
+            }
+        }
+
+        std::shared_ptr<ASTNode> clone() const override {
+            if (operand2) {
+                return std::make_shared<OpNode>(op, operand1->clone(), operand2->clone());
+            }
+            else {
+                return std::make_shared<OpNode>(op, operand1->clone());
+            }
+        }
+
+        std::shared_ptr<ASTNode> derivative(const std::string& var) const override {
+            if (operand2) {
+                // Для бинарных операций
+                if (op == "+") {
+                    return std::make_shared<OpNode>("+", operand1->derivative(var), operand2->derivative(var));
+                }
+                else if (op == "-") {
+                    return std::make_shared<OpNode>("-", operand1->derivative(var), operand2->derivative(var));
+                }
+                else if (op == "*") {
+                    return std::make_shared<OpNode>("+",
+                        std::make_shared<OpNode>("*", operand1->clone(), operand2->derivative(var)),
+                        std::make_shared<OpNode>("*", operand1->derivative(var), operand2->clone())
+                    );
+                }
+                else if (op == "/") {
+                    return std::make_shared<OpNode>("/",
+                        std::make_shared<OpNode>("-", 
+                            std::make_shared<OpNode>("*", operand2->clone(), operand1->derivative(var)),
+                            std::make_shared<OpNode>("*", operand1->clone(), operand2->derivative(var))),
+                        std::make_shared<OpNode>("^", operand2->clone(), std::make_shared<NumberNode>(2))
+                    );
+                }
+                else if (op == "^") {
+                    // d/dx(u^v) = u^v * (v * du/dx / u + ln(u) * dv/dx)
+                    return std::make_shared<OpNode>("*",
+                        std::make_shared<OpNode>("^", operand1->clone(), operand2->clone()),
+                        std::make_shared<OpNode>("+",
+                            std::make_shared<OpNode>("*",
+                                std::make_shared<OpNode>("/",
+                                    std::make_shared<OpNode>("*", operand2->clone(), operand1->derivative(var)),
+                                    operand1->clone()
+                                ),
+                                std::make_shared<NumberNode>(1.0)
+                            ),
+                            std::make_shared<OpNode>("*",
+                                std::make_shared<OpNode>("log", operand1->clone()),
+                                operand2->derivative(var)
+                            )
+                        )
+                    );
+                }
+            }
+            else {
+                if (op == "sin") {
+                    return std::make_shared<OpNode>("*", std::make_shared<OpNode>("cos", operand1->clone()), operand1->derivative(var));
+                }
+                else if (op == "cos") {
+                    return std::make_shared<OpNode>("*", std::make_shared<OpNode>("*",
+                        std::make_shared<NumberNode>(-1),
+                        std::make_shared<OpNode>("sin", operand1->clone())),
+                        operand1->derivative(var));
+                }
+                else if (op == "sqrt") {
+                    return std::make_shared<OpNode>("*",
+                        std::make_shared<OpNode>("/", std::make_shared<NumberNode>(1),
+                        std::make_shared<OpNode>("*", std::make_shared<NumberNode>(2),
+                        std::make_shared<OpNode>("sqrt", operand1->clone()))),
+                        operand1->derivative(var));
+                }
+                else if (op == "tan") {
+                    // d/dx(tan(u)) = (1 / cos^2(u)) * du/dx
+                    return std::make_shared<OpNode>("*",
+                        std::make_shared<OpNode>("/",
+                            std::make_shared<NumberNode>(1),
+                            std::make_shared<OpNode>("^",
+                                std::make_shared<OpNode>("cos", operand1->clone()),
+                                std::make_shared<NumberNode>(2))),
+                        operand1->derivative(var)); 
+                }
+                else if (op == "cot") {
+                    // d/dx(cot(u)) = -(1 / sin^2(u)) * du/dx
+                    return std::make_shared<OpNode>("*",
+                        std::make_shared<OpNode>("*",
+                            std::make_shared<NumberNode>(-1),
+                            std::make_shared<OpNode>("/",
+                                std::make_shared<NumberNode>(1),
+                                std::make_shared<OpNode>("^",
+                                    std::make_shared<OpNode>("sin", operand1->clone()),
+                                    std::make_shared<NumberNode>(2)))),
+                        operand1->derivative(var)); 
+                }
+                else if (op == "log") {
+                    // d/dx(log(u)) = (1/u) * du/dx
+                    return std::make_shared<OpNode>("*",
+                        std::make_shared<OpNode>("/",
+                            std::make_shared<NumberNode>(1),
+                            operand1->clone()), // u
+                        operand1->derivative(var)); // du/dx
+                }
+            }
+
+            throw std::runtime_error("Unknown operator for derivation: " + op);
+        }
+    };
+
+    class ExpressionParser {
+    private:
+        std::vector<std::string> expr;
+        std::string digit = "";
+
+        std::map<std::string, void (*)(std::vector<std::string>&, std::string&)> commands = {
+            {"sin", [](std::vector<std::string>& polish, std::string& command) {
+                polish.push_back(std::move(command));
+            }},
+            {"cos", [](std::vector<std::string>& polish, std::string& command) {
+                polish.push_back(std::move(command));
+            }},
+            {"tan", [](std::vector<std::string>& polish, std::string& command) {
+                polish.push_back(std::move(command));
+            }},
+            {"cot", [](std::vector<std::string>& polish, std::string& command) {
+                polish.push_back(std::move(command));
+            }},
+            {"sqrt", [](std::vector<std::string>& polish, std::string& command) {
+                polish.push_back(std::move(command));
+            }},
+            {"log", [](std::vector<std::string>& polish, std::string& command) {
+                polish.push_back(std::move(command));
+            }}
+        };
+
+    public:
+        ExpressionParser() {}
+
+        std::shared_ptr<ASTNode> buildAST() {
+            std::vector<std::shared_ptr<ASTNode>> stack;
+            std::string invalidToken;
+
+            for (auto v : expr) {
+                invalidToken += v;
+                invalidToken += " ";
+            }
+
+            for (const auto& token : expr) {
+                try {
+                    if (token == "+" || token == "-" || token == "*" || token == "/" || token == "^") {
+                        if (stack.size() < 2) {
+                            throw std::runtime_error("Invalid expression: " + token);
+                        }
+                        auto right = std::move(stack.back());
+                        stack.pop_back();
+                        auto left = std::move(stack.back());
+                        stack.pop_back();
+                        stack.push_back(std::make_shared<OpNode>(token, std::move(left), std::move(right)));
+                    } 
+                    else if (token == "sin" || token == "cos" || token == "tan" || token == "cot" || token == "sqrt" || token == "log") {
+                        if (stack.empty()) {
+                            throw std::runtime_error("Invalid expression: " + token);
+                        }
+                        auto operand = std::move(stack.back());
+                        stack.pop_back();
+                        stack.push_back(std::make_shared<OpNode>(token, std::move(operand)));
+                    } 
+                    else {
+                        try {
+                            long double value = std::stod(token);
+                            stack.push_back(std::make_shared<NumberNode>(value));
+                        } 
+                        catch (const std::invalid_argument&) {
+                            stack.push_back(std::make_shared<VariableNode>(token));
+                        }
+                    }
+                } 
+                catch (const std::runtime_error& e) {
+                    std::cout << invalidToken << std::endl;
+                    throw;
+                }
+            }
+
+            if (stack.size() != 1) {
+                throw std::runtime_error("Invalid expression: " + invalidToken);
+            }
+
+            return std::move(stack.back());
+        }
+
+        long double evaluateExpression(const std::shared_ptr<ASTNode>& ast, const std::map<std::string, long double>& variables) {
+            return ast->evaluate(variables);
+        }
+
+        value_t evaluateComplexExpression(const std::shared_ptr<ASTNode>& ast, const std::map<std::string, value_t>& variables) {
+            return ast->evaluateComplex(variables);
+        }
+
+        std::shared_ptr<ASTNode> computeDerivative(const std::shared_ptr<ASTNode>& ast, const std::string& var) {
+            return ast->derivative(var);
+        }
+
+        void to_polish_notation(const std::string& expression) {
+            std::map<char, std::pair<int, bool>> precedence {
+                {'+', {1, false}}, {'-', {1, false}},
+                {'*', {2, false}}, {'/', {2, false}},
+                {'^', {4, true}}
+            };
+            std::stack<std::string> oper_stack;
+            std::string token = "";
+
+            auto push_token = [&]() {
+                if (!token.empty()) {
+                    expr.push_back(token);
+                    token = "";
+                }
+            };
+
+            for (size_t i = 0; i < expression.size(); ++i) {
+                char c = expression[i];
+
+                if (std::isdigit(c) || c == '.' || (c == '-' && (i == 0 || expression[i-1] == '('))) {
+                    token += c;
+                    if (i + 1 < expression.size()) {
+                        char next = expression[i + 1];
+                        if (!std::isdigit(next) && next != '.' && !(c == '-' && std::isdigit(next))) {
+                            push_token();
+                        }
+                    } else {
+                        push_token();
+                    }
+                }
+                else if (std::isalpha(c)) {
+                    token += c;
+                    if (i + 1 == expression.size() || !std::isalpha(expression[i + 1])) {
+                        if (commands.find(token) != commands.end()) {
+                            oper_stack.push(token);
+                        } else {
+                            expr.push_back(token);
+                        }
+                        token = "";
+                    }
+                }
+                else if (c == '(') {
+                    oper_stack.push(std::string(1, c));
+                }
+                else if (c == ')') {
+                    push_token();
+                    while (!oper_stack.empty() && oper_stack.top() != "(") {
+                        expr.push_back(oper_stack.top());
+                        oper_stack.pop();
+                    }
+                    if (!oper_stack.empty() && oper_stack.top() == "(") {
+                        oper_stack.pop();
+                    }
+                    if (!oper_stack.empty() && commands.find(oper_stack.top()) != commands.end()) {
+                        expr.push_back(oper_stack.top());
+                        oper_stack.pop();
+                    }
+                }
+                else if (precedence.find(c) != precedence.end()) {
+                    push_token();
+                    while (!oper_stack.empty() && oper_stack.top().size() == 1 && 
+                            (precedence[oper_stack.top()[0]].first > precedence[c].first ||
+                            (precedence[oper_stack.top()[0]].first == precedence[c].first && 
+                            !precedence[c].second))) {
+                        expr.push_back(oper_stack.top());
+                        oper_stack.pop();
+                    }
+                    oper_stack.push(std::string(1, c));
+                }
+            }
+
+            push_token();
+
+            while (!oper_stack.empty()) {
+                expr.push_back(oper_stack.top());
+                oper_stack.pop();
+            }
+        }
+    };
+}
+
+std::tuple<func_t, func_t, func_t> differentiate(const std::string& eq) {
+    using namespace AST;
+
+    auto ex = std::make_shared<ExpressionParser>();
+
+    ex->to_polish_notation(eq);
+    auto ast = ex->buildAST();
+
+    auto derivative = ex->computeDerivative(ast, "x");
+    auto derivative_2 = ex->computeDerivative(derivative, "x");
+
+    return {
+        [ex, ast = std::move(ast)](value_t x) {
+            std::map<std::string, value_t> variables{{"x", x}};
+            return ex->evaluateComplexExpression(ast, variables);
+        },
+        [ex, derivative = std::move(derivative)](value_t x) {
+            std::map<std::string, value_t> variables{{"x", x}};
+            return ex->evaluateComplexExpression(derivative, variables);
+        },
+        [ex, derivative_2 = std::move(derivative_2)](value_t x) {
+            std::map<std::string, value_t> variables{{"x", x}};
+            return ex->evaluateComplexExpression(derivative_2, variables);
+        }
+    };
+}
+
+        Best Practices0
+        Clever0
+    0
+    Fork
+    Compare with your solution
+    Link
+
+lachesism
+
+#include <cmath>
+#include <complex>
+#include <functional>
+#include <memory>
+#include <regex>
+#include <string>
+#include <unordered_map>
+#include <variant>
+
+#define TOKENIZER R"((\d+(?:\.\d+)?)|(x)|)" \
+                  R"(([+-])|([*/])|(\^)|)" \
+                  R"((sin|cos|tan|cot|log)|(\()|(\)))"
+
+using std::pow, std::exp, std::sin, std::cos, std::tan, std::log;
+
+template <class T>
+class Trionion {
+    public:
+        T a, b, c;
+        Trionion(const T &a, const T &b = T(0), const T &c = T(0)): a(a), b(b), c(c) {}
+        Trionion operator+(const Trionion &other) const { return Trionion<T>(a + other.a, b + other.b, c + other.c); }
+        Trionion operator-(const Trionion &other) const { return Trionion<T>(a - other.a, b - other.b, c - other.c); }
+        Trionion operator*(const Trionion &other) const {
+            return Trionion<T>(
+                a * other.a,
+                a * other.b + b * other.a,
+                a * other.c + b * other.b + c * other.a
+            );
+        }
+        Trionion operator/(const T &t) const { return Trionion<T>(a / t, b / t, c / t); }
+        Trionion operator/(const Trionion &other) const {
+            const T &tmp = other.a * other.a * other.a;
+            return (*this) * other.conj() / tmp;
+        }
+        Trionion conj() const { return Trionion<T>(a * a, -a * b, b * b - a * c); }
+};
+
+template <class T>
+inline Trionion<T> pow(const Trionion<T> &x, const Trionion<T> &y)
+{
+    return exp(log(x) * y);
+}
+
+template <class T>
+inline Trionion<T> exp(const Trionion<T> &x)
+{
+    const T &tmp = exp(x.a);
+    return Trionion<T>(tmp, tmp * x.b, tmp * (x.c + x.b * x.b / T(2)));
+}
+
+template <class T>
+inline Trionion<T> sin(const Trionion<T> &x)
+{
+    const T &sin_a = sin(x.a), &cos_a = cos(x.a);
+    return Trionion<T>(sin_a, cos_a * x.b, cos_a * x.c - sin_a * x.b * x.b / T(2));
+}
+
+template <class T>
+inline Trionion<T> cos(const Trionion<T> &x)
+{
+    const T &sin_a = sin(x.a), &cos_a = cos(x.a);
+    return Trionion<T>(cos_a, -sin_a * x.b, -sin_a * x.c - cos_a * x.b * x.b / T(2));
+}
+
+template <class T>
+inline Trionion<T> tan(const Trionion<T> &x)
+{
+    const T &tan_a = tan(x.a), &sec_a = T(1) / cos(x.a), &sec_a2 = sec_a * sec_a;
+    return Trionion<T>(tan_a, sec_a2 * x.b, sec_a2 * (x.c + tan_a * x.b * x.b));
+}
+
+template <class T>
+inline T cot(const T &x)
+{
+    return T(1) / tan(x);
+}
+
+template <class T>
+inline Trionion<T> cot(const Trionion<T> &x)
+{
+    const T &cot_a = cot(x.a), &csc_a = T(1) / sin(x.a), &csc_a2 = csc_a * csc_a;
+    return Trionion<T>(cot_a, -csc_a2 * x.b, csc_a2 * (cot_a * x.b * x.b - x.c));
+}
+
+template <class T>
+inline Trionion<T> log(const Trionion<T> &x)
+{
+    const T &tmp = x.b / x.a;
+    return Trionion<T>(log(x.a), tmp, x.c / x.a - tmp * tmp / T(2));
+}
+
+
+enum ExprNodeType { NUM, VAR, OP, FN };
+enum OpType { ADD, SUB, MUL, DIV, POW };
+enum FnType { SIN, COS, TAN, COT, LOG };
+
+class NumNode;
+class OpNode;
+class FnNode;
+class ExprNode {
+    public:
+        ExprNodeType type;
+        std::variant<
+            std::unique_ptr<NumNode>,
+            std::unique_ptr<OpNode>,
+            std::unique_ptr<FnNode>
+        > node;
+        ExprNode(): type(VAR) {}
+        ExprNode(std::unique_ptr<NumNode> num_node): type(NUM), node(std::move(num_node)) {}
+        ExprNode(std::unique_ptr<OpNode> op_node): type(OP), node(std::move(op_node)) {}
+        ExprNode(std::unique_ptr<FnNode> fn_node): type(FN), node(std::move(fn_node)) {}
+        template <class T>
+        T evaluate(const T &) const;
+};
+
+class NumNode {
+    public:
+        double num;
+        NumNode(double num): num(num) {}
+        template <class T>
+        T evaluate() const { return T(num); }
+};
+
+class OpNode {
+    public:
+        OpType type;
+        std::unique_ptr<ExprNode> lhs;
+        std::unique_ptr<ExprNode> rhs;
+        OpNode(const std::string &op): type(map.find(op) -> second) {}
+        template <class T>
+        T evaluate(const T &) const;
+    private:
+        static inline const std::unordered_map<std::string, OpType> map = {
+            {"+", ADD},
+            {"-", SUB},
+            {"*", MUL},
+            {"/", DIV},
+            {"^", POW},
+        };
+};
+
+class FnNode {
+    public:
+        FnType type;
+        std::unique_ptr<ExprNode> body;
+        FnNode(const std::string &fn): type(map.find(fn) -> second) {}
+        template <class T>
+        T evaluate(const T &) const;
+    private:
+        static inline const std::unordered_map<std::string, FnType> map = {
+            {"sin", SIN},
+            {"cos", COS},
+            {"tan", TAN},
+            {"cot", COT},
+            {"log", LOG},
+        };
+};
+
+template <class T>
+T ExprNode::evaluate(const T& t) const
+{
+    switch (type) {
+        case NUM:
+            return std::get<std::unique_ptr<NumNode>>(node) -> evaluate<T>();
+        case VAR:
+            return t;
+        case OP:
+            return std::get<std::unique_ptr<OpNode>>(node) -> evaluate(t);
+        case FN:
+            return std::get<std::unique_ptr<FnNode>>(node) -> evaluate(t);
+    }
+}
+
+template <class T>
+T OpNode::evaluate(const T& t) const
+{
+    const T &x = lhs -> evaluate(t), &y = rhs -> evaluate(t);
+    switch (type) {
+        case ADD:
+            return x + y;
+        case SUB:
+            return x - y;
+        case MUL:
+            return x * y;
+        case DIV:
+            return x / y;
+        case POW:
+            return pow(x, y);
+    }
+}
+
+template <class T>
+T FnNode::evaluate(const T& t) const
+{
+    const T &x = body -> evaluate(t);
+    switch (type) {
+        case SIN:
+            return sin(x);
+        case COS:
+            return cos(x);
+        case TAN:
+            return tan(x);
+        case COT:
+            return cot(x);
+        case LOG:
+            return log(x);
+    }
+}
+
+
+enum TokenType { C = 1, V, AS, MD, P, F, LP, RP };
+class Token {
+    public:
+        TokenType type;
+        std::string value;
+        Token(TokenType type, const std::string &value): type(type), value(value) {}
+        static std::vector<Token> tokenize(const std::string &);
+    private:
+        static inline const TokenType types[] = { C, V, AS, MD, P, F, LP, RP };
+        static inline const std::regex tokenizer = std::regex(TOKENIZER);
+};
+
+std::vector<Token> Token::tokenize(const std::string &str)
+{
+    if (std::regex_search(std::regex_replace(str, tokenizer, " "), std::regex("\\S+"))) throw "Invalid Token";
+    std::vector<Token> res;
+    for (std::sregex_iterator it(str.begin(), str.end(), tokenizer), end; it != end; ++it) {
+        for (const auto tp : types) {
+            if ((*it)[tp].matched) {
+                res.emplace_back(tp, (*it)[tp].str());
+                break;
+            }
+        }
+    }
+    return res;
+}
+
+
+class ExprParser {
+    public:
+        std::unique_ptr<ExprNode> parse(const std::string &);
+    private:
+        std::vector<Token> tokens;
+        std::size_t index;
+        bool peek(TokenType type) { return index < tokens.size() && tokens[index].type == type; }
+        const Token &eat();
+        const Token &eat(TokenType);
+        std::unique_ptr<ExprNode> parse_expr();
+        std::unique_ptr<ExprNode> parse_term();
+        std::unique_ptr<ExprNode> parse_factor();
+        std::unique_ptr<ExprNode> parse_atom();
+};
+
+std::unique_ptr<ExprNode> ExprParser::parse(const std::string &str)
+{
+    tokens = Token::tokenize(str);
+    index = 0;
+    std::unique_ptr<ExprNode> res = parse_expr();
+    if (index != tokens.size()) throw "Expected EOF";
+    return res;
+}
+
+const Token &ExprParser::eat()
+{
+    if (index == tokens.size()) throw "Unexpected EOF";
+    return tokens[index++];
+}
+
+const Token &ExprParser::eat(TokenType type)
+{
+    const Token &res = eat();
+    if (res.type != type) throw "Incorrect Token";
+    return res;
+}
+
+std::unique_ptr<ExprNode> ExprParser::parse_expr()
+{
+    std::unique_ptr<ExprNode> res = parse_term();
+    while (peek(AS)) {
+        std::unique_ptr<OpNode> op_node(new OpNode(eat().value));
+        op_node -> lhs = std::move(res);
+        op_node -> rhs = parse_term();
+        res = std::unique_ptr<ExprNode>(new ExprNode(std::move(op_node)));
+    }
+    return res;
+}
+
+std::unique_ptr<ExprNode> ExprParser::parse_term()
+{
+    std::unique_ptr<ExprNode> res = parse_factor();
+    while (peek(MD)) {
+        std::unique_ptr<OpNode> op_node(new OpNode(eat().value));
+        op_node -> lhs = std::move(res);
+        op_node -> rhs = parse_factor();
+        res = std::unique_ptr<ExprNode>(new ExprNode(std::move(op_node)));
+    }
+    return res;
+}
+
+std::unique_ptr<ExprNode> ExprParser::parse_factor()
+{
+    std::unique_ptr<ExprNode> res = parse_atom(), *last = &res, *tmp;
+    while (peek(P)) {
+        std::unique_ptr<OpNode> op_node(new OpNode(eat().value));
+        op_node -> lhs = std::move(*last);
+        op_node -> rhs = parse_atom();
+        tmp = &op_node -> rhs;
+        *last = std::unique_ptr<ExprNode>(new ExprNode(std::move(op_node)));
+        last = tmp;
+    }
+    return res;
+}
+
+std::unique_ptr<ExprNode> ExprParser::parse_atom()
+{
+    const Token &token = eat();
+    std::unique_ptr<ExprNode> res, *ptr = &res;
+    switch (token.type) {
+        case C:
+            return std::unique_ptr<ExprNode>(new ExprNode(std::unique_ptr<NumNode>(new NumNode(std::stod(token.value)))));
+        case V:
+            return std::unique_ptr<ExprNode>(new ExprNode());
+        case F:
+            res = std::unique_ptr<ExprNode>(new ExprNode(std::unique_ptr<FnNode>(new FnNode(token.value))));
+            ptr = &std::get<std::unique_ptr<FnNode>>(res -> node) -> body;
+            eat(LP);
+        case LP:
+            *ptr = parse_expr();
+            eat(RP);
+            return res;
+        default:
+            throw "Incorrect Token";
+    }
+}
+
+
+template <class T>
+using func_t = std::function<T(T)>;
+
+template <class T>
+std::tuple<func_t<T>, func_t<T>, func_t<T>> differentiate(const std::string &str)
+{
+    std::shared_ptr<ExprNode> root = std::shared_ptr(ExprParser().parse(str));
+    return {
+        [root](T t)
+        { return root -> evaluate(t); },
+        [root](T t)
+        { return root -> evaluate(Trionion<T>(t, T(1), T(0))).b; },
+        [root](T t)
+        { return root -> evaluate(Trionion<T>(t, T(1), T(0))).c * T(2); },
+    };
+}
+
+using value_t = std::complex<double>;
+
+std::tuple<func_t<value_t>, func_t<value_t>, func_t<value_t>> differentiate(const std::string &eq)
+{
+    return differentiate<value_t>(eq);
+}
