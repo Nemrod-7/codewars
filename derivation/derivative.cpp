@@ -425,9 +425,11 @@ int main () {
     string pass0 = "95.6^9.4/x^98.4/x^x-27.5^x*x/x-2.8/0.7^32.2";
 
     pass0 = "2.8/0.7^32.2";
-    pass0 = "3.14 * (1 + 5 * x) / log(x)";
+    pass0 = "(91.2^21/x^87.1)^x";
 
     string pass1 = derivate(pass0);
+    string pass2 = derivate(pass1);
+
     cout << " => " << pass1 << "\n";
     //cout << " = " << evaluate(pass1, x) << "\n\n"; 
 
@@ -438,7 +440,6 @@ Expected: equal to (4397.53,-9026.63) (+/- (2,4))
 Actual: (-nan,-nan)
 
 
-string pass2 = derivate(pass1);
 cout << " => " << pass2 << "\n";
 cout << " = " << evaluate(pass2, x) << "\n\n"; 
 

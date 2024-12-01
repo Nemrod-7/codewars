@@ -32,7 +32,7 @@ bool operator == (const vector<Token> &a, const vector<Token> &b) {
     return true;
 }
 
-string showarm (const vector<Token> &x) {
+string showvect (const vector<Token> &x) {
     stringstream os;
     os << "[";
     for (auto &tok : x) {
@@ -155,15 +155,6 @@ vector<Token> calc (const vector<Token> &a, const string &op, const vector<Token
 
     return arm;
 }
-vector<Token> join (const vector<Token> &a, const vector<Token> &b) {
-    vector<Token> arm = a;
-
-    for (auto &tok : b) arm.push_back(tok);
-
-    return arm;
-
-
-}
 vector<Token> mkfunc (string fn, vector<Token> x) {
 
     vector<Token> arm = {Token(fn), Token("(")};
@@ -185,8 +176,8 @@ vector<Token> add (const vector<Token> &a, const vector<Token> &b) {
 }
 vector<Token> sub (const vector<Token> &a, const vector<Token> &b) {
 
+    if (a == b) return zero;
     if (isnum(a) && isnum(b)) return { Token(a[0].num - b[0].num) };
-
 
     return calc(a,"-",b);
 }
@@ -201,8 +192,8 @@ vector<Token> mul (const vector<Token> &a, const vector<Token> &b) {
 }
 vector<Token> div (const vector<Token> &a, const vector<Token> &b) {
 
-    if (isnum(a) && isnum(b)) return { Token(a[0].num * b[0].num) };
-
+    if (a == b) return one;
+    if (isnum(a) && isnum(b)) return { Token(a[0].num / b[0].num) };
 
     return calc(a,"/",b);
 }
@@ -229,7 +220,7 @@ pair<vector<Token>,vector<Token>> diff (vector<pair<vector<Token>,vector<Token>>
     } else if (op == "*") {
         res = {mul(f1, f2), add(mul(f1,d2), mul(d1,f2))} ;
     } else if (op == "/") {
-        vector<Token> num =  sub(mul(d1,f2),mul(f1,d2)) ;
+        vector<Token> num =  sub(mul(d1,f2),mul(f1,d2));
         vector<Token> den =  exp(f2, two);
 
         res = {div(f1,f2), div(num,den)} ;
@@ -243,9 +234,9 @@ pair<vector<Token>,vector<Token>> diff (vector<pair<vector<Token>,vector<Token>>
     }
 
     //        cout << op << '\n';
-    //        cout << "f1: " << showarm(f1) << " d1 : " << showarm(d1) << '\n';
-    //        cout << "f2: " << showarm(f2) << " d2 : " << showarm(d2) << '\n';
-    //        cout << " = " << showarm( mul(f1, f2));
+    //        cout << "f1: " << showvect(f1) << " d1 : " << showvect(d1) << '\n';
+    //        cout << "f2: " << showvect(f2) << " d2 : " << showvect(d2) << '\n';
+    //        cout << " = " << showvect( mul(f1, f2));
     //        cout << "\n";
 
     return res;
@@ -256,7 +247,7 @@ vector<Token> derivate (vector<Token> code) {
     vector<string> oper;
     vector<pair<vector<Token>,vector<Token>>> vars;
 
-    //showarm(code);
+    //showvect(code);
     //cout << "\n";
 
     while (it < end) {
@@ -330,7 +321,6 @@ complex<double> evaluate (vector<Token> expr, const complex<double> &val) {
             while (precedence(oper, cell.sym)) {
                 complex<double> b = getstack(vars), a = getstack(vars);
                 string op = getstack(oper);
-
                 //cout << "[" << a << "]" << op << "[" << b << "]" ;
                 switch (op[0]) {
                     case '+' : vars.push_back(a + b); break;
@@ -376,8 +366,8 @@ complex<double> evaluate (vector<Token> expr, const complex<double> &val) {
             case '^' : vars.push_back(a ^ b); break;
             default  : break;
         }
-        // cout << "[" << a << "]" << op << "[" << b << "]" ;
-        // cout << " => " << vars.back() << "\n";
+        cout << "[" << a << "]" << op << "[" << b << "]" ;
+        cout << " => " << vars.back() << "\n";
     }
 
     return getstack(vars);
@@ -409,25 +399,32 @@ int main () {
     // cout << -dx * pow(csc(x), 2) << "\n";
     // cout << fixed << setprecision(15) << pow(pow(0.7, 32.2), 2);
 
-    complex<double> x = {0,1};
-    string expression = "3.14 * (1 + 5 * x) / log(x)";
+    complex<double> x = {-8.15,5.1};
+    string expression = "x*41.6+63.1^61/x^70.9/65.7";
 
     //expression = "x ^ 3";
     auto pass0 = tokenize(expression);
     auto pass1 = derivate(pass0);
-    //auto pass2 = derivate(pass1); // 0.12722 0.402059
+    auto pass2 = derivate(pass1); 
+    
+//    cout << showvect(pass2);
 
-    //cout << showarm(pass1);
-
-    //cout << " = " << evaluate(pass2, x) << "\n\n"; 
+    cout << " = " << evaluate(pass2, x) << "\n\n"; 
     //
 
     /*
+       tests();
     */
 
-
-    tests();
-    //showarm(pass1);
-
     cout << "\nexit\n";
+}
+///////////////////////////////////////////////////////////////////////////////////
+vector<Token> join (const vector<Token> &a, const vector<Token> &b) {
+    vector<Token> arm = a;
+
+    for (auto &tok : b) arm.push_back(tok);
+
+    return arm;
+
+
 }
