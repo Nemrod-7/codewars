@@ -27,17 +27,17 @@
 
 using namespace std;
 using value_t = std::complex<double>;
-using func_t = std::function<value_t(value_t)>; 
+using func_t = std::function<value_t(value_t)>;
 
 const std::regex trigon ("^sin|cos|tan|cot|log$");
 const std::regex operat ("^[-+*/^]$");
-const std::regex number ("^-?\\d+(.\\d+)?|\\(-?\\d+(.\\d+)?,-?\\d+(.\\d+)?\\)$");
+const std::regex number ("^-?\\d+(\\.\\d+)?$|^\\(-?\\d+(\\.\\d+)?,-?\\d+(\\.\\d+)?\\)$");
 
 /////////////////////////////////////////////////////////////////////////////////////////
 string showvect (const std::vector<std::string> &vs) {
     string os;
     for (size_t i = 0; i < vs.size(); i++) {
-        os += "[" + vs[i] + "]";
+      os += "[" + vs[i] + "]";
     }
 
     return os;
@@ -54,24 +54,100 @@ complex<double> operator ^ (const complex<double> &a, const complex<double> &b) 
     return pow(a,b);
 }
 
+/*
+bool is_term (const string &src) { 
+    return src == "+" || src == "-"; 
+}
+bool is_fact (const string &src) { 
+    return src == "*" || src == "/"; 
+}
+bool is_func (const string &input) {
+    return input == "sin" || input == "cos" || input == "tan" || input == "log" || input == "cot";
+}
+bool is_number (const string &input) {
+
+    if (input.size() == 0) return false;
+
+    for (size_t i = 0; i < input.size(); i++) {
+        if (input[i] == '-' && isdigit(input[i+1])) continue;
+        if (input[i] != '.' && input[i] != ',' && !isdigit(input[i])) {
+            return false;
+        }
+    }
+
+    return true;
+}
+bool is_operator (const string &input) {
+    return is_fact(input) || is_term(input) || input == "^";
+}
+
+vector<string> tokenize1 (const string &input) {
+
+    vector<string> code;
+    size_t i = 0;
+
+    while (i < input.size()) {
+
+        if (isdigit(input[i])) {
+            string buffer;
+
+            while (isdigit(input[i]) || input[i] == '.') buffer += input[i++];
+            code.push_back(buffer);
+        } else if (isspace(input[i])) {
+            while (isspace(input[i])) i++;
+        } else if (input[i] == '+') {
+            code.push_back(string(1,input[i++]));
+        } else if (input[i] == '*' || input[i] == '/') {
+            code.push_back(string(1,input[i++]));
+        } else if (input[i] == '^') {
+            code.push_back(string(1,input[i++]));
+        } else if (isalpha(input[i])) {
+            string buffer;
+
+            while (isalpha(input[i])) buffer += input[i++];
+            code.push_back(buffer);
+        } else if (input[i] == '-') {
+            if (code.size() == 0 || is_operator(code.back())) {
+                string buffer = "-";
+                i++;
+
+                while (isdigit(input[i]) || input[i] == '.') buffer += input[i++];
+                code.push_back(buffer);
+            } else {
+                code.push_back(string(1,input[i++]));
+            }
+        } else {
+            code.push_back(string(1,input[i++]));
+        }
+    }
+
+    return code;
+}
+*/
 vector<string> tokenize (const string &input) {
 
     const regex tokn ("([0-9]+(\\.[0-9]+)?)|x|[-+*/^()]|(sin|cos|tan|cot|log)");
-    const regex oper ("^[-+*/^]$");
     sregex_token_iterator iter (input.begin (), input.end (), tokn);
     vector<string> temp (iter, sregex_token_iterator ()), code;
 
     for (size_t i = 0; i < temp.size(); i++) {
-        if (temp[i] == "-" && (i == 0 || regex_match(temp[i-1], oper))) {
+        if (temp[i] == "-" && (i == 0 || regex_match(temp[i-1], operat))) {
             code.push_back("-" + temp[i + 1]);
-
-            if (i + 2 < temp.size()) i += 2;
+            i += 2;
+            if (i >= temp.size()) break;
         }
         code.push_back(temp[i]);
     }
 
     return code;
 }
+complex<double> stoc (const string &input) {
+    istringstream iss(input);
+    complex<double> zx;
+    iss >> zx;
+    return zx;
+}
+
 std::string getsub (std::vector<std::string>::iterator &it, std::vector<std::string>::iterator nd) {
     int pile = 1;
     std::string sub;
@@ -85,6 +161,7 @@ std::string getsub (std::vector<std::string>::iterator &it, std::vector<std::str
     //if (sub.size() && sub.back() == ' ') sub.pop_back();
     return sub;
 }
+
 template<class T> T getstack (vector<T> &stack) {
     if (stack.empty()) throw::exception();
     const T val = stack.back();
@@ -104,6 +181,7 @@ bool precedence (const vector<string> &stack, const string &cell) {
     return order(stack.back()) >= order(cell);
 }
 bool compare (string a, double b) {
+
     if (!regex_match(a, number)) return false;
     return stod(a) == b;
 }
@@ -118,9 +196,9 @@ string add (string a, string b) {
     if (a == "inf" || b == "inf") return "inf";
     if (compare(a, 0)) return b;
     if (compare(b, 0)) return a;
-    if (regex_match(a, number) && regex_match(b, number)) return to_string(stod(a) + stod(b));
     if (a == b) return ( "2 * " + b);
 
+    if (regex_match(a,number) && regex_match(b, number)) return to_string(stod(a) + stod(b));
     return mktok(a) + "+" + mktok(b);
 }
 string sub (string a, string b) {
@@ -131,7 +209,7 @@ string sub (string a, string b) {
 
     if (compare(b, 0)) return a;
 
-    if (regex_match(a, number) && regex_match(b, number)) return to_string(stod(a) - stod(b));
+    if (regex_match(a,number) && regex_match(b, number)) return to_string(stod(a) - stod(b));
     return mktok(a) + "-" + mktok(b);
 }
 string mul (string a, string b) {
@@ -141,7 +219,8 @@ string mul (string a, string b) {
     if (compare(b, 1)) return a;
     if (compare(a, 0) || compare(b, 0)) return "0";
     //if (a == b) return (a + "^2");
-    if (regex_match(a, number) && regex_match(b, number)) return to_string(stod(a) * stod(b));
+
+    if (regex_match(a,number) && regex_match(b, number)) return to_string(stod(a) * stod(b));
     return mktok(a) + "*" + mktok(b);
 }
 string div (string a, string b) {
@@ -151,7 +230,7 @@ string div (string a, string b) {
     if (b == "inf") return "0";
     if (compare(b, 1)) return a;
 
-    if (regex_match(a, number) && regex_match(b, number)) return to_string(stod(a) / stod(b));
+    if (regex_match(a,number) && regex_match(b, number)) return to_string(stod(a) / stod(b));
     return mktok(a) + "/" + mktok(b);
 }
 string exp (string a, string b) {
@@ -159,12 +238,11 @@ string exp (string a, string b) {
     if (compare(b, 1)) return a;
     if (compare(a, 1) || compare(b, 0)) return "1";
 
-    if (regex_match(a, number) && regex_match(b, number)) return to_string(pow(stod(a),  stod(b)));
+    if (regex_match(a,number) && regex_match(b, number)) return to_string(pow(stod(a),  stod(b)));
     return mktok(a) + "^" + mktok(b);
 }
 
 pair<string,string> operate (vector<pair<string,string>> &vars, vector<string> &oper) {
-
     auto [f2,d2] = vars.back(); vars.pop_back();
     auto [f1,d1] = vars.back(); vars.pop_back();
     string op = getstack(oper);
@@ -176,12 +254,11 @@ pair<string,string> operate (vector<pair<string,string>> &vars, vector<string> &
     } else if (op == "*") {
         return {mul(f1, f2),  add(mul(f1,d2), mul(d1,f2))} ;
     } else if (op == "/") {
-        string num = sub(mul(d1,f2),mul(f1,d2)), den = exp(f2, "2");
-
+        string num =  sub(mul(d1,f2),mul(f1,d2)), den =  exp(f2, "2");
         return {div(f1,f2), div(num,den)} ;
+
     } else if (op == "^") {
         string ex = exp(f1,f2), inner = add( mul( d1, div(f2,f1) ), mul(d2, "log(" +  f1 + ")"));
-
         return {ex, mul(ex,inner)} ;
     }
 
@@ -189,7 +266,7 @@ pair<string,string> operate (vector<pair<string,string>> &vars, vector<string> &
 }
 complex<double> evaluate (const std::string &input, complex<double> val) {
 
-    auto expr = tokenize(input);
+    auto expr = tokenize (input);
     vector<string>::iterator it = expr.begin(), end = expr.end(); 
     vector<string> oper;
     vector<complex<double>> vars;
@@ -257,7 +334,7 @@ complex<double> evaluate (const std::string &input, complex<double> val) {
 }
 string derivate (const string &input) {
 
-    auto expr = tokenize (input);
+    auto expr = tokenize(input);
     vector<string>::iterator it = expr.begin(), end = expr.end();
 
     vector<string> oper;
@@ -328,32 +405,21 @@ tuple<func_t,func_t,func_t> differentiate (const string &expression) {
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
-#include "tests.hpp"
 
-complex<double> sec (const complex<double> &x) {
-    return 1.0 / cos(x);
-}
-complex<double> csc (const complex<double> &x) {
-    return 1.0 / sin(x);
-}
-complex<double> sqr (const complex<double> &x) {
-    return x * x;
-}
+#include "tests.hpp"
+#include "/home/Nemrod-7/include/Timer.hpp"
+
+complex<double> sec (complex<double> x) { return 1.0 / cos(x); }
+complex<double> csc (complex<double> x) { return 1.0 / sin(x); }
+complex<double> sqr (const complex<double> &x) { return x * x; }
 
 int main () {
 
-    complex<double> x = {-4.76,-9.88};
-    string expression = "(x + 3) / (1 - x)";
+    Timer clock;
+    clock.start();
 
-    //auto pass0 = expression;
-    //auto pass1 = derivate(pass0);
-    //auto pass2 = derivate(pass1);
-    
-
-    expression = "(x+3)*-1.000000";
-
+ 
     tests();
 
-    std::cout << "\nexit\n";
-    return 0;
+    clock.get_duration();
 }

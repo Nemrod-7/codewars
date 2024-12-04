@@ -28,6 +28,11 @@
 using namespace std;
 using value_t = std::complex<double>;
 using func_t = std::function<value_t(value_t)>;
+
+const std::regex trigon ("^sin|cos|tan|cot|log$");
+const std::regex operat ("^[-+*/^]$");
+const std::regex number ("^-?\\d+(.\\d+)?|\\(-?\\d+(.\\d+)?,-?\\d+(.\\d+)?\\)$");
+
 /////////////////////////////////////////////////////////////////////////////////////////
 string showvect (const std::vector<std::string> &vs) {
     string os;
@@ -47,15 +52,6 @@ string showtransform (string t1, string op, string t2, string res) {
 /////////////////////////////////////////////////////////////////////////////////////////
 complex<double> operator ^ (const complex<double> &a, const complex<double> &b) {
     return pow(a,b);
-}
-complex<double> sec (const complex<double> &x) {
-    return 1.0 / cos(x);
-}
-complex<double> csc (const complex<double> &x) {
-    return 1.0 / sin(x);
-}
-complex<double> sqr (const complex<double> &x) {
-    return x * x;
 }
 
 bool is_term (const string &src) { 
@@ -122,6 +118,25 @@ vector<string> tokenize (const string &input) {
         } else {
             code.push_back(string(1,input[i++]));
         }
+    }
+
+    return code;
+}
+
+vector<string> tokenize2 (const string &input) {
+
+    const regex tokn ("([0-9]+(\\.[0-9]+)?)|x|[-+*/^()]|(sin|cos|tan|cot|log)");
+    const regex oper ("^[-+*/^]$");
+    sregex_token_iterator iter (input.begin (), input.end (), tokn);
+    vector<string> temp (iter, sregex_token_iterator ()), code;
+
+    for (size_t i = 0; i < temp.size(); i++) {
+        if (temp[i] == "-" && (i == 0 || regex_match(temp[i-1], oper))) {
+            code.push_back("-" + temp[i + 1]);
+
+            if (i + 2 < temp.size()) i += 2;
+        }
+        code.push_back(temp[i]);
     }
 
     return code;
@@ -385,7 +400,7 @@ string derivate (const string &input) {
 }
 tuple<func_t,func_t,func_t> differentiate (const string &expression) {
 
-    cout << "expression : [" <<  expression << "]\n" << flush;
+    //cout << "expression : [" <<  expression << "]\n" << flush;
     string pass0 = expression;
     string pass1 = derivate(pass0);
     string pass2 = derivate(pass1);
@@ -398,30 +413,27 @@ tuple<func_t,func_t,func_t> differentiate (const string &expression) {
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
+
 #include "tests.hpp"
+#include "/home/Nemrod-7/include/Timer.hpp"
+
+complex<double> sec (complex<double> x) { return 1.0 / cos(x); }
+complex<double> csc (complex<double> x) { return 1.0 / sin(x); }
+complex<double> sqr (const complex<double> &x) {
+    return x * x;
+}
 
 int main () {
 
-    complex<double> x = {-4.76,-9.88};
-    string expression;
+    Timer clock;
+    clock.start();
+
 
     tests();
 
-    std::cout << "\nexit\n";
-    return 0;
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-string join (vector<string>::iterator &fs, vector<string>::iterator &nd) {
-
-    string os;
-
-    for (auto it = fs; it != nd; it++) {
-        os += *it + " ";
-    }
-
-    if (os.size() > 0) os.pop_back();
-    return os;
+    clock.get_duration();
+ 
+    cout << "\nexit\n";
 }
 
 
