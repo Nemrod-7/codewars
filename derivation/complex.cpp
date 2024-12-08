@@ -32,8 +32,8 @@ using namespace std;
 using value_t = std::complex<double>;
 using func_t = std::function<value_t(value_t)>;
 
-const std::regex trigon ("^sin|cos|tan|cot|log$");
-const std::regex operat ("^[-+*/^]$");
+const std::regex trigon ("^sin|cos|tan|cot|log|asin|acos|atan|ln|log$");
+const std::regex operat ("^[-+*%/^]$");
 const std::regex number ("^-?\\d+(\\.\\d+)?$|^\\(-?\\d+(\\.\\d+)?,-?\\d+(\\.\\d+)?\\)$");
 
 complex<double> cot (const complex<double> &x) { return 1.0 / tan(x); }
@@ -255,7 +255,7 @@ pair<vector<Token>,vector<Token>> operate (vector<pair<vector<Token>,vector<Toke
 
     return res;
 }
-pair<vector<Token>,vector<Token>> interpret (vector<Token> expression, const complex<double> &val = {0,0}) {
+pair<vector<Token>,vector<Token>> evaluate (vector<Token> expression, const complex<double> &val = {0,0}) {
     // expression -> { fonction, derivative }
     vector<Token>::iterator it = expression.begin(), end = expression.end();
     vector<string> oper;
@@ -272,7 +272,7 @@ pair<vector<Token>,vector<Token>> interpret (vector<Token> expression, const com
         } else if (curr.sym == "") {
             vars.push_back({{curr}, {Token(0.0)}});
         } else if (curr.sym == "(") {
-            vars.push_back(interpret(getsub(it,end), val));
+            vars.push_back(evaluate(getsub(it,end), val));
         } else if (regex_match(curr.sym, operat)) {
             while (precedence(oper, curr.sym)) {
                 vars.push_back(operate(vars,oper));
@@ -280,7 +280,7 @@ pair<vector<Token>,vector<Token>> interpret (vector<Token> expression, const com
             oper.push_back(curr.sym);
         } else if (regex_match(curr.sym, trigon)) {
             it++;
-            auto [var, dx] = interpret(getsub(it,end), val);
+            auto [var, dx] = evaluate(getsub(it,end), val);
             vector<Token> nxt = brace(var);
 
             if (curr.sym == "log") {
@@ -326,15 +326,16 @@ tuple<func_t,func_t,func_t> differentiate (const string &expression) {
 
     //cout << "expression : [" <<  expression << "]\n" << flush;
     vector<Token> pass0 = tokenize(expression);
-    vector<Token> pass1 = interpret(pass0).second;
-    vector<Token> pass2 = interpret(pass1).second;
+    vector<Token> pass1 = evaluate(pass0).second;
+    vector<Token> pass2 = evaluate(pass1).second;
 
     return {
-        [pass0](value_t x) { return interpret(pass0, x).first[0].num; },
-            [pass1](value_t x) { return interpret(pass1, x).first[0].num; },
-            [pass2](value_t x) { return interpret(pass2, x).first[0].num; },
+        [pass0](value_t x) { return evaluate(pass0, x).first[0].num; },
+            [pass1](value_t x) { return evaluate(pass1, x).first[0].num; },
+            [pass2](value_t x) { return evaluate(pass2, x).first[0].num; },
     };
 }
+
 int main () {
 
     Timer clock;
@@ -345,7 +346,7 @@ int main () {
 
     auto code = tokenize(expression);
 
-    auto [fx,dx] = interpret(code, x);
+    auto [fx,dx] = evaluate(code, x);
 
     //cout << fx[0].num;
     //cout << showvect(fx);

@@ -3,13 +3,12 @@
 #include <tuple>
 #include <complex>
 
-using value_t = std::complex<double>;
 
 class Assert {
     public:
 
     public:
-        static void That (value_t actual, value_t expect, const std::string &msg = "") {
+        static void That (std::complex<double> actual, std::complex<double> expect, const std::string &msg = "") {
             double epsilon = 1e-2;
 
             if (abs(actual - expect) > epsilon) {
@@ -21,11 +20,11 @@ class Assert {
         }
 };
 
+using value_t = std::complex<double>;
 value_t EqualsAdaptive (value_t x) { return x; }
 std::string ExtraMessage (const std::string &msg) { return msg; }
 
 using func_t = std::function<value_t(value_t)>;
-
 std::tuple<func_t,func_t,func_t> differentiate(const std::string &);
 
 void tests() {
