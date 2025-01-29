@@ -10,24 +10,28 @@ function pathFinder (maze) {
 
     var visit = Array(maze.length);
     var distc = Array(maze.length);
-    var queue = [[0,0]];
+    var queue = [0];
 
     for (let i = 0; i < distc.length; i++) {
-        distc[i] = Number.MAX_VALUE, visit[i] = false;
+        distc[i] = 99999, visit[i] = false;
     }
 
     distc[0] = 0;
 
     while (true) {
-        var dist = Number.MAX_VALUE, curr = 0;
+        var dist = 99999, curr = -1;
 
-        for (var i = 0; i < distc.length; i++) {
-            if (distc[i] < dist && !visit[i]) {
-                dist = distc[i], curr = i;
+        for (var i = 0; i < queue.length; i++) {
+            exp = queue[i];
+
+            if (distc[exp] < dist && !visit[exp]) {
+                dist = distc[exp], curr = exp;
             }
+            //process.stdout.write(i + ' ' + distc[i] + ' '+ dist + '\n');
         }
+        console.log(curr);
+        console.log(visit, distc);
 
-        console.log(dist, "[" , curr % size, Math.trunc(curr / size), "]");
         if (curr == maze.length - 1) return distc[curr];
 
         visit[curr] = true;
@@ -38,8 +42,9 @@ function pathFinder (maze) {
             if (next >= 0 && next < maze.length && !visit[next]) { 
                 alt = distc[curr] + Math.abs( val(maze[curr]) - val(maze[next])) ;
 
-                if (alt <= distc[next]) {
+                if (alt < distc[next]) {
                     distc[next] = alt;
+                    queue.push(next);
                 }
             }
         }
@@ -48,13 +53,13 @@ function pathFinder (maze) {
     return -1;
 }
 
-console.log("dist ", pathFinder(
-`777000
-007000
-007000
-007000
-007000
-007777`)) ; // 0
+//console.log("dist ", pathFinder(
+//`777000
+//007000
+//007000
+//007000
+//007000
+//007777`)) ; // 0
 
 console.log("dist ", pathFinder(
 `010
