@@ -61,16 +61,16 @@ bool isnum (const vector<Token> &term) {
     return term.size() == 1 && term[0].sym == "";
 }
 
-bool is_term (const string &src) { 
-    return src == "+" || src == "-"; 
+bool is_term (const string &src) {
+    return src == "+" || src == "-";
 }
-bool is_fact (const string &src) { 
-    return src == "*" || src == "/"; 
+bool is_fact (const string &src) {
+    return src == "*" || src == "/";
 }
 bool is_func (const string &src) {
     return src == "sin" || src == "cos" || src == "tan" || src == "log" || src == "cot";
 }
-bool is_operator (const string &src) { 
+bool is_operator (const string &src) {
     return is_term(src) || is_fact(src) || src == "^";
 }
 
@@ -307,7 +307,7 @@ vector<Token> derivate (vector<Token> code) {
 }
 complex<double> evaluate (vector<Token> expr, const complex<double> &val) {
 
-    vector<Token>::iterator it = expr.begin(), end = expr.end(); 
+    vector<Token>::iterator it = expr.begin(), end = expr.end();
     vector<string> oper;
     vector<complex<double>> vars;
 
@@ -353,7 +353,7 @@ complex<double> evaluate (vector<Token> expr, const complex<double> &val) {
                 vars.push_back( 1.0 / tan(var));
             }
             //cout << vars.back() << "  ";
-        } 
+        }
 
         it++;
     }

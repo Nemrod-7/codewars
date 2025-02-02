@@ -1,67 +1,32 @@
-import heapq
+import math
 
-def isinside (pos, lim) :
-    return pos >= 0 and pos < lim
+def eratosthenes () :
+    limit = 16000000
 
-def path_finder (maze) :
+    i = 5
+    step = 2
+    prime = [2,3]
+    sieve = [True] * (limit >> 1)
 
-    size = maze.find('\n') + 1
-    direction = [-1, 1, -size, size]
+    while i < limit :
+        if sieve[i >> 1] == True :
+            prime.append(i)
+            j = i * i
+            t = step
 
-    visit = [False] * len(maze) 
-    distc = [99999] * len(maze) 
-    queue = [[0,0]]
-    
-    heapq.heapify(queue);
-    
-    while queue :
-        [dist,curr] = heapq.heappop(queue)
+            while j < limit :
+                sieve[j >> 1] = False
+                j += i * t
+                t = 6 - t
 
-        visit[curr] = True
+        i += step
+        step = 6 - step
 
-        if curr == len(maze) - 1 :
-            return dist
+    return prime
 
-        for dir in direction :
-            next = curr + dir
-            altt = dist + 1
+class Primes:
+    prime = eratosthenes()
 
-            if isinside(next, len(maze)) and not visit[next] and maze[next] == '.' :
-                heapq.heappush(queue, [altt,next])
-
-    return False
-
-a = "\n".join([
-  ".W.",
-  ".W.",
-  "..."
-])
-
-b = "\n".join([
-  ".W.",
-  ".W.",
-  "W.."
-])
-
-c = "\n".join([
-  "......",
-  "......",
-  "......",
-  "......",
-  "......",
-  "......"
-])
-
-d = "\n".join([
-  "......",
-  "......",
-  "......",
-  "......",
-  ".....W",
-  "....W."
-])
-path_finder(a)
-#test.assert_equals(path_finder(a), 4)
-#test.assert_equals(path_finder(b), False)
-#test.assert_equals(path_finder(c), 10)
-#test.assert_equals(path_finder(d), False)
+    @staticmethod
+    def stream():
+        yield from Primes.prime

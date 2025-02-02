@@ -2,10 +2,12 @@
 
 #include <vector>
 #include <cmath>
-#include <regex>
+
 #include <tuple>
 #include <complex>
 #include <functional>
+
+// current solution without regex
 
 // Let f be a function.
 // The derivative function, denoted by f′, is the function whose domain consists of those values of x
@@ -29,10 +31,6 @@ using namespace std;
 using value_t = std::complex<double>;
 using func_t = std::function<value_t(value_t)>;
 
-const std::regex trigon ("^sin|cos|tan|cot|log$");
-const std::regex operat ("^[-+*/^]$");
-const std::regex number ("^-?\\d+(.\\d+)?|\\(-?\\d+(.\\d+)?,-?\\d+(.\\d+)?\\)$");
-
 /////////////////////////////////////////////////////////////////////////////////////////
 string showvect (const std::vector<std::string> &vs) {
     string os;
@@ -54,11 +52,11 @@ complex<double> operator ^ (const complex<double> &a, const complex<double> &b) 
     return pow(a,b);
 }
 
-bool is_term (const string &src) { 
-    return src == "+" || src == "-"; 
+bool is_term (const string &src) {
+    return src == "+" || src == "-";
 }
-bool is_fact (const string &src) { 
-    return src == "*" || src == "/"; 
+bool is_fact (const string &src) {
+    return src == "*" || src == "/";
 }
 bool is_func (const string &input) {
     return input == "sin" || input == "cos" || input == "tan" || input == "log" || input == "cot";
@@ -123,24 +121,6 @@ vector<string> tokenize (const string &input) {
     return code;
 }
 
-vector<string> tokenize2 (const string &input) {
-
-    const regex tokn ("([0-9]+(\\.[0-9]+)?)|x|[-+*/^()]|(sin|cos|tan|cot|log)");
-    const regex oper ("^[-+*/^]$");
-    sregex_token_iterator iter (input.begin (), input.end (), tokn);
-    vector<string> temp (iter, sregex_token_iterator ()), code;
-
-    for (size_t i = 0; i < temp.size(); i++) {
-        if (temp[i] == "-" && (i == 0 || regex_match(temp[i-1], oper))) {
-            code.push_back("-" + temp[i + 1]);
-
-            if (i + 2 < temp.size()) i += 2;
-        }
-        code.push_back(temp[i]);
-    }
-
-    return code;
-}
 complex<double> stoc (const string &input) {
     istringstream iss(input);
     complex<double> zx;
@@ -275,7 +255,7 @@ pair<string,string> diff (vector<pair<string,string>> &vars, vector<string> &ope
 complex<double> evaluate (const std::string &input, complex<double> val) {
 
     auto expr = tokenize(input);
-    vector<string>::iterator it = expr.begin(), end = expr.end(); 
+    vector<string>::iterator it = expr.begin(), end = expr.end();
     vector<string> oper;
     vector<complex<double>> vars;
 
@@ -319,7 +299,7 @@ complex<double> evaluate (const std::string &input, complex<double> val) {
             } else if (cell == "cot") { //cot(x) = cos(x)/sin(x) or cot(x) = 1 / tan(x)
                 vars.push_back( 1.0 / tan(var));
             }
-        } 
+        }
 
         it++;
     }
@@ -380,7 +360,7 @@ string derivate (const string &input) {
             } else if (cell == "cot") {
                 vars.push_back( { fx , div( sub("0", dx), "(sin(" + var + "))^2") });
                 //vars.push_back( { fx , mul(sub("0", dx), "(csc(" + var + "))^2") });
-            } 
+            }
 
             else if (cell == "sec") {
                 vars.push_back( { fx , mul(dx, mul("(sec(" + var + "))", "(tan(" + var + "))")) });
@@ -415,7 +395,7 @@ tuple<func_t,func_t,func_t> differentiate (const string &expression) {
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "tests.hpp"
-#include "/home/Nemrod-7/include/Timer.hpp"
+// #include "/home/Nemrod-7/include/Timer.hpp"
 
 complex<double> sec (complex<double> x) { return 1.0 / cos(x); }
 complex<double> csc (complex<double> x) { return 1.0 / sin(x); }
@@ -425,15 +405,13 @@ complex<double> sqr (const complex<double> &x) {
 
 int main () {
 
-    Timer clock;
-    clock.start();
+    // Timer clock;
+    // clock.start();
 
 
-    tests();
+    // tests();
 
-    clock.get_duration();
- 
+    // clock.get_duration();
+
     cout << "\nexit\n";
 }
-
-

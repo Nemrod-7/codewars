@@ -7,6 +7,9 @@
 #include <complex>
 #include <functional>
 
+// definitive solution posted on codewars
+
+
 // Let f be a function.
 // The derivative function, denoted by f′, is the function whose domain consists of those values of x
 // such that the following limit exists:
@@ -55,11 +58,11 @@ complex<double> operator ^ (const complex<double> &a, const complex<double> &b) 
 }
 
 /*
-bool is_term (const string &src) { 
-    return src == "+" || src == "-"; 
+bool is_term (const string &src) {
+    return src == "+" || src == "-";
 }
-bool is_fact (const string &src) { 
-    return src == "*" || src == "/"; 
+bool is_fact (const string &src) {
+    return src == "*" || src == "/";
 }
 bool is_func (const string &input) {
     return input == "sin" || input == "cos" || input == "tan" || input == "log" || input == "cot";
@@ -267,7 +270,7 @@ pair<string,string> operate (vector<pair<string,string>> &vars, vector<string> &
 complex<double> evaluate (const std::string &input, complex<double> val) {
 
     auto expr = tokenize (input);
-    vector<string>::iterator it = expr.begin(), end = expr.end(); 
+    vector<string>::iterator it = expr.begin(), end = expr.end();
     vector<string> oper;
     vector<complex<double>> vars;
 
@@ -311,7 +314,7 @@ complex<double> evaluate (const std::string &input, complex<double> val) {
             } else if (cell == "cot") { //cot(x) = cos(x)/sin(x) or cot(x) = 1 / tan(x)
                 vars.push_back( 1.0 / tan(var));
             }
-        } 
+        }
 
         it++;
     }
@@ -372,7 +375,7 @@ string derivate (const string &input) {
             } else if (cell == "cot") {
                 vars.push_back( { fx , div( sub("0", dx), "(sin(" + var + "))^2") });
                 //vars.push_back( { fx , mul(sub("0", dx), "(csc(" + var + "))^2") });
-            } 
+            }
 
             else if (cell == "sec") {
                 vars.push_back( { fx , mul(dx, mul("(sec(" + var + "))", "(tan(" + var + "))")) });
@@ -418,7 +421,7 @@ int main () {
     Timer clock;
     clock.start();
 
- 
+
     tests();
 
     clock.get_duration();
