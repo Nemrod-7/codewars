@@ -1,11 +1,4 @@
 
-class node :
-    def __init__ (self, id) :
-        self.id = id
-        self.visit = False
-        self.edges = []
-
-
 def getstart (graph) :
     start = 0
     minv = 99
@@ -19,55 +12,96 @@ def getstart (graph) :
 
 def dfs (index, seq, visit, graph) :
 
-    if index == len(seq) : return True
+    if index == len(seq) - 1 : return True
     
     curr = seq[index]
     visit[curr] = True
 
+    print(seq)
     for edge in graph[curr] :
         if visit[edge] == False :
             visit[edge] = True
             seq[index + 1] = edge
 
-            dfs(index + 1, seq, visit, graph)
+            if dfs(index + 1, seq, visit, graph) == True : return True
 
+            seq[index + 1] = 0
             visit[edge] = False
-
 
     return False
 
 def square_sums (N) :
 
-    graph = [] 
     i, squares = 2, []
+    graph = [[] for _ in range(0,N+1)] 
     visit = [False] * (N + 1)
 
-    while i * i <= (2 * N) : squares.append( i * i); i += 1
+    while i * i <= (2 * N) : squares.append(i * i); i += 1
 
-    for i in range(0, N + 1) : graph.append([])
+    for i in range(1, N+1) :
+        for sq in squares :
+            j = sq - i
+            if j > 0 and j <= N and visit[j] == False:
+                graph[i].append(j)
 
-    for i in range(0, N) :
-        for j in range(0, N) :
-            if ((i + 1) + (j + 1)) in squares :
-                graph[i+1].append(j + 1)
+        print(i, graph[i])
 
-    index = 0
     seq = [0] * N
 
-    seq[index] = getstart(graph)
-    visit[seq[index]] = True
+    seq[0] = getstart(graph)
+    visit[seq[0]] = True
 
-    dfs(index, seq, visit, graph)
-
-    print(seq)
-    # for i in range(1,N+1) :
-    #     print(i, visit[i], graph[i])
-
-
-    return False
+    if dfs(0, seq, visit, graph) == True :
+        return seq
+    else :
+        print(seq)
+        return False
 
 
-# [ 9, 7, 2, 14, 11, 5, 4, 12, 13, 3, 6, 10, 15, 1, 8 ]
+class node :
+    def __init__ (self, id) :
+        self.id = id
+        self.visit = False
+        self.edges = []
 
-square_sums(15)
+    def show (self) :
+        print(self.id, self.visit, self.edges)
+
+
+class graph :
+    def __init__(self, N) :
+        i = 2
+        self.squares = []
+        self.vmap = [node(i) for i in range(0,N+1)]
+
+        while i * i <= (2 * N) : self.squares.append( i * i); i += 1
+
+        for i in range(1, N + 1) :
+            self.update(self.vmap[i])
+
+
+    def update(self, node) :
+        node.edges = []
+
+        for sq in self.squares :
+            j = sq - node.id
+            if j > 0 and j < len(self.vmap) and self.vmap[node.id].visit == False :
+                node.edges.append(j)
+        pass
+
+        
+
+def struct(N) :
+
+    curr = graph(N)
+
+    for i in range(1, N + 1) :
+        curr.vmap[i].show()
+
+    pass
+
+# struct(15)
+res = square_sums(23)
+print(res)
+
 
