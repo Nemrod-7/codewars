@@ -1,107 +1,70 @@
-
-def getstart (graph) :
-    start = 0
-    minv = 99
-
-    for i in range(1, len(graph)) :
-        if len(graph[i]) <= minv :
-            minv = len(graph[i])
-            start = i
-
-    return start
-
-def dfs (index, seq, visit, graph) :
-
-    if index == len(seq) - 1 : return True
-    
-    curr = seq[index]
-    visit[curr] = True
-
-    print(seq)
-    for edge in graph[curr] :
-        if visit[edge] == False :
-            visit[edge] = True
-            seq[index + 1] = edge
-
-            if dfs(index + 1, seq, visit, graph) == True : return True
-
-            seq[index + 1] = 0
-            visit[edge] = False
-
-    return False
-
-def square_sums (N) :
-
-    i, squares = 2, []
-    graph = [[] for _ in range(0,N+1)] 
-    visit = [False] * (N + 1)
-
-    while i * i <= (2 * N) : squares.append(i * i); i += 1
-
-    for i in range(1, N+1) :
-        for sq in squares :
-            j = sq - i
-            if j > 0 and j <= N and visit[j] == False:
-                graph[i].append(j)
-
-        print(i, graph[i])
-
-    seq = [0] * N
-
-    seq[0] = getstart(graph)
-    visit[seq[0]] = True
-
-    if dfs(0, seq, visit, graph) == True :
-        return seq
-    else :
-        print(seq)
-        return False
-
-
-class node :
+class vertex :
     def __init__ (self, id) :
         self.id = id
         self.visit = False
         self.edges = []
 
-    def show (self) :
-        print(self.id, self.visit, self.edges)
-
-
-class graph :
-    def __init__(self, N) :
+class Graph :
+    def __init__ (self, N) :
         i = 2
         self.squares = []
-        self.vmap = [node(i) for i in range(0,N+1)]
+        self.vmap = [vertex(i) for i in range(0,N+1)]
 
         while i * i <= (2 * N) : self.squares.append( i * i); i += 1
 
-        for i in range(1, N + 1) :
-            self.update(self.vmap[i])
+        for i in range(1, N + 1) : self.update(self.vmap[i])
 
-
-    def update(self, node) :
+    def update (self, node) :
         node.edges = []
 
         for sq in self.squares :
             j = sq - node.id
-            if j > 0 and j < len(self.vmap) and self.vmap[node.id].visit == False :
+            if j > 0 and j < len(self.vmap) and self.vmap[j].visit == False :
                 node.edges.append(j)
-        pass
 
-        
+def getstart (vmap) :
+    start, minv = 0, 99
 
-def struct(N) :
+    for i in range(1, len(vmap)) :
+        if len(vmap[i].edges) < minv :
+            minv = len(vmap[i].edges)
+            start = i
 
-    curr = graph(N)
+    return start
 
-    for i in range(1, N + 1) :
-        curr.vmap[i].show()
+def dfs (index, seq, curr) :
 
-    pass
+    if index == len(seq) - 1 : return True
+    graph = curr.vmap
 
-# struct(15)
-res = square_sums(23)
-print(res)
+    curr.update(graph[seq[index]])
+    node = graph[seq[index]]
+
+    for edge in node.edges : 
+        if graph[edge].visit == False :
+            graph[edge].visit = True 
+            seq[index + 1] = edge
+
+            if dfs(index + 1, seq, curr) == True : return True
+
+            seq[index + 1] = 0
+            graph[edge].visit = False
 
 
+    return False
+
+def square_sums (N) :
+
+    graph = Graph(N)
+    seq = [0] * N
+
+    seq[0] = getstart(graph.vmap)
+    graph.vmap[seq[0]].visit = True
+
+    result = dfs(0, seq, graph)
+
+    return seq if result == True else False
+
+
+
+print(square_sums(23))
