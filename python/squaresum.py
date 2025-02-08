@@ -59,9 +59,27 @@ def square_sums (N) :
     seq = [0] * N
 
     seq[0] = getstart(graph.vmap)
-    graph.vmap[seq[0]].visit = True
+    #graph.vmap[seq[0]].visit = True
 
-    result = dfs(0, seq, graph)
+    grp = graph.vmap
+    node = grp[seq[0]];
+
+    node.visit = True
+
+
+    num = 7
+    grp[num].visit = True
+
+    for i in range(1, N + 1) : 
+        print(grp[i].id, grp[i].visit, grp[i].edges)
+
+
+    
+    print()
+    for i in range(1, N + 1) : 
+        print(grp[i].id, grp[i].visit, grp[i].edges)
+
+    result = False # dfs(0, seq, graph)
 
     return seq if result == True else False
 
