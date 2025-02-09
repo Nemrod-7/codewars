@@ -1,3 +1,7 @@
+import time
+
+start = time.time()
+
 class vertex :
     def __init__ (self, id) :
         self.id = id
@@ -26,7 +30,7 @@ def getstart (vmap) :
     start, minv = 0, 99
 
     for i in range(1, len(vmap)) :
-        if len(vmap[i].edges) < minv :
+        if len(vmap[i].edges) <= minv :
             minv = len(vmap[i].edges)
             start = i
 
@@ -35,10 +39,12 @@ def getstart (vmap) :
 def dfs (index, seq, curr) :
 
     if index == len(seq) - 1 : return True
-    graph = curr.vmap
 
-    curr.update(graph[seq[index]])
+    graph = curr.vmap
     node = graph[seq[index]]
+    # print(index, ' ', end='')
+    curr.update(node)
+    node.edges.sort(key=lambda x: len(graph[x].edges))
 
     for edge in node.edges : 
         if graph[edge].visit == False :
@@ -55,34 +61,26 @@ def dfs (index, seq, curr) :
 
 def square_sums (N) :
 
-    graph = Graph(N)
+    curr = Graph(N)
     seq = [0] * N
 
-    seq[0] = getstart(graph.vmap)
-    #graph.vmap[seq[0]].visit = True
+    graph = curr.vmap
+    seq[0] = getstart(graph)
+    graph[seq[0]].visit = True
 
-    grp = graph.vmap
-    node = grp[seq[0]];
-
-    node.visit = True
-
-
-    num = 7
-    grp[num].visit = True
-
-    for i in range(1, N + 1) : 
-        print(grp[i].id, grp[i].visit, grp[i].edges)
+    # for node in graph :
+    #     print(node.id, node.visit, node.edges)
 
 
-    
-    print()
-    for i in range(1, N + 1) : 
-        print(grp[i].id, grp[i].visit, grp[i].edges)
-
-    result = False # dfs(0, seq, graph)
+    result = dfs(0, seq, curr)
 
     return seq if result == True else False
 
 
 
+print(square_sums(15))
 print(square_sums(23))
+print(square_sums(56))
+
+end = time.time()
+print( "elapsed : ", end - start)
