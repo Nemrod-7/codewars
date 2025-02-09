@@ -1,5 +1,7 @@
 import time
+import sys
 
+sys.setrecursionlimit(1100)
 start = time.time()
 
 class vertex :
@@ -23,7 +25,7 @@ class Graph :
 
         for sq in self.squares :
             j = sq - node.id
-            if j > 0 and j < len(self.vmap) and self.vmap[j].visit == False :
+            if j > 0 and j < len(self.vmap) and j != node.id and self.vmap[j].visit == False :
                 node.edges.append(j)
 
 def getstart (vmap) :
@@ -42,20 +44,22 @@ def dfs (index, seq, curr) :
 
     graph = curr.vmap
     node = graph[seq[index]]
-    # print(index, ' ', end='')
-    curr.update(node)
+
+    for edge in node.edges :
+        curr.update(graph[edge])
+
     node.edges.sort(key=lambda x: len(graph[x].edges))
 
-    for edge in node.edges : 
+    for edge in node.edges :
+        # print(len(graph[edge].edges), ' ', end='')
         if graph[edge].visit == False :
-            graph[edge].visit = True 
+            graph[edge].visit = True
             seq[index + 1] = edge
 
-            if dfs(index + 1, seq, curr) == True : return True
+            if dfs(index + 1, seq, curr)  : return True
 
             seq[index + 1] = 0
             graph[edge].visit = False
-
 
     return False
 
@@ -68,19 +72,11 @@ def square_sums (N) :
     seq[0] = getstart(graph)
     graph[seq[0]].visit = True
 
-    # for node in graph :
-    #     print(node.id, node.visit, node.edges)
+    return seq if dfs(0, seq, curr) == True else False
 
+for num in [5, 15, 23, 50, 56, 128, 512, 993, 1000] :
+    res = square_sums(num)
 
-    result = dfs(0, seq, curr)
-
-    return seq if result == True else False
-
-
-
-print(square_sums(15))
-print(square_sums(23))
-print(square_sums(56))
 
 end = time.time()
 print( "elapsed : ", end - start)

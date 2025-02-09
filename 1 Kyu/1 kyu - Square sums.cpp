@@ -154,20 +154,21 @@ vector<int> square_sums_row (int size) {
 
     seq[0] = getstart (curr);
     curr[seq[0]]->visit = true;
-
+    // cout << seq[0] << ' ';
     return dfs (0, curr, seq) == true ? seq : vector<int>{};
 }
 
 int main () {
 
-    vector<int> test = {15, 50, 128, 256, 512, 980};
+    vector<int> test = {15, 23, 50, 56, 128, 256, 512, 980};
     vector<int> vec;
 
     for (auto N : test) {
         Timer clock;
         auto res = square_sums_row(N);
 
-        Display::vect (res);
+        // std::cout << res.size() << ' ';
+        // Display::vect (res);
 
         clock.stop();
         clock.get_duration();
