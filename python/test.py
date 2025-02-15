@@ -1,4 +1,6 @@
+
 from typing import NamedTuple
+import heapq
 
 class Point (NamedTuple):
     x: float
@@ -18,4 +20,16 @@ dict = {}
 dict[circles[0]] = 0
 dict[circles[1]] = 1
 
-print(dict[circles[0]])
+heap = []
+
+heapq.heappush(heap, [9, 0, [start, 0] ])
+heapq.heappush(heap, [7, 6, [start, 1] ])
+heapq.heappush(heap, [6, 0, [start, 4] ])
+heapq.heappush(heap, [14, 0, [start, 4] ])
+heapq.heappush(heap, [2, 7, [start, 15] ))
+
+
+while heap :
+    node = heapq.heappop(heap)
+    print(node)
+

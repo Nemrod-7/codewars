@@ -1,9 +1,10 @@
 from typing import NamedTuple
 import math
+import heapq
 
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.patches import Circle
+# import matplotlib.pyplot as plt
+# from matplotlib.patches import Circle
 
 epsilon = 1e-8
 
@@ -27,7 +28,8 @@ def inside_circle (p, c) :
 def slope (a, b) :
     return (b.y - a.y) / (b.x - a.x) if (a.x != b.x) else 1e8 
 
-def interception (p1, p2, circle) : # return interception points of a line (p1,p2) and a circle
+def interception (line, circle) : # return interception points of a line (p1,p2) and a circle
+    [p1,p2] = line
     [c1,r1] = circle
 
     p3 = Point(p1.x - c1.x, p1.y - c1.y)
@@ -61,24 +63,6 @@ def tangent (p1, c) : # tangent points of a cricle => gives two lines p1,t1 and 
 
     return [t1,t2]
 
-def circles_intersection (c1,c2) : # intersection points of 2 circles
-    [p1,r1] = c1
-    [p2,r2] = c2
-    dist = distance (p1, p2)
-
-    if dist <= r1 + r2 and dist >= abs (r2 - r1) :
-        dx = (p2.x - p1.x) / dist
-        dy = (p2.y - p1.y) / dist
-
-        a = (sq(r1) - sq(r2) + sq(dist)) / (2 * dist)
-        h = sqrt (r1 * r1 - a * a)
-
-        p3 = Point(p1.x + a * dx - h * dy, p1.y + a * dy + h * dx)
-        p4 = Point(p1.x + a * dx + h * dy, p1.y + a * dy - h * dx)
-
-        return [p3,p4]
-    
-    return []
 
 def collision (p1, p2, circles) :
     dist = distance (p1,p2)
@@ -86,20 +70,15 @@ def collision (p1, p2, circles) :
     for c1 in circles :
         if inside_circle (p1, c1) or inside_circle (p2, c1) : return True
 
-        icp = interception (p1, p2, c1)
+        icp = interception ([p1,p2], c1)
 
         for ip in icp :
-            dis2 = (distance (p1,ip) + distance (ip,p2) )
+            dis2 = (distance (p1,ip) + distance (ip,p2) ) # check if a circles lies between the points
 
             if (distance (p1,ip) + distance (ip,p2) - dist) <= epsilon : 
                 return True
     
     return False
-
-class node :
-    def __init__ (self, p, id) :
-        self.p = p
-        self.id = id
 
 def hcenter (c1, c2) : # homothetic centers of two circles
     [p1,r1] = c1
@@ -130,28 +109,44 @@ def hcenter (c1, c2) : # homothetic centers of two circles
 
     return hc
 
+def circles_intersection (c1,c2) : # intercection points of 2 circles
+    [p1,r1] = c1
+    [p2,r2] = c2
+    dist = distance (p1, p2)
+
+    if dist <= r1 + r2 and dist >= abs (r2 - r1) :
+        dx = (p2.x - p1.x) / dist
+        dy = (p2.y - p1.y) / dist
+
+        a = (sqr(r1) - sqr(r2) + sqr(dist)) / (2 * dist)
+        h = math.sqrt (r1 * r1 - a * a)
+
+        p3 = Point(p1.x + a * dx - h * dy, p1.y + a * dy + h * dx)
+        p4 = Point(p1.x + a * dx + h * dy, p1.y + a * dy - h * dx)
+
+        return [p3,p4]
+    
+    return []
+
 def shortest_path_length (start: Point, exit: Point, circles: list[Circle]) -> float:
 
     if not collision (start,exit, circles) :
         return distance(start,exit)
-
-
-    fig , ax = plt.subplots()             # Create a figure containing a single Axes.
-
-    ax.set_aspect('equal')
-    ax.plot(start.x, start.y, 'r.') 
-    ax.plot(exit.x, exit.y, 'r.') 
-
-    for c1 in circles :
-        ax.add_patch(plt.Circle(c1.ctr, c1.r, color='y' ))
-
-    size = len(circles)
-    index = {}
-    graph = []
     
-    edges = [[] for _ in range(0, size)]
+    # fig , ax = plt.subplots()             # Create a figure containing a single Axes.
+    # ax.set_aspect('equal')
+    # ax.plot(start.x, start.y, 'r.') 
+    # ax.plot(exit.x, exit.y, 'r.') 
+    #
+    # for c1 in circles :
+    #     ax.add_patch(plt.Circle(c1.ctr, c1.r, color='y' ))
+    
+    size = len(circles)
 
-    print(edges)
+    # finding all tangents
+    graph = []                           # base for all tangents of homothectic centers between circles
+    edges = [[] for _ in range(0, size)]
+    icept = [[] for _ in range(0, size)]
 
     for i in range(0,size) :
         c1 = circles[i]
@@ -161,79 +156,96 @@ def shortest_path_length (start: Point, exit: Point, circles: list[Circle]) -> f
 
             for p1 in hcenter (c1,c2) :
                 if not inside_circle(p1,c1) and not inside_circle(p1,c2) :
-                    t1 = tangent(p1,c1)
-                    t2 = tangent(p1,c2)
+                    t1, t2 = tangent(p1,c1), tangent(p1,c2)
 
-                    if not collision(t1[0],t2[0], circles) :
-                        index[t1[0]] = i
-                        edges[i].append(t1[0])
+                    if not collision(t1[0],t2[0], circles) :    # if the tangent point doesn't lie on a circle
+                        graph.append([[t1[0], i], [t2[0], j]])
 
-                        index[t2[0]] = j
-                        edges[j].append(t2[0])
+                        edges[i].append(len(graph) - 1)
+                        edges[j].append(len(graph) - 1)
 
-                        graph.append( [t1[0],t2[0]])
+                    if not collision(t1[1],t2[1], circles) :    # if the tangent point doesn't lie on a circle
+                        graph.append([[t1[1], i], [t2[1], j]])
 
-                    if not collision(t1[1],t2[1], circles) :
-                        index[t1[1]] = i
-                        edges[i].append(t1[1])
-                        
-                        index[t2[1]] = j
-                        edges[j].append(t2[1])
-
-                        graph.append( [t1[1],t2[1]])
+                        edges[i].append(len(graph) - 1)
+                        edges[j].append(len(graph) - 1)
 
         pass
 
-    queue = []
-    
+    for i in range(0,size) :
+        for j in range(i+1, size) :
+            for p in circles_intersection(circles[i], circles[j]) :
+                icept[i].append(p)
+                icept[j].append(p)
+
+        pass
+
+    # handling start and exit point
+    heap = []
+
     for i in range(0,size) :
         c1 = circles[i]
         t1 = tangent(start, c1)
         t2 = tangent(exit , c1)
 
         if not collision(start,t1[0], circles) :
-            index[t1[0]] = i
-            edges[i].append(t1[0])
-            queue.append( [start,t1[0]])
+            graph.append([[start, -1 ], [t1[0], i]])
+            heapq.heappush(heap, [0, distance(start, t1[0]), [t1[0], i], len(graph) - 1, [[[start, -1 ], [t1[0], i]]]])
 
         if not collision(start,t1[1], circles) :
-            index[t1[1]] = i
-            edges[i].append(t1[1])
-            queue.append( [start,t1[1]])
+            graph.append([[start, -1 ], [t1[1], i]])
+            heapq.heappush(heap, [0, distance(start, t1[1]), [t1[1], i], len(graph) - 1, [[start, -1 ], [t1[1], i]]])
 
         if not collision(exit,t2[0], circles) :
-            index[t2[0]] = i
-            edges[i].append(t2[0])
-            graph.append( [t2[0], exit])
-
+            graph.append([[t2[0], i], [exit, -1]])
+            edges[i].append(len(graph) - 1)
+        
         if not collision(exit,t2[1], circles) :
-            index[t2[1]] = i
-            edges[i].append(t2[1])
-            graph.append( [t2[1], exit])
+            graph.append([[t2[1], i],[exit, -1]])
+            edges[i].append(len(graph) - 1)
 
-    # for t2 in graph :
-    #     ax.plot([t2[0].x, t2[1].x], [t2[0].y,t2[1].y], 'b')
-
-    dist = 0.0
-    curr = queue.pop() 
-
-    if curr[0] == exit : return dist
-
-    ncircle = index[curr[1]]
-    edge = edges[ncircle]
-
-    for p in edges[3] :
-        ax.plot(p.x, p.y,'b+')
-        # print(p)
-
-    # for key,value in index.items() :
-    #     print(key, value)
+    # pathfinder
+    visit = [False] * len(graph) # 
     
-    plt.show()
+    while heap :
+        [heur, dist, [p1,id], edge, path] = heapq.heappop(heap)
 
+        [ctr, rad] = circles[id]
+        visit[edge] = True
 
-    return 0.0
+        if p1 == exit : 
+            x, y = [], []
 
+            for p in path :
+                x.append(p[0].x)
+                y.append(p[0].y)
+
+            # ax.plot(x,y, 'b')
+            # plt.show()
+            return dist
+
+        limit = 360.0
+
+        for icp in icept[id] :
+            print(icp)
+            
+            pass
+
+        for next in edges[id] :
+            if not visit[next] :
+                [n1,n2] = graph[next]
+                if n1[1] != id : n1, n2 = n2, n1
+
+                alt = dist + distance (n1[0], n2[0])
+
+                angle = 2.0 * math.asin(distance(p1, n1[0]) * 0.5 / rad) # minor angle in radian
+                major = 2.0 * math.pi - angle                            # major angle in radian
+                
+                nxdist = angle * rad + alt
+                heapq.heappush(heap,[heur, nxdist, n2, next, path + [n1,n2]])
+            pass
+   
+    return -1.0
 
 
 
