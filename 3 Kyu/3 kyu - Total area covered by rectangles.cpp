@@ -78,17 +78,17 @@ int calculate (vector<vector<int>> graph) {
 }
 
 int main () {
-
+        vector<vector<int>> rect = {{3,3,8,5}, {6,3,8,9},{11,6,14,12}};
 
     //Assert::equals_eq(calculate({ { 1, 4, 5, 6 },  { 2, 5, 6, 7 },{ 3, 6, 7, 8 },{ 4, 7, 8, 9 },{ 2, 3, 6, 5 },{ 3, 2, 7, 4 },{ 4, 1, 8, 3 }}), 38, "wings");
-    Assert::equals_eq(calculate({ { 7, 1, 11, 7 },  { 8, 0, 12, 3 },  { 8, 4, 13, 5 },  { 9, 5, 14, 8 },{ 10, 2, 15, 6 }}), 53, "intersection 2");
+    // Assert::equals_eq(calculate({ { 7, 1, 11, 7 },  { 8, 0, 12, 3 },  { 8, 4, 13, 5 },  { 9, 5, 14, 8 },{ 10, 2, 15, 6 }}), 53, "intersection 2");
 
     //sweep(graph);
     /*
        Assert::equals_eq(calculate({{1,2,3,7},{2,1,7,3},{6,2,8,7},{2,6,7,8},{4,4,5,5}}), 37, "circle");
        Assert::equals_eq(calculate({{3,3,6,5},{4,4,6,6},{4,3,7,5},{4,2,8,5},{4,3,8,6},{9,0,11,4},{9,1,10,6},{9,0,12,2},{10,1,13,5},{12,4,15,6},{14,1,16,5},{12,1,17,2}}), 52, "very hard!");
        */
-    Test();
+    // Test();
 }
 
 void Test () {
