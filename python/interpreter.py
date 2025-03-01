@@ -1,86 +1,75 @@
-def find_next (code, pos) :
 
-    size = len(code)
-    index = pos
-    pile = 0 
-    fwrd = True
-    if code[index] == ']' : fwrd = False
+import re
 
-    while index < size :
-        if code[index] == '[' : pile += 1
-        if code[index] == ']' : pile -= 1
+operator = ['+','-','*','/']
 
-        if pile == 0 : return index
-        index += 1 if fwrd == True else -1
+def tokenize(expression):
+    if expression == "": return []
 
-    return index
+    regex = re.compile("\s*(=>|[-+*\/\%=\(\)]|[A-Za-z_][A-Za-z0-9_]*|[0-9]*\.?[0-9]+)\s*")
+    code = regex.findall(expression)
 
-def boolfuck (code, input="") :
-    
-    oss = ''
-    tape = [0] * 30
-    index, it, bin, out = 0, 0, 0, 0
-    input = iter(input)
+    return [s for s in code if not s.isspace()]
+def isnumber (expr) :
+    try :
+        int (expr)
+        return True
+    except :
+        return False
 
-    while index < len(code) :
-        match code[index] :
-            case '>' : it += 1
-            case '<' : it -= 1
-            case '+' : tape[it] ^= 1
+def order (cell) :
+    if cell == '+' or cell == '-' : return 1
+    if cell == '*' or cell == '/' : return 2
+    return 0
 
-            case ';' : 
-                if out / 8 >= len(oss) : oss += 0
-                oss[out / 8] |= tape[it] << (out % 8);
-                out += 1
+def operate (oper, stack) :
+    b, a = stack.pop(), stack.pop()
 
-            case ',' : 
-                try :
-                    tape[it] = input[bin / 8] >> (bin % 8) &1;
-                    bin += 1;
-                except :
-                    pass
+    match oper.pop() :
+        case '+': return (a + b)
+        case '-': return (a - b)
+        case '*': return (a * b)
+        case '/': return (a / b)
 
-            case '[' : 
-                if tape[it] == 0 : index = find_next(code, index)
-            case ']' : 
-                if tape[it] != 0 : index = find_next(code, index)
+class Interpreter:
+    def __init__(self):
+        self.vars = {}
+        self.functions = {}
 
-        index += 1    
+    def input(self, expression):
+        index = 0
+        running = True
+        oper, stack = [],[]
+        code = tokenize(expression)
 
-    return oss
+        while running :
+            
+            if code[index] in operator :
+                while oper and order(oper[-1]) >= order(code[index]) :
+                    stack.append( operate(oper, stack) )
+                oper.append(code[index])
 
-def brain_luck(code, input) :
+            elif isnumber(code[index]) :
+                stack.append(int(code[index]))
 
-    oss = ''
-    tape = [0] * 30
-    index, it, id = 0, 0, 0
-    input = iter(input)
+            index += 1
+            if index >= len(code) : running = False
 
-    print(input)
-    
-    while index < len(code) :
-        match code[index] :
-            case '>' : it += 1
-            case '<' : it -= 1
-            case '+' : 
-                tape[it] = 0 if tape[it] == 255 else tape[it] + 1
-            case '-' : 
-                tape[it] = 255 if tape[it] == 0 else tape[it] - 1
-            case '.' : 
-                oss += chr(tape[it])
-            case ',' : 
-                try :
-                    tape[it] = ord(next(input))
-                except :
-                    tape[it] = 0
-            case '[' : 
-                if tape[it] == 0 : index = find_next(code, index)
-            case ']' : 
-                if tape[it] != 0 : index = find_next(code, index)
+        while oper : stack.append( operate(oper, stack))
 
-        index += 1    
+        return stack.pop()
 
-    return oss
+class test :
+    def assert_equals(actual, result) :
 
-brain_luck(',[.[-],]', 'Codewars' + chr(0))
+        print(actual, result)
 
+
+interpreter = Interpreter()
+
+
+test.assert_equals(interpreter.input("1 + 1"), 2)
+test.assert_equals(interpreter.input("2 - 1"), 1)
+test.assert_equals(interpreter.input("2 * 3"), 6)
+test.assert_equals(interpreter.input("8 / 4"), 2)
+test.assert_equals(interpreter.input("7 % 4"), 3)
