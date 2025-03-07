@@ -74,26 +74,24 @@ class Interpreter:
         self.vars = {}
         self.func = {}
 
-    def getargs(self, expr, index) :
+    def getargs(self,expr, index) :
         args = []
         nvar = len(self.func[expr[index]][0])
-        print('name : ', expr[index], index)
+
         while index + 1 < len(expr) and len(args) < nvar :
             index += 1
             arg = expr[index]
-            print('arg ', arg, 'index ', index )
 
             if arg in self.func :
-                sub = ' '.join( self.getargs(expr, index))
-                arg += ' ' + sub
+                [sub, nxt] = self.getargs(expr, index)
+                arg += ' ' + ''.join(sub)
+                index = nxt
 
-
-            # print('sub :', arg, end=' ')
             args.append(arg)
 
-        return args
+        return [args,index]
 
-    def evaluate (self, source) :
+    def input(self, source):
         i, sign = 0, 1
         running = True
         oper, stack = [], []
@@ -122,7 +120,7 @@ class Interpreter:
 
             if expr[i] == '(' :
                 sub = getsub(expr[i:])
-                stack.append(self.evaluate(' '.join(sub)) * sign)
+                stack.append(self.input(' '.join(sub)) * sign)
                 sign = 1; i += len(sub) + 1
             elif re.match(number, expr[i]) :
                 stack.append(float(expr[i]) * sign)
@@ -131,13 +129,13 @@ class Interpreter:
                 if '=' in expr :            # intialize variable
                     if expr[i] in self.func : raise ValueError("ERROR: a variable of the same name already exist.")
 
-                    self.vars[expr[i]] = self.evaluate(' '.join(expr[i+2:]))
+                    self.vars[expr[i]] = self.input(' '.join(expr[i+2:]))
                     return self.vars[expr[i]]
                 elif expr[i] in self.vars : # return variable
                     stack.append( self.vars[expr[i]] )
                 elif expr[i] in self.func : # execute function
                     [vars,lmdb] = self.func[expr[i]]
-                    args, sub = self.getargs(expr, i), []
+                    [args, nxt], sub = self.getargs(expr, i), []
 
                     if len(vars) != len(args) : raise ValueError("ERROR: Invalid function.")
 
@@ -145,8 +143,8 @@ class Interpreter:
                         if cell in vars : cell = args[vars.index(cell)]
                         sub += cell
 
-                    i += len(args)
-                    stack.append( self.evaluate(' '.join(sub))) 
+                    i = nxt 
+                    stack.append( self.input(''.join(sub))) 
                 else :
                     raise ValueError('ERROR: Unknown identifier.')
             elif expr[i] in operator :
@@ -165,23 +163,7 @@ class Interpreter:
         
         raise ValueError('ERROR: Invalid input.')
 
-    def input(self, expression):
 
-        return self.evaluate(expression)    
-
-
-    def prototype(self, source) :
-        code = tokenize(source)
-        index = 0
-
-        args = self.getargs(code, index)
-
-        print(args, index)
-
-        pass
-
-
-# Tests
 class test :
     def assert_equals(actual, result) :
 
@@ -218,7 +200,6 @@ interpreter = Interpreter();
 test.assert_equals(interpreter.input("fn echo x => x"), (''))
 test.assert_equals(interpreter.input("fn avg x y => (x + y) / 2"), (''))
 
-interpreter.prototype('avg echo 4 echo 2')
 
 # # Basic arithmetic
 # test.assert_equals(interpreter.input("1 + 1"), 2)
@@ -228,9 +209,9 @@ interpreter.prototype('avg echo 4 echo 2')
 # test.assert_equals(interpreter.input("7 % 4"), 3)
 #
 # # Variables
-# test.assert_equals(interpreter.input("x = 1"), 1)
-# test.assert_equals(interpreter.input("x"), 1)
-# test.assert_equals(interpreter.input("x + 3"), 4)
+test.assert_equals(interpreter.input("x = 1"), 1)
+test.assert_equals(interpreter.input("x"), 1)
+test.assert_equals(interpreter.input("x + 3"), 4)
 # test.expect_error("input: 'y'", lambda : interpreter.input("y"))
 #
 # # Functions
@@ -241,8 +222,7 @@ interpreter.prototype('avg echo 4 echo 2')
 # test.expect_error("input: 'fn x => 0'", lambda : interpreter.input("fn x => 0"))
 # test.expect_error("input: 'avg = 5'", lambda : interpreter.input("avg = 5"))
 #
-# test.assert_equals(interpreter.input("avg 4 2"), 3)
-#
+test.assert_equals(interpreter.input("avg echo 4 echo 2"), 3)
 
 
 for name in interpreter.func :
