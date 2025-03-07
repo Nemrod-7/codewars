@@ -24,12 +24,10 @@ import re
 operator = ['+','-','*','/','%']
 
 def tokenize(expression):
-    if expression == "" : return []
-
+    if expression == "": return []
     regex = re.compile("\s*(=>|[-+*\/\%=\(\)]|[A-Za-z_][A-Za-z0-9_]*|[0-9]*\.?[0-9]+)\s*")
-    code = regex.findall(expression)
-
-    return [s for s in code if not s.isspace()]
+    tokens = regex.findall(expression)
+    return [s for s in tokens if not s.isspace()]
 
 def order (cell) :
     if cell == '+' or cell == '-' : return 1
@@ -51,12 +49,9 @@ def isminus (expr, idx) :
 
     if expr[idx] != '-' : return False
     if idx == 0 : return True
-
-    if isnumber(expr[prev]) : return False
-    if expr[prev] == ')' : return False
-    if expr[prev] == '(' : return False
+    if re.match("-?[0-9]*.?[0-9]+$", expr[prev]) : return False
+    if expr[prev] == ')' or expr[prev] == '(' : return False
     if expr[prev] in operator : return True
-
     return False
 
 def getsub (expr) : 
@@ -81,88 +76,109 @@ class Interpreter:
 
     def getargs(self, expr, index) :
         args = []
-        nvar = len(self.func[expr[index]])
-
+        nvar = len(self.func[expr[index]][0])
+        print('name : ', expr[index], index)
         while index + 1 < len(expr) and len(args) < nvar :
             index += 1
-            arg = ' '.join(expr[index])
-            
+            arg = expr[index]
+            print('arg ', arg, 'index ', index )
+
             if arg in self.func :
                 sub = ' '.join( self.getargs(expr, index))
-                arg += sub
+                arg += ' ' + sub
 
+
+            # print('sub :', arg, end=' ')
             args.append(arg)
 
         return args
 
-    def evaluate (self, expr) :
+    def evaluate (self, source) :
         i, sign = 0, 1
         running = True
         oper, stack = [], []
         number = ("^-?[0-9]*.?[0-9]+$")
         identf = ("_?[a-zA-Z]+_?|_[0-9]+");
+        expr = tokenize(source)
+        
+        if len(expr) == 0 : return ''
 
+        if expr[0] == 'fn' :
+            if expr[1] in self.func : raise ValueError("ERROR: this function already exist.")
+            if expr[1] in self.vars : raise ValueError("ERROR: this name already exist as a variable.")
+            mid = expr.index('=>')
+            vars, func, args = expr[2:mid], expr[mid + 1:], {}
+            
+            for var in vars : 
+                if not var in func or var in args :  raise ValueError("ERROR: Invalid function.")
+                args[var] = True
+                
+            self.func[expr[1]] = [vars, func]
+            return ''
+        
         while running :
             if isminus(expr, i) : 
                 sign = -1; i += 1
 
             if expr[i] == '(' :
                 sub = getsub(expr[i:])
-                stack.append(self.evaluate(sub) * sign)
+                stack.append(self.evaluate(' '.join(sub)) * sign)
                 sign = 1; i += len(sub) + 1
             elif re.match(number, expr[i]) :
                 stack.append(float(expr[i]) * sign)
                 sign = 1
             elif re.match(identf, expr[i]): # if cell is a variable
                 if '=' in expr :            # intialize variable
-                    try :
-                        if not expr[i] in self.vars :
-                            self.vars[expr[i]] = self.evaluate(expr[i+2:])
-                            return self.vars[expr[i]]
-                    except :
-                        return 'ERROR: Invalid identifier. Existing variable'
+                    if expr[i] in self.func : raise ValueError("ERROR: a variable of the same name already exist.")
+
+                    self.vars[expr[i]] = self.evaluate(' '.join(expr[i+2:]))
+                    return self.vars[expr[i]]
                 elif expr[i] in self.vars : # return variable
                     stack.append( self.vars[expr[i]] )
                 elif expr[i] in self.func : # execute function
-                    name = expr[i]
                     [vars,lmdb] = self.func[expr[i]]
-                    args = self.getargs(expr, i)
+                    args, sub = self.getargs(expr, i), []
 
-                    if len(vars) != len(args) : return "ERROR: Invalid function."
-                    print(vars, args)
+                    if len(vars) != len(args) : raise ValueError("ERROR: Invalid function.")
 
                     for cell in lmdb :
-                        if cell in vars :
-                            cell = args[vars.index(cell)]
+                        if cell in vars : cell = args[vars.index(cell)]
+                        sub += cell
 
-                    print(lmdb)
+                    i += len(args)
+                    stack.append( self.evaluate(' '.join(sub))) 
+                else :
+                    raise ValueError('ERROR: Unknown identifier.')
             elif expr[i] in operator :
                 while oper and order(oper[-1]) >= order(expr[i]) :
                     stack.append( operate(oper, stack) )
                 oper.append(expr[i])
-            else :
-                pass
-
+            # print(expr[i], stack, oper)
             i += 1
             if i >= len(expr) : running = False
 
         while oper : stack.append( operate(oper, stack))
 
-        return stack.pop()
+        match len(stack) :
+            case 0 : return 0
+            case 1 : return stack.pop()
+        
+        raise ValueError('ERROR: Invalid input.')
 
     def input(self, expression):
-        code = tokenize(expression)
-        if len(code) == 0 : return 'ERROR: Empty expression'
 
-        if code[0] == 'fn' :
-            if code[1] in self.func : return "ERROR : this function already exist."
+        return self.evaluate(expression)    
 
-            mid = code.index('=>')
-            self.func[code[1]] = [code[2:mid], code[mid + 1:]]
 
-            return 0
-        else :
-            return self.evaluate(code)
+    def prototype(self, source) :
+        code = tokenize(source)
+        index = 0
+
+        args = self.getargs(code, index)
+
+        print(args, index)
+
+        pass
 
 
 # Tests
@@ -173,11 +189,8 @@ class test :
             print('actual : ', actual, 'expect : ', result)
 
     def expect_error(actual, input) :
-        # print(actual, input)
-
+        # (actual, input)
         pass
-
-interpret = Interpreter()
 
 # cases = (
 #     ("1 + 1", 2),
@@ -192,36 +205,52 @@ interpret = Interpreter()
 # 
 # for x, y in cases:
 #     test.assert_equals(interpret.input(x), y)
-# 
+# test.assert_equals(interpret.input("fn inc x => x + 1"), (0))
+# test.assert_equals(interpret.input("fn add x y => x + y"), (0))
+#
+# test.assert_equals(interpret.input("a = 0"), (0))
+# test.assert_equals(interpret.input("a = inc a"), (1))
+# test.assert_equals(interpret.input("a = inc a"), (2))
+# test.assert_equals(interpret.input("a = inc a"), (3))
+
+interpreter = Interpreter();
+
+test.assert_equals(interpreter.input("fn echo x => x"), (''))
+test.assert_equals(interpreter.input("fn avg x y => (x + y) / 2"), (''))
+
+interpreter.prototype('avg echo 4 echo 2')
+
 # # Basic arithmetic
-# test.assert_equals(interpret.input("1 + 1"), 2)
-# test.assert_equals(interpret.input("2 - 1"), 1)
-# test.assert_equals(interpret.input("2 * 3"), 6)
-# test.assert_equals(interpret.input("8 / 4"), 2)
-# test.assert_equals(interpret.input("7 % 4"), 3)
+# test.assert_equals(interpreter.input("1 + 1"), 2)
+# test.assert_equals(interpreter.input("2 - 1"), 1)
+# test.assert_equals(interpreter.input("2 * 3"), 6)
+# test.assert_equals(interpreter.input("8 / 4"), 2)
+# test.assert_equals(interpreter.input("7 % 4"), 3)
+#
+# # Variables
+# test.assert_equals(interpreter.input("x = 1"), 1)
+# test.assert_equals(interpreter.input("x"), 1)
+# test.assert_equals(interpreter.input("x + 3"), 4)
+# test.expect_error("input: 'y'", lambda : interpreter.input("y"))
+#
+# # Functions
+#
+# test.expect_error("input: 'avg 7'", lambda : interpreter.input("avg 7"))
+# test.expect_error("input: 'avg 7 2 4'", lambda : interpreter.input("avg 7 2 4"))
+# # Conflicts
+# test.expect_error("input: 'fn x => 0'", lambda : interpreter.input("fn x => 0"))
+# test.expect_error("input: 'avg = 5'", lambda : interpreter.input("avg = 5"))
+#
+# test.assert_equals(interpreter.input("avg 4 2"), 3)
+#
 
-test.assert_equals(interpret.input("x = 4"), 4)
-test.assert_equals(interpret.input("x"), 4)
-test.assert_equals(interpret.input("x + 3"), 7)
-test.expect_error("input: 'y'", lambda : interpret.input("y"))
 
-test.assert_equals(interpret.input("x = 3"), 3)
-
-test.assert_equals(interpret.input("fn inc x => x + 1"), (0))
-test.assert_equals(interpret.input("fn avg x y => (x + y) / 2"), (0))
-test.assert_equals(interpret.input("fn add x y => x + y"), (0))
-test.assert_equals(interpret.input("fn echo x => x"), (0))
-
-test.assert_equals(interpret.input("a = 0"), (0))
-
-test.assert_equals(interpret.input("inc a"), (1))
-
-for name in interpret.func :
-    var = interpret.func[name][0]
-    lam = interpret.func[name][1]
+for name in interpreter.func :
+    [var, lam] = interpreter.func[name]
+    # print(name, len(var))
     # print(name, '=> ', var, lam)
 
-for name in interpret.vars :
+for name in interpreter.vars :
     # print(name, '=>', interpret.vars[name])
     pass
 
