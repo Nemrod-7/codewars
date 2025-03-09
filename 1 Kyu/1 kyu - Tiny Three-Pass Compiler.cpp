@@ -180,15 +180,21 @@ class Compiler {
             while (!tree.empty()) {
                 AST *node = getstk (tree);
 
-                if (node->op == "imm") { Asm.push_back ("IM " + to_string (node->n));
-                } else if (node->op == "arg") { Asm.push_back ("AR " + to_string (node->n));
+                if (node->op == "imm") { 
+                    Asm.push_back ("IM " + to_string (node->n));
+                } else if (node->op == "arg") { 
+                    Asm.push_back ("AR " + to_string (node->n));
                 } else {
                     Asm.insert (Asm.end(), pref.begin(), pref.end());
 
-                    if (node->op == "+") { Asm.push_back("AD");
-                    } else if (node->op == "-") { Asm.push_back("SU");
-                    } else if (node->op == "*") { Asm.push_back("MU");
-                    } else if (node->op == "/") { Asm.push_back("DI");
+                    if (node->op == "+") { 
+                        Asm.push_back("AD");
+                    } else if (node->op == "-") { 
+                        Asm.push_back("SU");
+                    } else if (node->op == "*") { 
+                        Asm.push_back("MU");
+                    } else if (node->op == "/") { 
+                        Asm.push_back("DI");
                     }
                 }
 
