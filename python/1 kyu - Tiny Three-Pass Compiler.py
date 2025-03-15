@@ -1,22 +1,5 @@
 import re
 
-# function   ::= '[' arg-list ']' expression
-#
-# arg-list   ::= /* nothing */
-#              | variable arg-list
-#
-# expression ::= term
-#              | expression '+' term
-#              | expression '-' term
-#
-# term       ::= factor
-#              | term '*' factor
-#              | term '/' factor
-#
-# factor     ::= number
-#              | variable
-#              | '(' expression ')'
-
 operator = ['+','-','*','/']
 
 def isnumber (x) :
@@ -144,20 +127,8 @@ prog = '[ x y z ] ( 2*3*x + 5*y - 3*z ) / (1 + 3 + 2*2)';
  
 t1 = {'op':'/', 'a':{'op':'-', 'a':{'op':'+', 'a':{'op':'*', 'a':{'op':'*', 'a':{'op':'imm','n':2}, 'b':{'op':'imm','n':3}}, 'b':{'op':'arg','n':0}}, 'b':{'op':'*', 'a':{'op':'imm','n':5}, 'b':{'op':'arg','n':1}}}, 'b':{'op':'*', 'a':{'op':'imm','n':3}, 'b':{'op':'arg','n':2}}}, 'b':{'op':'+', 'a':{'op':'+', 'a':{'op':'imm','n':1}, 'b':{'op':'imm','n':3}}, 'b':{'op':'*', 'a':{'op':'imm','n':2}, 'b':{'op':'imm','n':2}}}};
 
-t2 = {'op':'/',
-      'a':{'op':'-',
-           'a':{'op':'+',
-                'a':{'op':'*',
-                     'a':{'op':'imm','n':6},
-                     'b':{'op':'arg','n':0}},
-                'b':{'op':'*',
-                     'a':{'op':'imm','n':5},
-                     'b':{'op':'arg','n':1}}},
-           'b':{'op':'*',
-                'a':{'op':'imm','n':3},
-                'b':{'op':'arg','n':2}}},
-      'b':{'op':'imm','n':8}};
-        
+t2 = {'op':'/', 'a':{'op':'-', 'a':{'op':'+', 'a':{'op':'*', 'a':{'op':'imm','n':6}, 'b':{'op':'arg','n':0}}, 'b':{'op':'*', 'a':{'op':'imm','n':5}, 'b':{'op':'arg','n':1}}}, 'b':{'op':'*', 'a':{'op':'imm','n':3}, 'b':{'op':'arg','n':2}}}, 'b':{'op':'imm','n':8}};
+
 
 # prog = "[x y z]  2*3*x + 5*y - 3*z "
 p1 = gcc.pass1(prog)
