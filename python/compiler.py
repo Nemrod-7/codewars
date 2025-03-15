@@ -1,21 +1,21 @@
 import re
 
-    # function   ::= '[' arg-list ']' expression
-    #
-    # arg-list   ::= /* nothing */
-    #              | variable arg-list
-    #
-    # expression ::= term
-    #              | expression '+' term
-    #              | expression '-' term
-    #
-    # term       ::= factor
-    #              | term '*' factor
-    #              | term '/' factor
-    #
-    # factor     ::= number
-    #              | variable
-    #              | '(' expression ')'
+# function   ::= '[' arg-list ']' expression
+#
+# arg-list   ::= /* nothing */
+#              | variable arg-list
+#
+# expression ::= term
+#              | expression '+' term
+#              | expression '-' term
+#
+# term       ::= factor
+#              | term '*' factor
+#              | term '/' factor
+#
+# factor     ::= number
+#              | variable
+#              | '(' expression ')'
 
 operator = ['+','-','*','/']
 
@@ -45,14 +45,13 @@ class Compiler(object):
         it = program.find(']')
         args = self.tokenize(program[1:it])
         expr = self.tokenize(program[it+1:])
-
         vars, oper = [], []
 
         for cell in expr :
             if isnumber(cell) :
                 vars.append( { 'op':'imm', 'n':cell } )
             elif cell in operator :
-                while oper and order(oper[-1] >= cell) :
+                while oper and order(oper[-1]) >= order(cell) :
                     self.operate(vars,oper)
                 oper += cell
             elif cell == '(' :
@@ -87,6 +86,7 @@ class Compiler(object):
 
     def pass3 (self, ast) : # Returns assembly instructions
         temp = ast
+        asm = []
         s1, s2 = [], []
         s1.append(temp)
         
@@ -97,23 +97,22 @@ class Compiler(object):
                 if temp['a'] : s1.append(temp['a'])
                 if temp['b'] : s1.append(temp['b'])
 
-        print(s2)
-        oss = ''
-        tree = {}
-        
-        while tree :
-            node = tree.pop()
+        while s2 :
+            node = s2.pop()
             if node['op'] == 'imm' : 
-                oss += 'IM' + str(node['n'])
+                asm += ['IM ' + str(node['n'])]
             elif node['op'] == 'arg' :
-                oss += 'AR' + str(node['n'])
+                asm += ['AR ' + str(node['n'])]
             else :
-                oss += ['PO','SW','PO']
-                if node['op'] == '+' : oss += 'AD'
-                if node['op'] == '-' : oss += 'SU'
-                if node['op'] == '*' : oss += 'MU'
-                if node['op'] == '/' : oss += 'DI'
-        return oss
+                asm += ['PO','SW','PO']
+                if node['op'] == '+' : asm += ['AD']
+                if node['op'] == '-' : asm += ['SU']
+                if node['op'] == '*' : asm += ['MU']
+                if node['op'] == '/' : asm += ['DI']
+            asm += ['PU']
+
+        return asm
+
     def compile(self, program) :
         return self.pass3(self.pass2(self.pass1(program)))
 
@@ -134,15 +133,39 @@ def simulate(asm, argv):
         elif ins == 'DI': r0 /= r1
     return r0
 
+class test:
+    def assert_equals(actual, expect, message='') :
+        if actual != expect :
+            print('actual : ', actual, '\nexpect : ', expect)
+
 gcc = Compiler()
 
 prog = '[ x y z ] ( 2*3*x + 5*y - 3*z ) / (1 + 3 + 2*2)';
  
-t1 = {'op':'/','a':{'op':'-','a':{'op':'+','a':{'op':'*','a':{'op':'*','a':{'op':'imm','n':2},'b':{'op':'imm','n':3}},'b':{'op':'arg','n':0}},'b':{'op':'*','a':{'op':'imm','n':5},'b':{'op':'arg','n':1}}},'b':{'op':'*','a':{'op':'imm','n':3},'b':{'op':'arg','n':2}}},'b':{'op':'+','a':{'op':'+','a':{'op':'imm','n':1},'b':{'op':'imm','n':3}},'b':{'op':'*','a':{'op':'imm','n':2},'b':{'op':'imm','n':2}}}};
+t1 = {'op':'/', 'a':{'op':'-', 'a':{'op':'+', 'a':{'op':'*', 'a':{'op':'*', 'a':{'op':'imm','n':2}, 'b':{'op':'imm','n':3}}, 'b':{'op':'arg','n':0}}, 'b':{'op':'*', 'a':{'op':'imm','n':5}, 'b':{'op':'arg','n':1}}}, 'b':{'op':'*', 'a':{'op':'imm','n':3}, 'b':{'op':'arg','n':2}}}, 'b':{'op':'+', 'a':{'op':'+', 'a':{'op':'imm','n':1}, 'b':{'op':'imm','n':3}}, 'b':{'op':'*', 'a':{'op':'imm','n':2}, 'b':{'op':'imm','n':2}}}};
 
-t2 = {'op':'/','a':{'op':'-','a':{'op':'+','a':{'op':'*','a':{'op':'imm','n':6},'b':{'op':'arg','n':0}},'b':{'op':'*','a':{'op':'imm','n':5},'b':{'op':'arg','n':1}}},'b':{'op':'*','a':{'op':'imm','n':3},'b':{'op':'arg','n':2}}},'b':{'op':'imm','n':8}};
+t2 = {'op':'/',
+      'a':{'op':'-',
+           'a':{'op':'+',
+                'a':{'op':'*',
+                     'a':{'op':'imm','n':6},
+                     'b':{'op':'arg','n':0}},
+                'b':{'op':'*',
+                     'a':{'op':'imm','n':5},
+                     'b':{'op':'arg','n':1}}},
+           'b':{'op':'*',
+                'a':{'op':'imm','n':3},
+                'b':{'op':'arg','n':2}}},
+      'b':{'op':'imm','n':8}};
         
-ast = gcc.pass1(prog)
-ast = gcc.pass2(ast)
-act = gcc.pass3(ast)
-print(act)
+
+# prog = "[x y z]  2*3*x + 5*y - 3*z "
+p1 = gcc.pass1(prog)
+p2 = gcc.pass2(p1)
+p3 = gcc.pass3(p2)
+
+test.assert_equals(p2,t2)
+
+test.assert_equals(simulate(p3, [4,0,0]), 3, 'prog(4,0,0) == 3')
+test.assert_equals(simulate(p3, [4,8,0]), 8, 'prog(4,8,0) == 8')
+test.assert_equals(simulate(p3, [4,8,16]), 2, 'prog(4,8,6) == 2')
