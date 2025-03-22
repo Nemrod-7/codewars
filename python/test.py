@@ -1,4 +1,18 @@
 
-state = [3,2,0,1]
+import seaborn as sns
+from matplotlib import pyplot as plt
 
 
+plt.style.use('dark_background')
+
+dots = sns.load_dataset("dots")
+
+sns.relplot(
+    data=dots, kind="line",
+    x="time", y="firing_rate", col="align",
+    hue="choice", size="coherence", style="choice",
+    facet_kws=dict(sharex=False),
+)
+
+
+plt.show()
