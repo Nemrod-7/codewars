@@ -1,8 +1,7 @@
-# import numpy as np
+import numpy as np
 
 def distance (p1,p2) :
-    return abs(p1[0] - p2[0]) ** 2 + abs(p1[1] - p2[1]) ** 2
-    # return np.hypot(p1[0] - p2[0], p1[1] - p2[1])
+    return np.hypot(p1[0] - p2[0], p1[1] - p2[1])
 
 def mindist (left, right) :
     return left if distance(left[0],left[1]) < distance(right[0],right[1]) else right
@@ -40,20 +39,20 @@ def stripdist (point, close) :
 
     return next
 
-def closest_pair(point):
-    point = [p for p in point]
-    point.sort()
+def closest_pair(points):
+    points = [p for p in points]
+    points.sort()
     
-    if len(point) <= 4 : return bruteforce(point)
-    # if len(point) == 2 : return point
-    left, right = [], []
-    mid = point[len(point) // 2][0]
+    if len(points) < 4 : return bruteforce(points)
 
-    for p in point : left.append(p) if p[0] < mid else right.append(p)
+    left, right = [], []
+    center = points[int(len(points) / 2)]
+
+    for p in points : left.append(p) if p[0] < center[0] else right.append(p)
 
     close = mindist(closest_pair(left),closest_pair(right))
     minv = distance(close[0], close[1])
-    strip = [ p for p in point if abs(p[0] - mid) < minv ]
+    strip = [ p for p in points if abs(p[0] - center[0]) < minv ]
 
     return stripdist(strip, close)
 

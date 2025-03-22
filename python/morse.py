@@ -53,7 +53,7 @@ def mkunit2 (token) :
     # plt.show()
 
     # print(u1, u2, u3)
-    return [round(u1), round(u2), round(u3)]
+    # return [round(u1), round(u2), round(u3)]
     return [u1,u2,u3]
 
 def type (length, units) :
@@ -98,44 +98,5 @@ token = msg.strip('0').replace("01", "0 1").replace("10", "1 0").split()
 morse = decode_bits(msg)
 text = decode_morse(morse)
 print(text)
-
-# def skip (src, it) :
-#     ref = src[it]
-#     prev = it
-#     while it < len(src) and src[it] == ref : it += 1
-#
-#     return it - prev
-#
-# def mkunit(src, ch) :
-#     i, unit = 0, 999
-#
-#     while i < len(src) :
-#         cnt = skip(src, i)
-#         if src[i] == ch and cnt : 
-#             unit = min(cnt,unit)
-#         i += cnt
-#
-#     return unit
-#
-# def decode_bits2(src) :
-#     bit = src.strip('0')
-#     i = 0
-#     morse = ''
-#     rate = min( mkunit(bit,'0'), mkunit(bit,'1'))
-#
-#     while i < len(bit) :
-#         unit = skip(bit, i)
-#
-#         if bit[i] == '0' :
-#             if unit == 3 * rate : morse += ' '
-#             if unit == 7 * rate : morse += '  '
-#
-#         if bit[i] == '1' :
-#             if unit == 1 * rate : morse += '.'
-#             if unit == 3 * rate : morse += '-'
-#
-#         i += unit
-#
-#     return morse
 
 
