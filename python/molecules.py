@@ -25,7 +25,7 @@ def test_methane() :
     methane = Molecule("methane").brancher(1)
     try:    atoms = methane.atoms
     except: test.expect(False, "Couldn't access to the list of atoms")
-        
+
     test.assert_equals(str(atoms[0]), 'Atom(C.1)')
 
     methane.closer()
@@ -65,7 +65,7 @@ CH2-CH2-CH2
 "cyclohexane",
 [6],
 [(1,1,6,1)],
-'C6H12', 
+'C6H12',
 84,
 ["Atom(C.1: C2,C6,H,H)", "Atom(C.2: C1,C3,H,H)", "Atom(C.3: C2,C4,H,H)", "Atom(C.4: C3,C5,H,H)", "Atom(C.5: C4,C6,H,H)", "Atom(C.6: C1,C5,H,H)"]),
 
@@ -182,7 +182,7 @@ def mutations () :
 
         test.assert_equals(m.formula, formula, "Testing raw formula")
         test.assert_equals(m.molecular_weight, mm, "Testing molecular weight")
-        # test.assert_equals(extractNoneHToStr(m), strNoH, "Checking bonds (for non-hydrogens)")
+        test.assert_equals(extractNoneHToStr(m), strNoH, "Checking bonds (for non-hydrogens)")
 
 config = [
 ("No self-bonding",
@@ -238,17 +238,5 @@ config = [
 #     if mutadd == "mutate":   func = lambda: m.mutate(inp).closer()
 #     elif mutadd == "add":    func = lambda: m.add(inp).closer()
 #     elif mutadd == "mutadd": func = lambda: m.mutate(inp[0]).add(inp[1]).closer()
-#     else:  
+#     else:
 #         pass
-
-
-
-
-
-
-
-
-
-
-
-
