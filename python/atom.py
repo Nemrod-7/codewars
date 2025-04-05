@@ -57,10 +57,6 @@ class Molecule() :
         self.arms = [[0]]
 
         print('Molecule(\'\')',end='')
-    def bond(self, i1, i2) :
-        a1, a2 = self.atoms[i1], self.atoms[i2]
-        self.atoms[i1].edge.append(a2)
-        self.atoms[i2].edge.append(a1)
 
     @property
     def formula(self) :
@@ -140,8 +136,8 @@ class Molecule() :
                 raise InvalidBond
 
             self.atoms.append(a1)
-            self.bond(self.arms[nb][nc], len(self.atoms) - 1)
-
+            # self.bond(self.arms[nb][nc], len(self.atoms) - 1)
+            Atom.bond(a2, a1)
         return self
 
     def add_chaining(self, nc, nb, *elts) :
@@ -151,10 +147,17 @@ class Molecule() :
         i1 = self.arms[nb][nc]
         i2 = len(self.atoms) + 1
 
-        self.atoms += [Atom(i2 + i, elts[i], []) for i in range(0,len(elts))]
+        chain = []
+        for i in range(0,len(elts)) :
+            if table[elts[i]][0] < 2 and i < len(elts) - 1 :
+                raise InvalidBond
+            chain.append( Atom(i2 + i, elts[i], []))
+        self.atoms += chain
+        # self.atoms += [Atom(i2 + i, elts[i], []) for i in range(0,len(elts))]
         for i in range(i2, len(self.atoms)) : self.bond(i-1, i)
 
-        self.bond(i1, i2-1)
+        Atom.bond(self.atoms[i1], self.atoms[i2-1])
+        # self.bond(i1, i2-1)
         return self
 
     def closer(self) : 
@@ -173,7 +176,7 @@ class Molecule() :
         return self
 
     def unlock (self) :
-        if self.lock : raise UnlockedMolecule
+        if not self.lock : raise UnlockedMolecule
 
         print('.unlock()')
         self.lock = False
@@ -201,8 +204,7 @@ class display :
             print(atom)
 
 try :
-    m = Molecule('').brancher(* (4,) ).closer()
-
+    m = Molecule('').brancher(* (3,) ).add_chaining( 2 , 1 ,* ('C', 'C', 'F', 'H') )
 
     print(m.formula, m.molecular_weight)
     display.atoms(m)
