@@ -29,15 +29,27 @@ def mkunit2 (token) :
 
     for cell in token :
         x = len(cell)
-        if cell[0] == '0' : 
-            zero[x] = zero[x] + 1 if x in zero else 1
-        if cell[0] == '1' : 
-            ones[x] = ones[x] + 1 if x in ones else 1
 
-    zero, ones = np.array([[x,zero[x]] for x in zero]), np.array([[x,ones[x]] for x in ones])
+        match cell[0] :
+            case '0' : zero[x] = zero[x] + 1 if x in zero else 1
+            case '1' : ones[x] = ones[x] + 1 if x in ones else 1
+        # if cell[0] == '0' : 
+        # if cell[0] == '1' : 
 
+    zero, ones = [[x,zero[x]] for x in zero], [[x,ones[x]] for x in ones]
+
+    # zero.sort(key = lambda x: x[0])
+    # ones.sort(key = lambda x: x[0])
+
+    print(zero)
+    print(ones)
     c0, c1 = kmeans(whiten(zero), 3)[0], kmeans(whiten(ones), 2)[0]
-    r0, r1 = np.sort(c0[:,0] * np.std(zero)), np.sort(c1[:,0] * np.std(zero))
+    r0, r1 = np.sort(c0[:,0] * np.std(zero)), np.sort(c1[:,0] * np.std(ones))
+
+    u0 = whiten(zero) * np.std(zero)
+    
+
+    print(u0)
 
     u1 = np.mean([r0[0], r1[0]])
     u2 = np.mean([r0[1], r1[1]])
@@ -63,6 +75,7 @@ def type (length, units) :
 
 def decode_bits (bin) :
     morse = ''
+    token = bin.strip('0').replace("01", "0 1").replace("10", "1 0").split()
     rate = mkunit2(token)
 
     print(rate)
@@ -90,13 +103,14 @@ class test :
             print ('expect : ', expect)
 
 msg = '0000000011011010011100000110000001111110100111110011111100000000000111011111111011111011111000000101100011111100000111110011101100000100000'
-token = msg.strip('0').replace("01", "0 1").replace("10", "1 0").split()
 
+msg = "00000000000111111100000011010001110111000000001110000000000000000001111111011111100001101111100000111100111100011111100000001011100000011111110010001111100110000011111100101111100000000000000111111100001111010110000011000111110010000011111110001111110011111110000010001111110001111111100000001111111101110000000000000010110000111111110111100000111110111110011111110000000011111001011011111000000000000111011111011111011111000000010001001111100000111110111111110000001110011111100011111010000001100001001000000000000000000111111110011111011111100000010001001000011111000000100000000101111101000000000000011111100000011110100001001100000000001110000000000000001101111101111000100000100001111111110000000001111110011111100011101100000111111000011011111000111111000000000000000001111110000100110000011111101111111011111111100000001111110001111100001000000000000000000000000000000000000000000000000000000000000" # "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG"
 # ones = [it for it in bin.split('0') if it != '']
 # zero = [it for it in bin.split('1') if it != '']
+# token = msg.strip('0').replace("01", "0 1").replace("10", "1 0").split()
 
 morse = decode_bits(msg)
-text = decode_morse(morse)
-print(text)
+# text = decode_morse(morse)
+# print(text)
 
 
