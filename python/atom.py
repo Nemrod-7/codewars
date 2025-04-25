@@ -7,9 +7,8 @@ from molecules import *
 ##############################################################################################
 
 
-table = { 'C':[4, 12.0], 'H':[1, 1.0 ], 'O':[2, 16.0], 'B':[3, 10.8], 'Br':[1, 80.0], 'Cl':[1, 35.5], 'F':[1, 19.0], 'Mg':[2, 24.3], 'N':[3, 14.0], 'P':[3, 31.0], 'S':[2, 32.1] }
-
 order = ['C','H','O','B','Br','Cl','F','Mg','N','P','S']
+table = { 'C':[4, 12.0], 'H':[1, 1.0 ], 'O':[2, 16.0], 'B':[3, 10.8], 'Br':[1, 80.0], 'Cl':[1, 35.5], 'F':[1, 19.0], 'Mg':[2, 24.3], 'N':[3, 14.0], 'P':[3, 31.0], 'S':[2, 32.1] }
 
 class UnlockedMolecule(Exception) : 
     def __init__(self) :
@@ -34,6 +33,9 @@ class Atom() :
     def __eq__(self, other): return self.id == other.id
 
     def __str__(self) :
+        self.edge.sort(key = lambda x: x.id  )
+        self.edge.sort(key = lambda x: order.index(x.element) if x.element != 'H' else len(order)  )
+
         prefix = 'Atom(' + self.element + '.' + str(self.id)
         edge =  ['H' if bond.element == 'H' else bond.element + str(bond.id) for bond in self.edge]
 
@@ -60,7 +62,8 @@ class Molecule() :
 
     @property
     def formula(self) :
-        if not self.lock : raise UnLockedMolecule
+        if not self.lock : raise UnlockedMolecule
+
         hist = {}
         formula = ''
         
@@ -77,11 +80,11 @@ class Molecule() :
     
     @property
     def molecular_weight (self) :
-        if not self.lock : raise UnLockedMolecule
+        if not self.lock : raise UnlockedMolecule
         return sum( table[atom.element][1] for atom in self.atoms)
     
     def brancher(self, *arg) :
-        if self.lock : raise UnlockedMolecule
+        if self.lock : raise LockedMolecule
         print('.brancher(*',arg,')',end='')
 
         for nc in arg :
@@ -154,7 +157,9 @@ class Molecule() :
             chain.append( Atom(i2 + i, elts[i], []))
         self.atoms += chain
         # self.atoms += [Atom(i2 + i, elts[i], []) for i in range(0,len(elts))]
-        for i in range(i2, len(self.atoms)) : self.bond(i-1, i)
+        for i in range(i2, len(self.atoms)) : 
+            Atom.bond(self.atoms[i-1], self.atoms[i])
+            # self.bond(i-1, i)
 
         Atom.bond(self.atoms[i1], self.atoms[i2-1])
         # self.bond(i1, i2-1)
@@ -177,11 +182,12 @@ class Molecule() :
 
     def unlock (self) :
         if not self.lock : raise UnlockedMolecule
+        self.lock = False
 
         print('.unlock()')
-        self.lock = False
         self.atoms = [ atom for atom in self.atoms if atom.element != 'H' ]
 
+        display.atoms(self)
         for atom in self.atoms :
             atom.edge = [nxt for nxt in atom.edge if nxt.element != 'H']
 
@@ -195,26 +201,30 @@ class display :
         for i in range(1, len(m.arms)) :
             for j in range(1, len(m.arms[i])) :
                 atom = m.atoms[m.arms[i][j]]
-
                 print(atom)
+
             print()
 
     def atoms(molecule) :
         for atom in molecule.atoms :
             print(atom)
 
+m = Molecule('')
+
 try :
-    m = Molecule('').brancher(* (3,) ).add_chaining( 2 , 1 ,* ('C', 'C', 'F', 'H') )
+    # m.brancher(* (4,) ).bounder(* ((3, 1, 2, 1), (3, 1, 2, 1), (3, 1, 2, 1)) )
+    # m = Molecule('').brancher(* (3,) ).add_chaining( 2 , 1 ,* ('C', 'C', 'F', 'H') )
+    # m.brancher(* (3,) ).add(* ((2, 1, 'H'),) ).brancher(* (1,) ).bounder(* ((2, 1, 1, 2),) )
+    m.brancher(* (3,) ).add(* ((2, 1, 'H'),) ).brancher(* (1,) ).bounder(* ((2, 1, 1, 2),) )
+    m.closer()
+    m.unlock()
 
-    print(m.formula, m.molecular_weight)
-    display.atoms(m)
-
+    print(m.formula)
 except Exception as x:
-    print('error :', x)
+    print('\nerror :', x)
 
 
 # display.branches(m)
-
 # for i in range(0,len(expect)) :
 #     if actual[i] != expect[i] :
 #         print('actuel : ', actual[i])
