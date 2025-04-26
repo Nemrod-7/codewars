@@ -10,13 +10,13 @@ from molecules import *
 order = ['C','H','O','B','Br','Cl','F','Mg','N','P','S']
 table = { 'C':[4, 12.0], 'H':[1, 1.0 ], 'O':[2, 16.0], 'B':[3, 10.8], 'Br':[1, 80.0], 'Cl':[1, 35.5], 'F':[1, 19.0], 'Mg':[2, 24.3], 'N':[3, 14.0], 'P':[3, 31.0], 'S':[2, 32.1] }
 
-class UnlockedMolecule(Exception) : 
+class UnlockedMolecule(Exception) :
     def __init__(self) :
         super().__init__('Unlocked Molecule.')
-class LockedMolecule(Exception):     
+class LockedMolecule(Exception):
     def __init__(self) :
         super().__init__('Locked Molecule.')
-class EmptyMolecule(Exception) : 
+class EmptyMolecule(Exception) :
     def __init__(self) :
         super().__init__('Empty Molecule.')
 class InvalidBond(Exception):
@@ -57,8 +57,7 @@ class Molecule() :
         self.lock = False
         self.atoms = []
         self.arms = [[0]]
-
-        print('Molecule(\'\')',end='')
+        print('Molecule(\'',name,'\')',end='')
 
     @property
     def formula(self) :
@@ -66,7 +65,7 @@ class Molecule() :
 
         hist = {}
         formula = ''
-        
+
         for atom in self.atoms :
             hist[atom.element] = 1 if atom.element not in hist else hist[atom.element] + 1
 
@@ -75,14 +74,14 @@ class Molecule() :
 
         for elt, nb in arr :
             formula += elt + (str(nb) if nb > 1 else '')
-     
+
         return formula
-    
+
     @property
     def molecular_weight (self) :
         if not self.lock : raise UnlockedMolecule
         return sum( table[atom.element][1] for atom in self.atoms)
-    
+
     def brancher(self, *arg) :
         if self.lock : raise LockedMolecule
         print('.brancher(*',arg,')',end='')
@@ -109,13 +108,11 @@ class Molecule() :
                 raise InvalidBond
 
             Atom.bond(a1,a2)
-            # self.bond(i1, i2)
 
         return self
 
     def mutate(self, *arg) :
         if self.lock : raise LockedMolecule
-
         print('.mutate(*',arg,')', end='')
         for nc,nb,elt in arg :
             [valence, weight] = table[elt]
@@ -146,30 +143,35 @@ class Molecule() :
     def add_chaining(self, nc, nb, *elts) :
         if self.lock : raise LockedMolecule
         print('.add_chaining(',nc,',',nb,',*', elts, ')',end='')
-
         i1 = self.arms[nb][nc]
         i2 = len(self.atoms) + 1
+
+        for at in elts :
+
+            pass
+
 
         chain = []
         for i in range(0,len(elts)) :
             if table[elts[i]][0] < 2 and i < len(elts) - 1 :
                 raise InvalidBond
             chain.append( Atom(i2 + i, elts[i], []))
+
         self.atoms += chain
-        # self.atoms += [Atom(i2 + i, elts[i], []) for i in range(0,len(elts))]
-        for i in range(i2, len(self.atoms)) : 
+
+        for i in range(i2, len(self.atoms)) :
             Atom.bond(self.atoms[i-1], self.atoms[i])
-            # self.bond(i-1, i)
 
         Atom.bond(self.atoms[i1], self.atoms[i2-1])
-        # self.bond(i1, i2-1)
+
         return self
 
-    def closer(self) : 
+    def closer(self) :
         if self.lock : raise LockedMolecule
+        print('.closer()')
         self.lock = True
         hist = {}
-        print('.closer()')
+
         for atom in self.atoms :
             while atom.valid_valence() :
                 hydr = Atom(len(self.atoms) + 1, 'H', [atom])
@@ -182,22 +184,36 @@ class Molecule() :
 
     def unlock (self) :
         if not self.lock : raise UnlockedMolecule
+        print('.unlock()')
         self.lock = False
 
-        print('.unlock()')
-        self.atoms = [ atom for atom in self.atoms if atom.element != 'H' ]
+        base = [[0]]
+        prev = self.atoms
+        next = [atom for atom in prev if atom.element != 'H']
 
-        display.atoms(self)
-        for atom in self.atoms :
-            atom.edge = [nxt for nxt in atom.edge if nxt.element != 'H']
+        # reindex base
+        for branch in self.arms:
+            arm = [0] + [ new for index in branch if prev[index].element != 'H' for new in range(len(next)) if next[new].id == prev[index].id ]
+            if arm != [0] : base.append(arm)
+            print(arm)
 
+        # reindex atoms
+        for i in range(len(next)) :
+            next[i].id = i + 1
+            next[i].edge = [nxt for nxt in next[i].edge if nxt.element != 'H']
+
+        self.arms = base
+        self.atoms = next
+
+        if next == [] : raise EmptyMolecule
         return self
 
 ################################################################################
 class display :
     def branches(molecule) :
-        print(molecule.name, molecule.formula, molecule.molecular_weight)
+        # print(molecule.name, molecule.formula, molecule.molecular_weight)
         m = molecule
+        print()
         for i in range(1, len(m.arms)) :
             for j in range(1, len(m.arms[i])) :
                 atom = m.atoms[m.arms[i][j]]
@@ -206,25 +222,23 @@ class display :
             print()
 
     def atoms(molecule) :
+        print()
         for atom in molecule.atoms :
             print(atom)
 
-m = Molecule('')
+m = Molecule('test #3')
 
 try :
-    # m.brancher(* (4,) ).bounder(* ((3, 1, 2, 1), (3, 1, 2, 1), (3, 1, 2, 1)) )
-    # m = Molecule('').brancher(* (3,) ).add_chaining( 2 , 1 ,* ('C', 'C', 'F', 'H') )
-    # m.brancher(* (3,) ).add(* ((2, 1, 'H'),) ).brancher(* (1,) ).bounder(* ((2, 1, 1, 2),) )
-    m.brancher(* (3,) ).add(* ((2, 1, 'H'),) ).brancher(* (1,) ).bounder(* ((2, 1, 1, 2),) )
-    m.closer()
-    m.unlock()
+    m.brancher(* (5, 6) ) 
+    m.mutate(* ((3, 1, 'O'),) ) 
+except Exception as x: print('\nerror :', x)
 
-    print(m.formula)
-except Exception as x:
-    print('\nerror :', x)
+try : 
+    m.add_chaining( 3 , 1 ,* ('C', 'N') ) 
+except Exception as x: print('\nerror :', x)
 
+# display.atoms(m)
 
-# display.branches(m)
 # for i in range(0,len(expect)) :
 #     if actual[i] != expect[i] :
 #         print('actuel : ', actual[i])
