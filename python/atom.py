@@ -1,5 +1,4 @@
-
-from molecules import *
+import re
 ##############################################################################################
 # Symbol:           H     B     C     N     O     F    Mg     P     S    Cl    Br            #
 # Valence number:   1     3     4     3     2     1     2     3     2     1     1            #
@@ -10,238 +9,93 @@ from molecules import *
 order = ['C','H','O','B','Br','Cl','F','Mg','N','P','S']
 table = { 'C':[4, 12.0], 'H':[1, 1.0 ], 'O':[2, 16.0], 'B':[3, 10.8], 'Br':[1, 80.0], 'Cl':[1, 35.5], 'F':[1, 19.0], 'Mg':[2, 24.3], 'N':[3, 14.0], 'P':[3, 31.0], 'S':[2, 32.1] }
 
-class UnlockedMolecule(Exception) :
-    def __init__(self) :
-        super().__init__('Unlocked Molecule.')
-class LockedMolecule(Exception):
-    def __init__(self) :
-        super().__init__('Locked Molecule.')
-class EmptyMolecule(Exception) :
-    def __init__(self) :
-        super().__init__('Empty Molecule.')
-class InvalidBond(Exception):
-    def __init__(self) :
-        super().__init__('Invalid Bond')
 
-class Atom() :
-    def __init__(self, id, elt, adj) :
-        self.id = id
-        self.element = elt
-        self.edge = adj
+RADICALS = ["meth",  "eth",   "prop",   "but",      "pent",     "hex",     "hept",     "oct",     "non",    "dec",  "undec", "dodec", "tridec", "tetradec", "pentadec", "hexadec", "heptadec", "octadec", "nonadec"]
 
-    def __hash__(self):      return self.id
-    def __eq__(self, other): return self.id == other.id
+MULTIPLIERS = [         "di",     "tri",     "tetra",     "penta",     "hexa",     "hepta",     "octa",     "nona",     "deca", "undeca", "dodeca", "trideca", "tetradeca", "pentadeca", "hexadeca", "heptadeca", "octadeca", "nonadeca"]
 
-    def __str__(self) :
-        self.edge.sort(key = lambda x: x.id  )
-        self.edge.sort(key = lambda x: order.index(x.element) if x.element != 'H' else len(order)  )
+ALK = ['ane','yl','ene', 'yne' ] # => ['C']
 
-        prefix = 'Atom(' + self.element + '.' + str(self.id)
-        edge =  ['H' if bond.element == 'H' else bond.element + str(bond.id) for bond in self.edge]
+HALOGEN = ['fluoro','chloro','bromo','iodo'] # => ['F','Cl','Br','I']
 
-        if len(edge) > 0 : prefix += ': '
-        return prefix + ','.join(edge) + ')'
+def alkane(chain) :
+    if chain[-3:] == 'ane' : return 'C'
+    return ''
 
-    def bond(atom1, atom2) :
-        a1, a2 = atom1, atom2
-        
-        if a1 == a2 : raise InvalidBond
-        if not a1.valid_valence() or not a2.valid_valence() : raise InvalidBond
+def alcool(chain) :
+    if chain[:8] == 'hydroxy' or chain[-2:] == 'ol' : return 'OH'
+    return ''
 
-        atom1.edge.append(a2)
-        atom2.edge.append(a1)
+def thiol(chain) :
+    if chain[:8] == 'mercapto' or chain[-5:] == 'thiol' : return 'SH'
+    return ''
 
-    def valid_valence(self) :
-        return len(self.edge) < table[self.element][0]
+def imine(chain) :
+    if chain[:5] == 'imino' or chain[-5:] == 'imine' : return 'NH'
+    return ''
 
-class Molecule() :
-    def __init__ (self, name='') :
-        self.name = name
+def ketone(chain) :
+    if chain[:3] == 'oxo' or chain[-3:] == 'one' : return 'O'
+    return ''
 
-        self.lock = False
-        self.atoms = []
-        self.arms = [[0]]
-        print('Molecule(\'',name,'\')',end='')
+def aldehyde(chain) :
+    if chain[:6] == 'formyl' : return 'CH=O'
+    if chain[-2:] == 'al': return 'O'
+    return ''
 
-    @property
-    def formula(self) :
-        if not self.lock : raise UnlockedMolecule
+def Carboxylic_acids(chain) :
+    if chain[-5:] == 'acid' : return 'C=O'
+    return ''
 
-        hist = {}
-        formula = ''
+def amide(chain) :
+    if chain[:5] == 'amido' or chain[-5:] == 'amide' : return 'NH2'
+    return ''
 
-        for atom in self.atoms :
-            hist[atom.element] = 1 if atom.element not in hist else hist[atom.element] + 1
-
-        arr = [(key,hist[key]) for key in hist]
-        arr.sort(key = lambda x: order.index(x[0]))
-
-        for elt, nb in arr :
-            formula += elt + (str(nb) if nb > 1 else '')
-
-        return formula
-
-    @property
-    def molecular_weight (self) :
-        if not self.lock : raise UnlockedMolecule
-        return sum( table[atom.element][1] for atom in self.atoms)
-
-    def brancher(self, *arg) :
-        if self.lock : raise LockedMolecule
-        print('.brancher(*',arg,')',end='')
-
-        for nc in arg :
-            branch = [0] + [len(self.atoms) + i for i in range(0, nc)]
-            self.atoms += [Atom((len(self.atoms) + i + 1), 'C',[]) for i in range(0,nc)]
-            self.arms.append(branch)
-
-            for i in range(2, nc + 1) :
-                Atom.bond(self.atoms[branch[i-1]], self.atoms[branch[i-0]])
-
-        return self
-
-    def bounder(self, *arg) :
-        if self.lock : raise LockedMolecule
-        print('.bounder(*',arg,')',end='')
-        for c1,b1,c2,b2 in arg :
-            # i1, i2 = self.arms[b1][c1], self.arms[b2][c2]
-            a1, a2 = self.atoms[self.arms[b1][c1]], self.atoms[self.arms[b2][c2]]
-            Atom.bond(a1,a2)
-
-        return self
-
-    def mutate(self, *arg) :
-        if self.lock : raise LockedMolecule
-        print('.mutate(*',arg,')', end='')
-        for nc,nb,elt in arg :
-            valence, weight = table[elt]
-            i1 = self.arms[nb][nc]
-
-            if len(self.atoms[i1].edge) > valence :
-                raise InvalidBond
-
-            self.atoms[i1].element = elt
-
-        return self
-
-    def add(self, *arg) :
-        if self.lock : raise LockedMolecule
-        print('.add(*',arg,')', end='')
-        for nc,nb,elt in arg :
-            a1 = Atom(len(self.atoms) + 1, elt, [])
-            a2 = self.atoms[self.arms[nb][nc]]
-            Atom.bond(a2, a1)
-            self.atoms.append(a1)
-
-        return self
-
-    def add_chaining(self, nc, nb, *elts) :
-        if self.lock : raise LockedMolecule
-        print('.add_chaining(',nc,',',nb,',*', elts, ')',end='')
-        i1 = self.arms[nb][nc]
-        i2 = len(self.atoms) + 1
-
-        chain = []
-        for i in range(0,len(elts)) :
-            if table[elts[i]][0] < 2 and i < len(elts) - 1 :
-                raise InvalidBond
-            chain.append( Atom(i2 + i, elts[i], []))
-
-        self.atoms += chain
-
-        for i in range(i2, len(self.atoms)) :
-            Atom.bond(self.atoms[i-1], self.atoms[i])
-
-        Atom.bond(self.atoms[i1], self.atoms[i2-1])
-
-        return self
-
-    def closer(self) :
-        if self.lock : raise LockedMolecule
-        print('.closer()')
-        self.lock = True
-        hist = {}
-
-        for atom in self.atoms :
-            while atom.valid_valence() :
-                hydr = Atom(len(self.atoms) + 1, 'H', [atom])
-                atom.edge.append(hydr)
-                self.atoms.append(hydr)
-            atom.edge.sort(key = lambda x: x.id  )
-            atom.edge.sort(key = lambda x: order.index(x.element) if x.element != 'H' else len(order)  )
-
-        return self
-
-    def unlock (self) :
-        if not self.lock : raise UnlockedMolecule
-        print('.unlock()')
-        self.lock = False
-
-        base = [[0]]
-        prev = self.atoms
-        next = [atom for atom in prev if atom.element != 'H']
-
-        # reindex base
-        for branch in self.arms:
-            arm = [0] + [ new for index in branch if prev[index].element != 'H' for new in range(len(next)) if next[new].id == prev[index].id ]
-            if arm != [0] : base.append(arm)
-            print(arm)
-
-        # reindex atoms
-        for i in range(len(next)) :
-            next[i].id = i + 1
-            next[i].edge = [nxt for nxt in next[i].edge if nxt.element != 'H']
-
-        self.arms = base
-        self.atoms = next
-
-        if next == [] : raise EmptyMolecule
-        return self
-
-################################################################################
-class display :
-    def branches(molecule) :
-        # print(molecule.name, molecule.formula, molecule.molecular_weight)
-        m = molecule
-        print()
-        for i in range(1, len(m.arms)) :
-            for j in range(1, len(m.arms[i])) :
-                atom = m.atoms[m.arms[i][j]]
-                print(atom)
-
-            print()
-
-    def atoms(molecule) :
-        print()
-        for atom in molecule.atoms :
-            print(atom)
-
-m = Molecule(' test #36 ')
-
-try :
-    m.brancher(* (4,) )
-    m.mutate(* ((3, 1, 'N'), (1, 1, 'S')) )
-    m.add(* ((1, 1, 'F'), (3, 1, 'P'), (3, 1, 'P')) )
-
-except Exception as x: print('\nerror :', x)
-
-# m.add_chaining( 3 , 1 ,* ('Mg',) )
-# m.bounder(* ((1, 1, 1, 1),) )
-# m.add_chaining( 1 , 1 ,* ('Cl', 'Br') )
-# m.add_chaining( 1 , 1 ,* ('Cl',) )
-# m.mutate(* ((3, 1, 'Mg'), (4, 1, 'Mg'), (4, 1, 'Mg')) )
-# m.add_chaining( 2 , 1 ,* ('C', 'O', 'N') )
-
-#['Atom(S.1: C2,F5)', 'Atom(C.2: C9,N3,S1)', 'Atom(N.3: C2,C4,P6)', 'Atom(C.4: N3)', 'Atom(F.5: S1)', 'Atom(P.6: N3)', 'Atom(Mg.7)', 'Atom(Cl.8)', 'Atom(C.9: C2,O10)', 'Atom(O.10: C9,N11)', 'Atom(N.11: O10)'] 
-
-# should equal 
-# ['Atom(S.1: C2,F5)', 'Atom(C.2: C7,N3,S1)', 'Atom(N.3: C2,C4,P6)', 'Atom(C.4: N3)', 'Atom(F.5: S1)', 'Atom(P.6: N3)', 'Atom(C.7: C2,O8)', 'Atom(O.8: C7,N9)', 'Atom(N.9: O8)']
-
-display.atoms(m)
-# for i in range(0,len(expect)) :
-#     if actual[i] != expect[i] :
-#         print('actuel : ', actual[i])
-#         print('expect : ', expect[i])
+def identify(chain) :
 
 
-print("end")
+    pass
+
+def halogen(chain) :
+    HALOGEN = { {'fluoro': 'F'},{'chloro':'Cl'},{'bromo':'Br'},{'iodo':'I'} }
+
+    for type in HALOGEN :
+        if chain[:len(type)] == type : return HALOGEN[type]
+
+# methane = meth + ane = 1 carbon   ->  CH4
+# ethane  = eth + ane  = 2 carbons  ->  CH3-CH3
+# propane = ...                     ->  CH3-CH2-CH3
+# butane  = ...                     ->  CH3-CH2-CH2-CH3
+
+# alkane : radical + "ane"
+# alkyl  : positions + "-" + multiplier + radical + "yl"
+# alkene : double bound between carbons. => radical + "-" + positions + "-" + multiplier + "ene"
+# alkyne : triple bound between carbons. => radical + "-" + positions + "-" + multiplier + "yne"
+
+
+chain = '3-ethyl-2,5-dimethylhexane'
+chain = 'tridec-4,10-dien-2,6,8-triyne'
+
+chain = '1-fluoropentane'
+chain = '1,2-di[1-ethyl-3-[2-methyl]propyl]heptylcyclobutane' 
+chain = 'heptylcyclobutane'
+
+
+for sub in RADICALS :
+    if sub == chain[:len(sub)] :
+        # print(sub, chain[:len(sub)])
+        pass
+
+for i in range(len(MULTIPLIERS)) :
+    if MULTIPLIERS[i] == chain[:len(MULTIPLIERS[i])] :
+        print(mul, i+1 )
+
+
+
+# for sub in RADICALS : chain = chain.replace(sub, '|'+ sub +'|')
+for sub in ALK : chain = chain.replace(sub, sub + ' ')
+# for sub in MULTIPLIERS : chain = chain.replace(sub, '|'+ sub +'|')
+
+
+token  = re.findall(r"[0-9]+|[\[\],-]|[a-z]+", chain)
+for cell in token : print(cell, end=' ')
