@@ -44,6 +44,10 @@ class Atom() :
 
     def bond(atom1, atom2) :
         a1, a2 = atom1, atom2
+
+        if not a1.valid_valence() or not a2.valid_valence() :
+            raise InvalidBond
+
         atom1.edge.append(a2)
         atom2.edge.append(a1)
 
@@ -104,7 +108,7 @@ class Molecule() :
             # i1, i2 = self.arms[b1][c1], self.arms[b2][c2]
             a1, a2 = self.atoms[self.arms[b1][c1]], self.atoms[self.arms[b2][c2]]
 
-            if a1 == a2 or not a1.valid_valence() or not a2.valid_valence() :
+            if a1 == a2 : # or not a1.valid_valence() or not a2.valid_valence() :
                 raise InvalidBond
 
             Atom.bond(a1,a2)
@@ -115,7 +119,7 @@ class Molecule() :
         if self.lock : raise LockedMolecule
         print('.mutate(*',arg,')', end='')
         for nc,nb,elt in arg :
-            [valence, weight] = table[elt]
+            valence, weight = table[elt]
             i1 = self.arms[nb][nc]
 
             if len(self.atoms[i1].edge) > valence :
@@ -132,8 +136,8 @@ class Molecule() :
             a1 = Atom(len(self.atoms) + 1, elt, [])
             a2 = self.atoms[self.arms[nb][nc]]
 
-            if not a1.valid_valence() or not a2.valid_valence() :
-                raise InvalidBond
+            # if not a1.valid_valence() or not a2.valid_valence() :
+            #     raise InvalidBond
 
             self.atoms.append(a1)
             # self.bond(self.arms[nb][nc], len(self.atoms) - 1)
@@ -145,11 +149,6 @@ class Molecule() :
         print('.add_chaining(',nc,',',nb,',*', elts, ')',end='')
         i1 = self.arms[nb][nc]
         i2 = len(self.atoms) + 1
-
-        for at in elts :
-
-            pass
-
 
         chain = []
         for i in range(0,len(elts)) :
@@ -237,7 +236,7 @@ try :
     m.add_chaining( 3 , 1 ,* ('C', 'N') ) 
 except Exception as x: print('\nerror :', x)
 
-# display.atoms(m)
+display.atoms(m)
 
 # for i in range(0,len(expect)) :
 #     if actual[i] != expect[i] :
