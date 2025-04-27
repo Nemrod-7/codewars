@@ -44,9 +44,9 @@ class Atom() :
 
     def bond(atom1, atom2) :
         a1, a2 = atom1, atom2
-
-        if not a1.valid_valence() or not a2.valid_valence() :
-            raise InvalidBond
+        
+        if a1 == a2 : raise InvalidBond
+        if not a1.valid_valence() or not a2.valid_valence() : raise InvalidBond
 
         atom1.edge.append(a2)
         atom2.edge.append(a1)
@@ -97,7 +97,6 @@ class Molecule() :
 
             for i in range(2, nc + 1) :
                 Atom.bond(self.atoms[branch[i-1]], self.atoms[branch[i-0]])
-                # self.bond(branch[i-1], branch[i-0])
 
         return self
 
@@ -107,10 +106,6 @@ class Molecule() :
         for c1,b1,c2,b2 in arg :
             # i1, i2 = self.arms[b1][c1], self.arms[b2][c2]
             a1, a2 = self.atoms[self.arms[b1][c1]], self.atoms[self.arms[b2][c2]]
-
-            if a1 == a2 : # or not a1.valid_valence() or not a2.valid_valence() :
-                raise InvalidBond
-
             Atom.bond(a1,a2)
 
         return self
@@ -135,13 +130,9 @@ class Molecule() :
         for nc,nb,elt in arg :
             a1 = Atom(len(self.atoms) + 1, elt, [])
             a2 = self.atoms[self.arms[nb][nc]]
-
-            # if not a1.valid_valence() or not a2.valid_valence() :
-            #     raise InvalidBond
-
-            self.atoms.append(a1)
-            # self.bond(self.arms[nb][nc], len(self.atoms) - 1)
             Atom.bond(a2, a1)
+            self.atoms.append(a1)
+
         return self
 
     def add_chaining(self, nc, nb, *elts) :
@@ -225,19 +216,28 @@ class display :
         for atom in molecule.atoms :
             print(atom)
 
-m = Molecule('test #3')
+m = Molecule(' test #36 ')
 
 try :
-    m.brancher(* (5, 6) ) 
-    m.mutate(* ((3, 1, 'O'),) ) 
+    m.brancher(* (4,) )
+    m.mutate(* ((3, 1, 'N'), (1, 1, 'S')) )
+    m.add(* ((1, 1, 'F'), (3, 1, 'P'), (3, 1, 'P')) )
+
 except Exception as x: print('\nerror :', x)
 
-try : 
-    m.add_chaining( 3 , 1 ,* ('C', 'N') ) 
-except Exception as x: print('\nerror :', x)
+# m.add_chaining( 3 , 1 ,* ('Mg',) )
+# m.bounder(* ((1, 1, 1, 1),) )
+# m.add_chaining( 1 , 1 ,* ('Cl', 'Br') )
+# m.add_chaining( 1 , 1 ,* ('Cl',) )
+# m.mutate(* ((3, 1, 'Mg'), (4, 1, 'Mg'), (4, 1, 'Mg')) )
+# m.add_chaining( 2 , 1 ,* ('C', 'O', 'N') )
+
+#['Atom(S.1: C2,F5)', 'Atom(C.2: C9,N3,S1)', 'Atom(N.3: C2,C4,P6)', 'Atom(C.4: N3)', 'Atom(F.5: S1)', 'Atom(P.6: N3)', 'Atom(Mg.7)', 'Atom(Cl.8)', 'Atom(C.9: C2,O10)', 'Atom(O.10: C9,N11)', 'Atom(N.11: O10)'] 
+
+# should equal 
+# ['Atom(S.1: C2,F5)', 'Atom(C.2: C7,N3,S1)', 'Atom(N.3: C2,C4,P6)', 'Atom(C.4: N3)', 'Atom(F.5: S1)', 'Atom(P.6: N3)', 'Atom(C.7: C2,O8)', 'Atom(O.8: C7,N9)', 'Atom(N.9: O8)']
 
 display.atoms(m)
-
 # for i in range(0,len(expect)) :
 #     if actual[i] != expect[i] :
 #         print('actuel : ', actual[i])
