@@ -11,11 +11,8 @@ table = { 'C':[4, 12.0], 'H':[1, 1.0 ], 'O':[2, 16.0], 'B':[3, 10.8], 'Br':[1, 8
 
 
 RADICALS = ["meth",  "eth",   "prop",   "but",      "pent",     "hex",     "hept",     "oct",     "non",    "dec",  "undec", "dodec", "tridec", "tetradec", "pentadec", "hexadec", "heptadec", "octadec", "nonadec"]
-
 MULTIPLIERS = [         "di",     "tri",     "tetra",     "penta",     "hexa",     "hepta",     "octa",     "nona",     "deca", "undeca", "dodeca", "trideca", "tetradeca", "pentadeca", "hexadeca", "heptadeca", "octadeca", "nonadeca"]
-
 HYDROCARBON = ['ane','ene', 'yne' , 'yl' ] # => ['C']
-
 HALOGEN = ['fluoro','chloro','bromo','iodo'] # => ['F','Cl','Br','I']
 
 def alkane(chain) :
@@ -51,40 +48,50 @@ def amide(chain) :
     if chain[:5] == 'amido' or chain[-5:] == 'amide' : return 'NH2'
     return ''
 
-def identify(chain) :
-    
-    atom = ''
-
-    if chain[-3:] == 'ane' : # alkane
-        atom = 'C'
-    else if chain[-3:] == 'ene' : # alkene
-        atom = 'C'
-    else if chain[-3:] == 'yne' : # alkyne
-        atom = 'C'
-    else if chain[:8] == 'hydroxy' or chain[-2:] == 'ol' : # alcool
-        atom = 'OH'
-    else if chain[:8] == 'mercapto' or chain[-5:] == 'thiol' : # thiol
-        atom = 'SH'
-    else if chain[:5] == 'imino' or chain[-5:] == 'imine' : # imine
-        atom = 'NH'
-    else if chain[:3] == 'oxo' or chain[-3:] == 'one' : # ketone
-        atom = 'O'
-    else if chain[:5] == 'amido' or chain[-5:] == 'amide' : # amide
-        atom = 'NH2'
-    else if chain[:6] == 'formyl' : 
-        atom = 'CH=O'
-    else if chain[-2:] == 'al': 
-        atom = 'O'
-    else if chain[-5:] == 'acid' : 
-        atom = 'C=O'
-
-    return atom
-
 def halogen(chain) :
     HALOGEN = { {'fluoro': 'F'},{'chloro':'Cl'},{'bromo':'Br'},{'iodo':'I'} }
 
     for type in HALOGEN :
         if chain[:len(type)] == type : return HALOGEN[type]
+
+def identify(chain) :
+    
+    atom = ''
+
+    if chain[-3:] == 'ane' : # alkane
+        atom = 'alkane'
+    elif chain[-3:] == 'ene' : # alkene
+        atom = 'alkene'
+    elif chain[-3:] == 'yne' : # alkyne
+        atom = 'alkyne'
+    elif chain[:8] == 'hydroxy' or chain[-2:] == 'ol' : # alcool
+        atom = 'alcool'
+    elif chain[:8] == 'mercapto' or chain[-5:] == 'thiol' : # thiol
+        atom = 'thiol'
+    elif chain[:5] == 'imino' or chain[-5:] == 'imine' : # imine
+        atom = 'imine'
+    elif chain[:3] == 'oxo' or chain[-3:] == 'one' : # ketone
+        atom = 'ketone'
+    elif chain[:5] == 'amido' or chain[-5:] == 'amide' : # amide
+        atom = 'amide'
+    elif chain[:6] == 'formyl' or chain[-2:] == 'al':  # aldehyde
+        atom = 'eldehyde' 
+    # elif chain[-2:] == 'al': # aldehyde
+    #     atom = 'O'
+    elif chain[-5:] == 'acid' : # carboxylic acid
+        atom = 'carboxylic acide'
+
+    # elif chain[] == 'fluoro' :
+    #     atom = 'F'
+    # elif chain[] == 'bromo' :
+    #     atom = 'Br'
+    # elif chain[] == 'chloro' :
+    #     atom = 'Cl'
+    # elif chian[] == 'iodo' :
+    #     atom = 'I'
+
+    return atom
+
 
 # methane = meth + ane = 1 carbon   ->  CH4
 # ethane  = eth + ane  = 2 carbons  ->  CH3-CH3
@@ -97,12 +104,13 @@ def halogen(chain) :
 # alkyl  : positions + "-" + multiplier + radical + "yl"
 
 
-chain = '3-ethyl-2,5-dimethylhexane'
-chain = 'tridec-4,10-dien-2,6,8-triyne'
+molecule = '3-ethyl-2,5-dimethylhexane'
+molecule = 'tridec-4,10-dien-2,6,8-triyne'
 
-chain = '1-fluoropentane'
-chain = '1,2-di[1-ethyl-3-[2-methyl]propyl]heptylcyclobutane' 
-chain = 'heptylcyclobutane'
+molecule = '1,2-di[1-ethyl-3-[2-methyl]propyl]heptylcyclobutane' 
+molecule = 'heptylcyclobutane'
+molecule = '1-fluoropentane'
+molecule = 'cyclobutane'
 
 def prefix(chain, array) :
     token = []
@@ -112,27 +120,37 @@ def prefix(chain, array) :
 
     return token
 
-for sub in RADICALS :
-    if sub == chain[:len(sub)] :
-        # print(sub, chain[:len(sub)])
+def getradical(chain, array) :
+    mul = 0
+    for i in range(len(array)) :
+        if array[i] == chain[:len(array[i])] :
+            mul = i + 1
+
+    return mul
+
+molecule = molecule.replace('cyclo', ' ' + 'cyclo'  + ' ')
+
+# mult = prefix(molecule, MULTIPLIERS)
+# molecule = prefix(molecule, RADICALS)
+# molecule = prefix(molecule, HYDROCARBON)
+
+
+# for sub in RADICALS : molecule = molecule.replace(sub,  sub +' ')
+# for sub in HYDROCARBON : molecule = molecule.replace(sub, sub + ' ')
+
+token  = re.findall(r"[0-9]+|[\[\],-]|[a-z]+", molecule)
+
+chain = token[0]
+type = identify(chain)
+
+match type :
+    case 'alkane' : # radical + 'ane'
+        atom = 'C'
+        carbon = [i for i in range(len(RADICALS)) if RADICALS[i] == chain[:len(RADICALS[i])]][-1] + 1
+        formula = atom + (str(carbon) if carbon > 1 else '') + 'H' + str(2 * carbon + 2)
+
+        print(chain, ':',formula)
+
         pass
 
-for i in range(len(MULTIPLIERS)) :
-    if MULTIPLIERS[i] == chain[:len(MULTIPLIERS[i])] :
-        print(mul, i+1 )
-
-
-
-# chain = chain.replace('cyclo', ' ' + 'cyclo'  + ' ')
-# mult = prefix(chain, MULTIPLIERS)
-# chain = prefix(chain, RADICALS)
-# chain = prefix(chain, HYDROCARBON)
-
-
-# for sub in RADICALS : chain = chain.replace(sub,  sub +' ')
-# for sub in HYDROCARBON : chain = chain.replace(sub, sub + ' ')
-
-
-print(chain)
-# token  = re.findall(r"[0-9]+|[\[\],-]|[a-z]+", chain)
 # for cell in token : print(cell, end=' ')
