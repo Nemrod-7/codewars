@@ -15,82 +15,105 @@ MULTIPLIERS = ["--","di",     "tri",     "tetra",     "penta",     "hexa",     "
 HYDROCARBON = ['ane','ene', 'yne' , 'yl' ] # => ['C']
 HALOGEN = ['fluoro','chloro','bromo','iodo'] # => ['F','Cl','Br','I']
 
-def identify(chain) :
-    atom = ''
+def isnumber(str) :
+    try :
+        num = int(str)
+        return num
+    except :
+        return False
 
-    if chain[-3:] == 'ane' : # alkane
-        atom = 'alkane'
-    elif chain[-3:] == 'ene' : # alkene
-        atom = 'alkene'
-    elif chain[-3:] == 'yne' : # print(token)alkyne
-        atom = 'alkyne'
-    elif chain[:8] == 'hydroxy' or chain[-2:] == 'ol' : # alcool
-        atom = 'alcool'
-    elif chain[:8] == 'mercapto' or chain[-5:] == 'thiol' : # thiol
-        atom = 'thiol'
-    elif chain[:5] == 'imino' or chain[-5:] == 'imine' : # imine
-        atom = 'imine'
-    elif chain[:3] == 'oxo' or chain[-3:] == 'one' : # ketone
-        atom = 'ketone'
-    elif chain[:5] == 'amido' or chain[-5:] == 'amide' : # amide
-        atom = 'amide'
-    elif chain[:6] == 'formyl' or chain[-2:] == 'al':  # aldehyde
-        atom = 'aldehyde'
-    elif chain[-5:] == 'acid' : # carboxylic acid
-        atom = 'carboxylic acid'
+def prefix(text, arr) :
+    max = [i for i in range(len(arr)) if arr[i] == text[:len(arr[i])] ]
+    return [text, 1] if max == [] else [text[len(arr[max[-1]]):] , max[-1] + 1]
+
+def identify(chain) :
+    if chain[-3:] == 'ane' : return 'alkane'
+    elif chain[-3:] == 'ene' : return 'alkene'
+    elif chain[-3:] == 'yne' : return 'alkyne'
+    elif chain[-2:] == 'yl' : return 'alkyl'
+    elif chain[:8] == 'hydroxy' or chain[-2:] == 'ol' : return 'alcool'
+    elif chain[:8] == 'mercapto' or chain[-5:] == 'thiol' : return 'thiol'
+    elif chain[:5] == 'imino' or chain[-5:] == 'imine' : return 'imine'
+    elif chain[:3] == 'oxo' or chain[-3:] == 'one' : return 'ketone'
+    elif chain[:5] == 'amido' or chain[-5:] == 'amide' : return 'amide'
+    elif chain[:6] == 'formyl' or chain[-2:] == 'al': return 'aldehyde'
+    elif chain[-5:] == 'acid' : return 'carboxylic acid'
+    if chain == 'fluoro' or chain == 'chloro' or chain == 'bromo' or chain == 'iodo' : return 'halogen'
 
     return ''
 
-# methane = meth + ane = 1 carbon   ->  CH4
-# ethane  = eth + ane  = 2 carbons  ->  CH3-CH3
-# propane = ...                     ->  CH3-CH2-CH3
-# butane  = ...                     ->  CH3-CH2-CH2-CH3
+# name = 'butane'
+name = '2-methylbutane'
+# name = '2,3,5-trimethylhexane'
+# name = '1-fluoropentane'
+# name = 'heptylcyclobutane'
+# name = '3-ethyl-2,5-dimethylhexane'
+# name = 'tridec-4,10-dien-2,6,8-triyne'
+# name = '1,2-di[1-ethyl-3-[2-methyl]propyl]heptylcyclobutane'
 
-# alkane : simple bound between carbons. CnH2n+2 => radical + "ane"
-# alkene : double bound between carbons. CnH2n   => radical + "-" + positions + "-" + multiplier + "ene"
-# alkyne : triple bound between carbons. CnH2n-2 => radical + "-" + positions + "-" + multiplier + "yne"
-# alkyl  : positions + "-" + multiplier + radical + "yl"
+name = name.replace('cyclo', ' ' + 'cyclo'  + ' ')
+for sub in HALOGEN : name = name.replace(sub, sub + ' ')
+for sub in HYDROCARBON : name = name.replace(sub, sub + ' ')
 
-molecule = '1-fluoropentane'
-molecule = 'cyclobutane'
-molecule = 'heptylcyclobutane'
-molecule = '3-ethyl-2,5-dimethylhexane'
-molecule = 'tridec-4,10-dien-2,6,8-triyne'
-molecule = '1,2-di[1-ethyl-3-[2-methyl]propyl]heptylcyclobutane'
+# "[0-9]+|[\[\],-]|[a-z]+"
+token  = re.findall(r"\S+", name)
+token.reverse()
 
-def getradical(chain, array) :
-    mul = 0
-    for i in range(len(array)) :
-        if array[i] == chain[:len(array[i])] :
-            mul = i + 1
+arms = []
 
-    return mul
+for cell in token :
+    type = identify(cell)
+    print(cell)
 
-molecule = molecule.replace('cyclo', ' ' + 'cyclo'  + ' ')
+    match type :
+        case 'alkane' : # simple bound between carbons. CnH2n+2 => radical + "ane"
+            cell, radical = prefix(cell, RADICALS)
+            branch = [['C', []] for _ in range(radical)]
 
-for sub in HALOGEN : molecule = molecule.replace(sub, ' ' + sub + ' ')
-# mult = prefix(molecule, MULTIPLIERS)
-# molecule = prefix(molecule, RADICALS)
-# molecule = prefix(molecule, HYDROCARBON)
+            for i in range(1, len(branch)) :
+                branch[i-1][1].append('C')
+                branch[i-0][1].append('C')
 
-# for sub in RADICALS : molecule = molecule.replace(sub,  sub +' ')
-# for sub in HYDROCARBON : molecule = molecule.replace(sub, sub + ' ')
+            arms.append(branch)
+        case 'alkyl' : # positions + "-" + multiplier + radical + "yl"
+            cell, position = cell[cell.rfind('-') + 1:], re.findall( r'\w+' , cell[:cell.rfind('-')])
+            cell, multipl = prefix(cell, MULTIPLIERS)
+            cell, radical = prefix(cell, RADICALS)
+            branch = [['C', []] for _ in range(radical)]
 
-token  = re.findall(r"[0-9]+|[\[\],-]|[a-z]+", molecule)
+        case 'alkene' : # double bound between carbons. CnH2n   => radical + "-" + positions + "-" + multiplier + "ene"            pos = cell.rfind('-')
+            cell, radical = prefix(cell, RADICALS)
+            cell, position = cell[cell.rfind('-') + 1:], re.findall( r'\w+' , cell[:cell.rfind('-')])
+            cell, multipl = prefix(cell, MULTIPLIERS)
+            branch = [['C', []] for _ in range(radical)]
 
-print(token)
+        case 'alkyne' : # triple bound between carbons. CnH2n-2 => radical + "-" + positions + "-" + multiplier + "yne"
+            cell, radical = prefix(cell, RADICALS)
+            cell, position = cell[cell.rfind('-') + 1:], re.findall( r'\w+' , cell[:cell.rfind('-')])
+            cell, multipl = prefix(cell, MULTIPLIERS)
+            branch = [['C', []] for _ in range(radical)]
 
-chain = token[0]
-type = identify(chain)
+        case 'alcool' :
+            elt = 'OH'
+        case 'thiol'  :
+            elt = 'SH'
+        case 'imine'  :
+            elt = 'NH'
+        case 'ketone' :
+            elt += 'O'
+        case 'amide'  :
+            pass
+        case 'aldehyde' :
+            pass
 
-match type :
-    case 'alkane' : # radical + 'ane'
-        atom = 'C'
-        carbon = [i for i in range(len(RADICALS)) if RADICALS[i] == chain[:len(RADICALS[i])]][-1] + 1
-        formula = atom + (str(carbon) if carbon > 1 else '') + 'H' + str(2 * carbon + 2)
+for branch in arms :
+    for atom in branch :
+        element = atom[0]
+        valence = table[element][0]
 
-        print(chain, ':',formula)
-        pass
+        # while len(atom[1]) < valence : atom[1].append('H')
+        print(atom)
+
 
 
 # for cell in token : print(cell, end=' ')
