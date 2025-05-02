@@ -8,11 +8,6 @@ MULTIPLIERS = ["--","di",     "tri",     "tetra",     "penta",     "hexa",     "
 HYDROCARBON = ['ane','ene', 'yne' , 'yl' ]
 HALOGEN = {'fluoro':'F','chloro':'Cl','bromo':'Br','iodo':'I'} 
 
-class Atom :
-    def __init__(self, element) :
-        self.element = element
-        self.edge = []
-
 def prefix(text, arr) :
     max = [i for i in range(len(arr)) if arr[i] == text[:len(arr[i])] ]
     return [text, 1] if max == [] else [text[len(arr[max[-1]]):] , max[-1] + 1]
@@ -22,12 +17,20 @@ thiol = ['S', []]
 imine = ['N', []] # double bond to carbon
 alcool = ['O', []]
 
-name = '3-ethyl-2,5-dimethylhexane'
-name = name.replace('cyclo', ' ' + 'cyclo'  + ' ')
-# name = name.replace('-', )
+branch = [0 for _ in range(10)]
 
-chain = re.findall(r'-?[0-9]+-?,?[0-9]+-?|\w+', name)
+name = '-2,5-dimethyl'
 
 
-print(chain)
+cell, position = name[name.rfind('-') + 1:], re.findall(r'\d+', name)
+cell, multipl = prefix(cell, MULTIPLIERS)
+cell, radical = prefix(cell, RADICALS)
 
+if len(position) == multipl :
+    for nc in position :
+        branch[int(nc)] = 9
+# chain = re.findall(r'-?[0-9]+-?,?[0-9]+-?|\w+', name)
+
+
+print(branch)
+print(cell)
