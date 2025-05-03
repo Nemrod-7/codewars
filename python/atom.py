@@ -55,9 +55,22 @@ name = name.replace('cyclo', ' ' + 'cyclo'  + ' ')
 for sub in HALOGEN : name = name.replace(sub, sub + ' ')
 for sub in HYDROCARBON : name = name.replace(sub, sub + ' ')
 
-# "[0-9]+|[\[\],-]|[a-z]+"
 token  = re.findall(r"\S+", name)
 token.reverse()
+
+
+def bond (a, b) :
+    a[1].append(b[0])
+    b[1].append(b[0])
+
+def brancher(radical) :
+
+    branch = [['C', []] for _ in range(radical)]
+
+    for i in range(1, len(branch)) :
+        bond(branch[i-1], branch[i-0])
+    
+    return branch
 
 arms = []
 
@@ -68,11 +81,7 @@ for cell in token :
     match type :
         case 'alkane' : # simple bound between carbons. CnH2n+2 => radical + "ane"
             cell, radical = prefix(cell, RADICALS)
-            branch = [['C', []] for _ in range(radical)]
-
-            for i in range(1, len(branch)) :
-                branch[i-1][1].append('C')
-                branch[i-0][1].append('C')
+            branch = brancher(radical)
 
             arms.append(branch)
         case 'alkyl' : # positions + "-" + multiplier + radical + "yl"
@@ -81,28 +90,23 @@ for cell in token :
             cell, radical = prefix(cell, RADICALS)
 
             for nb in range(multipl) :
-                branch = [['C', []] for _ in range(radical)]
-
-                for i in range(1, len(branch)) :
-                    branch[i-1][1].append('C')
-                    branch[i-0][1].append('C')
-
-                    carbon = arms[0][int(position[nb])]
+                branch = brancher(radical)
+                link = arms[0][int(position[nb])]
 
             print(position, branch)
-        case 'alkene' : # double bound between carbons. CnH2n   => radical + "-" + positions + "-" + multiplier + "ene"            pos = cell.rfind('-')
+        case 'alkene' : # double bound between carbons. CnH2n   => radical + "-" + positions + "-" + multiplier + "ene"            
             cell, radical = prefix(cell, RADICALS)
             cell, position = cell[cell.rfind('-') + 1:], re.findall( r'\d+' , cell)
             cell, multipl = prefix(cell, MULTIPLIERS)
-            branch = [['C', []] for _ in range(radical)]
 
-
+            branch = brancher(radical)
 
         case 'alkyne' : # triple bound between carbons. CnH2n-2 => radical + "-" + positions + "-" + multiplier + "yne"
             cell, radical = prefix(cell, RADICALS)
             cell, position = cell[cell.rfind('-') + 1:], re.findall( r'\d+' , cell)
             cell, multipl = prefix(cell, MULTIPLIERS)
-            branch = [['C', []] for _ in range(radical)]
+
+            branch = brancher(radical)
 
         case 'alcool' :
             elt = 'OH'
@@ -116,6 +120,8 @@ for cell in token :
             pass
         case 'aldehyde' :
             pass
+
+print(arms)
 
 for branch in arms :
     for atom in branch :
