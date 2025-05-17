@@ -69,7 +69,7 @@ def brancher(radical) :
 
     for i in range(1, len(branch)) :
         bond(branch[i-1], branch[i-0])
-    
+
     return branch
 
 arms = []
@@ -94,7 +94,7 @@ for cell in token :
                 link = arms[0][int(position[nb])]
 
             print(position, branch)
-        case 'alkene' : # double bound between carbons. CnH2n   => radical + "-" + positions + "-" + multiplier + "ene"            
+        case 'alkene' : # double bound between carbons. CnH2n   => radical + "-" + positions + "-" + multiplier + "ene"
             cell, radical = prefix(cell, RADICALS)
             cell, position = cell[cell.rfind('-') + 1:], re.findall( r'\d+' , cell)
             cell, multipl = prefix(cell, MULTIPLIERS)
