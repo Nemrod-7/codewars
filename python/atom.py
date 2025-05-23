@@ -15,16 +15,22 @@ MULTIPLIERS = ["--","di",     "tri",     "tetra",     "penta",     "hexa",     "
 HYDROCARBON = ['ane','ene', 'yne' , 'yl' ] # => ['C']
 HALOGEN = ['fluoro','chloro','bromo','iodo'] # => ['F','Cl','Br','I']
 
-def isnumber(str) :
-    try :
-        num = int(str)
-        return num
-    except :
-        return False
-
 def prefix(text, arr) :
     max = [i for i in range(len(arr)) if arr[i] == text[:len(arr[i])] ]
     return [text, 1] if max == [] else [text[len(arr[max[-1]]):] , max[-1] + 1]
+
+def bond (a, b) :
+    a[1].append(b[0])
+    b[1].append(b[0])
+
+def brancher(radical) :
+
+    branch = [['C', []] for _ in range(radical)]
+
+    for i in range(1, len(branch)) :
+        bond(branch[i-1], branch[i-0])
+
+    return branch
 
 def identify(chain) :
     if chain[-3:] == 'ane' : return 'alkane'
@@ -42,41 +48,33 @@ def identify(chain) :
 
     return ''
 
-# name = 'butane'
+def tokenize(name) :
+    # name = name.replace('cyclo', ' cyclo ')
+    for sub in HALOGEN : name = name.replace(sub, sub + ' ')
+    for sub in HYDROCARBON : name = name.replace(sub, sub + ' ')
+
+    token  = re.findall(r"\S+", name)
+    return token
+
+name = 'butane'
 name = '2-methylbutane'
-# name = '2,3,5-trimethylhexane'
-# name = '1-fluoropentane'
-# name = 'heptylcyclobutane'
-# name = '3-ethyl-2,5-dimethylhexane'
-# name = 'tridec-4,10-dien-2,6,8-triyne'
+name = '2,3,5-trimethylhexane'
+name = '1-fluoropentane'
+name = '3-ethyl-2,5-dimethylhexane'
+
+name = '2-methyl'
 # name = '1,2-di[1-ethyl-3-[2-methyl]propyl]heptylcyclobutane'
+# name = '1-[3-propyl]heptylcyclobutane'
 
-name = name.replace('cyclo', ' ' + 'cyclo'  + ' ')
-for sub in HALOGEN : name = name.replace(sub, sub + ' ')
-for sub in HYDROCARBON : name = name.replace(sub, sub + ' ')
-
-token  = re.findall(r"\S+", name)
+token = tokenize(name)
 token.reverse()
 
-
-def bond (a, b) :
-    a[1].append(b[0])
-    b[1].append(b[0])
-
-def brancher(radical) :
-
-    branch = [['C', []] for _ in range(radical)]
-
-    for i in range(1, len(branch)) :
-        bond(branch[i-1], branch[i-0])
-
-    return branch
+print(token)
 
 arms = []
 
 for cell in token :
     type = identify(cell)
-    print(cell)
 
     match type :
         case 'alkane' : # simple bound between carbons. CnH2n+2 => radical + "ane"
@@ -91,9 +89,9 @@ for cell in token :
 
             for nb in range(multipl) :
                 branch = brancher(radical)
-                link = arms[0][int(position[nb])]
+                link = arms[-1][int(position[nb])]
 
-            print(position, branch)
+            # print(position, branch)
         case 'alkene' : # double bound between carbons. CnH2n   => radical + "-" + positions + "-" + multiplier + "ene"
             cell, radical = prefix(cell, RADICALS)
             cell, position = cell[cell.rfind('-') + 1:], re.findall( r'\d+' , cell)
@@ -108,6 +106,11 @@ for cell in token :
 
             branch = brancher(radical)
 
+        case 'halogen' :
+            cell, position = cell[cell.rfind('-') + 1:], re.findall( r'\d+' , cell)
+
+
+            branch
         case 'alcool' :
             elt = 'OH'
         case 'thiol'  :
@@ -121,16 +124,16 @@ for cell in token :
         case 'aldehyde' :
             pass
 
-print(arms)
+# print(arms)
 
 for branch in arms :
     for atom in branch :
         element = atom[0]
         valence = table[element][0]
 
-        # while len(atom[1]) < valence : atom[1].append('H')
-        # print(atom)
-
+        while len(atom[1]) < valence : atom[1].append('H')
+        print(atom)
 
 
 # for cell in token : print(cell, end=' ')
+
