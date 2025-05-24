@@ -8,13 +8,13 @@
 
 using namespace std;
 /*
-    "Dot" – 1 time unit long.
-    "Dash" – 3 time units long.
+    "Dot" - 1 time unit long.
+    "Dash" - 3 time units long.
     "pause" - 7 time units long.
 
-    Pause between dots and dashes in a character – is 1 time unit long.
-    Pause between characters inside a word – is 3 time units long.
-    Pause between words – is 7 time units long.
+    Pause between dots and dashes in a character - is 1 time unit long.
+    Pause between characters inside a word - is 3 time units long.
+    Pause between words - is 7 time units long.
 */
 /////////////////////////////////Assert/////////////////////////////////////////
 class Assert {
@@ -47,7 +47,7 @@ class Point {
         double x, y;
 
         Point () { x = 0, y = 0;}
-        Point (double a) {x = a, y = 0;};
+        Point (double a) { x = a, y = 0;};
         Point (double a, double b) { x = a, y = b;}
         double distance (Point p) { return hypot (p.x - x, p.y - y); }
 };
@@ -165,17 +165,19 @@ vector<double> mk_unit (string src) {
 
     if (zero.size() == 0) zero = ones;
 
+    // Debug::display_vect( mk_seeds (zero, 3));
+
     nunits = min (static_cast<int> (ones.size()), 2);
     ones = Kmeans::clust (ones, mk_seeds (ones, nunits));
 
     nunits = min (static_cast<int> (zero.size()), 3);
     zero = Kmeans::clust (zero, mk_seeds (zero, nunits));
+    Debug::display_vect(zero);
+
 
     unit[0] = min (ones.front().x, zero.front().x);
     unit[1] = (ones.back().x + zero[1].x) * 0.5;
     unit[2] = max (ones.back().x, zero.back().x);
-    Debug::display_vect(zero);
-    Debug::display_vect(ones);
     cout << unit[0] << ' ' << unit[1] << ' ' << unit[2] << '\n';
     if (nunits == 1) {
         if (unit[2] >= unit[0] * 6)
