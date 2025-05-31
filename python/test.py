@@ -1,4 +1,4 @@
-import heapq
+import re
 
 class board :
     def __init__(self, grid) :
@@ -6,38 +6,24 @@ class board :
         self.height = len(grid)
         self.grid = grid
 
-    def is_inside(self, p) :
-        if p[0] >= 0 and p[1] >= 0 and p[0] < self.width and p[1] < self.height :
-            if self.grid[p[1]][p[0]] != '0' : return True
-        return False
+    def is_inside(self, p) : return p[0] >= 0 and p[1] >= 0 and p[0] < self.width and p[1] < self.height
+    def is_free(self, p) : return self.is_inside(p) and self.grid[p[1]][p[0]] != '0'
+    def at(self, p) : return '.' if self.is_free(p) else ' '
 
-start = [0, [0,0], '']
-n2 = [5, [0,0], '']
-n3 = [2, [0,0], '']
-n4 = [3, [0,0], '']
+# result = diff("(tan (* 2 x))")
 
-queue = [start]
-heapq.heapify(queue);
+"(* 2 (+ 1 (^ (tan (* 2 x)) 2)))", 
+"(* 2 (^ (cos (* 2 x)) -2))", 
+"(/ 2 (^ (cos (* 2 x)) 2))"
 
-heapq.heappush(queue, n2)
-heapq.heappush(queue, n3)
-heapq.heappush(queue, n4)
+var = 'x'
 
+def form(sym, a, b='') : return '('+ sym + ' ' + a + (' ' if b else '') + b + ')'
 
-dist, curr, path = heapq.heappop(queue)
+n1 = form('sin', 'x')
+print(n1)
 
-dir = (0,1)
-curr = ((2,3),(0,0))
-standing = True
-
-def add (p1, p2, mul) :
-    return (p1[0] * mul + p2[0], p1[1] * mul + p2[1])
+n2 = form('+', '2', '3')
+print(n2)
 
 
-# block = add(dir, curr[0], 2) if standing else add(dir, curr[1], 1)
-
-
-next = dir + curr[0]
-
-
-print(next)

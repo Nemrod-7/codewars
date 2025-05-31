@@ -2,15 +2,12 @@ import heapq
 
 COMPASS = [[[0,-1],'U'],[[1,0],'R'],[[0,1],'D'],[[-1,0],'L']]
 
-def is_inside(p, grid) :
-    if p[0] >= 0 and p[1] >= 0 and p[0] < len(grid[0]) and p[1] < len(grid) :
-        if grid[p[1]][p[0]] != '0' : return True
-    return False
+def is_inside(p, grid) : return p[0] >= 0 and p[1] >= 0 and p[0] < len(grid[0]) and p[1] < len(grid)
+def is_free(p, grid) : return is_inside(p, grid) and grid[p[1]][p[0]] != '0'
 
 def blox_solver(grid):
-    height, width = len(grid), len(grid[0])
-    start = [(x,y) for y in range(height) for x in range(width) if grid[y][x] == 'B'][0]
-    exit = [(x,y) for y in range(height) for x in range(width) if grid[y][x] == 'X'][0]
+    start = [(x,y) for y in range(len(grid)) for x in range(len(grid[0])) if grid[y][x] == 'B'][0]
+    exit = [(x,y) for y in range(len(grid)) for x in range(len(grid[0])) if grid[y][x] == 'X'][0]
 
     visit = {}
     queue = [[0, (start,start), '']]
@@ -28,7 +25,7 @@ def blox_solver(grid):
             b1 = (curr[0][0] + nx, curr[0][1] + ny)
             b2 = (curr[0][0] + nx * 2, curr[0][1] + ny * 2) if standing else (curr[1][0] + nx, curr[1][1] + ny)
 
-            if is_inside(b1, grid) and is_inside(b2,grid) :
+            if is_free(b1, grid) and is_free(b2,grid) :
                 route = path + letter
 
                 if standing or (dx != nx and dy != ny) :
