@@ -10,20 +10,21 @@ class board :
     def is_free(self, p) : return self.is_inside(p) and self.grid[p[1]][p[0]] != '0'
     def at(self, p) : return '.' if self.is_free(p) else ' '
 
-# result = diff("(tan (* 2 x))")
 
-"(* 2 (+ 1 (^ (tan (* 2 x)) 2)))", 
-"(* 2 (^ (cos (* 2 x)) -2))", 
-"(/ 2 (^ (cos (* 2 x)) 2))"
-
-var = 'x'
-
-def form(sym, a, b='') : return '('+ sym + ' ' + a + (' ' if b else '') + b + ')'
-
-n1 = form('sin', 'x')
-print(n1)
-
-n2 = form('+', '2', '3')
-print(n2)
+height, width = 4, 5
+graph = [[[99, ['']] for x in range(width)] for y in range(height)]
 
 
+x, y = 0,0
+
+path = graph[y][x][1][-1]
+graph[y][x][1][-1] = path + 'L'
+
+
+path = graph[y][x][1][-1]
+graph[y][x][1][-1] = path + 'L'
+
+path = graph[y][x][1][-1]
+graph[y][x][1][-1] = path + 'D'
+
+print(graph[y][x][1])
