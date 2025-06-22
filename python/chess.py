@@ -82,10 +82,9 @@ class WhitePlayer :
     
                     if is_inside(nx, ny) :
                         dist = manhatan(px,py,nx,ny)
-                        # eucl = euclidian(px,py,nx,ny)
 
                         if dist == 0 :
-                            print('check : ', nx, ny)
+                            print('checkmate : ', nx, ny)
                             return to_str(['K', 'white,', nx, ny])
                         if dist == 2 :
                             for sx,sy in DIAGONAL :
@@ -95,11 +94,10 @@ class WhitePlayer :
 
                         if dist == 1 :
 
-
-                            pass
+                            continue
                         else :
 
-                            print(nx, ny, 'distance : ', dist)
+                            print(nx, ny, 'distance : ', dist, to_str([type, 'white', nx, ny]))
                             possible.append(['K', 'white,', nx, ny])
 
             print()
