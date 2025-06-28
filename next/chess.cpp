@@ -328,5 +328,5 @@ int main () {
 
     play("a2 a4", black, white);
 
-    display::board(black, white);
+R  display::board(black, white);
 }
