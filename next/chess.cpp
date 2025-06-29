@@ -77,9 +77,9 @@ const vector<vector<int>> heuristic {
                    
 namespace bit {
     bool chk (u64 num, u64 ix) { return num >> ix &1UL; }
-    u64 set (u64 num, u64 ix) { return num |= 1UL << ix; }
-    u64 tog (u64 num, u64 ix) { return num ^= 1UL << ix; }
-    u64 clr (u64 num, u64 ix) { return num &= ~(1UL << ix); }
+    u64 set (u64 num, u64 ix) { return num | 1UL << ix; }
+    u64 tog (u64 num, u64 ix) { return num ^ 1UL << ix; }
+    u64 clr (u64 num, u64 ix) { return num & ~(1UL << ix); }
 
     u64 cnt (u64 num) {
         u64 cnt = 0;

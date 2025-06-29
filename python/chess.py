@@ -13,11 +13,16 @@ def manhatan(x1,y1, x2,y2) :
     return abs(x1-x2) + abs(y1-y2)
 
 def euclidian(x1,y1, x2, y2) :
-    a = abs(x1 - x2) 
-    b = abs(y1 - y2)
-    return math.hypot(a,b)
-    # return sqrt(a**2 + b**2) 
+    return math.hypot(abs(x1 - x2), abs(y1 - y2))
 
+def score(type) :
+    match type :
+        case 'P' : return 1
+        case 'B' : return 3
+        case 'N' : return 3
+        case 'R' : return 5
+        case 'Q' : return 8
+        case 'K' : return 99
 
 def is_inside(x, y) :
     return x >= 0 and y >= 0 and x < 8 and y < 8
@@ -66,8 +71,7 @@ class WhitePlayer :
         for piece in self.board :
             type, color, x, y = piece 
             if color == 'black' : continue 
-            mult = 1
-            move = COMPASS
+            mult, move = 1, COMPASS
 
             print(piece)
             if type == 'K' :
