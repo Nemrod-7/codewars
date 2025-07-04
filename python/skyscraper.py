@@ -102,23 +102,20 @@ def backtrack(grid, cells, clues, row, col, index) :
 
     x, y = index % N, index // N
     dig = 0
-    cell, mask = grid[y][x], cells[y][x] # mask == all possible
+    cell, mask = grid[y][x], cells[y][x]
 
     if cell != 0 : return backtrack(grid, cells, clues, row, col, index + 1)
-    # print(showmask(mask),   showmask(curr.cell[y][x]))
-    while mask :
-        if (mask & 1) :
-            if not exist(row[y], dig) and not exist(col[x], dig) :
-                row[y] ^= 1 << dig; col[x] ^= 1 << dig
-                grid[y][x] = dig
 
-                if backtrack(grid, cells, clues, row, col, index + 1) :
-                    return True
+    for dig in mask :
+        if not exist(row[y], dig) and not exist(col[x], dig) :
+            row[y] ^= 1 << dig; col[x] ^= 1 << dig
+            grid[y][x] = dig
 
-                grid[y][x] = 0
-                row[y] ^= 1 << dig; col[x] ^= 1 << dig
-        dig += 1
-        mask >>= 1
+            if backtrack(grid, cells, clues, row, col, index + 1) :
+                return True
+
+            grid[y][x] = 0
+            row[y] ^= 1 << dig; col[x] ^= 1 << dig
 
     return False
 
@@ -142,10 +139,10 @@ def mk_cell(mask, clue, p, dir) :
 
 def solve_puzzle (clues):
     grid = [ [0 for x in range(N)] for y in range(N) ]
+    comb = [ [[] for x in range(N)] for y in range(N) ]
     mask = [ [126 for x in range(N)] for y in range(N) ]
     row, col = [0] * N, [0] * N
-    comb = list(itertools.permutations([i + 1 for i in range(N)]))
-
+    # comb = list(itertools.permutations([i + 1 for i in range(N)]))
     for i in range(N) :
         west, east = ((N * 4) - 1) - i, N + i
         south, north = ((N * 4) - 1) - i - N, i
@@ -159,21 +156,17 @@ def solve_puzzle (clues):
         mk_cell (mask, clues[south], (i, N - 1), up)
 
     for i in range(2) : reduce(mask)
-
-    for y in range(N) :
-        for x in range(N) :
-            if hasonebit(mask[y][x]) :
-                bit = bit2int(mask[y][x])
-                grid[y][x] = bit
-                row[y] |= 1 << bit
-                col[x] |= 1 << bit
-    
+    #
+    # for y in range(N) :
+    #     for x in range(N) :
+    #         for i in range(1,N+1) :
+    #             if (mask[y][x] >> i&1) :
+    #                 comb[y][x].append(i)
+    #
+    # backtrack(grid, comb, clues, row, col, 0)
     print()
     print(clues)
     display(mask)
-    print()
-
-    # backtrack(grid, mask, clues, row, col, 0)
     print()
 
     for line in grid :
@@ -212,22 +205,22 @@ clues = (3,2,2,3,2,1, 1,2,3,3,2,2, 5,1,2,2,4,3, 3,2,1,2,2,4)
 actual = solve_puzzle(clues)
 
 # expected = (
-#     (5, 6, 1, 4, 3, 2), 
-#     (4, 1, 3, 2, 6, 5), 
-#     (2, 3, 6, 1, 5, 4), 
-#     (6, 5, 4, 3, 2, 1), 
-#     (1, 2, 5, 6, 4, 3), 
+#     (5, 6, 1, 4, 3, 2),
+#     (4, 1, 3, 2, 6, 5),
+#     (2, 3, 6, 1, 5, 4),
+#     (6, 5, 4, 3, 2, 1),
+#     (1, 2, 5, 6, 4, 3),
 #     (3, 4, 2, 5, 1, 6)
 # )
 # clues = (0,0,0,2,2,0, 0,0,0,6,3,0, 0,4,0,0,0,0, 4,4,0,3,0,0)
 # actual = solve_puzzle(clues)
 #
 # expected = (
-#     (5, 2, 6, 1, 4, 3), 
-#     (6, 4, 3, 2, 5, 1), 
-#     (3, 1, 5, 4, 6, 2), 
-#     (2, 6, 1, 5, 3, 4), 
-#     (4, 3, 2, 6, 1, 5), 
+#     (5, 2, 6, 1, 4, 3),
+#     (6, 4, 3, 2, 5, 1),
+#     (3, 1, 5, 4, 6, 2),
+#     (2, 6, 1, 5, 3, 4),
+#     (4, 3, 2, 6, 1, 5),
 #     (1, 5, 4, 3, 2, 6)
 # )
 # clues = (0,3,0,5,3,4, 0,0,0,0,0,1, 0,3,0,3,2,3, 3,2,0,3,1,0)
