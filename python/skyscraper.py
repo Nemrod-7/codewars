@@ -2,14 +2,8 @@ import itertools
 import time
 start = time.time()
 
-# {{4,1,2,3},{4,2,1,3},{4,1,3,2},{4,2,3,1},{4,3,1,2},{4,3,2,1}},
-# {{3,1,2,4},{3,2,1,4},{1,4,2,3},{2,1,4,3},{2,4,1,3},{3,1,4,2},{3,2,4,1},{3,4,1,2},{1,4,3,2},{2,4,3,1},{3,4,2,1}},
-# {{1,3,2,4},{2,1,3,4},{2,3,1,4},{1,2,4,3},{1,3,4,2},{2,3,4,1}},
-# {{1,2,3,4}}};
-
 N = 6
 comb = list(itertools.permutations([i + 1 for i in range(N)]))
-
 
 # def hasonebit (x) : return x != 0 and (x & (x - 1)) == 0
 def exist (x, bit) : return (x >> bit &1) == 1
@@ -20,7 +14,7 @@ def bit2int (x) :
         dig += 1
         x >>= 1
     return 0
-#
+
 def filter (line) :
     uniq, hist = [False] * (N + 1), [0] * (N + 1)
 
@@ -120,24 +114,6 @@ def backtrack(grid, cells, clues, row, col, index) :
 
     return False
 
-def mk_cell(mask, clue, p, dir) :
-    x,y = p
-
-    if clue == 1 :
-        mask[y][x] = 0 | 1 << N
-    elif clue == N :
-        for i in range(1, N+1) :
-            mask[y][x] = 0 | 1 << i
-            x += dir[0]; y += dir[1]
-    else :
-        maxv = N - clue + 2
-
-        for i in range(clue-1) :
-            for j in range(maxv + i, N + 1) :
-                mask[y][x] &= ~(1 << j)
-            mask[y][x] &= ~(1 << N)
-            x += dir[0]; y += dir[1]
-
 def mkmask2(clues) :
     mask1 = [ [0 for x in range(N)] for y in range(N) ]
     mask2 = [ [0 for x in range(N)] for y in range(N) ]
@@ -170,9 +146,9 @@ def solve_puzzle (clues):
     mask = mkmask2(clues)
 
     # for i in range(3) : reduce(mask)
-    for i in range(4) : 
+    for i in range(4) :
         reduce(mask)
-    
+
     for y in range(N) :
         for x in range(N) :
             for i in range(1,N+1) :
@@ -191,6 +167,23 @@ def solve_puzzle (clues):
 
     return tuple(tuple(line) for line in grid)
 
+def mk_cell(mask, clue, p, dir) :
+    x,y = p
+
+    if clue == 1 :
+        mask[y][x] = 0 | 1 << N
+    elif clue == N :
+        for i in range(1, N+1) :
+            mask[y][x] = 0 | 1 << i
+            x += dir[0]; y += dir[1]
+    else :
+        maxv = N - clue + 2
+
+        for i in range(clue-1) :
+            for j in range(maxv + i, N + 1) :
+                mask[y][x] &= ~(1 << j)
+            mask[y][x] &= ~(1 << N)
+            x += dir[0]; y += dir[1]
 def showmask(cell) :
     for i in range(1,N+1) :
         bit = (cell >> i&1)

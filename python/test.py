@@ -1,5 +1,5 @@
 import itertools
-N = 7
+N = 6
 
 comb = list(itertools.permutations([i + 1 for i in range(N)]))
 
@@ -66,8 +66,25 @@ def mkmask2(clues) :
             print(end='|')
         print()
 
-for i in range(N) :
-    for actual in comb :
+clues = (0,0,0,2,2,0, 0,0,0,6,3,0, 0,4,0,0,0,0, 4,4,0,3,0,0)
+grid = [ [0 for x in range(N + 2)] for y in range(N + 2) ]
 
-        pass
-# mkmask2(clues)
+for i in range(N) :
+    west, east = ((N * 4) - 1) - i, N + i
+    south, north = ((N * 4) - 1) - i - N, i
+
+    grid[0][i + 1] = clues[north]
+    grid[N][i + 1] = clues[south]
+    grid[i + 1][0] = clues[west]
+    grid[i + 1][N] = clues[east]
+
+
+for i in range(N + 1)  :
+    for j in range(N + 1) :
+        if grid[i][j] :
+            print(grid[i][j], end=' ')
+        elif i > 0 and j > 0 and i < N and j < N:
+            print(grid[i][j], end=' ')
+        else :
+            print(' ', end=' ')
+    print()
