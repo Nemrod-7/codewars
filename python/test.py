@@ -1,23 +1,25 @@
-
+import itertools
 N = 4
 
-def showmask(cell) :
-    for i in range(1,N+1) :
-        if (cell >> i&1) == 1 :
-            print(i, end=' ')
-        else :
-            print(' ', end=' ')
+def check_num (now) :
+    end, first, sec, index = N - 1, 0, 0, N - 1
+    head, tail = 0,0
 
-cell = 16
-row, col = 2, 0
-row |= cell
-# col |= 1 << 1
+    while index >= 0 :
+        if now[index] > sec :
+            sec = now[index]
+            tail += 1
+        if now[N - 1 - index] > first :
+            first = now[end - index]
+            head += 1
+        index -= 1
 
-# cell = 30 ^ (row | col)
+    return (head,tail)
 
-showmask(row)
-print()
-showmask(col)
-print()
-print('----------')
-showmask(cell)
+comb = list(itertools.permutations([i + 1 for i in range(N)]))
+
+
+for actual in comb :
+    [head,tail] = check_num(actual)
+    print(head, actual, tail)
+
