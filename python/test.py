@@ -1,5 +1,16 @@
 import itertools
-N = 6
+N = 7
+
+comb = list(itertools.permutations([i + 1 for i in range(N)]))
+
+def showmask(cell) :
+    for i in range(1,N+1) :
+        bit = (cell >> i&1)
+        # print(bit, end=' ')
+        if bit == 1 :
+            print(i, end=' ')
+        else :
+            print(' ', end=' ')
 
 def equals (a, b) :
     if b[0] == 0 and b[1] == 0 :
@@ -27,44 +38,36 @@ def check_num (now) :
 
     return (head,tail)
 
-comb = list(itertools.permutations([i + 1 for i in range(N)]))
-clues = (3,2,2,3,2,1, 1,2,3,3,2,2, 5,1,2,2,4,3, 3,2,1,2,2,4)
 
-mask = [ [set() for x in range(N+2)] for y in range(N+2) ]
+def mkmask2(clues) :
+    mask1 = [ [0 for x in range(N)] for y in range(N) ]
+    mask2 = [ [0 for x in range(N)] for y in range(N) ]
+    mask = [ [0 for x in range(N)] for y in range(N) ]
+
+    for i in range(N) :
+        west, east = ((N * 4) - 1) - i, N + i
+        south, north = ((N * 4) - 1) - i - N, i
+
+        horiz = (clues[west], clues[east])
+        verti = (clues[north], clues[south])
+
+        for actual in comb :
+            if equals(check_num(actual), horiz) :
+                for j in range(N) : mask1[i][j] |= 1 << actual[j]
+
+            if equals(check_num(actual), verti) :
+                for j in range(N) : mask2[j][i] |= 1 << actual[j]
+
+    print()
+    for y in range(N) :
+        for x in range(N) :
+            mask[y][x] = mask1[y][x] & mask2[y][x]
+            showmask(mask1[y][x])
+            print(end='|')
+        print()
 
 for i in range(N) :
-    west, east = ((N * 4) - 1) - i, N + i
-    south, north = ((N * 4) - 1) - i - N, i
-
-    horiz = (clues[west], clues[east])
-    verti = (clues[north], clues[south])
-
     for actual in comb :
-        if equals(horiz, check_num(actual)) :
-            for j in range(N) :
-                mask[i][j].add(actual[j])
-            # print(clues[west], actual, clues[east])
 
-for y in range(N) :
-    for x in range(N) :
-        cmb = mask[y][x]
-
-        for i in range(1, N + 1) :
-            if i in cmb :
-                print(i, end=' ')
-            else :
-                print(' ', end=' ')
-        print(end='|')
-    print()
-#     grid[0][i + 1] = clues[north]
-#     grid[N+1][i + 1] = clues[south]
-#     grid[i+1][0] = clues[west]
-#     grid[i+1][N + 1] = clues[east]
-#
-# for line in grid :
-#     for dig in line :
-#         if dig == 0 :
-#             print(' ', end=' ')
-#         else :
-#             print(dig, end=' ')
-#     print()
+        pass
+# mkmask2(clues)
