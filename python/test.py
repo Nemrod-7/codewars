@@ -1,7 +1,14 @@
-import itertools
-N = 6
+N = 4
 
-comb = list(itertools.permutations([i + 1 for i in range(N)]))
+def exist (x, bit) : return (x >> bit &1) == 1
+def decompose(cell) :
+    dig, vs = 0, []
+
+    while cell :
+        if (cell &1) : vs.append(dig)
+        dig += 1
+        cell >>= 1
+    return vs
 
 def showmask(cell) :
     for i in range(1,N+1) :
@@ -19,6 +26,10 @@ def equals (a, b) :
         return True
     elif b[1] == 0 and a[0] == b[0] :
         return True
+    elif a[0] == 0 and a[1] == b[1] :
+        return True
+    elif a[1] == 0 and a[0] == b[0] :
+        return True
     elif a == b :
         return True
     return False
@@ -28,6 +39,7 @@ def check_num (now) :
     head, tail = 0,0
 
     while index >= 0 :
+        if now[index] == 0 : return (-1,-1)
         if now[index] > sec :
             sec = now[index]
             tail += 1
@@ -38,53 +50,37 @@ def check_num (now) :
 
     return (head,tail)
 
+def comb_subset(mask, clues) :
+    start = [0] * N
+    heap = [(0,0, start.copy())]
 
-def mkmask2(clues) :
-    mask1 = [ [0 for x in range(N)] for y in range(N) ]
-    mask2 = [ [0 for x in range(N)] for y in range(N) ]
-    mask = [ [0 for x in range(N)] for y in range(N) ]
+    while heap :
+        [index, visit, comb] = heap.pop()
 
-    for i in range(N) :
-        west, east = ((N * 4) - 1) - i, N + i
-        south, north = ((N * 4) - 1) - i - N, i
+        if index == N :
+            if equals(check_num(comb), clues) :
+                for i in range(N) : start[i] |= 1 << comb[i]
+        else :
+            for dig in decompose(mask[index]) :
+                if not exist(visit, dig) :
+                    comb[index] = dig
+                    heap.append( ( index + 1, (visit | 1 << dig), comb.copy()))
+    return start
 
-        horiz = (clues[west], clues[east])
-        verti = (clues[north], clues[south])
+clues = (5,0,0,0,0, 1,0,0,2,3, 0,0,4,0,0,  0,0,3,0,0)
+new = comb_subset([14,14,14,16], (2,0))
 
-        for actual in comb :
-            if equals(check_num(actual), horiz) :
-                for j in range(N) : mask1[i][j] |= 1 << actual[j]
+def vertical(clues, i) :
+    south, north = ((n * 4) - 1) - i - n, i
+    return (clues[north], clues[south])
 
-            if equals(check_num(actual), verti) :
-                for j in range(N) : mask2[j][i] |= 1 << actual[j]
+def horizont(clues, i) :
+    west, east = ((n * 4) - 1) - i, n + i
+    return (clues[west], clues[east])
 
-    print()
-    for y in range(N) :
-        for x in range(N) :
-            mask[y][x] = mask1[y][x] & mask2[y][x]
-            showmask(mask1[y][x])
-            print(end='|')
-        print()
-
-clues = (0,0,0,2,2,0, 0,0,0,6,3,0, 0,4,0,0,0,0, 4,4,0,3,0,0)
-grid = [ [0 for x in range(N + 2)] for y in range(N + 2) ]
 
 for i in range(N) :
-    west, east = ((N * 4) - 1) - i, N + i
-    south, north = ((N * 4) - 1) - i - N, i
-
-    grid[0][i + 1] = clues[north]
-    grid[N][i + 1] = clues[south]
-    grid[i + 1][0] = clues[west]
-    grid[i + 1][N] = clues[east]
+    [north,south] = vertical(clues, i)
+    [west, east] = horizont(clues, i)
 
 
-for i in range(N + 1)  :
-    for j in range(N + 1) :
-        if grid[i][j] :
-            print(grid[i][j], end=' ')
-        elif i > 0 and j > 0 and i < N and j < N:
-            print(grid[i][j], end=' ')
-        else :
-            print(' ', end=' ')
-    print()
