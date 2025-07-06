@@ -1,4 +1,4 @@
-N = 4
+N = 6
 
 def exist (x, bit) : return (x >> bit &1) == 1
 def decompose(cell) :
@@ -59,6 +59,7 @@ def comb_subset(mask, clues) :
 
         if index == N :
             if equals(check_num(comb), clues) :
+                print(comb)
                 for i in range(N) : start[i] |= 1 << comb[i]
         else :
             for dig in decompose(mask[index]) :
@@ -67,20 +68,17 @@ def comb_subset(mask, clues) :
                     heap.append( ( index + 1, (visit | 1 << dig), comb.copy()))
     return start
 
-clues = (5,0,0,0,0, 1,0,0,2,3, 0,0,4,0,0,  0,0,3,0,0)
-new = comb_subset([14,14,14,16], (2,0))
 
-def vertical(clues, i) :
-    south, north = ((n * 4) - 1) - i - n, i
-    return (clues[north], clues[south])
+full = (1 << (N + 1)) - 1;
 
-def horizont(clues, i) :
-    west, east = ((n * 4) - 1) - i, n + i
-    return (clues[west], clues[east])
+full = 0
+for i in range(1,N+1) :
+    full |= 1 << i
 
+row = [126] * N
 
-for i in range(N) :
-    [north,south] = vertical(clues, i)
-    [west, east] = horizont(clues, i)
+if row == [full] * N :
+    print(row)
 
+# print(full)
 
