@@ -1,7 +1,7 @@
 import time
 start = time.time()
 
-N = 6
+N = 7
 
 def powerof2 (x) : return x != 0 and (x & (x - 1)) == 0
 def exist (x, bit) : return (x >> bit &1) == 1
@@ -17,11 +17,9 @@ def decompose (cell) :
 def vertical (clues, i) :
     south, north = ((N * 4) - 1) - i - N, i
     return (clues[north], clues[south])
-
 def horizont (clues, i) :
     west, east = ((N * 4) - 1) - i, N + i
     return (clues[west], clues[east])
-
 def equals (a, b) :
     if b[0] == 0 and b[1] == 0 :
         return True
@@ -36,7 +34,6 @@ def equals (a, b) :
     elif a == b :
         return True
     return False
-
 def check_line (now) :
     end, first, sec, index = N - 1, 0, 0, N - 1
     head, tail = 0,0
@@ -51,7 +48,6 @@ def check_line (now) :
             head += 1
         index -= 1
     return (head,tail)
-
 def mk_cell (mask, clue, p, dir) :
     x,y = p
 
@@ -69,9 +65,8 @@ def mk_cell (mask, clue, p, dir) :
                 mask[y][x] &= ~(1 << j)
             mask[y][x] &= ~(1 << N)
             x += dir[0]; y += dir[1]
-
 def mk_mask (clues) :
-    mask = [ [126 for x in range(N)] for y in range(N) ]
+    mask = [ [254 for x in range(N)] for y in range(N) ]
 
     for i in range(N) :
         [north,south] = vertical(clues, i)
@@ -81,7 +76,6 @@ def mk_mask (clues) :
         mk_cell(mask, east, (N-1, i), (-1,0))
         mk_cell(mask, south, (i, N - 1), (0,-1))
     return mask
-
 def eliminate (line) : # search for uniques digit in a row or a column and reajust the mask
     uniq, hist = [False] * (N + 1), [0] * (N + 1)
 
@@ -103,7 +97,6 @@ def eliminate (line) : # search for uniques digit in a row or a column and reaju
                     if uniq[j] == 1 : line[i] &= ~(1 << j) # clear bit
                     if hist[j] == 1 : line[i] = 0 | (1 << j) # mark bit
     return line
-
 def subset_permutation (mask, clues) :
     start = [0] * N
     heap = [(0,0, start.copy())]
@@ -120,7 +113,6 @@ def subset_permutation (mask, clues) :
                     comb[index] = dig
                     heap.append( ( index + 1, (visit | 1 << dig), comb.copy()))
     return start
-
 def reduce (mask) : # apply the search for unique digits on the grid
     for i in range(N) :
         col = eliminate([mask[j][i] for j in range(N)])
@@ -131,7 +123,6 @@ def reduce (mask) : # apply the search for unique digits on the grid
         row = eliminate([mask[i][j] for j in range(N)])
         for j in range(N) :
             mask[i][j] = row[j]
-
 def filtering (mask, clues) : # apply the search for right combinations on the grid
     m1, m2 = mask.copy(), mask.copy()
     grid = [ [0 for x in range(N)] for y in range(N) ]
@@ -152,17 +143,6 @@ def filtering (mask, clues) : # apply the search for right combinations on the g
             grid[y][x] = m1[y][x] & m2[y][x]
     return grid
 
-# def valid_grid(grid, clues) :
-#     for i in range(N) :
-#         column = [grid[j][i] for j in range(N)]
-#
-#         if not equals(check_line(grid[i]), horizont(clues, i)) :
-#             return False
-#
-#         if not equals(check_line(column), vertical(clues, i)) :
-#             return False
-#     return True
-
 def backtrack (grid, cells, clues, row, col, index) :
     if index == N * N :
         return True
@@ -181,24 +161,62 @@ def backtrack (grid, cells, clues, row, col, index) :
             grid[y][x] = 0
             row[y] ^= 1 << dig; col[x] ^= 1 << dig
     return False
+def valid_grid(grid, clues) :
+    for i in range(N) :
+        column = [grid[j][i] for j in range(N)]
+
+        if not equals(check_line(grid[i]), horizont(clues, i)) :
+            return False
+
+        if not equals(check_line(column), vertical(clues, i)) :
+            return False
+    return True
 
 def solve_puzzle (clues):
-    grid = [ [0 for x in range(N)] for y in range(N) ]
-    comb = [ [[] for x in range(N)] for y in range(N) ]
     row, col = [0] * N, [0] * N
+    grid = [ [0 for x in range(N)] for y in range(N) ]
     mask = mk_mask(clues)
 
-    for _ in range(6) :
-        for i in range(4) : reduce(mask)
+    for _ in range(8) :
+        for i in range(4) : 
+            reduce(mask)
         mask = filtering(mask, clues)
 
+    heap = [0]
 
-    backtrack(grid, mask, clues, row, col, 0) # eventually fill the unsolved cells
+    while heap :
+        index = heap.pop()
+        x, y = index % N, index // N
+
+        if index == N * N :
+            valid_grid(grid, clues)
+
+        for dig in decompose(mask[y][x]) :
+            row[y] ^= 1 << dig; col[x] ^= 1 << dig
+            grid[y][x] = dig
+
+    # backtrack(grid, mask, clues, row, col, 0) # eventually fill the unsolved cells
     # display_mask(mask)
-    display_grid(mask)
+    # display_grid(clues,mask)
+    return grid
 
-    return tuple(tuple(line) for line in grid)
+def backtrack (grid, cells, clues, row, col, index) :
+    if index == N * N :
+        return valid_grid(grid, clues)
 
+    x, y = index % N, index // N
+    # if grid[y][x] != 0 : return backtrack(grid, cells, clues, row, col, index + 1)
+    for dig in decompose(cells[y][x]) :
+        if not exist(row[y], dig) and not exist(col[x], dig) :
+            row[y] ^= 1 << dig; col[x] ^= 1 << dig
+            grid[y][x] = dig
+
+            if backtrack(grid, cells, clues, row, col, index + 1) :
+                return True
+
+            grid[y][x] = 0
+            row[y] ^= 1 << dig; col[x] ^= 1 << dig
+    return False
 
 def showmask(cell) :
     for i in range(1,N+1) :
@@ -208,7 +226,6 @@ def showmask(cell) :
             print(i, end=' ')
         else :
             print(' ', end=' ')
-
 def display_mask(mask) :
     print()
 
@@ -218,8 +235,7 @@ def display_mask(mask) :
             print('|', end=' ')
         print()
     print()
-
-def display_grid(mask) :
+def display_grid(clues,mask) :
     grid = [ [0 for x in range(N + 2)] for y in range(N + 2) ]
 
     for i in range(N) :
@@ -246,41 +262,22 @@ def display_grid(mask) :
         print()
     print()
 
-expected = (
-    (2, 1, 4, 3, 5, 6),
-    (1, 6, 3, 2, 4, 5),
-    (4, 3, 6, 5, 1, 2),
-    (6, 5, 2, 1, 3, 4),
-    (5, 4, 1, 6, 2, 3),
-    (3, 2, 5, 4, 6, 1)
-)
-clues = (3,2,2,3,2,1, 1,2,3,3,2,2, 5,1,2,2,4,3, 3,2,1,2,2,4)
-actual = solve_puzzle(clues)
-if actual != expected : print('error')
+def do_test(actual, expected) :
+    print(actual, "\n", expected)
+    pass
 
-expected = (
-    (5, 6, 1, 4, 3, 2),
-    (4, 1, 3, 2, 6, 5),
-    (2, 3, 6, 1, 5, 4),
-    (6, 5, 4, 3, 2, 1),
-    (1, 2, 5, 6, 4, 3),
-    (3, 4, 2, 5, 1, 6)
-)
-clues = (0,0,0,2,2,0, 0,0,0,6,3,0, 0,4,0,0,0,0, 4,4,0,3,0,0)
-actual = solve_puzzle(clues)
-if actual != expected : print('error')
+# medved
+actual = solve_puzzle( [3,3,2,1,2,2,3, 4,3,2,4,1,4,2, 2,4,1,4,5,3,2, 3,1,4,2,5,2,3])
+expect = [
+ [2, 1, 4, 7, 6, 5, 3], 
+ [6, 4, 7, 3, 5, 1, 2],
+ [1, 2, 3, 6, 4, 7, 5],
+ [5, 7, 6, 2, 3, 4, 1], 
+ [4, 3, 5, 1, 2, 6, 7],
+ [7, 6, 2, 5, 1, 3, 4],
+ [3, 5, 1, 4, 7, 2, 6]]
 
-expected = (
-    (5, 2, 6, 1, 4, 3),
-    (6, 4, 3, 2, 5, 1),
-    (3, 1, 5, 4, 6, 2),
-    (2, 6, 1, 5, 3, 4),
-    (4, 3, 2, 6, 1, 5),
-    (1, 5, 4, 3, 2, 6)
-)
-clues = (0,3,0,5,3,4, 0,0,0,0,0,1, 0,3,0,3,2,3, 3,2,0,3,1,0)
-actual = solve_puzzle(clues)
-if actual != expected : print('error')
+do_test(actual, expect)
 
 end = time.time()
 print( "elapsed : ", end - start)
