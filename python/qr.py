@@ -37,28 +37,28 @@ EXP = [
     0x2c, 0x58, 0xb0, 0x7d, 0xfa, 0xe9, 0xcf, 0x83, 0x1b, 0x36, 0x6c, 0xd8, 0xad, 0x47, 0x8e, 0x00
 ]
 
-grid = [
-[1,1,1,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,1,1,1],
-[1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
-[1,0,1,1,1,0,1,0,0,0,0,0,0,0,1,0,1,1,1,0,1],
-[1,0,1,1,1,0,1,0,0,0,0,0,0,0,1,0,1,1,1,0,1],
-[1,0,1,1,1,0,1,0,0,0,0,0,0,0,1,0,1,1,1,0,1],
-[1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+template =[
+[1,1,1,1,1,1,1,0,1,2,2,2,2,0,1,1,1,1,1,1,1],
+[1,0,0,0,0,0,1,0,0,2,2,2,2,0,1,0,0,0,0,0,1],
+[1,0,1,1,1,0,1,0,0,2,2,2,2,0,1,0,1,1,1,0,1],
+[1,0,1,1,1,0,1,0,1,2,2,2,2,0,1,0,1,1,1,0,1],
+[1,0,1,1,1,0,1,0,0,2,2,2,2,0,1,0,1,1,1,0,1],
+[1,0,0,0,0,0,1,0,0,2,2,2,2,0,1,0,0,0,0,0,1],
 [1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[1,1,1,1,1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
-[1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[1,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[1,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[1,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]
+[0,0,0,0,0,0,0,0,0,2,2,2,2,0,0,0,0,0,0,0,0],
+[0,0,1,0,1,1,1,0,1,2,2,2,2,1,0,0,0,1,0,0,1],
+[2,2,2,2,2,2,0,2,2,2,2,2,2,2,2,2,2,2,2,2,2],
+[2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2],
+[2,2,2,2,2,2,0,2,2,2,2,2,2,2,2,2,2,2,2,2,2],
+[2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2],
+[0,0,0,0,0,0,0,0,1,2,2,2,2,2,2,2,2,2,2,2,2],
+[1,1,1,1,1,1,1,0,0,2,2,2,2,2,2,2,2,2,2,2,2],
+[1,0,0,0,0,0,1,0,1,2,2,2,2,2,2,2,2,2,2,2,2],
+[1,0,1,1,1,0,1,0,1,2,2,2,2,2,2,2,2,2,2,2,2],
+[1,0,1,1,1,0,1,0,0,2,2,2,2,2,2,2,2,2,2,2,2],
+[1,0,1,1,1,0,1,0,1,2,2,2,2,2,2,2,2,2,2,2,2],
+[1,0,0,0,0,0,1,0,0,2,2,2,2,2,2,2,2,2,2,2,2],
+[1,1,1,1,1,1,1,0,0,2,2,2,2,2,2,2,2,2,2,2,2] ]
 
 def display(grid) :
     for line in grid :
@@ -69,23 +69,7 @@ def display(grid) :
 
 def make_path (size) :
     index, cycle = size - 1, 0
-    path, grid = [], [[1 for _ in range(21)] for _ in range(21) ]
-
-    for i in range(8) :
-        grid[8][size - 8 + i] = 0 # informations for the first pattern
-        grid[size - 8 + i][8] = 0 # informations for the second pattern
-        for j in range(8) :
-            grid[i][j] = 0
-            grid[size - 8 + i][j] = 0
-            grid[i][size - 8 + j] = 0
-
-    for i in range(5) : # timing pattern
-        grid[6][8 + i] = 0
-        grid[8 + i][6] = 0
-
-    for i in range(9) : # informations for the first pattern
-        grid[8][i] = 0
-        grid[i][8] = 0
+    path = []
 
     while index > 0 :
         if index == 6 : index = 5
@@ -94,11 +78,10 @@ def make_path (size) :
             y = i if cycle % 2 else size - 1 - i
 
             for x in range(index,index-2,-1) :
-                if grid[y][x] :
+                if template[y][x] == 2 :
                     path.append([x,y])
         index -= 2
         cycle += 1
-
 
     return path
 
@@ -107,49 +90,48 @@ def binary(num) :
     for i in range(8) : os += str(num >> i&1)
     return os[::-1]
 
-def mkmask(i, j) :
-    return (i + j) % 2 == 0
+def make_qr_code(text) :
+    pad = [ '11101100', '00010001' ]
+    version = 1
+    ecc, mask, mode = 'H', '0', '0100'
 
-text = "Hi"
+    # make data codewords
+    bits = mode
+    bits += binary(len(text))
+    for ch in text : bits += binary(ord(ch))
 
-pad = [ '11101100', '00010001' ]
-version = 1
-ecc, mask, mode = 'H', '0', '0100'
+    for i in range(min(4, 72 - len(bits))) : # fill with zeros
+        bits += '0'
 
-# make data codewords
-bits = mode
-bits += binary(len(text))
-for ch in text : bits += binary(ord(ch))
+    while len(bits) < 72 :
+        for line in pad :
+            bits += line
 
-for i in range(min(4, 72 - len(bits))) : # fill with zeros
-    bits += '0'
+    bits = bits[:72]
 
-while len(bits) < 72 :
-    for line in pad :
-        bits += line
+    # make ecc codewords
+    gen = [0,43,139,206,78,43,239,123,206,214,147,24,99,150,39,243,163,136]
+    poly = [ int(bits[i * 8: i * 8 + 8], 2) for i in range(len(bits) // 8) ]
 
-bits = bits[:72]
+    cycle = len(poly)
 
-# make ecc codewords
-gen = [0,43,139,206,78,43,239,123,206,214,147,24,99,150,39,243,163,136]
-poly = [ int(bits[i * 8: i * 8 + 8], 2) for i in range(len(bits) // 8) ]
+    for _ in range(cycle) :
+        poly = [EXP[(gen[i] + LOG[poly[0]]) % 255] ^ (poly[i] if i < len(poly) else 0) for i in range(len(gen))]
+        while poly[0] == 0 : poly.pop(0)
 
-cycle = len(poly)
+    # complete bits
+    for exp in poly : bits += binary(exp)
 
-for _ in range(cycle) :
-    poly = [EXP[(gen[i] + LOG[poly[0]]) % 255] ^ (poly[i] if i < len(poly) else 0) for i in range(len(gen))]
-    while poly[0] == 0 : poly.pop(0)
+    path = make_path(version * 4 + 17)
+    grid = [ [1 if template[y][x] == 1 else 0 for x in range(21)] for y in range(21) ]
 
-# complete bits
-for exp in poly : bits += binary(exp)
+    for [x,y] in path : # make the mask
+        grid[y][x] = ((x + y) % 2) == 0
 
-path = make_path(version * 4 + 17)
+    for i in range(len(bits)) : # print all codewords
+        [x,y] = path[i]
+        grid[y][x] ^= int(bits[i])
 
-for [x,y] in path :
-    grid[y][x] = mkmask(x,y)
+    display(grid)
 
-for i in range(len(bits)) :
-    [x,y] = path[i]
-    grid[y][x] ^= int(bits[i])
-
-display(grid)
+make_qr_code("Hi")
