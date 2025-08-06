@@ -1,6 +1,6 @@
 
 alphaTable = [
-    0x01, 0x00, 0x01, 0x19, 0x02, 0x32, 0x1a, 0xc6, 0x03, 0xdf, 0x33, 0xee, 0x1b, 0x68, 0xc7, 0x4b,
+    0x00, 0x00, 0x01, 0x19, 0x02, 0x32, 0x1a, 0xc6, 0x03, 0xdf, 0x33, 0xee, 0x1b, 0x68, 0xc7, 0x4b,
     0x04, 0x64, 0xe0, 0x0e, 0x34, 0x8d, 0xef, 0x81, 0x1c, 0xc1, 0x69, 0xf8, 0xc8, 0x08, 0x4c, 0x71,
     0x05, 0x8a, 0x65, 0x2f, 0xe1, 0x24, 0x0f, 0x21, 0x35, 0x93, 0x8e, 0xda, 0xf0, 0x12, 0x82, 0x45,
     0x1d, 0xb5, 0xc2, 0x7d, 0x6a, 0x27, 0xf9, 0xb9, 0xc9, 0x9a, 0x09, 0x78, 0x4d, 0xe4, 0x72, 0xa6,
@@ -22,10 +22,11 @@ alphaTable = [
 def display(grid) :
     for line in grid :
         for ce in line :
-            if ce : print('#', end=' ')
-            else : print(' ', end=' ')
+            if ce :
+                print('██',end='')
+            else :
+                print('  ',end='')
         print()
-
 
 def new_grid() :
     return [
@@ -70,10 +71,9 @@ def scan (grid) :
 
     return path
 
-def make_qr_code(text) :
+def create_qr_code(text) :
     pad = [ '11101100', '00010001' ]
-    version = 1
-    
+
     grid = new_grid()
     path = scan(grid)
     LOG, EXP = alphaTable, [0] * 255
@@ -82,7 +82,7 @@ def make_qr_code(text) :
     bits = '0100'
     bits += format(len(text), '08b')
 
-    for ch in text : 
+    for ch in text :
         bits += format((ord(ch)), '08b')
 
     for i in range(min(4, 72 - len(bits))) : # fill with zeros
@@ -103,6 +103,7 @@ def make_qr_code(text) :
         poly = [EXP[(gen[i] + LOG[poly[0]]) % 255] ^ (poly[i] if i < len(poly) else 0) for i in range(len(gen))]
         while poly[0] == 0 : poly.pop(0)
 
+    while len(poly) < 17 : poly.append(0)
     for exp in poly : # complete bits
         bits += format(exp, '08b')
 
@@ -113,9 +114,23 @@ def make_qr_code(text) :
         [x,y] = path[i]
         grid[y][x] ^= int(bits[i])
 
-    display(grid)
-
+    # display(grid)
     return grid
 
-make_qr_code("Warrior")
+LOG, EXP = alphaTable, [0] * 256
+for i in range(255) : EXP[LOG[i]] = i
 
+gen = [0,43,139,206,78,43,239,123,206,214,147,24,99,150,39,243,163,136]
+erc = [64 , 36 , 134 , 144 , 236 , 17 , 236 , 17 , 236]
+
+erc = [EXP[(gen[i] + LOG[erc[0]]) % 255] ^ (erc[i] if i < len(erc) else 0) for i in range(len(gen))]
+while erc[0] == 0 : erc.pop(0)
+
+erc = (len(gen) - len(erc) - 1) * [0] + erc
+
+print(erc)
+
+
+# create_qr_code("Warrior")
+# create_qr_code("k-%-")
+# create_qr_code('sU&-/')

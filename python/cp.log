@@ -7,4 +7,4 @@ DEBUG: pause: True
 DEBUG: repl: python
 DEBUG: args: ['/home/wintermute/code/codewars/python/qr.py']
 INFO: return code: 0 (0x0)
-INFO: elapsed time: 0.025047
+INFO: elapsed time: 0.025915
