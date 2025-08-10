@@ -54,12 +54,11 @@ def new_grid() :
 
 def scan (grid) :
     size = len(grid)
-    index, cycle = size - 1, 0
     path = []
+    index, cycle = size - 1, 0
 
     while index > 0 :
         if index == 6 : index = 5
-
         for i in range(size) :
             y = i if cycle % 2 else size - 1 - i
 
@@ -102,8 +101,8 @@ def create_qr_code(text) :
     for _ in range(cycle) :
         poly = [EXP[(gen[i] + LOG[poly[0]]) % 255] ^ (poly[i] if i < len(poly) else 0) for i in range(len(gen))]
         while poly[0] == 0 : poly.pop(0)
-
     while len(poly) < 17 : poly.append(0)
+
     for exp in poly : # complete bits
         bits += format(exp, '08b')
 
@@ -117,18 +116,6 @@ def create_qr_code(text) :
     # display(grid)
     return grid
 
-LOG, EXP = alphaTable, [0] * 256
-for i in range(255) : EXP[LOG[i]] = i
-
-gen = [0,43,139,206,78,43,239,123,206,214,147,24,99,150,39,243,163,136]
-erc = [64 , 36 , 134 , 144 , 236 , 17 , 236 , 17 , 236]
-
-erc = [EXP[(gen[i] + LOG[erc[0]]) % 255] ^ (erc[i] if i < len(erc) else 0) for i in range(len(gen))]
-while erc[0] == 0 : erc.pop(0)
-
-erc = (len(gen) - len(erc) - 1) * [0] + erc
-
-print(erc)
 
 
 # create_qr_code("Warrior")
