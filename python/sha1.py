@@ -1,65 +1,63 @@
-H0 = [0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0]
-K = [0x5A827999, 0x6ED9EBA1, 0x8F1BBCDC, 0xCA62C1D6]
-
-def F1(B, C, D) : return (B & C) | ((~B) & D)
-def F2(B, C, D) : return B ^ C ^ D
-def F3(B, C, D) : return (B & C) | (B & D) | (C & D)
-def F4(B, C, D) : return B ^ C ^ D
+mod = 4294967296
 
 def rotate(val, n) :
     return (val << n) ^ (val >> (32-n));
 
-def add (a,b) :
-    return (a + b) % 4294967296
+def printex (txt) :
+    hash = [format(ha, '08X') for ha in txt]
+    return hash
 
-def preprocess(txt) :
-    end = (448 - ((len(txt) * 8 + 8) - 64)) // 8 - 1
+class SHA1(object) :
+    def preprocess(txt) :
+        end = (448 - ((len(txt) * 8 + 8) - 64)) // 8 - 1
+        msg = [it for it in txt]
 
-    txt += chr(0x01)
+        msg.append(0x80)
+        msg += [0] * end
+        msg.append(len(txt) * 8)
 
-    for i in range(end) :
-        txt += chr(0x00)
+        return msg
 
-    txt += chr(len(txt) * 8)
-    return txt
+    def update(self, msg) :
+        self.msg = msg
 
+    def digest(self) :
+        msg = SHA1.preprocess(self.msg)
 
-txt = 'Hello'
-msg = [ord(it) for it in preprocess(txt)]
-# compression
+        w = [0] * 90
+        for i in range(16) :
+            w[i] = msg[i * 4 + 0] << 24 | msg[i * 4 + 1] << 16 | msg[i * 4 + 2] <<  8 | msg[i * 4 + 3]
 
-w = [0] * 90
-for i in range(16) :
-    w[i] = msg[i * 4 + 0] << 24 | msg[i * 4 + 1] << 16 | msg[i * 4 + 2] <<  8 | msg[i * 4 + 3]
+        for i in range(16,80) :
+            w[i] = rotate(w[i-3] ^ w[i-8] ^ w[i-14] ^ w[i-16], 1);
 
-for i in range(16,80) :
-    w[i] = rotate(w[i-3] ^ w[i-8] ^ w[i-14] ^ w[i-16], 1);
+        hash = [0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0]
+        a,b,c,d,e = hash
+#
+        for i in range(80) :
+            if i < 20 :
+                f,k = (b & c) | ((~b) & d), 0x5A827999
+            elif i < 40 :
+                f,k = b ^ c ^ d, 0x6ED9EBA1
+            elif i < 60 :
+                f,k = (b & c) | (b & d) | (c & d), 0x8F1BBCDC
+            else :
+                f,k = b ^ c ^ d, 0xCA62C1D6
 
-hash = H0.copy()
-a,b,c,d,e = H0
+            e = d;
+            d = c;
+            c = rotate(b,30);
+            b = a;
+            a = (e + f + k + rotate(a,5) + w[i]) % mod
 
-for i in range(80) :
-    if i < 20 :
-        f,k = F1(b,c,d), K[0]
-    elif i < 40 :
-        f,k = F2(b,c,d), K[1]
-    elif i < 60 :
-        f,k = F3(b,c,d), K[2]
-    else :
-        f,k = F4(b,c,d), K[3]
-    # e + f + k + rotate(a,5) + w[i]
-    # s1 = add(e , f);
-    # s2 = add(s1 , rotate(a,5));
-    # s3 = add(s2 , w[i]);
-    # s4 = add(s3 , k);
-    e = d;
-    d = c;
-    c = rotate(b,30);
-    b = a;
-    a = e + f + k + rotate(a,5) + w[i]
+        digest = [a,b,c,d,e]
+        hash = [(digest[i] ) % mod for i in range(5)]
 
-digest = [a,b,c,d,e]
-hash = [add(digest[i] , hash[i]) for i in range(5)]
+        print(printex(hash))
+        
+        return hash
 
-print(msg)
-# hash = [format(ha, '08x') for ha in hash]
+sha = SHA1()
+sha.update(b'abc')
+actual = sha.digest()
+expect = b'a9993e364706816aba3e25717850c26c9cd0d89d'
