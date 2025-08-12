@@ -1,29 +1,25 @@
-mod = 4294967296
 print('\n\n\n')
 
-def hex (txt) : return [format(ha, '08X') for ha in txt]
+mod = 4294967296
+
 def rotl(n, d): return ((n << d) | (n >> (32 - d))) & 0xffffffff
 
 class SHA1(object) :
     def preprocess(txt) :
-        end = (448 - ((len(txt) * 8 + 8) - 64)) // 8 - 1
-        msg = [it for it in txt]
+        nzo = 64 - (len(txt) + 9) % 64
 
+        msg = bytearray(txt)
         msg.append(0x80)
-        msg += [0] * end
-        msg.append(len(txt) * 8)
+        msg += bytes(nzo)
+        msg += (len(txt) * 8).to_bytes(8)
 
         return msg
 
-    def update(self, msg) :
-        self.msg = msg
-
-    def digest(self) :
-        msg = SHA1.preprocess(self.msg)
-
+    def compress(self, chunk) :
         w = [0] * 80
+
         for i in range(16) :
-            w[i] = msg[i * 4 + 0] << 24 | msg[i * 4 + 1] << 16 | msg[i * 4 + 2] <<  8 | msg[i * 4 + 3]
+            w[i] = chunk[i * 4 + 0] << 24 | chunk[i * 4 + 1] << 16 | chunk[i * 4 + 2] <<  8 | chunk[i * 4 + 3]
 
         for i in range(16,80) :
             w[i] = rotl(w[i-3] ^ w[i-8] ^ w[i-14] ^ w[i-16], 1);
@@ -41,29 +37,36 @@ class SHA1(object) :
             else :
                 f,k = b ^ c ^ d, 0xCA62C1D6
 
-            s1 = (e + f) % mod
-            s2 = (s1 + rotl(a,5)) % mod
-            s3 = (s2 + w[i]) % mod
-            s4 = (s3 + k) % mod
-
-            e,d,c,b,a = d % mod, c % mod, rotl(b,30) % mod, a % mod, s4 % mod
-
+            tmp = (rotl(a,5) +  e + f + k + w[i]) % mod
+            e,d,c,b,a = d, c, rotl(b,30), a, tmp
             digest = [a,b,c,d,e]
 
-        return ''.join([format(digest[i] + hash[i], 'x') for i in range(5)])
+        return [(digest[i] + hash[i]) % mod for i in range(5)]
+
+    def update(self, msg) :
+        self.msg = msg
+
+    def digest(self) :
+        msg = SHA1.preprocess(self.msg)
+        hash = self.compress(msg)
+        hash = [format(hash[i], '08x') for i in range(5)]
+        return bytes( ''.join(hash) , 'utf-8')
 
 
+def assert_equals(actual, expect) :
+    if actual != expect :
+        print('actual :', actual,  '\nexpect :', expect)
 
-def binary(num) :
-    for i in range(32) :
-        bit = num >> i &1
-        print(bit,end='')
-    print()
 
 sha = SHA1()
 sha.update(b'abc')
-actual = sha.digest()
-expect = b'a9993e364706816aba3e25717850c26c9cd0d89d'
+assert_equals(sha.digest(), b'a9993e364706816aba3e25717850c26c9cd0d89d')
 
-if actual != expect :
-    print('actual : ', actual,  '\nexpect :', expect)
+sha = SHA1()
+sha.update(b'hello this is a test')
+assert_equals(sha.digest(), b'f291f60cafb2ef2e0013f5a5889b1da5af4b4657')
+
+sha = SHA1()
+sha.update(b'codewars.com is awesome')
+assert_equals(sha.digest(), b'67f1d2416b4f0d24a22c9a79af1128bb40a808fb')
+

@@ -1,24 +1,24 @@
-txt = b'abc'
 
 def rotl(n, d): return ((n << d) | (n >> (32 - d))) & 0xffffffff
 
+txt = b'abc'
+
+txt = b'\xe9\xf6B\xf32\xbd\xb5\xbdSxU\x94\x0c\x89\x92\xf8\xca \xb4\xd9l\xc3\x82d\xd3\x02h4\x96\x8b\xb6\xb5c\xc9ce)\xc6\x12,,\x1f\xe0T9\x99>eq\xa4Hy\xd5\x0c36\xd8\xbf\x00}e\xfa\x04\x12\xd37\xf7\x17\xaa6B\x8b\x037C\x85w\x16I`\xff\x17\x81\xf2\x04\x8aF\x13\xe0\x9d\x7f\x7f%\xc9\x04\xde\x1b{\xfe\xbeF\x16\xa2+\xcc\xd3\x85g\x1d\x1eY\x0b\x91\xf6\xac\xb1P\xa3z\xc5\xcb\xcbm\xa6\xcc\xa4\x01>i\t\xd6k\xd8u\xc3\xf6\x13Z\xfd\xd0\xfb)\xb0\xbbU\t\x17\xe0\x98b0\x84\x0c\x03 %\xdd1r\x99wo\x06j3\xcd\xf7r\x04\xd2\x08\xdb\x9f\xc2\xbb\x11b\x12\x161sj\xf6\x96d\xa9\xd2\xd6\xe8\n'
+
+
+
+nzo = 64 - (len(txt) + 9) % 64
 msg = bytearray(txt)
-end = (448 - ((len(txt) * 8 + 8) - 64)) // 8 - 1
-
 msg.append(0x80)
-msg += bytes(end)
-msg.append(len(txt) * 8)
+msg += bytes(nzo)
+msg += (len(txt) * 8).to_bytes(8)
 
-w = [0] * 80
 
-for i in range(16) :
-    w[i] = msg[i * 4 + 0] << 24 | msg[i * 4 + 1] << 16 | msg[i * 4 + 2] <<  8 | msg[i * 4 + 3]
+print(len(msg) * 8)
 
-for i in range(16,80) :
-    w[i] = rotl(w[i-3] ^ w[i-8] ^ w[i-14] ^ w[i-16], 1)
+for i in range(0, len(msg), 64) :
+    chunk = msg[i:i + 64]
 
-hash = [0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0]
+    print(len(chunk))
 
-hash = ''.join([format(x,'x') for x in hash])
 
-print(bytes(hash, 'utf-8'))
