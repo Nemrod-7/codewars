@@ -10,9 +10,9 @@ def calculate (rect) :
         hist[x1] = [i] if not x1 in hist else hist[x1] + [i]
         hist[x2] = [i] if not x2 in hist else hist[x2] + [i]
 
+    # print(hist)
     sweep = [ [x, hist[x]] for x in hist ]
     sweep.sort()
-
     for i in range(0,len(sweep)) :
         [x, record] = sweep[i]
 
@@ -50,6 +50,27 @@ def calculate (rect) :
     return area
 
 print('\n\n\n\n\n\n')
-rect = [[3,3,8,5], [6,3,8,9], [11,6,14,12]]
-actual = calculate(rect)
-print(actual)
+rect = [[3,3,8,5], [11,6,14,12], [6,3,8,9]]
+# actual = calculate(rect)
+# print(actual)
+
+sweep = {}
+for ix in range(len(rect)) :
+    x1, x2 = rect[ix][0], rect[ix][2]
+
+    sweep[x1] = [ix] if not x1 in sweep else sweep[x1] + [ix]
+    sweep[x2] = [ix] if not x2 in sweep else sweep[x2] + [ix]
+
+line = set()
+sweep = sorted(sweep.items(), key=lambda x: x[0])
+#
+print(sweep)
+
+for [x, record] in sweep :
+    # print(x, line)
+
+    for i1 in record :
+        [x1,y1,x2,y2] = rect[i1]
+
+        if x == x1 : line.add(i1)
+        if x == x2 : line.remove(i1)

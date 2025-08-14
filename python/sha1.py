@@ -40,17 +40,23 @@ class SHA1(object) :
             tmp = (rotl(a,5) +  e + f + k + w[i]) % mod
             e,d,c,b,a = d, c, rotl(b,30), a, tmp
             digest = [a,b,c,d,e]
-
-        return [(digest[i] + hash[i]) % mod for i in range(5)]
+        return digest
+        # return [(digest[i] + hash[i]) % mod for i in range(5)]
 
     def update(self, msg) :
         self.msg = msg
 
     def digest(self) :
+        hash = [0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0]
         msg = SHA1.preprocess(self.msg)
-        hash = self.compress(msg)
+
+        for i in range(0,len(msg),64) :
+            digest = self.compress(msg[i:i+64])
+            hash = [(digest[i] + hash[i]) % mod for i in range(5)]
+
         hash = [format(hash[i], '08x') for i in range(5)]
         return bytes( ''.join(hash) , 'utf-8')
+
 
 
 def assert_equals(actual, expect) :
@@ -69,4 +75,3 @@ assert_equals(sha.digest(), b'f291f60cafb2ef2e0013f5a5889b1da5af4b4657')
 sha = SHA1()
 sha.update(b'codewars.com is awesome')
 assert_equals(sha.digest(), b'67f1d2416b4f0d24a22c9a79af1128bb40a808fb')
-
