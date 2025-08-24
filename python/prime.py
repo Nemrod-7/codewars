@@ -73,13 +73,13 @@ class primes :
 
 stream = primes()
 
-for i in range(100) :
-    print(next(stream), end=' ')
-print()
+# for i in range(100) :
+#     print(next(stream), end=' ')
+# print()
 # 21–40 	73 	79 	83 	89 	97 	101 103	107	109	113	127	131	137	139	149 151	157	163	167 173
 
-for i in range(5000000) :
-    next(sieve)
+# for i in range(500000) :
+#     next(sieve)
     # print(next(stream), end=' ')
 print()
 

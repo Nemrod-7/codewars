@@ -1,8 +1,43 @@
+
+
+def brain_luck(code, input) :
+
+    oss = ''
+    tape = [0] * 30
+    index, it, id = 0, 0, 0
+    input = iter(input)
+
+    print(input)
+
+    while index < len(code) :
+        match code[index] :
+            case '>' : it += 1
+            case '<' : it -= 1
+            case '+' :
+                tape[it] = 0 if tape[it] == 255 else tape[it] + 1
+            case '-' :
+                tape[it] = 255 if tape[it] == 0 else tape[it] - 1
+            case '.' :
+                oss += chr(tape[it])
+            case ',' :
+                try :
+                    tape[it] = ord(next(input))
+                except :
+                    tape[it] = 0
+            case '[' :
+                if tape[it] == 0 : index = find_next(code, index)
+            case ']' :
+                if tape[it] != 0 : index = find_next(code, index)
+
+        index += 1
+
+    return oss
+
 def find_next (code, pos) :
 
     size = len(code)
     index = pos
-    pile = 0 
+    pile = 0
     fwrd = True
     if code[index] == ']' : fwrd = False
 
@@ -16,71 +51,55 @@ def find_next (code, pos) :
     return index
 
 def boolfuck (code, input="") :
-    
-    oss = ''
-    tape = [0] * 30
+    oss = []
+    tape = [0] * 500
     index, it, bin, out = 0, 0, 0, 0
-    input = iter(input)
 
     while index < len(code) :
         match code[index] :
-            case '>' : it += 1
+            case '>' :
+                it += 1
+                if it > len(tape) : tape.append(0)
             case '<' : it -= 1
             case '+' : tape[it] ^= 1
 
-            case ';' : 
-                if out / 8 >= len(oss) : oss += 0
-                oss[out / 8] |= tape[it] << (out % 8);
+            case ';' :
+                if out // 8 >= len(oss) : oss.append(0)
+                oss[out // 8] |= tape[it] << (out % 8);
                 out += 1
-
-            case ',' : 
+            case ',' :
                 try :
-                    tape[it] = input[bin / 8] >> (bin % 8) &1;
+                    tape[it] = ord(input[bin // 8]) >> (bin % 8) &1;
                     bin += 1;
                 except :
                     pass
 
-            case '[' : 
+            case '[' :
                 if tape[it] == 0 : index = find_next(code, index)
-            case ']' : 
+            case ']' :
                 if tape[it] != 0 : index = find_next(code, index)
 
-        index += 1    
+        index += 1
+    return ''.join([chr(it) for it in oss])
 
-    return oss
+def assert_equals(actual, expect) :
+    if actual != expect :
+        print('actual : ', actual, 'expect : ', expect)
 
-def brain_luck(code, input) :
+def fixed_tests():
+    assert_equals(boolfuck("", ""), "")
 
-    oss = ''
-    tape = [0] * 30
-    index, it, id = 0, 0, 0
-    input = iter(input)
+    assert_equals(boolfuck("<"), "")
+    assert_equals(boolfuck(">"), "")
+    assert_equals(boolfuck("+"), "")
+    assert_equals(boolfuck("."), "")
+    assert_equals(boolfuck(";"), "\u0000")
 
-    print(input)
-    
-    while index < len(code) :
-        match code[index] :
-            case '>' : it += 1
-            case '<' : it -= 1
-            case '+' : 
-                tape[it] = 0 if tape[it] == 255 else tape[it] + 1
-            case '-' : 
-                tape[it] = 255 if tape[it] == 0 else tape[it] - 1
-            case '.' : 
-                oss += chr(tape[it])
-            case ',' : 
-                try :
-                    tape[it] = ord(next(input))
-                except :
-                    tape[it] = 0
-            case '[' : 
-                if tape[it] == 0 : index = find_next(code, index)
-            case ']' : 
-                if tape[it] != 0 : index = find_next(code, index)
+    assert_equals(boolfuck(";;;+;+;;+;+;+;+;+;+;;+;;+;;;+;;+;+;;+;;;+;;+;+;;+;+;;;;+;+;;+;;;+;;+;+;+;;;;;;;+;+;;+;;;+;+;;;+;+;;;;+;+;;+;;+;+;;+;;;+;;;+;;+;+;;+;;;+;+;;+;;+;+;+;;;;+;+;;;+;+;+;", ""), "Hello, world!\n")
 
-        index += 1    
+    assert_equals(boolfuck(">,>,>,>,>,>,>,>,<<<<<<<[>]+<[+<]>>>>>>>>>[+]+<<<<<<<<+[>+]<[<]>>>>>>>>>[+<<<<<<<<[>]+<[+<]>>>>>>>>>+<<<<<<<<+[>+]<[<]>>>>>>>>>[+]<<<<<<<<;>;>;>;>;>;>;>;<<<<<<<,>,>,>,>,>,>,>,<<<<<<<[>]+<[+<]>>>>>>>>>[+]+<<<<<<<<+[>+]<[<]>>>>>>>>>]<[+<]", "Codewars\u00ff"), "Codewars")
+    assert_equals(boolfuck(">,>,>,>,>,>,>,>,>+<<<<<<<<+[>+]<[<]>>>>>>>>>[+<<<<<<<<[>]+<[+<]>;>;>;>;>;>;>;>;>+<<<<<<<<+[>+]<[<]>>>>>>>>>[+<<<<<<<<[>]+<[+<]>>>>>>>>>+<<<<<<<<+[>+]<[<]>>>>>>>>>[+]+<<<<<<<<+[>+]<[<]>>>>>>>>>]<[+<]>,>,>,>,>,>,>,>,>+<<<<<<<<+[>+]<[<]>>>>>>>>>]<[+<]", "Codewars"), "Codewars")
 
-    return oss
+    assert_equals(boolfuck(">,>,>,>,>,>,>,>,>>,>,>,>,>,>,>,>,<<<<<<<<+<<<<<<<<+[>+]<[<]>>>>>>>>>[+<<<<<<<<[>]+<[+<]>>>>>>>>>>>>>>>>>>+<<<<<<<<+[>+]<[<]>>>>>>>>>[+<<<<<<<<[>]+<[+<]>>>>>>>>>+<<<<<<<<+[>+]<[<]>>>>>>>>>[+]>[>]+<[+<]>>>>>>>>>[+]>[>]+<[+<]>>>>>>>>>[+]<<<<<<<<<<<<<<<<<<+<<<<<<<<+[>+]<[<]>>>>>>>>>]<[+<]>>>>>>>>>>>>>>>>>>>>>>>>>>>+<<<<<<<<+[>+]<[<]>>>>>>>>>[+<<<<<<<<[>]+<[+<]>>>>>>>>>+<<<<<<<<+[>+]<[<]>>>>>>>>>[+]<<<<<<<<<<<<<<<<<<<<<<<<<<[>]+<[+<]>>>>>>>>>[+]>>>>>>>>>>>>>>>>>>+<<<<<<<<+[>+]<[<]>>>>>>>>>]<[+<]<<<<<<<<<<<<<<<<<<+<<<<<<<<+[>+]<[<]>>>>>>>>>[+]+<<<<<<<<+[>+]<[<]>>>>>>>>>]<[+<]>>>>>>>>>>>>>>>>>>>;>;>;>;>;>;>;>;<<<<<<<<", "\u0008\u0009"), "\u0048")
 
-brain_luck(',[.[-],]', 'Codewars' + chr(0))
-
+fixed_tests()

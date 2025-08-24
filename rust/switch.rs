@@ -1,65 +1,109 @@
-use std::time::{Instant};
+#![allow(warnings, unused)]
 
+use std::time::{Instant};
 use std::collections::{BinaryHeap, HashSet};
 
+struct binary { }
+impl binary {
+    fn show(mut num:usize) {
+        let mut dig = 0;
+
+        while num  > 0 {
+            if num &1 == 1 {
+                print!("{dig}");
+            }
+
+            dig += 1;
+            num >>= 1;
+        }
+
+        print!("\n");
+    }
+
+    fn itob(list: &Vec<usize>) -> usize {
+        list.iter().fold(0, |bin, num| bin | 1 << num)
+    }
+}
+
 struct LightController {
+    max:usize,
+    lim:usize,
     size:usize,
-    switch:Vec<Vec<usize>>,
+    comb:Vec<Vec<usize>>,
 }
 impl LightController {
 
-    fn new (n: usize, list: &[Vec<usize>]) -> Self {
-        //print!("{} {:?}\n", n, list);
-        Self {
-            size:n,
-            switch:list.to_vec(),
-        }
+    fn getmax(list: &[Vec<usize>]) -> usize {
+        let max = list.iter().fold(None, |acc, x| std::cmp::max(acc, x.iter().max()) ).unwrap_or(&0usize);
+
+        // let mut max = 0;
+        //
+        // for i in 0..list.len() {
+        //     for nu in &list[i] {
+        //         max = std::cmp::max(max, *nu);
+        //     }
+        // }
+        //
+        // print!("{:?}\n", max);
+        *max
     }
 
-    fn check(&self, lights: &Vec<usize>) -> bool {
+    fn new (n: usize, list: &[Vec<usize>]) -> Self {
+        let max = LightController::getmax(list); 
+        let lim = (max >> 6) + 1;
+        let mut comb = vec![vec![0; lim]; list.len()];
 
-        for pos in lights {
-            if pos >= &self.size {
-                return false;
+        for i in 0..list.len() {
+            for nu in &list[i] {
+                comb[i][nu >> 6] |= 1 << (nu&63);
             }
         }
 
-        true
+        Self {
+            max:max,
+            lim:lim,
+            size:n,
+            comb: comb,
+        }
     }
 
     fn solve(&self, lights: &Vec<usize>) -> Option<Vec<usize>> {
+        let size = self.comb.len();
+        let start = ( vec![0usize; self.lim], vec![]);
+        let mut exit = vec![0; self.lim];
+        let mut heap: BinaryHeap<(Vec<usize>, Vec<usize>)> = BinaryHeap::new();
+        let mut hash: HashSet<Vec<usize>> = HashSet::new();
 
-        if self.check(lights) == false { return None; }
-
-        let mut heap = BinaryHeap::new();
-        let mut hash = HashSet::new();
-        let mut mask = vec![0;(self.size >> 6) + 1];
-
-        heap.push((mask.clone(), vec![]));
-
-        for bit in lights {
-            mask[bit >> 6] |= 1u64 << (bit &63);
+        for it in lights {
+            if *it > self.max {
+                return None
+            } else {
+                exit[it >> 6] |= 1 << (it&63);
+            }
         }
+
+        // binary::show(comb[i]);
+        heap.push( start );
 
         while let Some ((state, hist)) = heap.pop() {
 
-            if state == mask {
+            if state == exit {
                 return Some(hist);
             }
 
-            for i in 0..self.switch.len() {
-                let mut next:Vec<u64> = state.clone();
+            for i in 0..size {
+                let mut next = state.clone();
 
-                for pos in &self.switch[i] {
-                    next[pos >> 6] ^= 1u64 << (*pos &63);
+                for j in 0..self.lim {
+                    next[j] ^= self.comb[i][j];
                 }
 
                 if hash.contains (&next) == false  {
-                    let mut nxp = hist.clone();
-                    nxp.push(i);
+                    let mut nxh = hist.clone();
+                    nxh.push(i);
 
                     hash.insert(next.clone());
-                    heap.push((next, nxp));
+                    heap.push((next, nxh));
                 }
             }
         }
@@ -72,10 +116,16 @@ fn main () {
 
     let start = Instant::now();
 
+    let choice = vec![1,4,5];
+    let list = [ vec![0, 1, 2], vec![1, 2], vec![1, 2, 3, 4], vec![1, 4] ];
+
+    let controller = LightController::new(2, &list);
+
+
     fixed_tests::exhaustive_small_tests();
 
-    print!("\n");
 
+    print!("\n");
     let duration = start.elapsed();
     println!("Duration: {:?}", duration);
 }
@@ -102,11 +152,11 @@ mod fixed_tests {
             (4, vec![vec![0, 1], vec![], vec![0, 1, 2, 3], ], vec![true, false, false, true, false, false, false, false, false, false, false, false, true, false, false, true]),
         ];
 
-        for (n, switch, possible) in tests {
-            let controller = LightController::new(n, &switch);
+        for (n, comb, possible) in tests {
+            let controller = LightController::new(n, &comb);
             for (choices, is_possible) in
                 powerset(n).into_iter().zip(possible.into_iter()) {
-                    test_controller( n, &switch, &controller, choices, is_possible,);
+                    test_controller( n, &comb, &controller, choices, is_possible,);
                 }
         }
     }
@@ -124,23 +174,23 @@ mod fixed_tests {
         }
     }
 
-    fn test_controller(n: usize, switch: &Vec<Vec<usize>>, controller: &LightController, choices: Vec<usize>, is_possible: bool,) {
+    fn test_controller(n: usize, comb: &Vec<Vec<usize>>, controller: &LightController, choices: Vec<usize>, is_possible: bool,) {
 
         if let Some(index) = controller.solve(&choices) {
-            assert_eq!( toggle_switches(switch, n, &index), choices,
-                "controller for switch {:?} failed to provide a right set of switches: tried to turn on the lights {:?} with the switches {:?}",
-                switch, choices, index)
+            // print!("n : {} comb : {:?} expect : {:?} got : {:?}\n", n, comb, choices, toggle_switches(comb, n, &index));
+            assert_eq!( toggle_switches(comb, n, &index), choices,
+            "controller for comb {:?} failed to provide a right set of switches: tried to turn on the lights {:?} with the switches {:?}", comb, choices, index)
         } else {
-            assert!(!is_possible, "controller for switch {:?} returned None for the lights set {:?}", switch, choices);
+            assert!(!is_possible, "controller for comb {:?} returned None for the lights set {:?}", comb, choices);
         }
     }
 
-    fn toggle_switches(switch: &Vec<Vec<usize>>, n: usize, index: &Vec<usize>,) -> Vec<usize> {
+    fn toggle_switches(comb: &Vec<Vec<usize>>, n: usize, index: &Vec<usize>,) -> Vec<usize> {
 
         let mut state = vec![false; n];
 
         for it in index {
-            for light in &switch[*it] {
+            for light in &comb[*it] {
                 state[*light] = !state[*light]
             }
         }

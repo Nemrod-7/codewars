@@ -12,6 +12,9 @@ class Point (NamedTuple):
     x: float
     y: float
 
+    def __repr__(self) :
+        return '(' + format(self.x, '.2f') + ' , ' + format(self.y, '.2f') + ')'
+
 class Circle (NamedTuple):
     ctr: Point
     r:   float
@@ -150,7 +153,7 @@ def shortest_path_length (start: Point, exit: Point, circles: list[Circle]) -> f
     edges = [[] for _ in range(0, size)] # list of all reference of tangent lines for each circle => [c1:[int,int,...], c2:[int,int,...]] (i references a graph[i])
     icept = [[] for _ in range(0, size)] # list of all intersections points between circles       => [[Point, Point, ...],[],[],[]]
 
-    for i in range(0,size) :
+    for i in range(size) :
         c1 = circles[i]
 
         for j in range(i + 1, size) :
@@ -185,7 +188,7 @@ def shortest_path_length (start: Point, exit: Point, circles: list[Circle]) -> f
     # handling start and exit point
     heap = []
 
-    for i in range(0,size) :
+    for i in range(size) :
         c1 = circles[i]
         t1 = tangent(start, c1)
         t2 = tangent(exit , c1)
@@ -209,7 +212,7 @@ def shortest_path_length (start: Point, exit: Point, circles: list[Circle]) -> f
     # pathfinder
     visit = [False] * len(graph) #
 
-    for i in range(0, len(graph)) :
+    for i in range(len(graph)) :
         x, y = [], []
         for j in range(0, len(graph[i])) :
             x.append(graph[i][j][0].x)
@@ -294,12 +297,73 @@ def tangraph (start: Point, exit: Point, circles: list[Circle]) :
     plt.show()
     pass
 
+def point(p) :
+    return format(p.x, '.2f'),format(p.y, '.2f')
+
 a, b = Point(-3, 1), Point(4.25, 0)
-c = [Circle(Point(0,0), 2.5), Circle(Point(1.5,2), 0.5), Circle(Point(3.5,1), 1), Circle(Point(3.5,-1.7), 1.2)]
+circles = [Circle(Point(0,0), 2.5), Circle(Point(1.5,2), 0.5), Circle(Point(3.5,1), 1), Circle(Point(3.5,-1.7), 1.2)]
 
+# point = [x,y]
+# circle = [p1, rad]
+# tangent = [p1, p2]
 
-tangraph(a,b,c)
-# shortest_path_length(a, b, c)
+tange = []
+sweep = []
+line = set()
 
+for i in range(len(circles)) :
+    c1 = circles[i]
+
+    p1, r = c1
+    p2 = Point(p1[0] - r, p1[1]) # i, start
+    p3 = Point(p1[0] + r, p1[1]) # i, end
+    sweep += [[p2, i, 'circle'], [p3,i, 'circle']]
+
+    for j in range(i + 1, len(circles)) :
+        c2 = circles[j]
+
+        for p1 in hcenter (c1,c2) :
+            if not inside_circle(p1,c1) and not inside_circle(p1,c2) :
+                t1, t2 = tangent(p1,c1), tangent(p1,c2)
+
+                tange.append([ t1[0], t2[0], True ])
+                tange.append([ t1[1], t2[1], True ])
+
+                sweep += [
+                    [t1[0], len(tange) - 2 , 'tangent'],
+                    [t2[0], len(tange) - 2 , 'tangent'],
+                    [t1[1], len(tange) - 1 , 'tangent'],
+                    [t2[1], len(tange) - 1 , 'tangent']
+                ]
+
+sweep.sort()
+
+for i in range(len(sweep)) :
+    p1, index, event = sweep[i]
+
+    if event == 'circle' :
+        c1 = circles[index]
+
+        if p1.x < c1[0].x :
+            line.add(index)
+        else :
+            line.remove(index)
+
+    if event == 'tangent' :
+        # t1 = tange[index]
+        if tange[index][2] == True :
+            for ix in line :
+                c1 = circles[ix]
+
+                if inside_circle(p1, c1) :
+                    tange[index][2] = False
+                # print(sweep[i], end=' ')
+                # print(line)
+
+for i in range(len(tange)) :
+    print(tange[i])
+
+# tangraph(a,b,circles)
+# shortest_path_length(a, b, circles)
 
 print("exit")
