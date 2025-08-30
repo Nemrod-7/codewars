@@ -1,21 +1,21 @@
+
 import time
-import numpy as np
+import array
 
 start = time.time()
 
 L1 = 32768
 LIMIT = int(1e8)
-WHEEL = [2,4,2,4,6,2,6,4,2,4,6,6,2,6,4,2,6,4,6,8,4,2,4,2,4,8,6,4,6,2,4,6,2,6,6,4,2,4,6,2,6,4,2,4,2,10,2,10]
+
+WHEEL = array.array('I',[2,4,2,4,6,2,6,4,2,4,6,6,2,6,4,2,6,4,6,8,4,2,4,2,4,8,6,4,6,2,4,6,2,6,6,4,2,4,6,2,6,4,2,4,2,10,2,10])
 vs = [2,3,5,7]
 
 class eratos : # segmented SOE with advanced wheel
     def __init__ (self) :
         self.low, self.high = 0, 0
         self.k, self.t, self.i, self.u = 11, 0, 11, 0
-        # self.sieve, self.cache = [0] * L1, [0] * L1
-        self.sieve, self.cache = np.tile(0, L1), np.tile(0, L1)
+        self.sieve, self.cache = [0] * L1, [0] * L1
         self.hist = []
-        # self.hist = np.array([])
 
     def __next__ (self) :
         prime = 0
@@ -33,8 +33,7 @@ class eratos : # segmented SOE with advanced wheel
             if self.k >= self.high :
                 self.high = min(self.high + L1, LIMIT);
                 self.low = self.high - L1;
-                # self.cache = [0] * L1
-                for i in range(len(self.cache)) : self.cache[i] = 0
+                self.cache = [0] * L1
 
                 while self.i * self.i <= self.high :
                     if self.sieve[self.i] == 0 :
@@ -76,10 +75,9 @@ stream = primes()
 # for i in range(100) :
 #     print(next(stream), end=' ')
 # print()
-# 21–40 	73 	79 	83 	89 	97 	101 103	107	109	113	127	131	137	139	149 151	157	163	167 173
 
-# for i in range(500000) :
-#     next(sieve)
+for i in range(500000) :
+    next(sieve)
     # print(next(stream), end=' ')
 print()
 
