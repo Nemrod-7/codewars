@@ -4,13 +4,14 @@ def display(grid) :
     for line in grid :
         print(line)
     print()
+
 class Nonogram:
     def __init__(self, clues):
         self.top = clues[0]
         self.left = clues[1]
         self.grid = [ [' '  for _ in range(N) ] for _ in range(N) ]
 
-    def place (self, blocks, total) : # ie : https://stackoverflow.com/questions/47159012/recursive-algorithm-to-find-all-possible-solutions-in-a-nonogram-row 
+    def place (self, blocks, total) : # ie : https://stackoverflow.com/questions/47159012/recursive-algorithm-to-find-all-possible-solutions-in-a-nonogram-row
         if not blocks: return [0 * total]
         if blocks[0] > total: return []
 
@@ -29,26 +30,28 @@ class Nonogram:
     def reduce (self, grid, north, east) :
         for y in range(N) :
             for x in range(N) :
-                if grid[y][x] != ' ' :    
+                if grid[y][x] != ' ' :
                     east[y] = [ comb for comb in east[y] if comb[x] == grid[y][x] ]
                     north[x] = [ comb for comb in north[x] if comb[y] == grid[y][x] ]
 
-                if len(north[x]) == 1 :
-                    for i in range(N) :
-                        grid[i][x] = north[x][0][i]
+                hist = [0,0]
+                for comb in north[x] :
+                    hist[int(comb[y])] += 1
+                if hist[0] == 0 : self.grid[y][x] = '1'
+                elif hist[1] == 0 : self.grid[y][x] = '0'
 
-            if len(east[y]) == 1 :
-                for i in range(N) :
-                    grid[y][i] = east[y][0][i]
+                hist = [0,0]
+                for comb in east[y] :
+                    hist[int(comb[x])] += 1
+                if hist[0] == 0 : self.grid[y][x] = '1'
+                elif hist[1] == 0 : self.grid[y][x] = '0'
 
     def backtrack(self, north, east, x, y) :
-
         if x == N :
             x, y = 0, y + 1
+            TODO
 
         if y == N :
-
-
             return True
 
         for comb in north[x] :
@@ -56,27 +59,27 @@ class Nonogram:
             if self.backtrack( north, east, x + 1, y) == True :
                 return True
             self.grid[y][x] = ' '
+
         return False
 
     def solve(self):
+        north = [ self.place(cell, N) for cell in self.top ]
+        east = [ self.place(cell, N) for cell in self.left ]
+
         for _ in range(6) :
-            north = [ self.place(cell, N) for cell in self.top ]
-            east = [ self.place(cell, N) for cell in self.left ]
-
             self.reduce(self.grid, north, east)
-            pass
 
-        # print(north)
-        # print(east)
-        # display(self.grid)
-        for line in east :
-            for comb in line :
-                print(comb)
-            print()
+        print(self.top)
+        print(self.left)
+
+        display(self.grid)
+        # for line in east :
+        #     for comb in line :
+        #         print(comb)
+        #     print()
         # self.backtrack(north, east, 0, 0)
 
         return self.grid
-
 
 clues = (((1, 1), (4,), (1, 1, 1), (3,), (1,)), ((1,), (2,), (3,), (2, 1), (4,)))
 
@@ -88,7 +91,7 @@ ans = ((0, 0, 1, 1, 1),
        (0, 1, 0, 0, 0),
        (0, 1, 0, 1, 1))
 
-clues = (((3,), (2,), (1, 1), (2,), (4,)), ((2,), (3, 1), (1, 2), (3,), (1,)))
+clues = ( ((3,), (2,), (1, 1), (2,), (4,)), ((2,), (3, 1), (1, 2), (3,), (1,)))
 
 ans = ((1, 1, 0, 0, 0),
        (1, 1, 1, 0, 1),
@@ -97,9 +100,5 @@ ans = ((1, 1, 0, 0, 0),
        (0, 0, 0, 0, 1))
 
 
-
-
 curr = Nonogram(clues)
 grid = curr.solve()
-
-
