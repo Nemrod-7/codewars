@@ -49,11 +49,17 @@ def backtrack (board, col, row, sub, tape, it) :
             col[x] ^= 1 << dig; row[y] ^= 1 << dig; sub[z] ^= 1 << dig
 
     return False
+    
+def is_valid(board) :
+    if len(board) != 9 : return False
+    for y in range(9) :
+        if len(board[y]) != 9 : return False
+        for x in range(9) :
+            if board[y][x] < 0 and board[y][x] > 9 : return False
 
-def solve (board) :
-    col, row, sub = [0] * 10, [0] * 10, [0] * 10
-    # grid = [ dig for line in board for dig in line ]
+def sudoku_solver (board) :
     cnt = 0
+    col, row, sub = [0] * 10, [0] * 10, [0] * 10
     # if len(board) != 9 : return 'error'
 
     for y in range(9) :
@@ -83,8 +89,8 @@ puzzle = [[5,3,0,0,7,0,0,0,0],
           [0,6,0,0,0,0,2,8,0],
           [0,0,0,4,1,9,0,0,5],
           [0,0,0,0,8,0,0,7,9]]
-grid = solve(puzzle)
-
+grid = sudoku_solver(puzzle)
+display(grid)
 
 puzzle = [
     [0,0,6,1,0,0,0,0,8],
@@ -96,7 +102,7 @@ puzzle = [
     [0,0,8,4,0,0,0,0,6],
     [0,2,0,0,5,0,0,8,0],
     [1,0,0,0,0,2,5,0,0]]
-grid = solve(puzzle)
+grid = sudoku_solver(puzzle)
 display(grid)
 
 puzz1 = [
@@ -109,7 +115,7 @@ puzz1 = [
     [0,7,0,0,2,3,0,1,0],
     [0,0,0,4,0,0,2,0,0],
     [9,0,6,0,7,0,4,0,3]]
-grid = solve(puzzle)
+grid = sudoku_solver(puzzle)
 display(grid)
 
 end = time.time()
