@@ -9,7 +9,7 @@ using u64 = unsigned long int;
 
 random_device rd;  //Will be used to obtain a seed for the random number engine
 mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
-                   //
+                   
 enum {pawn, rook, bishop, knight, queen, king};
 
 struct node { int alt, now, nxt; };
@@ -108,7 +108,7 @@ int distance (int x1, int y1, int x2, int y2) { return abs(x1-x2) + abs(y1-y2); 
 bool is_inside (int x, int y) { return x >= 0 and y >= 0 and x < 8 and y < 8; }
 
 int idx (int x, int y) { return x + y * 8; }
-int player_id (vector<u64> player, int pos) {
+int player_id (const vector<u64> &player, int pos) {
 
     for (int i = 0; i < 6; i++) {
         if (bit::chk(player[i], pos)) return i;
@@ -123,7 +123,7 @@ class display {
         inline static map<int, string> white = { {pawn, "♟"}, {rook, "♜"}, {bishop, "♝"}, {knight, "♞"}, {queen, "♛"}, {king, "♚"} };
 
     public :
-        static void board (vector<u64> &black, vector<u64> &white) {
+        static void board (const vector<u64> &black, const vector<u64> &white) {
             cout << "\n";
             for (unsigned long i = 0; i < 64; i++) {
                 int x = i % 8, y = 7 - i / 8;
@@ -195,7 +195,7 @@ int cntboard (vector<u64> &black, vector<u64> &white) {
 
     return total;
 }
-vector<node> get_moves (vector<u64> &black, vector<u64> &white) {
+vector<node> get_moves (vector<u64> &black, vector<u64> &white) { // v0.0
 
     u64 grid = 0;
     int kg = bit::pos(white[king])[0];
@@ -211,7 +211,7 @@ vector<node> get_moves (vector<u64> &black, vector<u64> &white) {
         if (grid & 1) {
             int x = index % 8, y = index / 8, mode = 0, type = -1;
             vector<int> direction;
-            
+
             if (bit::chk(black[pawn], index)) { 
                 type = pawn, mode = 1, direction = {-8};
                 if ((index / 8) == 6) direction = {-8, -16};
@@ -229,7 +229,7 @@ vector<node> get_moves (vector<u64> &black, vector<u64> &white) {
 
             for (auto &dir : direction) {
                 int dx = dir % 8, dy = dir / 8;
-                
+
                 for (int j = 1; j <= mode; j++) {
                     int nx = x + dx * j, ny = y + dy * j;
 
@@ -255,7 +255,7 @@ vector<node> get_moves (vector<u64> &black, vector<u64> &white) {
 }
 
 void play (string play, vector<u64> &black, vector<u64> &white) {
-    
+
     int now = idx(play[0] - 97, play[1] - 49);
     int nxt = idx(play[3] - 97, play[4] - 49);
 
@@ -283,7 +283,7 @@ void play (string play, vector<u64> &black, vector<u64> &white) {
 
     for (auto dir : direction) {
         int dx = dir % 8, dy = dir / 8;
-        
+
         for (int i = 1; i <= mode; i++) {
             int nx = x + dx * i, ny = y + dy * i;
 
@@ -307,8 +307,22 @@ void play (string play, vector<u64> &black, vector<u64> &white) {
 
 int main () {
 
-    vector<u64> white = {65280,129, 66,36,16,8};
-    vector<u64> black = { 71776119061217280UL, 9295429630892703744UL, 4755801206503243776UL, 2594073385365405696UL, 1152921504606846976UL, 576460752303423488UL };
+    vector<u64> white = {
+        0xff00, 
+        0x0081, 
+        0x0042, 
+        0x0024, 
+        0x0010, 
+        0x0008 };
+
+    vector<u64> black = {
+        0x00ff000000000000,
+        0x8100000000000000,
+        0x4200000000000000,
+        0x2400000000000000,
+        0x1000000000000000,
+        0x0800000000000000 };
+
 
     int index = 0;
 
@@ -326,7 +340,7 @@ int main () {
         // cout << now << " " << nxt << '\n';
     }
 
-    play("a2 a4", black, white);
+    // play("a2 a4", black, white);
 
-R  display::board(black, white);
+    display::board(black, white);
 }

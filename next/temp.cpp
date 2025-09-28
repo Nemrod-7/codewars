@@ -88,22 +88,39 @@ class display {
 
 int main () {
 
-    vector<u64> white = {65280,129, 66,36,16,8};
-    vector<u64> black = { 71776119061217280UL, 9295429630892703744UL, 4755801206503243776UL, 2594073385365405696UL, 1152921504606846976UL, 576460752303423488UL };
-
     vector<vector<string>> grid (8, vector<string> (8, "."));
 
-    white[pawn] ^= 1UL << 8;
-    white[pawn] ^= 1UL << 16;
+    vector<u64> white = {
+        0xff00, 
+        0x0081, 
+        0x0042, 
+        0x0024, 
+        0x0010, 
+        0x0008 };
 
-    for (int i = 0; i < 64; i++) {
-        int x = i % 8, y = 7 - i / 8;
+    vector<u64> black = {
+        0x00ff000000000000,
+        0x8100000000000000,
+        0x4200000000000000,
+        0x2400000000000000,
+        0x1000000000000000,
+        0x0800000000000000 };
+    
+    int now = 8, next = 16;
+    white[pawn] ^= 1UL << now;
+    white[pawn] ^= 1UL << next;
 
-
-         
-        cout << "[" << x << " " << y << "]";
-        if (x == 7) cout << "\n";
+    for (auto &num : black) {
+        printf("%lx \n", num);
     }
-    // display::board(black, white);
+
+
+    // for (int i = 0; i < 64; i++) {
+    //     int x = i % 8, y = 7 - i / 8;
+    //
+    //     cout << "[" << x << " " << y << "]";
+    //     if (x == 7) cout << "\n";
+    // }
+    display::board(black, white);
 
 }
