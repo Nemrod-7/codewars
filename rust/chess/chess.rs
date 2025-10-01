@@ -76,7 +76,8 @@ fn identify(piece:&str) -> (char,u8,u8) {
     let x = piece[1] as u8 - 97;
     let y = piece[2] as u8 - 49;
 
-    (id,x,y)
+    // print!("{} {} {}\n", id, x, y);
+    (id, x, 7 - y)
 }
 
 struct WhitePlayer {
@@ -154,20 +155,18 @@ impl WhitePlayer {
 
         // print!("{:?} ", self.black);
         for (id,curr,next) in moves.iter() {
-            let sx = curr % 8;
-            let sy = curr / 8;
             let nx = next % 8;
             let ny = next / 8;
+
+            // print!("{} {} {} => ", id, nx, ny);
+            let notation = format!("{}{}{}", id, (nx as u8 + 97) as char,  (8 - ny) as u8);
             let mut heur = 0;
-            let notation = format!("{}{}{}", id, (nx as u8 + 97) as char, ny as u8 + 1);
 
             if *id == 'R' {
                 heur = Heuristic::rook()[*next] - Heuristic::rook()[*curr];
             }
-
             if *id == 'K' {
                 heur = Heuristic::king()[*next] - Heuristic::king()[*curr];
-
             }
 
             print!("{notation} {heur}\n");
@@ -186,8 +185,9 @@ fn main() {
     let mut white_player = WhitePlayer::new("Ke8,Rh7 - Kc8");
     let mut white_move = white_player.play("Kb8");
 
+    let (id,x,y) = identify("Ra8");
 
     display(&white_player);
 
-    //
+    
 }

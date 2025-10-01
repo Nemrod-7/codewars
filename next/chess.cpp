@@ -4,19 +4,20 @@
 #include <random>
 #include <algorithm>
 
+///////////////////////////////////////chess.hpp////////////////////////////////////
 using namespace std;
 using u64 = unsigned long int;
 
 random_device rd;  //Will be used to obtain a seed for the random number engine
 mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
-
+                   //
+enum {black, white};
 enum {pawn, rook, bishop, knight, queen, king};
 
 struct node { int alt, now, nxt; };
 
 const vector<int> compass = {-8, 1, 8, -1}, diagonal = {-9, 9, 7, -7};
 const vector<int> complete = {-8, 1, 8, -1, -9, 9, 7, -7};
-
 const vector<vector<int>> heuristic {
     { // pawn
  0,  0,  0,  0,  0,  0,  0,  0,
@@ -77,9 +78,9 @@ const vector<vector<int>> heuristic {
 
 namespace bit {
     bool chk (u64 num, u64 ix) { return num >> ix &1UL; }
-    u64 set (u64 num, u64 ix) { return num | 1UL << ix; }
-    u64 tog (u64 num, u64 ix) { return num ^ 1UL << ix; }
-    u64 clr (u64 num, u64 ix) { return num & ~(1UL << ix); }
+    u64 set (u64 num, u64 ix) { return num |= 1UL << ix; }
+    u64 tog (u64 num, u64 ix) { return num ^= 1UL << ix; }
+    u64 clr (u64 num, u64 ix) { return num &= ~(1UL << ix); }
 
     u64 cnt (u64 num) {
         u64 cnt = 0;
@@ -104,78 +105,108 @@ namespace bit {
     }
 };
 
-int distance (int x1, int y1, int x2, int y2) { return abs(x1 - x2) + abs(y1 - y2); }
-bool is_inside (int x, int y) { return x >= 0 and y >= 0 and x < 8 and y < 8; }
-
 int idx (int x, int y) { return x + y * 8; }
-int player_id (const vector<u64> &player, int pos) {
+pair<int,int> notation (const string &txt) {
+    char id = txt[0];
+    int x = txt[1] - 97, y = 7 - (txt[2] - 49);
+    // printf("%c %i %i\n", id, x, y);
+    switch (id) {
+      case 'P' : return {pawn, idx(x,y)}; break;
+      case 'R' : return {rook, idx(x,y)}; break;
+      case 'K' : return {king, idx(x,y)}; break;
+      case 'Q' : return {queen, idx(x,y)}; break;
+      case 'B' : return {bishop, idx(x,y)}; break;
+      case 'N' : return {knight, idx(x,y)}; break;
+    }
+    return {};
+}
+int score (int type) {
 
-    for (int i = 0; i < 6; i++) {
-        if (bit::chk(player[i], pos)) return i;
+    switch (type) {
+        case pawn : return 1 ; break;
+        case rook : return 5; break;
+        case bishop : return 3; break;
+        case knight : return 3;break;
+        case queen : return 8; break;
+        case king : return 99; break;
     }
 
-    return -1;
+    return 0;
 }
 
 class Board {
-private :
-
-  public :
-    vector<u64> white, black;
-
-      Board() { // create an empty new board
-          black = {0,0,0,0,0,0};
-          white = {0,0,0,0,0,0};
-      }
-
-      void place(const string &txt) {
-          char id = txt[0];
-          int x = txt[1] - 97, y = txt[2] - 49;
-
-          switch (id) {
-            case 'P' : white[pawn] |= 1UL << idx(x,y); break;
-            case 'R' : white[rook] |= 1UL << idx(x,y); break;
-            case 'K' : white[king] |= 1UL << idx(x,y); break;
-            case 'Q' : white[queen] |= 1UL << idx(x,y); break;
-            case 'B' : white[bishop] |= 1UL << idx(x,y); break;
-            case 'N' : white[knight] |= 1UL << idx(x,y); break;
-          }
-      }
-      void create() { // create a new board all pieces in place
-        white = {
-            0xff00,
-            0x0081,
-            0x0042,
-            0x0024,
-            0x0010,
-            0x0008 };
-
-        black = {
-            0x00ff000000000000,
-            0x8100000000000000,
-            0x4200000000000000,
-            0x2400000000000000,
-            0x1000000000000000,
-            0x0800000000000000 };
-      }
-};
-class display {
     private :
-        inline static map<int, string> black = { {pawn, "♙"}, {rook, "♖"}, {bishop, "♗"}, {knight, "♘"}, {queen, "♕"}, {king, "♔"} };
-        inline static map<int, string> white = { {pawn, "♟"}, {rook, "♜"}, {bishop, "♝"}, {knight, "♞"}, {queen, "♛"}, {king, "♚"} };
 
     public :
-        static void board (const vector<u64> &black, const vector<u64> &white) {
+        vector<vector<u64>> grid;
+
+        Board() { // create an empty new board
+            grid = {
+                {0,0,0,0,0,0},
+                {0,0,0,0,0,0}
+            };
+        }
+
+        bool is_inside (int x, int y) { return x >= 0 and y >= 0 and x < 8 and y < 8; }
+        void place(const string &txt) {
+            int color = white;
+            auto [piece, curr] = notation(txt);
+            grid[color][piece] |= 1UL << curr;
+        }
+
+        void create() { // create a new board all pieces in place
+            grid = {{
+                0xff00,
+                0x0081,
+                0x0042,
+                0x0024,
+                0x0010,
+                0x0008 }, {
+                0x00ff000000000000,
+                0x8100000000000000,
+                0x4200000000000000,
+                0x2400000000000000,
+                0x1000000000000000,
+                0x0800000000000000 }};
+        }
+        int player_id (int color, int pos) const {
+
+            for (int i = 0; i < 6; i++) {
+                if (bit::chk(grid[color][i], pos)) return i;
+            }
+
+            return -1;
+        }
+
+        int count () {
+
+            int total = 0;
+
+            for (int i = 0; i < 6; i++) {
+                total += ( bit::cnt(grid[white][i]) - bit::cnt(grid[black][i])) * score(i);
+            }
+
+            return total;
+        }
+
+};
+
+class display {
+    private :
+        inline static map<int, string> utblack = { {pawn, "♙"}, {rook, "♖"}, {bishop, "♗"}, {knight, "♘"}, {queen, "♕"}, {king, "♔"} };
+        inline static map<int, string> utwhite = { {pawn, "♟"}, {rook, "♜"}, {bishop, "♝"}, {knight, "♞"}, {queen, "♛"}, {king, "♚"} };
+
+    public :
+        static void board (const Board &curr) {
             cout << "\n";
             for (unsigned long i = 0; i < 64; i++) {
                 int x = i % 8, y = 7 - i / 8;
-                int ix = x + y * 8;
-                int pla = player_id(white, ix), opp = player_id(black, ix);
+                int pla = curr.player_id(white, i), opp = curr.player_id(black, i);
 
                 if (pla >= 0) {
-                    cout << display::white[pla];
+                    cout << display::utwhite[pla];
                 } else if (opp >= 0) {
-                    cout << display::black[opp];
+                    cout << display::utblack[opp];
                 } else {
                     cout << (((x + y) % 2) ? "□" : " ");
                 }
@@ -190,8 +221,7 @@ class display {
 
             for (unsigned long i = 0; i < 64; i++) {
                 int x = i % 8, y = 7 - i / 8;
-                int ix = x + y * 8;
-                int pla = player_id(curr.white, ix), opp = player_id(curr.black, ix);
+                int pla = curr.player_id(white, i), opp = curr.player_id(black, i);
 
                 if (pla >= 0) {
                     cout << diswhite[pla];
@@ -219,73 +249,44 @@ class display {
             return "";
         }
 };
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+int main () {
 
-int score (int type) {
+    Board board;
 
-    switch (type) {
-        case pawn : return 1 ; break;
-        case rook : return 5; break;
-        case bishop : return 3; break;
-        case knight : return 3;break;
-        case queen : return 8; break;
-        case king : return 99; break;
-    }
-
-    return 0;
-}
-node rnd_walk (vector<node> vs) {
-
-    sort(vs.begin(), vs.end(), [](node a, node b) { return a.alt > b.alt; });
-
-    for (auto [alt, now, nxt] : vs) {
-        cout<< alt << " ";
-    }
-    cout << "\n";
-    std::geometric_distribution dist;
-    // uniform_int_distribution<int> dist (0, vs.size() - 1);
-
-    return vs[dist(gen) % vs.size()];
-}
-
-int cntboard (vector<u64> &black, vector<u64> &white) {
-
-    int total = 0;
-
-    for (int i = 0; i < 6; i++) {
-        total += (bit::cnt(black[i]) - bit::cnt(white[i])) * score(i);
-    }
-
-    return total;
-}
-vector<node> get_moves (vector<u64> &black, vector<u64> &white) { // v0.0
+    string txt = "Kc8";
+    auto [piece, place] = notation("Kc8");
+   
+    board.grid[black][piece] |= 1UL << place;
+    board.place("Ke8");
+    board.place("Rh7");
 
     u64 grid = 0;
-    int kg = bit::pos(white[king])[0];
-    int index = 0;
+    int curr = 0;
+    int kg = bit::pos(board.grid[black][king])[0];
     vector<node> hist;
 
     for (int i = 0; i < 6; i++) {
-        grid |= black[i];
-        // grid |= white[i];
+        grid |= board.grid[white][i];
     }
 
     do {
         if (grid & 1) {
-            int x = index % 8, y = index / 8, mode = 0, type = -1;
+            int x = curr % 8, y = curr / 8, mode = 0, type = -1;
             vector<int> direction;
 
-            if (bit::chk(black[pawn], index)) {
+            if (bit::chk(board.grid[white][pawn], curr)) {
                 type = pawn, mode = 1, direction = {-8};
-                if ((index / 8) == 6) direction = {-8, -16};
-            } else if (bit::chk(black[rook], index)) {
+                if ((curr / 8) == 6) direction = {-8, -16};
+            } else if (bit::chk(board.grid[white][rook], curr)) {
                 type = rook, mode = 8, direction = compass;
-            } else if (bit::chk(black[king], index)) {
+            } else if (bit::chk(board.grid[white][king], curr)) {
                 type = king, mode = 1, direction = complete;
-            } else if (bit::chk(black[queen], index)) {
+            } else if (bit::chk(board.grid[white][queen], curr)) {
                 type = queen, mode = 8, direction = complete;
-            } else if (bit::chk(black[bishop], index)) {
+            } else if (bit::chk(board.grid[white][bishop], curr)) {
                 type = bishop, mode = 8, direction = diagonal;
-            } else if (bit::chk(black[knight], index)) {
+            } else if (bit::chk(board.grid[white][knight], curr)) {
                 type = knight, mode = 1, direction = {-17,-15,-10,-6,6,10,15,17};
             }
 
@@ -294,141 +295,30 @@ vector<node> get_moves (vector<u64> &black, vector<u64> &white) { // v0.0
 
                 for (int j = 1; j <= mode; j++) {
                     int nx = x + dx * j, ny = y + dy * j;
+                    // int nxt = curr + dir * j;
 
-                    if (is_inside(nx,ny)) {
-                        int nxt = index + dir * j;
-                        if (player_id(black, index + dir * j) >= 0) break;
-                        int opp = score(player_id(white, nxt)); // score of white piece taken, if any
-                        int heur = heuristic[type][nxt] - heuristic[type][index] + cntboard(black, white);
+                    if (board.is_inside(nx,ny)) {
+                        int next = idx(nx,ny);
+                        if (board.player_id(white, next) >= 0) break;
+
+                        int opp = score(board.player_id(black, next)); // score of black piece taken, if any
+                        // printf("%i %i\n", next, idx(nx,ny));
+                        // int heur = heuristic[type][next] - heuristic[type][curr] + board.count();
                         // int dist = 10 - distance(nx,ny, kg % 8, kg / 8); // distance from white king
-                        // countpoint(black, white);
-
-                        hist.push_back( {heur, index, nxt});
-                        if (opp >= 0) break;
+                
+                //         hist.push_back( {heur, curr, next});
+                //         if (opp >= 0) break;
                     }
                 }
             }
         }
 
-        index++;
+        curr++;
     } while (grid >>= 1);
 
-    return hist;
-}
-
-void play (string play, vector<u64> &black, vector<u64> &white) {
-
-    int now = idx(play[0] - 97, play[1] - 49);
-    int nxt = idx(play[3] - 97, play[4] - 49);
-
-    int player = player_id(white, now);
-    int automa = player_id(black, nxt);
-
-    int x = now % 8, y = now / 8;
-    int type, mode;
-    vector<int> direction;
-
-    if (bit::chk(white[pawn], now)) {
-        type = pawn, mode = 1, direction = {-8};
-        // if ((now / 8) == 1) direction = {-8, -16};
-    } else if (bit::chk(white[rook], now)) {
-        type = rook, mode = 8, direction = compass;
-    } else if (bit::chk(white[king], now)) {
-        type = king, mode = 1, direction = complete;
-    } else if (bit::chk(white[queen], now)) {
-        type = queen, mode = 8, direction = complete;
-    } else if (bit::chk(white[bishop], now)) {
-        type = bishop, mode = 8, direction = diagonal;
-    } else if (bit::chk(white[knight], now)) {
-        type = knight, mode = 1, direction = {-17,-15,-10,-6,6,10,15,17};
-    }
-
-    for (auto dir : direction) {
-        int dx = dir % 8, dy = dir / 8;
-
-        for (int i = 1; i <= mode; i++) {
-            int nx = x + dx * i, ny = y + dy * i;
-
-            if (is_inside(nx,ny)) {
-                int nxt = now + dir * i;
-                if (player_id(white, now + dir * i) >= 0) break;
-
-                int opp = score(player_id(black, nxt)); // score of white piece taken, if any
-
-            }
-        }
-    }
-
-    white[player] ^= 1UL << now;
-    white[player] ^= 1UL << nxt;
-
-    if (automa >= 0) {
-        black[automa] ^= 1UL << nxt;
-    }
-}
 
 
-pair<int,int> notation (const string &txt) {
-    char id = txt[0];
-    int x = txt[1] - 97, y = txt[2] - 49;
-
-    switch (id) {
-      case 'P' : return {pawn, idx(x,y)}; break;
-      case 'R' : return {rook, idx(x,y)}; break;
-      case 'K' : return {king, idx(x,y)}; break;
-      case 'Q' : return {queen, idx(x,y)}; break;
-      case 'B' : return {bishop, idx(x,y)}; break;
-      case 'N' : return {knight, idx(x,y)}; break;
-    }
-    return {};
-}
-int main () {
-
-    vector<u64> white = {
-        0xff00,
-        0x0081,
-        0x0042,
-        0x0024,
-        0x0010,
-        0x0008 };
-
-    vector<u64> black = {
-        0x00ff000000000000,
-        0x8100000000000000,
-        0x4200000000000000,
-        0x2400000000000000,
-        0x1000000000000000,
-        0x0800000000000000 };
 
 
-    string txt = "Kc8";
-
-
-    Board chess;
-
-    auto [piece, index] = notation("Kc8");
-    chess.black[piece] |= 1UL << index;
-
-    chess.place("Ke8");
-    chess.place("Rh7");
-
-
-    display::limited(chess);
-    // int cycle = 0;
-    // while (cycle-->0) {
-    //     auto [score, now, nxt] = rnd_walk( get_moves(black,white));
-    //     int machin = player_id(black, now);
-    //     int player = player_id(white, nxt);
-    //
-    //     black[machin] ^= 1UL << now;
-    //     black[machin] ^= 1UL << nxt;
-    //
-    //     if (player >= 0) {
-    //         white[player] ^= 1UL << nxt;
-    //     }
-    //     // cout << now << " " << nxt << '\n';
-    // }
-
-    // play("a2 a4", black, white);
-
+    display::limited(board);
 }
