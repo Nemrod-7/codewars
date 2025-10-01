@@ -9,7 +9,7 @@ using u64 = unsigned long int;
 
 random_device rd;  //Will be used to obtain a seed for the random number engine
 mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
-                   
+
 enum {pawn, rook, bishop, knight, queen, king};
 
 struct node { int alt, now, nxt; };
@@ -74,7 +74,7 @@ const vector<vector<int>> heuristic {
  20, 30, 10,  0,  0, 10, 30, 20
     }
 };
-                   
+
 namespace bit {
     bool chk (u64 num, u64 ix) { return num >> ix &1UL; }
     u64 set (u64 num, u64 ix) { return num | 1UL << ix; }
@@ -104,7 +104,7 @@ namespace bit {
     }
 };
 
-int distance (int x1, int y1, int x2, int y2) { return abs(x1-x2) + abs(y1-y2); }
+int distance (int x1, int y1, int x2, int y2) { return abs(x1 - x2) + abs(y1 - y2); }
 bool is_inside (int x, int y) { return x >= 0 and y >= 0 and x < 8 and y < 8; }
 
 int idx (int x, int y) { return x + y * 8; }
@@ -117,6 +117,48 @@ int player_id (const vector<u64> &player, int pos) {
     return -1;
 }
 
+class Board {
+private :
+
+  public :
+    vector<u64> white, black;
+
+      Board() { // create an empty new board
+          black = {0,0,0,0,0,0};
+          white = {0,0,0,0,0,0};
+      }
+
+      void place(const string &txt) {
+          char id = txt[0];
+          int x = txt[1] - 97, y = txt[2] - 49;
+
+          switch (id) {
+            case 'P' : white[pawn] |= 1UL << idx(x,y); break;
+            case 'R' : white[rook] |= 1UL << idx(x,y); break;
+            case 'K' : white[king] |= 1UL << idx(x,y); break;
+            case 'Q' : white[queen] |= 1UL << idx(x,y); break;
+            case 'B' : white[bishop] |= 1UL << idx(x,y); break;
+            case 'N' : white[knight] |= 1UL << idx(x,y); break;
+          }
+      }
+      void create() { // create a new board all pieces in place
+        white = {
+            0xff00,
+            0x0081,
+            0x0042,
+            0x0024,
+            0x0010,
+            0x0008 };
+
+        black = {
+            0x00ff000000000000,
+            0x8100000000000000,
+            0x4200000000000000,
+            0x2400000000000000,
+            0x1000000000000000,
+            0x0800000000000000 };
+      }
+};
 class display {
     private :
         inline static map<int, string> black = { {pawn, "♙"}, {rook, "♖"}, {bishop, "♗"}, {knight, "♘"}, {queen, "♕"}, {king, "♔"} };
@@ -141,12 +183,33 @@ class display {
                 if (x == 7) cout << "\n";
             }
         }
+        static void limited (const Board &curr) {
+            cout << "\n";
+            map<int, string> disblack = { {pawn, "p"}, {rook, "r"}, {bishop, "b"}, {knight, "n"}, {queen, "q"}, {king, "k"} };
+            map<int, string> diswhite = { {pawn, "P"}, {rook, "R"}, {bishop, "B"}, {knight, "N"}, {queen, "Q"}, {king, "K"} };
+
+            for (unsigned long i = 0; i < 64; i++) {
+                int x = i % 8, y = 7 - i / 8;
+                int ix = x + y * 8;
+                int pla = player_id(curr.white, ix), opp = player_id(curr.black, ix);
+
+                if (pla >= 0) {
+                    cout << diswhite[pla];
+                } else if (opp >= 0) {
+                    cout << disblack[opp];
+                } else {
+                    cout << ".";
+                }
+                cout << " ";
+                if (x == 7) cout << "\n";
+            }
+        }
 
         static string identify (int type) {
 
             switch (type) {
                 case pawn : return "pawn"; break;
-                case rook : return "rook"; break; 
+                case rook : return "rook"; break;
                 case king : return "king"; break;
                 case queen : return "queen"; break;
                 case bishop : return "bishop"; break;
@@ -157,12 +220,11 @@ class display {
         }
 };
 
-
 int score (int type) {
 
     switch (type) {
         case pawn : return 1 ; break;
-        case rook : return 5; break; 
+        case rook : return 5; break;
         case bishop : return 3; break;
         case knight : return 3;break;
         case queen : return 8; break;
@@ -212,7 +274,7 @@ vector<node> get_moves (vector<u64> &black, vector<u64> &white) { // v0.0
             int x = index % 8, y = index / 8, mode = 0, type = -1;
             vector<int> direction;
 
-            if (bit::chk(black[pawn], index)) { 
+            if (bit::chk(black[pawn], index)) {
                 type = pawn, mode = 1, direction = {-8};
                 if ((index / 8) == 6) direction = {-8, -16};
             } else if (bit::chk(black[rook], index)) {
@@ -266,7 +328,7 @@ void play (string play, vector<u64> &black, vector<u64> &white) {
     int type, mode;
     vector<int> direction;
 
-    if (bit::chk(white[pawn], now)) { 
+    if (bit::chk(white[pawn], now)) {
         type = pawn, mode = 1, direction = {-8};
         // if ((now / 8) == 1) direction = {-8, -16};
     } else if (bit::chk(white[rook], now)) {
@@ -305,14 +367,29 @@ void play (string play, vector<u64> &black, vector<u64> &white) {
     }
 }
 
+
+pair<int,int> notation (const string &txt) {
+    char id = txt[0];
+    int x = txt[1] - 97, y = txt[2] - 49;
+
+    switch (id) {
+      case 'P' : return {pawn, idx(x,y)}; break;
+      case 'R' : return {rook, idx(x,y)}; break;
+      case 'K' : return {king, idx(x,y)}; break;
+      case 'Q' : return {queen, idx(x,y)}; break;
+      case 'B' : return {bishop, idx(x,y)}; break;
+      case 'N' : return {knight, idx(x,y)}; break;
+    }
+    return {};
+}
 int main () {
 
     vector<u64> white = {
-        0xff00, 
-        0x0081, 
-        0x0042, 
-        0x0024, 
-        0x0010, 
+        0xff00,
+        0x0081,
+        0x0042,
+        0x0024,
+        0x0010,
         0x0008 };
 
     vector<u64> black = {
@@ -324,23 +401,34 @@ int main () {
         0x0800000000000000 };
 
 
-    int index = 0;
+    string txt = "Kc8";
 
-    while (index-->0) {
-        auto [score, now, nxt] = rnd_walk( get_moves(black,white));
-        int machin = player_id(black, now);
-        int player = player_id(white, nxt);
 
-        black[machin] ^= 1UL << now;
-        black[machin] ^= 1UL << nxt;
+    Board chess;
 
-        if (player >= 0) {
-            white[player] ^= 1UL << nxt;
-        }
-        // cout << now << " " << nxt << '\n';
-    }
+    auto [piece, index] = notation("Kc8");
+    chess.black[piece] |= 1UL << index;
+
+    chess.place("Ke8");
+    chess.place("Rh7");
+
+
+    display::limited(chess);
+    // int cycle = 0;
+    // while (cycle-->0) {
+    //     auto [score, now, nxt] = rnd_walk( get_moves(black,white));
+    //     int machin = player_id(black, now);
+    //     int player = player_id(white, nxt);
+    //
+    //     black[machin] ^= 1UL << now;
+    //     black[machin] ^= 1UL << nxt;
+    //
+    //     if (player >= 0) {
+    //         white[player] ^= 1UL << nxt;
+    //     }
+    //     // cout << now << " " << nxt << '\n';
+    // }
 
     // play("a2 a4", black, white);
 
-    display::board(black, white);
 }
