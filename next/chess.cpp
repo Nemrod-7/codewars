@@ -16,8 +16,11 @@ enum {pawn, rook, bishop, knight, queen, king};
 
 struct node { int alt, now, nxt; };
 
-const vector<int> compass = {-8, 1, 8, -1}, diagonal = {-9, 9, 7, -7};
-const vector<int> complete = {-8, 1, 8, -1, -9, 9, 7, -7};
+const vector<pair<int,int>> compass = {{0,-1},{1,0},{0,1},{-1,0}};
+const vector<pair<int,int>> diagonal = {{-1,-1},{1,-1},{1,1},{-1,1}};
+const vector<pair<int,int>> complete = {{0,-1},{1,0},{0,1},{-1,0},{-1,-1},{1,-1},{1,1},{-1,1}};
+// const vector<int> compass = {-8, 1, 8, -1}, diagonal = {-9, 9, 7, -7};
+// const vector<int> complete = {-8, 1, 8, -1, -9, 9, 7, -7};
 const vector<vector<int>> heuristic {
     { // pawn
  0,  0,  0,  0,  0,  0,  0,  0,
@@ -76,6 +79,10 @@ const vector<vector<int>> heuristic {
     }
 };
 
+namespace ix {
+    const int x[64] = {0,1,2,3,4,5,6,7,0,1,2,3,4,5,6,7,0,1,2,3,4,5,6,7,0,1,2,3,4,5,6,7,0,1,2,3,4,5,6,7,0,1,2,3,4,5,6,7,0,1,2,3,4,5,6,7,0,1,2,3,4,5,6,7};
+    const int y[64] = {0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7};
+}
 namespace bit {
     bool chk (u64 num, u64 ix) { return num >> ix &1UL; }
     u64 set (u64 num, u64 ix) { return num |= 1UL << ix; }
@@ -136,7 +143,7 @@ int score (int type) {
 
 class Board {
     private :
-
+        // u64 bitboard;
     public :
         vector<vector<u64>> grid;
 
@@ -189,9 +196,59 @@ class Board {
             return total;
         }
 
+        vector<node> get_moves () {
+            int curr = 0;
+            u64 bitboard = 0;
+            vector<node> hist;
+
+            for (int i = 0; i < 6; i++) {
+                bitboard |= grid[white][i];
+            }
+
+            do {
+                if (bitboard & 1) {
+                    // int x = curr % 8, y = curr / 8, dist = 0, type = -1;
+                    int x = ix::x[curr], y = ix::y[curr], dist = 0, type = -1;
+                    vector<pair<int,int>> direction;
+
+                    if (bit::chk(grid[white][pawn], curr)) {
+                        type = pawn, dist = 1, direction = {{0,1}};
+                        if (y == 6) direction = {{0,1},{0,2}};
+                    } else if (bit::chk(grid[white][rook], curr)) {
+                        type = rook, dist = 8, direction = compass;
+                    } else if (bit::chk(grid[white][king], curr)) {
+                        type = king, dist = 1, direction = complete;
+                    } else if (bit::chk(grid[white][queen], curr)) {
+                        type = queen, dist = 8, direction = complete;
+                    } else if (bit::chk(grid[white][bishop], curr)) {
+                        type = bishop, dist = 8, direction = diagonal;
+                    } else if (bit::chk(grid[white][knight], curr)) {
+                        // type = knight, dist = 1, direction = {-17,-15,-10,-6,6,10,15,17};
+                    }
+
+                    for (auto &[dx,dy] : direction) {
+
+                        for (int j = 1; j <= dist; j++) {
+                            int nx = x + dx * j, ny = y + dy * j;
+                            int next = idx(nx,ny);
+
+                            if (is_inside(nx,ny)) {
+                                if (player_id(white, next) >= 0) break;
+
+                                hist.push_back( {type, curr, next});
+                            }
+                        }
+                    }
+                }
+
+                curr++;
+            } while (bitboard >>= 1);
+
+            return hist;
+        }
 };
 
-class display {
+class Display {
     private :
         inline static map<int, string> utblack = { {pawn, "♙"}, {rook, "♖"}, {bishop, "♗"}, {knight, "♘"}, {queen, "♕"}, {king, "♔"} };
         inline static map<int, string> utwhite = { {pawn, "♟"}, {rook, "♜"}, {bishop, "♝"}, {knight, "♞"}, {queen, "♛"}, {king, "♚"} };
@@ -204,9 +261,9 @@ class display {
                 int pla = curr.player_id(white, i), opp = curr.player_id(black, i);
 
                 if (pla >= 0) {
-                    cout << display::utwhite[pla];
+                    cout << Display::utwhite[pla];
                 } else if (opp >= 0) {
-                    cout << display::utblack[opp];
+                    cout << Display::utblack[opp];
                 } else {
                     cout << (((x + y) % 2) ? "□" : " ");
                 }
@@ -256,69 +313,59 @@ int main () {
 
     string txt = "Kc8";
     auto [piece, place] = notation("Kc8");
-   
+
     board.grid[black][piece] |= 1UL << place;
     board.place("Ke8");
     board.place("Rh7");
+    // int kg = bit::pos(board.grid[black][king])[0];
+    vector<node> vs;
+    vector<node> possibilities = board.get_moves();
 
-    u64 grid = 0;
-    int curr = 0;
-    int kg = bit::pos(board.grid[black][king])[0];
-    vector<node> hist;
+    for (auto &[type, curr, next] : possibilities) {
+        int heur = heuristic[type][next] - heuristic[type][curr];
+        int opp = score(board.player_id(black, next));
+        vs.push_back({heur, curr, next});
 
-    for (int i = 0; i < 6; i++) {
-        grid |= board.grid[white][i];
+        cout << Display::identify(type) ;
+        cout << "[" << ix::x[curr] << " " << ix::y[curr]  << "]";
+        cout << "[" << ix::x[next] << " " << ix::y[next]  << "]";
+        cout << heur << "\n";
     }
 
-    do {
-        if (grid & 1) {
-            int x = curr % 8, y = curr / 8, mode = 0, type = -1;
-            vector<int> direction;
-
-            if (bit::chk(board.grid[white][pawn], curr)) {
-                type = pawn, mode = 1, direction = {-8};
-                if ((curr / 8) == 6) direction = {-8, -16};
-            } else if (bit::chk(board.grid[white][rook], curr)) {
-                type = rook, mode = 8, direction = compass;
-            } else if (bit::chk(board.grid[white][king], curr)) {
-                type = king, mode = 1, direction = complete;
-            } else if (bit::chk(board.grid[white][queen], curr)) {
-                type = queen, mode = 8, direction = complete;
-            } else if (bit::chk(board.grid[white][bishop], curr)) {
-                type = bishop, mode = 8, direction = diagonal;
-            } else if (bit::chk(board.grid[white][knight], curr)) {
-                type = knight, mode = 1, direction = {-17,-15,-10,-6,6,10,15,17};
-            }
-
-            for (auto &dir : direction) {
-                int dx = dir % 8, dy = dir / 8;
-
-                for (int j = 1; j <= mode; j++) {
-                    int nx = x + dx * j, ny = y + dy * j;
-                    // int nxt = curr + dir * j;
-
-                    if (board.is_inside(nx,ny)) {
-                        int next = idx(nx,ny);
-                        if (board.player_id(white, next) >= 0) break;
-
-                        int opp = score(board.player_id(black, next)); // score of black piece taken, if any
-                        // printf("%i %i\n", next, idx(nx,ny));
-                        // int heur = heuristic[type][next] - heuristic[type][curr] + board.count();
-                        // int dist = 10 - distance(nx,ny, kg % 8, kg / 8); // distance from white king
-                
-                //         hist.push_back( {heur, curr, next});
-                //         if (opp >= 0) break;
-                    }
-                }
-            }
-        }
-
-        curr++;
-    } while (grid >>= 1);
+    sort(vs.begin(), vs.end(), [](node a, node b) { return a.alt > b.alt; });
+    // type curr next heur
+    // king[4 0][5 0]10
+    // king[4 0][4 1]0
+    // king[4 0][3 0]0
+    // king[4 0][5 1]10
+    // rook[7 1][7 0]-5
+    // rook[7 1][7 2]-10
+    // rook[7 1][7 3]-10
+    // rook[7 1][7 4]-10
+    // rook[7 1][7 5]-10
+    // rook[7 1][7 6]-10
+    // rook[7 1][7 7]-5
+    // rook[7 1][6 1]5
+    // rook[7 1][5 1]5
+    // rook[7 1][4 1]5
+    // rook[7 1][3 1]5
+    // rook[7 1][2 1]5
+    // rook[7 1][1 1]5
+    // rook[7 1][0 1]0
 
 
 
+    Display::limited(board);
+
+    //     if (is_inside(nx,ny)) {
+    //            int opp = score(player_id(black, next)); // score of black piece taken, if any
+    //            int heur = heuristic[type][next] - heuristic[type][curr];// + board.count();
+    //            int dist = 10 - distance(nx,ny, kg % 8, kg / 8); // distance from white king
+    //
+    //            hist.push_back( {type, curr, next});
+    //            if (opp >= 0) break;
+    //     }
 
 
-    display::limited(board);
+
 }
