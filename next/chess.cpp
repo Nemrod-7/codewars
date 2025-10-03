@@ -14,11 +14,12 @@ mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
 enum {black, white};
 enum {pawn, rook, bishop, knight, queen, king};
 
-struct node { int alt, now, nxt; };
+struct node { int type, alt, now, nxt; };
 
 const vector<pair<int,int>> compass = {{0,-1},{1,0},{0,1},{-1,0}};
 const vector<pair<int,int>> diagonal = {{-1,-1},{1,-1},{1,1},{-1,1}};
 const vector<pair<int,int>> complete = {{0,-1},{1,0},{0,1},{-1,0},{-1,-1},{1,-1},{1,1},{-1,1}};
+const vector<pair<int,int>> knight_m = { {-2,-1},{-2,1},{-1,-2},{-1,2},{1,-2},{1,2},{2,-1},{2,1} };
 // const vector<int> compass = {-8, 1, 8, -1}, diagonal = {-9, 9, 7, -7};
 // const vector<int> complete = {-8, 1, 8, -1, -9, 9, 7, -7};
 const vector<vector<int>> heuristic {
@@ -67,16 +68,29 @@ const vector<vector<int>> heuristic {
 -10,  5,  5,  5,  5,  5,  0,-10,
 -10,  0,  5,  0,  0,  0,  0,-10,
 -20,-10,-10, -5, -5,-10,-10,-20
-    },{ // king
--30,-40,-40,-50,-50,-40,-40,-30,
--30,-40,-40,-50,-50,-40,-40,-30,
--30,-40,-40,-50,-50,-40,-40,-30,
--30,-40,-40,-50,-50,-40,-40,-30,
--20,-30,-30,-40,-40,-30,-30,-20,
--10,-20,-20,-20,-20,-20,-20,-10,
- 20, 20,  0,  0,  0,  0, 20, 20,
- 20, 30, 10,  0,  0, 10, 30, 20
+    },
+//     { // king
+// -30,-40,-40,-50,-50,-40,-40,-30,
+// -30,-40,-40,-50,-50,-40,-40,-30,
+// -30,-40,-40,-50,-50,-40,-40,-30,
+// -30,-40,-40,-50,-50,-40,-40,-30,
+// -20,-30,-30,-40,-40,-30,-30,-20,
+// -10,-20,-20,-20,-20,-20,-20,-10,
+//  20, 20,  0,  0,  0,  0, 20, 20,
+//  20, 30, 10,  0,  0, 10, 30, 20
+//     },
+    {
+// king end game
+-50,-40,-30,-20,-20,-30,-40,-50,
+-30,-20,-10,  0,  0,-10,-20,-30,
+-30,-10, 20, 30, 30, 20,-10,-30,
+-30,-10, 30, 40, 40, 30,-10,-30,
+-30,-10, 30, 40, 40, 30,-10,-30,
+-30,-10, 20, 30, 30, 20,-10,-30,
+-30,-30,  0,  0,  0,  0,-30,-30,
+-50,-30,-30,-30,-30,-30,-30,-50
     }
+
 };
 
 namespace ix {
@@ -102,7 +116,7 @@ namespace bit {
 
         do {
             if (num & 1) {
-                vs.push_back(num);
+                vs.push_back(ix);
             }
 
             ix++;
@@ -144,14 +158,18 @@ int score (int type) {
 class Board {
     private :
         // u64 bitboard;
-    public :
         vector<vector<u64>> grid;
+    public :
 
         Board() { // create an empty new board
             grid = {
                 {0,0,0,0,0,0},
                 {0,0,0,0,0,0}
             };
+        }
+
+        vector<u64> &operator [] (int color) {
+            return grid[color];
         }
 
         bool is_inside (int x, int y) { return x >= 0 and y >= 0 and x < 8 and y < 8; }
@@ -198,18 +216,20 @@ class Board {
 
         vector<node> get_moves () {
             int curr = 0;
-            u64 bitboard = 0;
+            u64 player = 0;
+            u64 enemy = 0;
             vector<node> hist;
 
             for (int i = 0; i < 6; i++) {
-                bitboard |= grid[white][i];
+                player |= grid[white][i];
+                enemy |= grid[black][i];
             }
 
-            do {
-                if (bitboard & 1) {
-                    // int x = curr % 8, y = curr / 8, dist = 0, type = -1;
+            for (int curr = 0; curr < 64; curr++) {
+                if (bit::chk(player, curr)) {
                     int x = ix::x[curr], y = ix::y[curr], dist = 0, type = -1;
                     vector<pair<int,int>> direction;
+                    // cout << x << " " << y << endl;
 
                     if (bit::chk(grid[white][pawn], curr)) {
                         type = pawn, dist = 1, direction = {{0,1}};
@@ -223,7 +243,7 @@ class Board {
                     } else if (bit::chk(grid[white][bishop], curr)) {
                         type = bishop, dist = 8, direction = diagonal;
                     } else if (bit::chk(grid[white][knight], curr)) {
-                        // type = knight, dist = 1, direction = {-17,-15,-10,-6,6,10,15,17};
+                        type = knight, dist = 1, direction = knight_m;
                     }
 
                     for (auto &[dx,dy] : direction) {
@@ -231,18 +251,20 @@ class Board {
                         for (int j = 1; j <= dist; j++) {
                             int nx = x + dx * j, ny = y + dy * j;
                             int next = idx(nx,ny);
-
+                
                             if (is_inside(nx,ny)) {
-                                if (player_id(white, next) >= 0) break;
+                                int heur = heuristic[type][next] - heuristic[type][curr];
 
-                                hist.push_back( {type, curr, next});
+                                if (bit::chk(player, next)) break;
+
+                                hist.push_back( {type, heur, curr, next});
+
+                                if (bit::chk(enemy, next)) break;
                             }
                         }
                     }
                 }
-
-                curr++;
-            } while (bitboard >>= 1);
+            }
 
             return hist;
         }
@@ -307,6 +329,86 @@ class Display {
         }
 };
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+node rnd_walk (vector<node> &vs) {
+    sort(vs.begin(), vs.end(), [](node a, node b) { return a.alt > b.alt; });
+    std::geometric_distribution dist;
+
+    return vs[dist(gen) % vs.size()];
+}
+int threat(Board &board, u64 bitboard, int next) {
+
+    int damage[6] = {0,0,0,0,0,0};
+
+    for (auto &[dx,dy] : knight_m) {
+        int sx = ix::x[next] + dx , sy = ix::y[next] + dy;
+
+        if (board.is_inside(sx,sy) && bit::chk(bitboard, sx + sy * 8)) {
+            if (bit::chk(board[black][knight], sx + sy * 8)) 
+                damage[knight]++;
+        }
+    }
+
+    for (auto &[dx,dy] : complete) {
+        for (int i = 1; i < 9; i++) {
+            int sx = ix::x[next] + dx * i, sy = ix::y[next] + dy * i;
+            int pos = sx + sy * 8;
+
+            if (board.is_inside(sx,sy) && bit::chk(bitboard, pos) == true) {
+                if (i < 2 && bit::chk(board[black][king], pos)) damage[king]++;
+                if (bit::chk(board[black][queen], pos)) damage[queen]++;
+
+                if (dx == 0 || dy == 0) { // ie : cross
+                    if (bit::chk(board[black][rook], pos)) damage[rook]++;
+                } else {                  // ie : diagonal
+                    if (bit::chk(board[black][bishop], pos)) damage[bishop]++;
+                }
+
+                break;
+            }
+        }
+    }
+
+    for (int i = 0; i < 6; i++) {
+        if (damage[i]) return true;
+        // cout << damage[i] << " ";
+    }
+
+    return false;
+}
+
+node evaluate (Board &board) {
+
+    if (board[black][king] == 0) {
+        cout << "checkmate\n";
+        return {-1,-1,0,0};
+    }
+
+    u64 bitboard = 0;
+    vector<node> vs = board.get_moves();
+    int damage[6] = {0,0,0,0,0,0};
+
+    for (int i = 0; i < 6; i++) {
+        bitboard |= board[white][i];
+        bitboard |= board[black][i];
+    }
+
+    for (auto &nod : vs) {
+        auto &[type, alt, curr, next] = nod;
+
+        threat(board, bitboard, next);
+        cout << Display::identify(type) ;
+        cout << "[" << ix::x[curr] << " " << ix::y[curr]  << "]";
+        cout << "[" << ix::x[next] << " " << ix::y[next]  << "]";
+
+        // cout << dmg << " ";
+        cout << alt << "\n";
+    }
+
+    // Display::limited(board);
+    // return rnd_walk(vs);
+    return {};
+}
+
 int main () {
 
     Board board;
@@ -314,48 +416,13 @@ int main () {
     string txt = "Kc8";
     auto [piece, place] = notation("Kc8");
 
-    board.grid[black][piece] |= 1UL << place;
+
+    board[black][piece] |= 1UL << place;
     board.place("Ke8");
     board.place("Rh7");
-    // int kg = bit::pos(board.grid[black][king])[0];
-    vector<node> vs;
-    vector<node> possibilities = board.get_moves();
-
-    for (auto &[type, curr, next] : possibilities) {
-        int heur = heuristic[type][next] - heuristic[type][curr];
-        int opp = score(board.player_id(black, next));
-        vs.push_back({heur, curr, next});
-
-        cout << Display::identify(type) ;
-        cout << "[" << ix::x[curr] << " " << ix::y[curr]  << "]";
-        cout << "[" << ix::x[next] << " " << ix::y[next]  << "]";
-        cout << heur << "\n";
-    }
-
-    sort(vs.begin(), vs.end(), [](node a, node b) { return a.alt > b.alt; });
-    // type curr next heur
-    // king[4 0][5 0]10
-    // king[4 0][4 1]0
-    // king[4 0][3 0]0
-    // king[4 0][5 1]10
-    // rook[7 1][7 0]-5
-    // rook[7 1][7 2]-10
-    // rook[7 1][7 3]-10
-    // rook[7 1][7 4]-10
-    // rook[7 1][7 5]-10
-    // rook[7 1][7 6]-10
-    // rook[7 1][7 7]-5
-    // rook[7 1][6 1]5
-    // rook[7 1][5 1]5
-    // rook[7 1][4 1]5
-    // rook[7 1][3 1]5
-    // rook[7 1][2 1]5
-    // rook[7 1][1 1]5
-    // rook[7 1][0 1]0
 
 
-
-    Display::limited(board);
+    evaluate(board);
 
     //     if (is_inside(nx,ny)) {
     //            int opp = score(player_id(black, next)); // score of black piece taken, if any
