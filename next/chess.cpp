@@ -3,7 +3,7 @@
 #include <algorithm>
 
 using namespace std;
-struct vertex { int type, now, nxt, alt; };
+struct vertex { int type, now, nxt; };
 
 random_device rd;  //Will be used to obtain a seed for the random number engine
 mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
@@ -101,12 +101,12 @@ void Board::place (const std::string &txt) {
     bitboard[color][piece] |= 1UL << curr;
 }
 
-vertex rnd_walk (vector<vertex> &vs) {
-    sort(vs.begin(), vs.end(), [](vertex a, vertex b) { return a.alt > b.alt; });
-    std::geometric_distribution dist;
-
-    return vs[dist(gen) % vs.size()];
-}
+// vertex rnd_walk (vector<vertex> &vs) {
+//     sort(vs.begin(), vs.end(), [](vertex a, vertex b) { return a.alt > b.alt; });
+//     std::geometric_distribution dist;
+//
+//     return vs[dist(gen) % vs.size()];
+// }
 
 pair<int,int> threat (Board &board, u64 bitboard, int next) {
 
@@ -192,6 +192,14 @@ vector<vertex> get_moves (Board &board) {
     return hist;
 }
 
+void change(Board &board, const vertex &node, int enemy) {
+    const auto &[piece, curr, next] = node;
+
+    if (enemy != -1) board[black][enemy] ^= 1UL << next;
+    board[white][piece] ^= 1UL << curr;
+    board[white][piece] ^= 1UL << next;
+}
+
 int evaluate (Board &board, int depth) {
 
     if (depth == 0) {
@@ -201,7 +209,7 @@ int evaluate (Board &board, int depth) {
     int maxv = 0;
     const vector<vertex> vs = get_moves(board);
 
-    for (auto &[piece, curr, next, heur] : vs) {
+    for (auto &[piece, curr, next] : vs) {
         const int enemy = board.player_id(black, next);
         if (enemy != -1) board[black][enemy] ^= 1UL << next;
         board[white][piece] ^= 1UL << curr;
@@ -232,7 +240,7 @@ vertex select2 (Board &board) {
     }
 
     for (auto &node : vs) {
-        const auto &[piece, curr, next, heur] = node;
+        const auto &[piece, curr, next] = node;
         const auto &[minv, maxv] = threat(board, bitboard, next);
         int enemy = board.player_id(black, next);
         // int heur = heuristic[piece][next] - heuristic[piece][curr];
@@ -261,8 +269,9 @@ vertex select2 (Board &board) {
         valid.push_back(node);
     }
 
+    return {};
     // Display::limited(board);
-    return rnd_walk(vs);
+    // return rnd_walk(vs);
 }
 vertex select1 (Board &board) {
 
@@ -279,10 +288,10 @@ vertex select1 (Board &board) {
     }
 
     for (auto &node : vs) {
-        auto &[piece, curr, next, heur] = node;
+        auto &[piece, curr, next] = node;
         const auto &[minv, maxv] = threat(board, bitboard, next);
 
-        heur = heuristic[piece][next] - heuristic[piece][curr];
+        // heur = heuristic[piece][next] - heuristic[piece][curr];
 
         // cout << Display::identify(piece) ;
         // cout << "[" << move::x[curr] << " " << move::y[curr]  << "]";
@@ -294,10 +303,92 @@ vertex select1 (Board &board) {
         valid.push_back(node);
     }
 
+    return {};
 
-    return rnd_walk(valid);
+    // return rnd_walk(valid);
 }
 
+int minimax (Board &board, int depth, int alpha, int beta, bool mode) {
+
+    if (depth == 0) {
+        // cout << board.count() << " ";
+        return board.count();
+    }
+
+    // cout << alpha << " " << beta << " ";
+    vector<vertex> vs = get_moves(board);
+
+    if (mode) {
+        int maxv = -99999;
+
+        for (auto &node : vs) {
+            auto &[piece, curr, next] = node;
+            const int enemy = board.player_id(black, next);
+
+            change(board, node, enemy);
+
+            maxv = max(maxv, minimax(board, depth - 1, alpha, beta, false));
+
+            change(board, node, enemy);
+
+            alpha = max(alpha, maxv);
+            if (beta <= alpha) break;
+        }
+
+        return maxv;
+    } 
+
+    else {
+        int minv = 99999; 
+
+        for (auto &node : vs) {
+            auto &[piece, curr, next] = node;
+            const int enemy = board.player_id(black, next);
+
+            change(board, node, enemy);
+            minv = min(minv, minimax(board, depth - 1, alpha, beta, true));
+
+            change(board, node, enemy);
+
+            alpha = min(alpha, minv);
+            if (beta <= alpha) break;
+        }
+
+        return minv;
+    }
+}
+vertex select3 (Board &board) {
+
+    int maxv = -999999;
+    vertex best;
+    const vector<vertex> vs = get_moves(board);
+
+    for (const auto &node : vs) {
+        const auto &[piece, curr, next] = node;
+        const int enemy = board.player_id(black, next);
+
+        change(board, node, enemy);
+
+        int eval = minimax(board, 2, -9999, 9999, false);
+
+        cout << eval << " ";
+
+        change(board, node, enemy);
+
+        if (eval > maxv) {
+            maxv = eval;
+            best = node;
+        }
+
+        // cout << Display::identify(piece) ;
+        // cout << "[" << move::x[curr] << " " << move::y[curr]  << "]";
+        // cout << "[" << move::x[next] << " " << move::y[next]  << "]";
+        // cout << heur << "\n";
+    }
+
+
+    return best;
+}
 string play (Board &board, const string &txt) {
 
     const auto [opp, post] = notation(txt);
@@ -313,7 +404,7 @@ string play (Board &board, const string &txt) {
     }
 
     if (valid_move) {
-        auto [piece, curr, next, heur] = select1(board);
+        auto [piece, curr, next] = select1(board);
 
         board[white][piece] ^= 1UL << curr;
         board[white][piece] ^= 1UL << next;
@@ -326,6 +417,20 @@ string play (Board &board, const string &txt) {
     return "";
 }
 
+// int negaMax( int depth ) {
+//
+//     if ( depth == 0 ) return evaluate();
+//
+//     int maxv = -999;
+//
+//     for (int i = 0; i < 5; i++) {
+//         int score = -negaMax( depth - 1 );
+//         if( score > maxv )
+//             maxv = score;
+//     }
+//
+//     return maxv;
+// }
 
 
 int main () {
@@ -337,17 +442,24 @@ int main () {
     board.place("Ke8");
     board.place("Rh7");
 
-    play(board, "Kb8");
-    // Display::limited(board);
-    // board[white][piece] ^= 1UL << curr;
-    // board[white][piece] ^= 1UL << next;
-    // string txt;
-    // cout << "play your next move : \n";
-    // cin >> txt;
-    // // play(board, txt);
-    //
-    Display::limited(board);
+    string txt, actual;
 
+    select3(board);
+
+
+    // int cycle = 4;
+    //
+    // while (cycle-->0) {
+    //     Display::limited(board);
+    //     cout << "play your next move : \n";
+    //
+    //     cin >> txt;
+    //
+    //     actual = play(board, txt);
+    // }
+    //
+    //
+    //
 
 
     std::cout << "\nexit\n";

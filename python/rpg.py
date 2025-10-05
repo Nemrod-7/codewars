@@ -217,7 +217,8 @@ def rpg(field) :
         map[y][x] = arrow[dir]
         display(map)
         map[y][x] = ' '
-        # enemys action
+
+        # enemies action
         for dx,dy in compass :
             sx,sy = x + dx, y + dy
 
@@ -237,10 +238,12 @@ def rpg(field) :
             if map[sy][sx] == ' ' or is_object(map[sy][sx]) :
                 heap.append( (map,pnj, [sx,sy, dir, hp, attack, defence, level, potion, coin, key]) ) # action => 'F'
             else :
+                # print("change direction.")
                 for i in range(4) :
                     dx,dy = compass[i]
-                    # if is_inside(x + dx,y + dy, width, height) :
-                    #     heap.append( (map,pnj, [x,y, i, hp, attack, defence, level, potion, coin, key]) )
+                    if is_inside(x + dx,y + dy, width, height) :
+                        # heap.append( (map,pnj, [x,y, i, hp, attack, defence, level, potion, coin, key]) )
+                        pass
                     pass
                 nexm = [ [map[y][x] for x in range(width)] for y in range(height) ]
                 nexp = [ [pnj[y][x] for x in range(width)] for y in range(height) ]
@@ -270,6 +273,32 @@ def rpg(field) :
                         nexm[sy][sx] = ' '
                         heap.append( (nexm,nexp, [x,y, dir, hp, attack, defence, level, potion, coin, key - 1]) )
 
+        else :
+            for dx,dy in compass :
+                sx,sy = x + dx, y + dy
+                # print(sx,sy)
+                if is_inside(sx,sy, width, height) :
+                    # heap.append( (nexm,nexp, [sx,sy, dir, hp, attack, defence, level, potion, coin, key - 1]) )
+                    pass
+            pass
+
+def proto(field) :
+    width, height = len(field[0]), len(field)
+    obj = []
+
+    objects = 'DEHHXSCK'
+    for i in range(height) :
+        for j in range(width) :
+            score = objects.find(field[i][j])
+
+            if score != -1 :
+                obj.append([score, j, i])
+    obj.sort()
+
+    print(obj)
+
+
+
 map = [
 'K   E     |    X#        C      E   S#  D  ',
 '    E     #######               ###### E E ',
@@ -288,10 +317,11 @@ m = [
     '^       K',
 ]
 
-rpg(m)
+proto(m)
+# rpg(m)
 
 
-#
+
 # def test_case(fun, map, action) :
 #     actual = fun(map, action)
 #
