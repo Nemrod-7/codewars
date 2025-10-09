@@ -4,6 +4,8 @@
 ///////////////////////////////////header/////////////////////////////////////
 using u64 = unsigned long int;
 
+struct vertex { int type, now, nxt; };
+
 enum {black, white};
 enum {pawn, bishop, knight, rook, queen, king};
 
@@ -15,6 +17,9 @@ namespace move {
     const std::vector<std::pair<int,int>> diagonal = {{-1,-1},{1,-1},{1,1},{-1,1}};
     const std::vector<std::pair<int,int>> complete = {{0,-1},{1,0},{0,1},{-1,0},{-1,-1},{1,-1},{1,1},{-1,1}};
     const std::vector<std::pair<int,int>> knight_m = { {-2,-1},{-2,1},{-1,-2},{-1,2},{1,-2},{1,2},{2,-1},{2,1} };
+    const std::vector<std::vector<std::pair<int,int>>> pawn_move = { {{0,1}},{{0,-1}} };
+    const std::vector<std::vector<std::pair<int,int>>> pawn_attack = { {{-1,1},{1,1}},{{-1,-1},{1,-1}} };
+
 
     const int index(int sx, int sy) { return sx + sy * 8; }
 
@@ -172,7 +177,7 @@ class Display {
                 case knight : return "knight";break;
             }
 
-            return "";
+            return "no id";
         }
 };
 
@@ -246,3 +251,80 @@ const std::vector<std::vector<int>> heuristic {
             }
 
 };
+
+///////////////////////////////general.cpp////////////////////////////////////
+std::pair<int,int> notation (const std::string &txt) { // chess notation to (type, index) => ex : kb6 -> (5,38)
+    const char id = txt[0];
+    const int x = txt[1] - 97, y = 7 - (txt[2] - 49);
+    // printf("%c %i %i\n", id, x, y);
+    switch (id) {
+      case 'P' : return {pawn, move::index(x,y)}; break;
+      case 'R' : return {rook, move::index(x,y)}; break;
+      case 'K' : return {king, move::index(x,y)}; break;
+      case 'Q' : return {queen, move::index(x,y)}; break;
+      case 'B' : return {bishop, move::index(x,y)}; break;
+      case 'N' : return {knight, move::index(x,y)}; break;
+    }
+
+    return {-1, 64};
+}
+int score (int type) {
+
+    switch (type) {
+        case pawn   : return 1 ; break;
+        case bishop : return 3; break;
+        case knight : return 3;break;
+        case rook   : return 5; break;
+        case queen  : return 8; break;
+        case king   : return 99; break;
+    }
+
+    return 0;
+}
+///////////////////////////////board.cpp/////////////////////////////////////
+
+const bool Board::is_inside (int x, int y) {
+    return x >= 0 && y >= 0 && x < 8 && y < 8;
+}
+const int Board::player_id(int color, int pos) const {
+  for (int j = 0; j < 6; j++) {
+      if (bit::chk(bitboard[color][j], pos)) return j;
+  }
+  return -1;
+}
+std::vector<u64> &Board::operator [] (int color) {
+    return bitboard[color];
+}
+void Board::place (const std::string &txt) {
+    int color = white;
+    auto [piece, curr] = notation(txt);
+    bitboard[color][piece] |= 1UL << curr;
+}
+void Board::create () {
+    bitboard = {{
+        0xff00,
+        0x0081,
+        0x0042,
+        0x0024,
+        0x0010,
+        0x0008 }, {
+        0x00ff000000000000,
+        0x8100000000000000,
+        0x4200000000000000,
+        0x2400000000000000,
+        0x1000000000000000,
+        0x0800000000000000 }};
+}
+const int Board::count () {
+
+    int total = 0;
+
+    for (int i = 0; i < 6; i++) {
+        // cout << bit::cnt(bitboard[white][i]) << " " << bit::cnt(bitboard[black][i]) << "\n";
+        total += ( bit::cnt(bitboard[white][i]) - bit::cnt(bitboard[black][i])) * score(i);
+    }
+
+    return total;
+}
+
+////////////////////////////////////////////////////////////////////////////////
