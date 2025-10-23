@@ -169,7 +169,7 @@ int main() {
     // history[next][piece]++;
 
     // cout << "\n";
-    // Display::limited(board);
+    Display::board(board);
 
     cout << "\nexit\n";
 }

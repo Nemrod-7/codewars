@@ -175,9 +175,13 @@ impl WhitePlayer {
                     let ny = y as i8 + dy * dist;
                     let next = ny * 8 + nx;
 
-                    if is_inside(nx, ny) && check(self.board[WHITE], next as usize) {
+                    if is_inside(nx, ny){
+                        if check(self.board[WHITE], next as usize) { break; }
+                        
                         moves.push( (id, curr as u64, next as u64) );
-                    } 
+
+                        if check(self.board[BLACK], next as usize) { break; }
+                    }
                 }
             }
         }
@@ -220,7 +224,6 @@ impl WhitePlayer {
         // print!("{depth} {alpha} {beta}");
         return if mode == true { maxv } else { minv }
     }
-
     fn select(&mut self) -> (char,u64,u64) {
         let moves = self.get_moves();
 
@@ -232,7 +235,7 @@ impl WhitePlayer {
             self.move_piece(WHITE, *id, *curr as usize, *next as usize);
 
             let mut heur = self.minimax(2, -999, 999, true);
-            // if *id == 'R' { heur += HEUR[ROOK][*next as usize] - HEUR[ROOK][*curr as usize]; } 
+            // if *id == 'R' { heur += HEUR[ROOK][*next as usize] - HEUR[ROOK][*curr as usize]; }
             // if *id == 'K' { heur += HEUR[KING][*next as usize] - HEUR[KING][*curr as usize]; }
 
             if heur > maxv {
@@ -247,8 +250,6 @@ impl WhitePlayer {
 
         *best
     }
-
-
     fn play (&mut self, txt : &str) -> String {
         let (id, next) = notation(&txt);
 
@@ -264,7 +265,6 @@ impl WhitePlayer {
 
         to_notation(best.0 ,best.2)
     }
-
 }
 
 fn main () {
