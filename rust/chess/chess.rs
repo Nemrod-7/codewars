@@ -27,6 +27,16 @@ const HEUR: [[i32;64];2] = [
              0,  0,  0,  5,  5,  0,  0,  0
         ]
 ];
+fn showbits(fzone:u64) {
+    for i in 0..64 {
+        if i > 0 && i % 8 == 0 {
+            print!("\n");
+        }
+        let bit = (fzone >> i)&1;
+        print!("{} ", bit);
+    }
+    print!("\n");
+}
 
 fn display(board: &WhitePlayer) {
 
@@ -55,8 +65,6 @@ fn display(board: &WhitePlayer) {
 }
 
 fn check (num: u64, pos : u64) -> bool { (num >> pos) & 1u64 == 1 }
-
-fn is_inside (x:i8, y:i8) -> bool { x >= 0 && y >=0 && x < 8 && y < 8 }
 fn position(mut num:u64) -> Vec<usize> {
     let mut ix = 0;
     let mut vs = vec![];
@@ -73,14 +81,7 @@ fn position(mut num:u64) -> Vec<usize> {
     vs
 }
 
-fn identify(piece:char) -> usize {
-    match piece {
-        'K' => KING,
-        'R' => ROOK,
-        _ => 2,
-    }
-
-}
+fn is_inside (x:i8, y:i8) -> bool { x >= 0 && y >=0 && x < 8 && y < 8 }
 fn notation(piece:&str) -> (char, u64) {
     let piece :Vec<_> = piece.chars().collect();
     let id = piece[0] ;
@@ -88,6 +89,10 @@ fn notation(piece:&str) -> (char, u64) {
     let y = piece[2] as u64 - 49;
 
     (id, x  + (7 - y) * 8)
+}
+
+fn coord(pos:u64) -> String {
+    format!("{}{}", ( (pos % 8) as u8 + 97) as char,  (8 - (pos / 8)) as u8)
 }
 
 fn to_notation(id: char, pos:u64) -> String {
@@ -105,6 +110,7 @@ fn score(ch:char) -> i32 {
 }
 
 struct WhitePlayer {
+    cycle : usize,
     piece : [char;64],
     board : [u64;2],
 }
@@ -126,12 +132,13 @@ impl WhitePlayer {
         }
 
         WhitePlayer {
+            cycle : 0,
             piece : piece,
             board : board,
         }
     }
 
-    fn count(&self) -> i32 {
+    fn count(&self) -> i32 { // evaluate board
         let mut total = 0;
 
         for pos in position (self.board[BLACK] | self.board[WHITE]) {
@@ -156,37 +163,45 @@ impl WhitePlayer {
             self.board[side ^ 1] ^= 1u64 << next;
         }
     }
-    fn get_moves(&self) -> Vec<(char,u64,u64)> {
+    fn trace_moves(&self, curr:usize, side:usize) -> u64 { // make the 64 bitmask of all valid moves of a piece
         let cross = vec![(0,1),(0,-1),(1,0),(-1,0)];
         let diag = vec![(-1,-1),(-1,1),(1,1),(1,-1)];
         let comp = vec![(0,1),(0,-1),(1,0),(-1,0),(-1,-1),(-1,1),(1,1),(1,-1)];
 
+        let (x,y) = (curr % 8, curr / 8);
+        let id = self.piece[curr];
+        let mut zone:u64 = 0;
+
+        let (dist, direction) = match id {
+            'K' => (1, &comp),
+            'R' => (8, &cross),
+            _  =>  (0, &cross),
+        };
+
+        for (dx, dy) in direction {
+            for dist in 1..=dist {
+                let nx = x as i8 + dx * dist;
+                let ny = y as i8 + dy * dist;
+                let next = ny * 8 + nx;
+
+                if is_inside(nx, ny){
+                    if check(self.board[side], next as u64 ) { break; }
+                    zone |= 1u64 << next;
+                    if check(self.board[side^1], next as u64 ) { break; }
+                }
+            }
+        }
+
+        zone
+    }
+    fn get_moves(&self) -> Vec<(char,u64,u64)> { // get all possible moves for all white pieces
         let mut moves :Vec<(char,u64,u64)> = vec![];
 
         for curr in position(self.board[WHITE]) {
             let id = self.piece[curr];
 
-            let (x,y) = (curr % 8, curr / 8);
-            let (dist, direction) = match id {
-                'K' => (1, &comp),
-                'R' => (8, &cross),
-                _  =>  (0, &cross),
-            };
-
-            for (dx, dy) in direction {
-                for dist in 1..=dist {
-                    let nx = x as i8 + dx * dist;
-                    let ny = y as i8 + dy * dist;
-                    let next = ny * 8 + nx;
-
-                    if is_inside(nx, ny){
-                        if check(self.board[WHITE], next as u64 ) { break; }
-                        
-                        moves.push( (id, curr as u64, next as u64) );
-
-                        if check(self.board[BLACK], next as u64 ) { break; }
-                    }
-                }
+            for next in position(self.trace_moves(curr, WHITE)) {
+                moves.push( (id, curr as u64, next as u64) );
             }
         }
 
@@ -227,21 +242,23 @@ impl WhitePlayer {
         }
 
         // print!("{depth} {alpha} {beta}");
-        return if mode == true { maxv } else { minv }
+        return if mode == true { maxv  } else { minv }
     }
     fn select(&mut self) -> (char,u64,u64) {
         let moves = self.get_moves();
+        let fzone = self.trace_moves( position(self.board[BLACK])[0], WHITE);
 
         let mut maxv = -999;
         let mut best = (' ', 0, 0);
 
         for &node in moves.iter() {
             let (id,curr,next) = node;
-            let enemy = if check(self.board[BLACK], next) { self.piece[next as usize] } else { ' ' };
+            if check(fzone, next) { continue } // check for threat
 
+            let enemy = if check(self.board[BLACK], next) { self.piece[next as usize] } else { ' ' };
             self.move_piece(WHITE, id, curr, next);
 
-            let mut heur = self.minimax(2, -999, 999, true);
+            let mut heur = self.minimax(2, -999, 999, true)  + score(enemy)  ;
             if id == 'R' { heur += HEUR[ROOK][next as usize] - HEUR[ROOK][curr as usize]; }
             if id == 'K' { heur += HEUR[KING][next as usize] - HEUR[KING][curr as usize]; }
 
@@ -256,7 +273,7 @@ impl WhitePlayer {
                 self.piece[next as usize] = enemy;
                 self.board[BLACK] ^= 1u64 << next;
             }
-            print!("{} {} {}\n", next, to_notation(id, next), heur);
+            // print!("{} {} {}\n", next, to_notation(id, next), heur);
         }
 
         best
@@ -272,25 +289,25 @@ impl WhitePlayer {
 
         let mut take = false;
         let (id,curr,next) = self.select();
-        print!("[{}]", next);
+        // print!("[{}]", next);
+        //
+        // for i in 0..64 {
+        //     if check(self.board[BLACK], i) {
+        //         print!("{} ", i);
+        //     }
+        // }
 
-        for i in 0..64 {
-            if check(self.board[BLACK], i) {
-                print!("{} ", i);
-            }
-        }
         if check(self.board[BLACK], next) {
             take = true;
             self.board[BLACK] ^= 1u64 << next;
-            print!("take");
         }
 
-
-        let position = to_notation(id, next); 
+        let mut algebraic = format!("{id}");//to_notation(id, next); 
+        if take == true { algebraic += "x"; }
+        algebraic += &coord(curr);
         // display(&self);
-        // print!("{}", to_notation(best.0, best.2));
 
-        to_notation(id, next)
+        algebraic
     }
 }
 
