@@ -54,7 +54,7 @@ fn display(board: &WhitePlayer) {
     print!("\n");
 }
 
-fn check (num: u64, pos : usize) -> bool { (num >> pos) & 1u64 == 1 }
+fn check (num: u64, pos : u64) -> bool { (num >> pos) & 1u64 == 1 }
 
 fn is_inside (x:i8, y:i8) -> bool { x >= 0 && y >=0 && x < 8 && y < 8 }
 fn position(mut num:u64) -> Vec<usize> {
@@ -84,13 +84,13 @@ fn identify(piece:char) -> usize {
 fn notation(piece:&str) -> (char, u64) {
     let piece :Vec<_> = piece.chars().collect();
     let id = piece[0] ;
-    let x = piece[1] as u64- 97;
+    let x = piece[1] as u64 - 97;
     let y = piece[2] as u64 - 49;
 
     (id, x  + (7 - y) * 8)
 }
 
-fn to_notation(id: char, pos:u64 ) -> String {
+fn to_notation(id: char, pos:u64) -> String {
     let nx = pos % 8;
     let ny = pos / 8;
 
@@ -145,12 +145,16 @@ impl WhitePlayer {
         return total;
     }
 
-    fn move_piece(&mut self, side: usize, id:char, curr:usize, next:usize) {
-        // print!("[{}]", self.piece[next]);
-        self.piece[curr] = ' ';
-        self.piece[next] = id;
+    fn move_piece(&mut self, side: usize, id:char, curr:u64, next:u64) {
+        // print!("[{}][{}]\n", self.piece[curr], self.piece[next]);
+        self.piece[curr as usize] = ' ';
+        self.piece[next as usize] = id;
         self.board[side] ^= 1u64 << curr;
-        self.board[side] ^= 1u64 << next;
+        self.board[side] ^= 1u64 << next; 
+
+        if check(self.board[side ^ 1], next) {
+            self.board[side ^ 1] ^= 1u64 << next;
+        }
     }
     fn get_moves(&self) -> Vec<(char,u64,u64)> {
         let cross = vec![(0,1),(0,-1),(1,0),(-1,0)];
@@ -176,11 +180,11 @@ impl WhitePlayer {
                     let next = ny * 8 + nx;
 
                     if is_inside(nx, ny){
-                        if check(self.board[WHITE], next as usize) { break; }
+                        if check(self.board[WHITE], next as u64 ) { break; }
                         
                         moves.push( (id, curr as u64, next as u64) );
 
-                        if check(self.board[BLACK], next as usize) { break; }
+                        if check(self.board[BLACK], next as u64 ) { break; }
                     }
                 }
             }
@@ -191,21 +195,17 @@ impl WhitePlayer {
 
     fn minimax(&mut self, depth:i32, mut alpha:i32, mut beta:i32, mode:bool) -> i32 {
 
-        if depth == 0 {
+        if depth == 0 || self.board[BLACK] == 0 {
             return self.count();
         }
 
         let mut maxv = -999;
         let mut minv = 999;
-        let moves = self.get_moves();
 
-        if moves.len() == 0 {
-            // print!("error : {}\n", self.board[WHITE]);
-        }
+        for &(id,curr,next) in self.get_moves().iter() {
+            let enemy = if check(self.board[BLACK], next) { self.piece[next as usize] } else { ' ' };
 
-        for (id,curr,next) in moves.iter() {
-            self.move_piece(WHITE, *id, *curr as usize, *next as usize);
-            // let (id,curr,next) = node;
+            self.move_piece(WHITE, id, curr, next);
 
             if mode == true {
                 maxv  = std::cmp::max(maxv, self.minimax(depth - 1, alpha, beta, false));
@@ -215,7 +215,12 @@ impl WhitePlayer {
                 beta = std::cmp::min(minv, beta);
             }
 
-            self.move_piece(WHITE, *id, *next as usize, *curr as usize);
+            self.move_piece(WHITE, id, next, curr);
+
+            if enemy != ' ' {
+                self.piece[next as usize] = enemy;
+                self.board[BLACK] ^= 1u64 << next;
+            }
 
             if mode == true  && maxv >= beta  { break }
             if mode == false && minv <= alpha { break }
@@ -228,54 +233,76 @@ impl WhitePlayer {
         let moves = self.get_moves();
 
         let mut maxv = -999;
-        let mut best = &(' ', 0, 0);
-        // print!("{:?} ", self.black);
-        for node in moves.iter() {
+        let mut best = (' ', 0, 0);
+
+        for &node in moves.iter() {
             let (id,curr,next) = node;
-            self.move_piece(WHITE, *id, *curr as usize, *next as usize);
+            let enemy = if check(self.board[BLACK], next) { self.piece[next as usize] } else { ' ' };
+
+            self.move_piece(WHITE, id, curr, next);
 
             let mut heur = self.minimax(2, -999, 999, true);
-            // if *id == 'R' { heur += HEUR[ROOK][*next as usize] - HEUR[ROOK][*curr as usize]; }
-            // if *id == 'K' { heur += HEUR[KING][*next as usize] - HEUR[KING][*curr as usize]; }
+            if id == 'R' { heur += HEUR[ROOK][next as usize] - HEUR[ROOK][curr as usize]; }
+            if id == 'K' { heur += HEUR[KING][next as usize] - HEUR[KING][curr as usize]; }
 
             if heur > maxv {
                 maxv = heur;
                 best = node;
             }
 
-            // display(self);
-            self.move_piece(WHITE, *id, *next as usize, *curr as usize);
-            // print!("{} {}\n", to_notation(*id, *next), heur);
+            self.move_piece(WHITE, id, next, curr );
+
+            if enemy != ' ' {
+                self.piece[next as usize] = enemy;
+                self.board[BLACK] ^= 1u64 << next;
+            }
+            print!("{} {} {}\n", next, to_notation(id, next), heur);
         }
 
-        *best
+        best
     }
     fn play (&mut self, txt : &str) -> String {
         let (id, next) = notation(&txt);
 
         for curr in position(self.board[BLACK]) {
             if self.piece[curr] == id {
-                self.move_piece(BLACK, id, curr, next as usize);
+                self.move_piece(BLACK, id, curr as u64, next);
             }
         }
 
-        let best = self.select();
+        let mut take = false;
+        let (id,curr,next) = self.select();
+        print!("[{}]", next);
 
+        for i in 0..64 {
+            if check(self.board[BLACK], i) {
+                print!("{} ", i);
+            }
+        }
+        if check(self.board[BLACK], next) {
+            take = true;
+            self.board[BLACK] ^= 1u64 << next;
+            print!("take");
+        }
+
+
+        let position = to_notation(id, next); 
+        // display(&self);
         // print!("{}", to_notation(best.0, best.2));
 
-        to_notation(best.0 ,best.2)
+        to_notation(id, next)
     }
 }
 
 fn main () {
 
     let mut white_player = WhitePlayer::new("Ke8,Rh7 - Kc8");
-    let mut white_move = white_player.play("Kb8");
+    // let mut white_move = white_player.play("Kb8");
+    let mut white_move = white_player.play("Kb7");
 
     // print!("{:?}\n{:?}\n", white_player.white, white_player.black);
     // let (id,x,y) = identify("Ra8");
 
-    display(&white_player);
 
 
 
