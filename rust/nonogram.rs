@@ -2,37 +2,39 @@
 
 type Clues = &'static [&'static [u8]];
 
-struct Combs {
-    bits: Vec<u32>,
-}
+static mut BITS:[u32;35] = [0u32; 35];
 
-impl Combs {
-    fn new(size:usize) -> Combs {
-        return Combs {
-            bits: (0..size+1).map( |x| !(!0 << x) ).collect()
-        }
-    }
+fn place (block: &[u8], total: u8) -> Vec<u32> {
+    if block.len() == 0 { return vec![0]; }
+    if block[0] > total { return vec![]; }
 
-    fn place (&self, block: &[u8], total: u8) -> Vec<u32> {
-        if block.len() == 0 { return vec![0]; }
-        if block[0] > total { return vec![]; }
+    let dig = block[0] as usize; 
+    let start = total - block[0];
+    let mut res:Vec<u32> = Vec::new();
 
-        let start = total - block[0];
-        let mut res:Vec<u32> = Vec::new();
-
-        if block.len() == 1 {
-            for i in 0..(start + 1) {
-                res.push(self.bits[block[0] as usize] << i);
-            }
+    unsafe {
+        if BITS[dig] == 0 { BITS[dig] = !(!0 << dig); } 
+        // while DP.len() <= dig { DP.push(vec![]); }
+        if block.len() == 1 { 
+            // print!("len 1 :[{}] \n", dig);
+            // if DP[dig].len() == 0 {
+                for i in 0..(start + 1) {
+                    // DP[dig].push(BITS[dig] << i);
+                    res.push(BITS[dig] << i);
+                }
+            // }
         } else {
+
             for i in 0..start {
-                for sol in self.place( &block[1..], start - i - 1) {
-                    res.push( (self.bits[block[0] as usize] << i) | (sol << (block[0] + i + 1 )) );
+                for sol in place( &block[1..], start - i - 1) {
+                    // DP[dig].push( (BITS[dig] << i) | (sol << (dig as u8 + i + 1 )) );
+                    res.push( (BITS[dig] << i) | (sol << (dig as u8 + i + 1 )) );
+
                 }
             }
         }
 
-        res
+        return res;
     }
 }
 
@@ -53,11 +55,11 @@ fn reduce(comb: &Vec<u32>, x:u32) -> u8 {
 }
 
 pub fn solve ((top, left): (Clues, Clues), width: usize, height: usize) -> Vec<Vec<u8>> {
-    let combs = Combs::new(15);
+    // let combs = Combs::new(15);
     let mut running = true ;
     let mut grid = vec![vec![2u8;width];height];
-    let mut west:Vec<Vec<u32>> = left.iter().map(|x| combs.place(x, width as u8)).collect();
-    let mut north:Vec<Vec<u32>> = top.iter().map(|x| combs.place(x, height as u8)).collect();
+    let mut west:Vec<Vec<u32>> = left.iter().map(|x| place(x, width as u8)).collect();
+    let mut north:Vec<Vec<u32>> = top.iter().map(|x| place(x, height as u8)).collect();
 
     let mut idy:Vec<(usize,usize)> = (0..west.len()).map(|x| ( west[x].len(), x) ).collect();
     let mut idx:Vec<(usize,usize)> = (0..north.len()).map(|x| ( north[x].len(), x) ).collect();
@@ -125,4 +127,7 @@ fn main () {
     let height = 11;
 
     let res = solve(CLUES, width, height);
+    let total = 6;
+
+
 }

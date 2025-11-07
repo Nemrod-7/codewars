@@ -37,25 +37,25 @@ def solve(clues, width, height) :
     grid = [ [2 for _ in range(width)] for _ in range(height) ]
     # print('(',top,',', left,')')
     
-    # for _ in range(20) :
-    #     cnt = 0
-    #     x_axis = sorted([ (len(north[i]), i) for i in range(width) ])
-    #     y_axis = sorted([ (len(east[i]), i) for i in range(height) ])
-    #     # print(x_axis)
-    #     # print(y_axis)
-    #     for _,y in y_axis :
-    #         for _,x in x_axis :
-    #             if grid[y][x] != 2 :
-    #                 east[y] = [ comb for comb in east[y] if (comb >> x&1) == grid[y][x] ]
-    #                 north[x] = [ comb for comb in north[x] if (comb >> y&1) == grid[y][x] ]
-    #             else :
-    #                 a = checkcell(north[x], y)
-    #                 b = checkcell(east[y], x)
-    #
-    #                 if a != 2 : grid[y][x] = a
-    #                 if b != 2 : grid[y][x] = b
-    #                 cnt += 1
-    #     if cnt == 0 : break
+    for _ in range(27) :
+        cnt = 0
+        x_axis = sorted([ (len(north[i]), i) for i in range(width) ])
+        y_axis = sorted([ (len(east[i]), i) for i in range(height) ])
+        # print(x_axis)
+        # print(y_axis)
+        for _,y in y_axis :
+            for _,x in x_axis :
+                if grid[y][x] != 2 :
+                    east[y] = [ comb for comb in east[y] if (comb >> x&1) == grid[y][x] ]
+                    north[x] = [ comb for comb in north[x] if (comb >> y&1) == grid[y][x] ]
+                else :
+                    a = checkcell(north[x], y)
+                    b = checkcell(east[y], x)
+
+                    if a != 2 : grid[y][x] = a
+                    if b != 2 : grid[y][x] = b
+                    cnt += 1
+        if cnt == 0 : break
     return tuple(tuple(line) for line in grid )
 
 def display(grid) :
