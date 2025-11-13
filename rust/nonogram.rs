@@ -1,40 +1,27 @@
 #![allow(unused)]
 
 type Clues = &'static [&'static [u8]];
-
 static mut BITS:[u32;35] = [0u32; 35];
 
 fn place (block: &[u8], total: u8) -> Vec<u32> {
-    if block.len() == 0 { return vec![0]; }
-    if block[0] > total { return vec![]; }
+    let dig = if block.len() == 0 { 0 } else { block[0] as usize } ;
+    if dig > total as usize { return vec![]; }
 
-    let dig = block[0] as usize; 
-    let start = total - block[0];
-    let mut res:Vec<u32> = Vec::new();
+    let start = total - dig as u8;
 
     unsafe {
         if BITS[dig] == 0 { BITS[dig] = !(!0 << dig); } 
-        // while DP.len() <= dig { DP.push(vec![]); }
-        if block.len() == 1 { 
-            // print!("len 1 :[{}] \n", dig);
-            // if DP[dig].len() == 0 {
-                for i in 0..(start + 1) {
-                    // DP[dig].push(BITS[dig] << i);
-                    res.push(BITS[dig] << i);
-                }
-            // }
-        } else {
 
-            for i in 0..start {
-                for sol in place( &block[1..], start - i - 1) {
-                    // DP[dig].push( (BITS[dig] << i) | (sol << (dig as u8 + i + 1 )) );
-                    res.push( (BITS[dig] << i) | (sol << (dig as u8 + i + 1 )) );
-
-                }
-            }
+        match block.len() {
+            0 => return vec![0],
+            1 => return (0..start + 1).map(|i| BITS[dig] << i).collect(),
+            _ => return (0..start + 0).map(|i|
+                place( &block[1..], start - i - 1)
+                .iter()
+                .map(|sol| (BITS[dig] << i) | (sol << (dig as u8 + i + 1 )) )
+                .collect::<Vec<_>>()
+            ).flatten().collect(),
         }
-
-        return res;
     }
 }
 
@@ -55,7 +42,6 @@ fn reduce(comb: &Vec<u32>, x:u32) -> u8 {
 }
 
 pub fn solve ((top, left): (Clues, Clues), width: usize, height: usize) -> Vec<Vec<u8>> {
-    // let combs = Combs::new(15);
     let mut running = true ;
     let mut grid = vec![vec![2u8;width];height];
     let mut west:Vec<Vec<u32>> = left.iter().map(|x| place(x, width as u8)).collect();
@@ -127,7 +113,6 @@ fn main () {
     let height = 11;
 
     let res = solve(CLUES, width, height);
-    let total = 6;
 
 
 }

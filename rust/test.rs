@@ -9,31 +9,19 @@ fn place (block: &[u8], total: u8) -> Vec<u64> {
 
     let dig = block[0] as usize; 
     let start = total - block[0];
-    let mut res:Vec<u64> = Vec::new();
 
     unsafe {
         if BITS[dig] == 0 { BITS[dig] = !(!0 << dig); } 
-        // while DP.len() <= dig { DP.push(vec![]); }
-        if block.len() == 1 { 
-            // print!("len 1 :[{}] \n", dig);
-            // if DP[dig].len() == 0 {
-                for i in 0..(start + 1) {
-                    // DP[dig].push(BITS[dig] << i);
-                    res.push(BITS[dig] << i);
-                }
-            // }
-        } else {
 
-            for i in 0..start {
-                for sol in place( &block[1..], start - i - 1) {
-                    // DP[dig].push( (BITS[dig] << i) | (sol << (dig as u8 + i + 1 )) );
-                    res.push( (BITS[dig] << i) | (sol << (dig as u8 + i + 1 )) );
-
-                }
-            }
+        match block.len() {
+            1 => return (0..start + 1).map(|i| BITS[dig] << i).collect(),
+            _ => return (0..start + 0).map(|i|
+                place( &block[1..], start - i - 1)
+                .iter()
+                .map(|sol| (BITS[dig] << i) | (sol << (dig as u8 + i + 1 )) )
+                .collect::<Vec<_>>()
+            ).flatten().collect(),
         }
-
-        return res;
     }
 }
 
@@ -48,28 +36,12 @@ fn show(num:u32, total:u8) {
 
 fn main() {
 
-    let total = 6;
-    let comb = place(&[2, 2], total);
-
-    for co in comb {
-        show(co as u32, total);
-    }
-
-    unsafe {
-
-        for i in 0..DP.len() {
-            for j in 0..DP[i].len() {
-                show(DP[i][j] as u32, total);
-
-            }
-            print!("\n");
-        }
+    let res = (0..10)
+        .map(|i| 
+            (0..5)
+            .map(|x| i + x).collect::<Vec<_>>()
+            ).flatten() .collect::<Vec<_>>();
 
 
-        for i in 0..10 {
-            print!("{} ", BITS[i] );
-        }
-
-    }
-
+    print!("{:?}", res);
 }
