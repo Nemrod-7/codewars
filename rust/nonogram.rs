@@ -1,6 +1,7 @@
 #![allow(unused)]
 
 type Clues = &'static [&'static [u8]];
+
 static mut BITS:[u32;35] = [0u32; 35];
 
 fn place (block: &[u8], total: u8) -> Vec<u32> {
@@ -10,7 +11,7 @@ fn place (block: &[u8], total: u8) -> Vec<u32> {
     let start = total - dig as u8;
 
     unsafe {
-        if BITS[dig] == 0 { BITS[dig] = !(!0 << dig); } 
+        if BITS[dig] == 0 { BITS[dig] = !(!0 << dig); }
 
         match block.len() {
             0 => return vec![0],
@@ -72,7 +73,7 @@ pub fn solve ((top, left): (Clues, Clues), width: usize, height: usize) -> Vec<V
         }
     }
 
-    display(&grid);
+    // display(&grid);
     grid
 }
 
@@ -101,7 +102,6 @@ fn show(num:u32, total:u8) {
 
 fn main () {
 
-    type Clues = &'static [&'static [u8]];
     type Solution = &'static [&'static [u8]];
 
     const CLUES: (Clues, Clues) = (
