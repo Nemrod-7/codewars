@@ -8,23 +8,23 @@ const ROOK:usize = 1;
 
 const HEUR: [[i32;64];2] = [
         [
-            -50,-40,-30,-20,-20,-30,-40,-50,
-            -30,-20,-10,  0,  0,-10,-20,-30,
-            -30,-10, 20, 30, 30, 20,-10,-30,
-            -30,-10, 30, 40, 40, 30,-10,-30,
-            -30,-10, 30, 40, 40, 30,-10,-30,
-            -30,-10, 20, 30, 30, 20,-10,-30,
-            -30,-30,  0,  0,  0,  0,-30,-30,
-            -50,-30,-30,-30,-30,-30,-30,-50
+            -50,-40, 10,-20,-20, 10,-40,-50,
+            -30,-20, 20,-20,-20, 20,-20,-30,
+             10, 20, 30, 30, 30, 20, 20, 10,
+            -30,-20, 30, 40, 40, 30,-20,-30,
+            -30,-20, 30, 40, 40, 30,-20,-30,
+             10, 20, 30, 30, 30, 20, 20, 10,
+            -30,-20, 20, 30, 30, 20,-20,-30,
+            -50,-30, 10,-30,-30, 10,-30,-50
         ] , [
-             0,  0,  0,  0,  0,  0,  0,  0,
-             5, 10, 10, 10, 10, 10, 10,  5,
-            -5,  0,  0,  0,  0,  0,  0, -5,
-            -5,  0,  0,  0,  0,  0,  0, -5,
-            -5,  0,  0,  0,  0,  0,  0, -5,
-            -5,  0,  0,  0,  0,  0,  0, -5,
-            -5,  0,  0,  0,  0,  0,  0, -5,
-             0,  0,  0,  5,  5,  0,  0,  0
+            10,  5, 10, 10, 10, 10,  5, 20,
+             5,  0,  0,  0,  0,  0,  0,  5,
+            15,  0,  0,  0,  0,  0,  0, 15,
+            15,  0,  0,  0,  0,  0,  0, 15,
+            15,  0,  0,  0,  0,  0,  0, 15,
+            15,  0,  0,  0,  0,  0,  0, 15,
+             5,  0,  0,  0,  0,  0,  0,  5,
+            10,  5, 10, 10, 10, 10,  5, 10,
         ]
 ];
 fn showbits(fzone:u64) {
@@ -246,19 +246,27 @@ impl WhitePlayer {
     }
     fn select(&mut self) -> (char,u64,u64) {
         let moves = self.get_moves();
-        let fzone = self.trace_moves( position(self.board[BLACK])[0], WHITE);
+        let fzone = self.trace_moves( position(self.board[BLACK])[0], BLACK);
 
+        showbits(fzone);
         let mut maxv = -999;
         let mut best = (' ', 0, 0);
 
         for &node in moves.iter() {
             let (id,curr,next) = node;
             if check(fzone, next) { continue } // check for threat
-
             let enemy = if check(self.board[BLACK], next) { self.piece[next as usize] } else { ' ' };
+
             self.move_piece(WHITE, id, curr, next);
 
-            let mut heur = self.minimax(2, -999, 999, true)  + score(enemy)  ;
+            let mut heur = self.minimax(2, -999, 999, true) + score(enemy)  ;
+
+            // print!("{} -> ",  check(fzone, curr));
+            if check(fzone, curr) == true {
+                heur += 50;
+            }
+
+
             if id == 'R' { heur += HEUR[ROOK][next as usize] - HEUR[ROOK][curr as usize]; }
             if id == 'K' { heur += HEUR[KING][next as usize] - HEUR[KING][curr as usize]; }
 
@@ -273,7 +281,7 @@ impl WhitePlayer {
                 self.piece[next as usize] = enemy;
                 self.board[BLACK] ^= 1u64 << next;
             }
-            // print!("{} {} {}\n", next, to_notation(id, next), heur);
+            print!("{} {} {}\n", next, to_notation(id, next), heur);
         }
 
         best
@@ -287,36 +295,54 @@ impl WhitePlayer {
             }
         }
 
+        self.cycle += 1;
+
+        let bking = position(self.board[BLACK])[0];
+        let (kbx, kby) = (bking % 8, bking / 8);
+
+        if kby < 4 {
+
+        } else if kby > 3 {
+
+        }
+        
+
+        display(&self);
+
         let mut take = false;
         let (id,curr,next) = self.select();
+       
         // print!("[{}]", next);
-        //
         // for i in 0..64 {
         //     if check(self.board[BLACK], i) {
         //         print!("{} ", i);
         //     }
         // }
+        let mut res = format!("{id}");//to_notation(id, next); 
 
         if check(self.board[BLACK], next) {
-            take = true;
             self.board[BLACK] ^= 1u64 << next;
+            res += &format!("x{}", coord(next));
+            
+            if self.piece[next as usize] == 'K' {
+                res += &"+";
+            }
+        } else {
+            res += &coord(next);
         }
 
-        let mut algebraic = format!("{id}");//to_notation(id, next); 
-        if take == true { algebraic += "x"; }
-        algebraic += &coord(curr);
-        // display(&self);
-
-        algebraic
+        // print!("{res}");
+        res
     }
 }
 
 fn main () {
 
-    let mut white_player = WhitePlayer::new("Ke8,Rh7 - Kc8");
-    // let mut white_move = white_player.play("Kb8");
-    let mut white_move = white_player.play("Kb7");
+    let mut white_player = WhitePlayer::new("Ke1,Ra7 - Kc8");
+    let mut white_move = white_player.play("Kb8");
+    // let mut white_move = white_player.play("Kb7");
 
+    // display(&white_player);
     // print!("{:?}\n{:?}\n", white_player.white, white_player.black);
     // let (id,x,y) = identify("Ra8");
 

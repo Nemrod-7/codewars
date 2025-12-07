@@ -7,7 +7,6 @@ fn clear_console() {
     print!("\x1B[2J\x1B[1;1H");
     std::io::stdout().flush().unwrap();
 }
-
 fn show_track(track: &Vec<Vec<char>>, a_train: &Train, b_train: &Train) -> String {
     let wa = &a_train.2;
     let wb = &b_train.2;
@@ -35,7 +34,6 @@ fn show_track(track: &Vec<Vec<char>>, a_train: &Train, b_train: &Train) -> Strin
 
     os
 }
-
 fn animation(rail: &Vec<Vec<char>>, a_train: &mut Train, b_train: &mut Train) {
     let ten = time::Duration::from_millis(100);
     let mut wait_a = a_train.1;
@@ -91,7 +89,7 @@ fn getcell(track : &Vec<Vec<char>>, prev: &(i32,i32), curr: &(i32,i32), index :u
         '|' => if index == 0 { return true; },
         'S' => if last == frwd { return true; }
         'X' => if last == frwd { return true; }
-        '+' => if ( (last == '-' && frwd == '-') || (last != '-' && index == 0) ) { return true; },
+        '+' => if (last == '-' && frwd == '-') || (last != '-' && index == 0) { return true; },
         _ => return BASE[index].find(frwd).is_some(),
     }
 
@@ -137,7 +135,7 @@ fn mk_train(track: &Vec<Vec<char>>, train: &str, pos:usize)-> Train {
     let ch = train.chars().next().unwrap();
     let origin = get_origin(track);
 
-    let (mut id, mut size, mut wagon) = (ch, train.len(), LinkedList::from([origin]) );
+    let (mut id, size, mut wagon) = (ch, train.len(), LinkedList::from([origin]) );
     let (fst,scd) = if ch.is_uppercase() { (0,3) } else { (4,8) };
 
     if !ch.is_uppercase() {
@@ -169,11 +167,11 @@ fn mk_train(track: &Vec<Vec<char>>, train: &str, pos:usize)-> Train {
     if ch.is_uppercase() {
         let dest = getstart(&track, pos);
 
-        while &dest != wagon.front().unwrap() {
-            move_wagon(&track, &mut wagon);
-        }
+        // while &dest != wagon.front().unwrap() {
+        //     move_wagon(&track, &mut wagon);
+        // }
     } else {
-        while pos != 0 {
+        for _ in 0..pos {
             move_wagon(&track, &mut wagon);
         }
     }
@@ -216,16 +214,16 @@ pub fn train_crash( track: &str, a_train: &str, a_pos: usize, b_train: &str, b_p
         .collect::<Vec<Vec<char>>>() ;
 
     let mut a_train = mk_train(&rail, &a_train, a_pos);
-    let mut b_train = mk_train(&rail, &b_train, b_pos);
-    let mut wait_a = a_train.1;
-    let mut wait_b = b_train.1;
+    // let mut b_train = mk_train(&rail, &b_train, b_pos);
+    // let mut wait_a = a_train.1;
+    // let mut wait_b = b_train.1;
 
-    for cnt in 1..limit {
-        advance(&rail, &mut a_train, &mut wait_a);
-        advance(&rail, &mut b_train, &mut wait_b);
-
-        if collision(&a_train, &b_train) { return Some(cnt); }
-    }
+    // for cnt in 1..limit {
+    //     advance(&rail, &mut a_train, &mut wait_a);
+    //     advance(&rail, &mut b_train, &mut wait_b);
+    //
+    //     if collision(&a_train, &b_train) { return Some(cnt); }
+    // }
     // show_track(&rail, &a_train, &b_train);
     // animation(&rail, &mut a_train, &mut b_train);
     None
@@ -258,10 +256,19 @@ fn main() {
               |                            |               
               \\----------------------------/ 
               ";
-    let res = train_crash(TRACK_EX, "Aaaa", 147, "Bbbbbbbbbbb", 288, 1000);
+    // let res = train_crash(TRACK_EX, "Aaaa", 147, "Bbbbbbbbbbb", 288, 1000);
     // Some(516);
 
+    const track: &str = 
+"/-----------------\\
+|                 |
+|                 |
+|                 |
+|                 |
+\\-----------------/";
+train_crash(track, "aaaaaA", 10 ,"bbbbbB", 30,100);
 
-    print!("{:?}\n", res);
+    // print!("{:?}\n", res);
 
+print!("end");
 }
