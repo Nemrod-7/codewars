@@ -36,29 +36,17 @@ fn show_track(track: &Vec<Vec<char>>, a_train: &Train, b_train: &Train) -> Strin
     os
 }
 
-fn proto(track: &Vec<Vec<char>>, a_train: &Train ) -> bool {
-    let a = a_train.2.front().unwrap();
-    let (ax,ay) = (a.0 as usize, a.1 as usize);
-    track[ay][ax] == 'S' 
-}
-
-fn animation(track: &Vec<Vec<char>>, a_train: &mut Train, b_train: &mut Train) {
+fn animation(rail: &Vec<Vec<char>>, a_train: &mut Train, b_train: &mut Train) {
     let ten = time::Duration::from_millis(100);
-    let mut ia = 0;
-    let mut ib = 0;
+    let mut wait_a = a_train.1;
+    let mut wait_b = b_train.1;
 
     loop {
-        if proto(&track, &a_train) {
-            ia = if ia == 0 { a_train.1 } else { ia - 1 }
-        }      
-        if proto(&track, &b_train) {
-            ib = if ib == 0 { b_train.1 } else { ib - 1 }
-        } 
 
-        if ia == 0 { move_wagon(&track, &mut a_train.2); }
-        if ib == 0 { move_wagon(&track, &mut b_train.2); }
+        advance(&rail, a_train, &mut wait_a);
+        advance(&rail, b_train, &mut wait_b);
 
-        print!("{}", show_track(&track, &a_train, &b_train) );
+        print!("{}", show_track(&rail, &a_train, &b_train) );
         std::io::stdout().flush().unwrap();
         thread::sleep(ten);
     }
@@ -72,9 +60,6 @@ type Train = (char,usize, LinkedList<(i32,i32)>);
 
 fn add (a: &(i32,i32), b: &(i32,i32)) -> (i32,i32) { (a.0 + b.0, a.1 + b.1) }
 
-// fn is_inside(x:i32,y:i32, track: &Vec<Vec<char>>) -> bool {
-//     return x >= 0 && y >= 0 && y < track.len() as i32 && x < track[y as usize].len() as i32;
-// }
 fn is_inside(p: &(i32,i32), track: &Vec<Vec<char>>) -> bool {
     return p.0 >= 0 && p.1 >= 0 && p.1 < track.len() as i32 && p.0 < track[p.1 as usize].len() as i32;
 }
@@ -95,8 +80,7 @@ fn getcell(track : &Vec<Vec<char>>, prev: &(i32,i32), curr: &(i32,i32), index :u
     let next = add( curr, &DIRECT[index]);  
     let index = index % 4;
 
-    if !is_inside(next, &track) { return false; }
-    // if !is_inside(next.0, next.1, &track) { return false; }
+    if !is_inside( &next, &track) { return false; }
     if next == *prev { return false; }
     let rail = track[curr.1 as usize][curr.0 as usize];
     let last = track[prev.1 as usize][prev.0 as usize];
@@ -136,7 +120,7 @@ fn getstart(track: &Vec<Vec<char>>, pos:usize) -> (i32,i32) {
     for i in 4..8 {
         let nxt = add( &origin, &DIRECT[i] );
 
-        if is_inside(nxt, &track) {
+        if is_inside( &nxt, &track) {
             if getcell(&track, &origin, &origin, i) {
                 curr.push_back( nxt );
             }
@@ -164,8 +148,7 @@ fn mk_train(track: &Vec<Vec<char>>, train: &str, pos:usize)-> Train {
         let p = *wagon.back().unwrap();
         let (sx,sy) = add(&p, &DIRECT[i]);
 
-        let is_inside( (sx,sy), &track) {
-        // if is_inside(sx,sy, &track) {
+        if is_inside( &(sx,sy), &track) {
             if BASE[i % 4].find( track[sy as usize][sx as usize] ).is_some() {
                 wagon.push_back( (sx, sy) );
             }
@@ -197,10 +180,33 @@ fn mk_train(track: &Vec<Vec<char>>, train: &str, pos:usize)-> Train {
 
     (id, size, wagon)
 }
-fn collision(a_train: &Train, b_train: &Train) -> bool {
+fn collision(a: &Train, b: &Train) -> bool {
     // let hist:HashMap<(i32,i32), usize> = HashMap::new();
+    let loco_a = a.2.front().unwrap();
+    let loco_b = b.2.front().unwrap();
+
+    for tr in b.2.iter() {
+        if loco_a == tr { return true; }
+    }
+
+    for tr in a.2.iter() {
+        if loco_b == tr { return true; }
+    }
 
     false
+}
+
+fn advance(track: &Vec<Vec<char>>, train: &mut Train, wait: &mut usize) {
+    let a = train.2.front().unwrap();
+    let (ax,ay) = (a.0 as usize, a.1 as usize);
+   
+    if track[ay][ax] == 'S' && *wait < (train.1 - 1)  {
+        *wait += 1
+    } else {
+        if *wait > 0 { *wait = 0 }
+        move_wagon(&track, &mut train.2);
+    }
+
 }
 pub fn train_crash( track: &str, a_train: &str, a_pos: usize, b_train: &str, b_pos: usize, limit: usize,) -> Option<usize> {
 
@@ -211,11 +217,17 @@ pub fn train_crash( track: &str, a_train: &str, a_pos: usize, b_train: &str, b_p
 
     let mut a_train = mk_train(&rail, &a_train, a_pos);
     let mut b_train = mk_train(&rail, &b_train, b_pos);
+    let mut wait_a = a_train.1;
+    let mut wait_b = b_train.1;
 
+    for cnt in 1..limit {
+        advance(&rail, &mut a_train, &mut wait_a);
+        advance(&rail, &mut b_train, &mut wait_b);
+
+        if collision(&a_train, &b_train) { return Some(cnt); }
+    }
     // show_track(&rail, &a_train, &b_train);
     // animation(&rail, &mut a_train, &mut b_train);
-
-
     None
 }
 
@@ -246,15 +258,9 @@ fn main() {
               |                            |               
               \\----------------------------/ 
               ";
-    train_crash(TRACK_EX, "Aaaa", 147, "Bbbbbbbbbbb", 288, 1000);
+    let res = train_crash(TRACK_EX, "Aaaa", 147, "Bbbbbbbbbbb", 288, 1000);
     // Some(516);
 
-
-    let vec = [4,2,3,8,3];
-
-
-    let res = (0..vec.len()).collect::<Vec<_>>() ;
-    let res = vec.iter().position(|&x| x == 3);
 
     print!("{:?}\n", res);
 

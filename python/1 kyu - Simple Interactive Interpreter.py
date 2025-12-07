@@ -2,23 +2,33 @@
 # fn-name         ::= identifier
 # fn-operator     ::= '=>'
 # fn-keyword      ::= 'fn'
-# 
+#
 # expression      ::= factor | expression operator expression
 # factor          ::= number | identifier | assignment | '(' expression ')' | function-call
 # assignment      ::= identifier '=' expression
 # function-call   ::= fn-name { expression }
-# 
+#
 # operator        ::= '+' | '-' | '*' | '/' | '%'
-# 
+#
 # identifier      ::= letter | '_' { identifier-char }
 # identifier-char ::= '_' | letter | digit
-# 
+#
 # number          ::= { digit } [ '.' digit { digit } ]
-# 
+#
 # letter          ::= 'a' | 'b' | ... | 'y' | 'z' | 'A' | 'B' | ... | 'Y' | 'Z'
 # digit           ::= '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
 
 ##################################################################################
+# def isminus (expr, idx) :
+#     prev , next = idx - 1, idx + 1
+#
+#     if expr[idx] != '-' : return False
+#     if idx == 0 : return True
+#     if re.match("-?[0-9]*.?[0-9]+$", expr[prev]) : return False
+#     if expr[prev] == ')' or expr[prev] == '(' : return False
+#     if expr[prev] in operator : return True
+#     return False
+
 import re
 
 operator = ['+','-','*','/','%']
@@ -44,17 +54,7 @@ def operate (oper, stack) :
         case '/': return (a / b)
         case '%': return (a % b)
 
-def isminus (expr, idx) :
-    prev , next = idx - 1, idx + 1
-
-    if expr[idx] != '-' : return False
-    if idx == 0 : return True
-    if re.match("-?[0-9]*.?[0-9]+$", expr[prev]) : return False
-    if expr[prev] == ')' or expr[prev] == '(' : return False
-    if expr[prev] in operator : return True
-    return False
-
-def getsub (expr) : 
+def getsub (expr) :
     sub = []
     i , pile = 1, 1
 
@@ -98,19 +98,19 @@ class Interpreter:
         number = ("^-?[0-9]*.?[0-9]+$")
         identf = ("_?[a-zA-Z]+_?|_[0-9]+");
         expr = tokenize(source)
-        
+
         if len(expr) == 0 : return ''
-        
+
         while running :
             if expr[i] == 'fn' :
                 if expr[1] in self.vars : raise ValueError("ERROR: This name already exist as a variable.")
                 mid = expr.index('=>')
                 vars, func, args = expr[2:mid], expr[mid + 1:], {}
-                
-                for var in vars : 
+
+                for var in vars :
                     if not var in func or var in args :  raise ValueError("ERROR: Invalid function.")
                     args[var] = True
-                    
+
                 self.func[expr[1]] = [vars, func]
                 return ''
             elif expr[i] == '(' :
@@ -138,15 +138,15 @@ class Interpreter:
                         if cell in vars : cell = args[vars.index(cell)]
                         sub += cell
 
-                    i = nxt 
-                    stack.append( self.input(''.join(sub))) 
+                    i = nxt
+                    stack.append( self.input(''.join(sub)))
                 else :
                     raise ValueError('ERROR: Unknown identifier.')
             elif expr[i] in operator :
                 while oper and order(oper[-1]) >= order(expr[i]) :
                     stack.append( operate(oper, stack) )
                 oper.append(expr[i])
-                             
+
             i += 1
             if i >= len(expr) : running = False
 
@@ -155,7 +155,7 @@ class Interpreter:
         match len(stack) :
             case 0 : return 0
             case 1 : return stack.pop()
-        
+
         raise ValueError('ERROR: Invalid input.')
 
 ##################################################################################

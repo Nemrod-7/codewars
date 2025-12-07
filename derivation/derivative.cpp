@@ -6,8 +6,7 @@
 #include <tuple>
 #include <complex>
 #include <functional>
-
-// current solution without regex
+// interpreter v5.0 without regex, handling of complex numbers
 
 // Let f be a function.
 // The derivative function, denoted by f′, is the function whose domain consists of those values of x
@@ -61,7 +60,7 @@ bool is_fact (const string &src) {
 bool is_func (const string &input) {
     return input == "sin" || input == "cos" || input == "tan" || input == "log" || input == "cot";
 }
-bool is_number (const string &input) {
+bool is_nume (const string &input) {
 
     if (input.size() == 0) return false;
 
@@ -74,7 +73,7 @@ bool is_number (const string &input) {
 
     return true;
 }
-bool is_operator (const string &input) {
+bool is_oper (const string &input) {
     return is_fact(input) || is_term(input) || input == "^";
 }
 
@@ -104,7 +103,7 @@ vector<string> tokenize (const string &input) {
             while (isalpha(input[i])) buffer += input[i++];
             code.push_back(buffer);
         } else if (input[i] == '-') {
-            if (code.size() == 0 || is_operator(code.back())) {
+            if (code.size() == 0 || is_oper(code.back())) {
                 string buffer = "-";
                 i++;
 
@@ -161,19 +160,19 @@ bool precedence (const vector<string> &stack, const string &cell) {
     return order(stack.back()) >= order(cell);
 }
 bool compare (string a, double b) {
-    if (!is_number(a)) return false;
+    if (!is_nume(a)) return false;
     return stod(a) == b;
 }
 
 string mktok (string src) {
-    if (is_number(src) || src == "x") return src;
+    if (is_nume(src) || src == "x") return src;
     return "(" + src + ")";
 }
 
 string add (string a, string b) {
 
     if (a == "inf" || b == "inf") return "inf";
-    if (is_number(a) && is_number(b)) return to_string(stod(a) + stod(b));
+    if (is_nume(a) && is_nume(b)) return to_string(stod(a) + stod(b));
     if (compare(a, 0)) return b;
     if (compare(b, 0)) return a;
     if (a == b) return ( "2 * " + b);
@@ -188,7 +187,7 @@ string sub (string a, string b) {
 
     if (compare(b, 0)) return a;
 
-    if (is_number(a) && is_number(b)) return to_string(stod(a) - stod(b));
+    if (is_nume(a) && is_nume(b)) return to_string(stod(a) - stod(b));
     return mktok(a) + "-" + mktok(b);
 }
 string mul (string a, string b) {
@@ -197,7 +196,7 @@ string mul (string a, string b) {
     if (compare(a, 1)) return b;
     if (compare(b, 1)) return a;
     if (compare(a, 0) || compare(b, 0)) return "0";
-    if (is_number(a) && is_number(b)) return to_string(stod(a) * stod(b));
+    if (is_nume(a) && is_nume(b)) return to_string(stod(a) * stod(b));
     //if (a == b) return (a + "^2");
 
     return mktok(a) + "*" + mktok(b);
@@ -209,7 +208,7 @@ string div (string a, string b) {
     if (b == "inf") return "0";
     if (compare(b, 1)) return a;
 
-    if (is_number(a) && is_number(b)) {
+    if (is_nume(a) && is_nume(b)) {
         return to_string(stod(a) / stod(b));
     }
 
@@ -220,7 +219,7 @@ string exp (string a, string b) {
     if (compare(b, 1)) return a;
     if (compare(a, 1) || compare(b, 0)) return "1";
 
-    if (is_number(a) && is_number(b)) {
+    if (is_nume(a) && is_nume(b)) {
         return to_string(pow(stod(a),  stod(b)));
     }
 
@@ -264,11 +263,11 @@ complex<double> evaluate (const std::string &input, complex<double> val) {
 
         if (cell == "x") {
             vars.push_back(val);
-        } else if (is_number(cell)) {
+        } else if (is_nume(cell)) {
             vars.push_back(stod(cell));
         } else if (cell == "(") {
             vars.push_back(evaluate(getsub(it,end), val));
-        } else if (is_operator(cell)) {
+        } else if (is_oper(cell)) {
 
             while (precedence(oper, cell)) {
                 complex<double> b = getstack(vars), a = getstack(vars);
@@ -333,12 +332,12 @@ string derivate (const string &input) {
 
         if (cell == "x") {
             vars.push_back({cell,"1"});
-        } else if (is_number(cell)) {
+        } else if (is_nume(cell)) {
             vars.push_back({cell,"0"});
         } else if (cell == "(") {
             string sub = getsub(it,end), dub = derivate(sub);
             vars.push_back({sub,dub});
-        } else if (is_operator(cell)) {
+        } else if (is_oper(cell)) {
             while (precedence(oper, cell)) {
                 vars.push_back(diff(vars,oper));
             }

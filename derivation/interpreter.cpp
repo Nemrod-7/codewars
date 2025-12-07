@@ -7,15 +7,15 @@
 #include <complex>
 #include <functional>
 
-//#include "/home/Nemrod-7/include/Timer.hpp"
-//#include "/home/Nemrod-7/include/Assert.hpp"
-//#include "tests.hpp"
+// #include "/home/Nemrod-7/include/Timer.hpp"
+// #include "/home/Nemrod-7/include/Assert.hpp"
+// #include "tests.hpp"
 
 // clang++ -fPIC -I $(INCLUDE) -L $(LIB_PATH) -c eval.cpp -o eval.o
 // clang++ -shared =I$(INCLUDE) -L $(LIB_PATH) -lglobal -Wl,-rpath,$(LIB_PATH) eval.o -o libeval.so
 // clang++ -I ~/code/interpreter/include -L ~/code/interpreter/lib -leval eval.cpp
 
-// simple interactive interpreter :
+// simple interactive interpreter v4.0:
 //
 //function        ::= fn-keyword fn-name { identifier } fn-operator expression
 //fn-name         ::= identifier
@@ -47,13 +47,14 @@ struct symbol {
     symbol (std::complex<double> n) : num(n), str("") {}
 };
 
-using inum = std::complex<double>;
-using func_t = std::function<inum(inum)>;
+using value_ = std::complex<double>;
+using funct_ = std::function<value_(value_)>;
 using expression = std::vector<symbol>;
 
 const std::regex operat ("^[-+*%/^=]$");
 const std::regex identf ("_?[a-zA-Z]+_?|_[0-9]+");
-const std::regex trigon ("^sin|cos|tan|cot|log|sec|csc$");
+const std::regex trigon ("^sin|cos|tan|cot|log|sec|csc|ln$");
+// const std::regex trigo ("^asin|acos|atan|$");
 const std::regex number ("^-?\\d+(\\.\\d+)?$|^\\(-?\\d+(\\.\\d+)?,-?\\d+(\\.\\d+)?\\)$");
 
 const expression zero = {symbol(0.0)}, one {symbol(1.0)}, two = {symbol(2.0)};
@@ -191,7 +192,6 @@ template<class T> T getstack(std::vector<T> &stack) {
 bool isnum (const expression &term) {
     return term.size() == 1 && term[0].str == "";
 }
-
 int order (const std::string &src) {
     if (src == "+" || src == "-") return 1;
     if (src == "*" || src == "/" || src == "%") return 2;
@@ -218,7 +218,7 @@ expression tokenize (const std::string &input) {
             curr = "-" + temp[i + 1];
             i += 2;
         }
-
+        
         if (regex_match(curr, number)) {
             code.push_back(stod(curr));
         } else {
@@ -347,7 +347,6 @@ std::pair<expression,expression> operate (std::vector<std::pair<expression, expr
 
         res = {exp(f1,f2), mul(exp(f1,f2), inner)} ;
     } else if (op == "%") {
-
         res = {mod(f1,f2), {zero}} ;
     } else {
         throw::std::logic_error ("Invalid operator.");
@@ -355,8 +354,7 @@ std::pair<expression,expression> operate (std::vector<std::pair<expression, expr
 
     return res;
 }
-std::pair<expression,expression> interpreter (expression expr, const std::complex<double> &val = {0,0}) {
-    // expression -> { fonction, derivative }
+std::pair<expression,expression> evaluate (expression expr, const std::complex<double> &val = {0,0}) { // expression -> { fonction, derivative }
     bool running = true;
     expression fx;
     expression::iterator it = expr.begin(), end = expr.end();
@@ -383,7 +381,7 @@ std::pair<expression,expression> interpreter (expression expr, const std::comple
             return {zero,zero};
         } else if (regex_match(curr.str, trigon)) {
             it++;
-            auto [var, dx] = interpreter(getsub(it,end), val);
+            auto [var, dx] = evaluate(getsub(it,end), val);
             expression nxt = brace(var);
 
             if (curr.str == "log") {
@@ -412,7 +410,20 @@ std::pair<expression,expression> interpreter (expression expr, const std::comple
             } else if (curr.str == "csc") {
                 fx = (isnum(var)) ? expression {symbol(sec(nxt[0].num))} : curr.str + nxt;
                 heap.push_back( { fx , mul(dx, mul("cot" + nxt, "csc" + nxt)) });
-            } else {
+            } else if (curr.str == "ln") {
+                fx = (isnum(var)) ? expression {symbol(log(var[0].num))} : curr.str + nxt;
+                heap.push_back( { fx , div( dx, nxt)});
+            }
+
+              else if (curr.str == "acos") {
+                // fx = (isnum(var)) ? expression {symbol(acos(nxt[0].num))} : curr.str + nxt;
+            } else if (curr.str == "asin") {
+                // fx = (isnum(var)) ? expression {symbol(asin(nxt[0].num))} : curr.str + nxt;
+            } else if (curr.str == "atan") {
+                // fx = (isnum(var)) ? expression {symbol(atan(nxt[0].num))} : curr.str + nxt;
+            }
+
+            else {
                 throw::std::logic_error ("Invalid trigonometric function.");
             }
 
@@ -421,7 +432,7 @@ std::pair<expression,expression> interpreter (expression expr, const std::comple
                 if (fbase.find (curr.str) != fbase.end())
                     throw::std::logic_error ("Invalid initializer.");
 
-                values[curr.str] = interpreter ({it + 2, end});
+                values[curr.str] = evaluate ({it + 2, end});
                 return values[curr.str];
             } else if (values.find (curr.str) != values.end()) {
 
@@ -437,15 +448,15 @@ std::pair<expression,expression> interpreter (expression expr, const std::comple
                 for (symbol &tok : lmda) {
                     if (regex_match (tok.str, identf)) {
                         int pos = find (values.begin(), values.end(), tok.str) - values.begin();
-                        next = next + interpreter(args[pos]).first;
+                        next = next + evaluate(args[pos]).first;
                     } else {
                         next.push_back(tok);
                     }
                 }
 
-                heap.push_back(interpreter(next));
+                heap.push_back(evaluate(next));
             } else if (curr.str == "x") {
-                fx = val == inum{0,0} ? expression {curr} : expression {symbol(val)};
+                fx = val == value_{0,0} ? expression {curr} : expression {symbol(val)};
                 heap.push_back({fx, {symbol(1.0)}});
             } else {
                 throw::std::logic_error ("Invalid identifier.");
@@ -453,7 +464,7 @@ std::pair<expression,expression> interpreter (expression expr, const std::comple
         } else if (curr.str == "") { // if symbol is a number
             heap.push_back({{curr}, {symbol(0.0)}});
         } else if (curr.str == "(") {
-            heap.push_back(interpreter(getsub(it,end), val));
+            heap.push_back(evaluate(getsub(it,end), val));
         } else if (regex_match(curr.str, operat)) {
             while (precedence(oper, curr.str)) {
                 heap.push_back(operate(heap,oper));
@@ -474,112 +485,26 @@ std::pair<expression,expression> interpreter (expression expr, const std::comple
     return getstack(heap);
 }
 
-std::tuple<func_t,func_t,func_t> differentiate (const std::string &input) { // for testing purpose only
-
+std::tuple<funct_,funct_,funct_> differentiate (const std::string &input) { // for testing purpose only
     //cout << "expression : [" <<  input << "]\n" << flush;
     expression pass0 = tokenize(input);
-    expression pass1 = interpreter(pass0).second;
-    expression pass2 = interpreter(pass1).second;
+    expression pass1 = evaluate(pass0).second;
+    expression pass2 = evaluate(pass1).second;
 
     return {
-        [pass0](inum x) { return interpreter(pass0, x).first[0].num; },
-            [pass1](inum x) { return interpreter(pass1, x).first[0].num; },
-            [pass2](inum x) { return interpreter(pass2, x).first[0].num; },
+        [pass0](value_ x) { return evaluate(pass0, x).first[0].num; },
+        [pass1](value_ x) { return evaluate(pass1, x).first[0].num; },
+        [pass2](value_ x) { return evaluate(pass2, x).first[0].num; },
     };
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-namespace txt {
 
-    const std::vector<std::string> help = {
-        "",
-
-      "Commands :\n"
-          //"exit derivate interpret help clear save show rules time pause\n"
-          "general : exit clear save load\n"
-          "mode    : evaluate derivate brainfuck\n"
-          "info    : help rules mode values base\n"
-          "modules : time rain sudoku brainfuck\n"
-          "variable: speed\n"
-          "\n\n",
-
-        "rules of differentiation : \n\n"
-        "Let f be a function.\n"
-        "The derivative function, denoted by f′, is the function whose domain\n"
-        "consists of those values of x such that the following limit exists:\n"
-        "f′(x) = lim h→0 of (f(x + h) − f(x)) / h.\n\n"
-        "cst : 1     => 0\n"
-        "lin : x     => 1\n"
-        "add : a + b => a' + b'\n"
-        "sub : a - b => a' - b'\n"
-        "mul : a * b => a.b' + a'.b\n"
-        "div : a / b => (a'* b − b'* a) / (b * b)\n"
-        "exp : x ^ y => x^y . (x'.(y/x) + y'.log(x))\n"
-        "log : log x => x' / x\n"
-        "sin : sin x => x'.cos x\n"
-        "cos : cos x => -x'.sin x\n"
-        "tan : tan x => x' / (cos(x))^2\n"
-        "cot : cot x => -x' / (sin(x))^2\n"
-        "sec : sec x => sec x . tan x . x'\n"
-        "csc : csc x => cot x . csc x . x'\n\n" ,
-
-        "Constants :\n" "e pi tau\n\n"
-        "Functions :\n"
-        "cos sin tan cot sec csc \n"
-        "log rad deg sqr         \n"
-        //"     cos    acos     deg    abs\n"
-        //"     sin    asin    sqrt    rad\n"
-        //"     tan    atan     sqr    deg\n\n"
-        "Operators :\n"
-        "+ - * % / ^ = =>\n\n"
-        "lambdas :\n"
-        "fn 'name' 'parameters' => 'function'\n"
-        "ex : fn avg x y => (x + y) / 2      \n\n",
-
-        "brainfuck rules: \n\n"
-            "> : move pointer forward\n"
-            "< : move pointer backward\n"
-            "+ : increment cell under pointer\n"
-            "- : decrement cell under pointer\n"
-            ". : output cell under pointer\n"
-            ", : input celll under pointer\n"
-            "[ : loop until cell equal zero\n"
-            "] : move backward if cell is not empty\n",
-  };
-
-    const std::string sav =
-        "\nsave expression to the base\nformat :\n\n"
-        "fn [name](param) => <expression> :: save as lambda.\n"
-        "   [name]        =  <expression> :: save as value.\n\n"
-        "ex: fn radian x => x * 360.0 * pi\n\n";
-
-    const std::vector<std::string> menu = {"File", "Place","Help","Base","Mode","clear","Time","Module"}; // main menu
-
-    std::vector<std::vector<std::string>> sub { // sub menus
-        {"Save","Load","Exit"},{}, {"commands$$", "interpreter"  ,"derivation", "brainfuck$"}, {"values$", "lambdas"}, {"evaluate","derivate$","brainfuck", "sudoku$$$"}, {"input$$", "console"}, {}, {"Rain$$$$", "Password"}
-    };
-
-    const std::vector<std::string> mode {"no mode selected", "evaluate", "derivate", "brainfuck", "sudoku"};
-    const std::vector<std::string> speed {"disable", "instant", "fast", "medium", "slow", "sluggish"};
-    const std::vector<std::string> difficulty = {"beginner", "easy", "medium", "hard", "hell"};
-    const std::vector<std::string> sudosub = {"solve", "new", "reset", "level"}; // main menu
-}
-
-class interface {
-    private:
-
-    public:
-        enum mode_t {no_mode, evaluate, derivate, brainfck, sudoku};
-
-};
-/*
 int main () {
-
     // Timer clock;
     // clock.start();
 
     fbase["echo"] = {tokenize("x"), tokenize("x")};
     fbase["inc"] = {tokenize("x"), tokenize("x + 1")};
-    fbase["sqr"] = {tokenize("x"), tokenize("x * x")};
     fbase["add"] = {tokenize("x y"), tokenize("x + y")};
     fbase["sub"] = {tokenize("x y"), tokenize("x - y")};
     fbase["mul"] = {tokenize("x y"), tokenize("x * y")};
@@ -588,62 +513,6 @@ int main () {
     fbase["rad"] = {tokenize("x y"), tokenize("x * pi / 180.0")};
     fbase["deg"] = {tokenize("x y"), tokenize("x * 180.0 / pi")};
 
-    enum mode_t { no_mode, evaluate, derivate, brainfck, sudoku };
-
-    std::string input;
-    std::stringstream iss;
-    //std::cout << interpret("avg 4 2") << "\n";
-    int mode = no_mode;
-    bool running = true;
-
-    while (running) {
-        std::cout << "enter input > ";
-        std::getline(std::cin, input);
-
-        if (input == "exit" || input == "quit") {
-            running = false;
-        } else if (input == "evaluate") {
-            mode = evaluate;
-        } else if (input == "derivate") {
-            mode = derivate;
-        } else if (input == "brainfuck") {
-            mode = brainfck;
-        }
-
-        else if (input == "help") {
-            std::cout << txt::help[0];
-        } else if (input == "rules") {
-            std::cout << txt::help[1];
-        } else if (input == "mode") {
-            std::cout << txt::mode[mode] << "\n";
-        } else if (input == "values") {
-            for (auto &[name, value] : values) {
-                std::cout << name << " => " << show::expr(value.first) << "\n";
-            }
-        } else if (input == "base") {
-            for (auto &[name,func] : fbase) {
-                std::cout << name << " => " << show::expr(func.first) << " | " << show::expr(func.second) << "\n";
-            }
-        }
-
-        else {
-
-            try {
-                expression code = tokenize(input);
-                auto [fx,dx] = interpreter(code);
-
-                switch (mode) {
-                    case evaluate : std::cout << "fx : " << show::expr(fx) << "\n"; break;
-                    case derivate : std::cout << "dx : " << show::expr(dx) << "\n"; break;
-                    default: std::cout << "no mode selected\n"; break;
-                }
-            } catch (const std::exception &x) {
-                std::cout << "error : " << x.what() << "\n";
-            }
-        }
-    }
-
     // clock.stop();
     // clock.get_duration();
 }
-*/

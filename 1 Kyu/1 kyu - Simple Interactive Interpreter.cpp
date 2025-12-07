@@ -7,7 +7,7 @@
 #include <functional>
 
 using namespace std;
-// simple interactive interpreter
+// simple interactive interpreter v4.0
 //
 //function        ::= fn-keyword fn-name { identifier } fn-operator expression
 //fn-name         ::= identifier
@@ -58,11 +58,14 @@ template<class T> T getstack (vector<T> &S) {
 }
 
 vector<string> tokenize (const string &expr) {
-    regex re ("=>|_?[0-9]+(\\.[0-9]+)?|[-+*/%()=\\[\\]]|_?[a-zA-Z]+_?");
-    //regex re ("=>|(_|-)?[0-9]+(\\.[0-9]+)?|[-+*/%()=\\[\\]]|_?[a-zA-Z]+_?");
+  // ("\\s* ( => | [-+*%=\(\)] | [A-Za-z_] [A-Za-z0-9_]* | [0-9]*\.?[0-9]+ ) \\s*");
+  // regex re ("=>|_?[0-9]+(\\.[0-9]+)?|[-+*/%()=\\[\\]]|_?[a-zA-Z]+_?");
+  // regex re ("\\s*(=>|[-+*\/\%=\(\)]|[A-Za-z_][A-Za-z0-9_]*|[0-9]*\.?[0-9]+)\\s*");
+  regex re ("\\s*(=>|[-+*%=\\/\\(\\)]|[A-Za-z_][A-Za-z0-9_]*|[0-9]*.?[0-9]+)\\s*");
+
     sregex_token_iterator it (expr.begin(), expr.end(), re);
     return vector<string> (it, sregex_token_iterator());
-}
+  }
 
 vector<string> getargs (vector<string>::iterator &it, const vector<string> &expr) {
 
@@ -122,82 +125,82 @@ double pass1 (vector<string> expr) {
     regex number ("^-?[0-9]+(.[0-9]+)?$");
     regex identi ("_?[a-zA-Z]+_?|_[0-9]+");
 
-    display(expr);
+    // display(expr);
     bool running = true;
 
     vector<double> value;
     vector<string> oper;
 
     while (running) {
+        string curr = *it;
 
-        int sign = 1;
+        if (curr == "fn") {
+            // string name = *++it;
+            // auto mid = find (it, end, "=>");
+            //
+            // for (auto fn_ex = it + 1; fn_ex != mid; fn_ex++) {
+            //     if (find (mid, end, *fn_ex) == end)
+            //         throw::logic_error ("Unknown identifier.");
+            //
+            //     if (find (it + 1, fn_ex, *fn_ex) != fn_ex)
+            //         throw::logic_error ("Invalid function.");
+            // }
+            //
+            // fbase[name] = {getsub (it, mid), getsub (it, end)};
+        } else if (curr == "(") {
+            value.push_back(pass1 (tokenize(getsub (it, end))));
+        } else if (regex_match(curr, number)) {
+            value.push_back(stod(curr));
+        } else if (regex_match(curr, identi)) {
 
-        if (isvar (expr, it - start)) {
-            sign = -1, it++;
-        }
-
-        string token = *it;
-
-        if (regex_match(token, number)) {
-            value.push_back(stod(token) * sign);
-        } else if (regex_match(token, identi)) {
-
-            if (token == "fn") {
-
-                string name = *++it;
-                auto mid = find (it, end, "=>");
-
-                for (auto fn_ex = it + 1; fn_ex != mid; fn_ex++) {
-                    if (find (mid, end, *fn_ex) == end)
-                        throw::logic_error ("Unknown identifier.");
-
-                    if (find (it + 1, fn_ex, *fn_ex) != fn_ex)
-                        throw::logic_error ("Invalid function.");
-                }
-
-                fbase[name] = {getsub (it, mid), getsub (it, end)};
-            } else if (find (it, end, "=") != end) {
-
-                if (fbase.find (token) != fbase.end())
-                    throw::logic_error ("Invalid initializer.");
-
-                vars[token] = pass1 ({it + 2, end});
-                return vars[token];
-            } else if (vars.find (token) != vars.end()) {
-                value.push_back (vars[token]);
-            } else if (fbase.find (token) != fbase.end()) {
-
-                vector<string> args = getargs (it, expr);
-                vector<string> vars = tokenize (fbase[token].first), lmda = tokenize (fbase[token].second);
-                cout << token << "\n";
-                // display(args);
-                if (args.size() != vars.size())
-                    throw::logic_error ("Invalid number of argument.");
-
-                for (auto &tok : lmda) {
-                    if (regex_match (tok, identi)) {
-                        int pos = find (vars.begin(), vars.end(), tok) - vars.begin();
-                        tok = to_string (pass1 (tokenize(args[pos])));
-                    }
-                }
-
-                value.push_back(pass1 (lmda));
-
-            } else {
-                throw::logic_error ("Invalid identifier.");
-            }
-        } else if (token == "(") {
-            value.push_back(pass1 (tokenize(getsub (it, end))) * sign);
-        } else if (order[token] != 0){
-
-            if (!oper.empty() && order[oper.back()] >= order[token]) {
-                double b = getstack (value), a = getstack (value);
-                value.push_back(operate[getstack (oper)] (a,b));
-            }
-            oper.push_back(token);
         } else {
             throw::logic_error ("Invalid operator.");
         }
+        // if (regex_match(token, identi)) {
+        //     if (token == "fn") {
+
+        //     } else if (find (it, end, "=") != end) {
+        //
+        //         if (fbase.find (token) != fbase.end())
+        //             throw::logic_error ("Invalid initializer.");
+        //
+        //         vars[token] = pass1 ({it + 2, end});
+        //         return vars[token];
+        //     } else if (vars.find (token) != vars.end()) {
+        //         value.push_back (vars[token]);
+        //     } else if (fbase.find (token) != fbase.end()) {
+        //
+        //         vector<string> args = getargs (it, expr);
+        //         vector<string> vars = tokenize (fbase[token].first), lmda = tokenize (fbase[token].second);
+        //         cout << token << "\n";
+        //         // display(args);
+        //         if (args.size() != vars.size())
+        //             throw::logic_error ("Invalid number of argument.");
+        //
+        //         for (auto &tok : lmda) {
+        //             if (regex_match (tok, identi)) {
+        //                 int pos = find (vars.begin(), vars.end(), tok) - vars.begin();
+        //                 tok = to_string (pass1 (tokenize(args[pos])));
+        //             }
+        //         }
+        //
+        //         value.push_back(pass1 (lmda));
+        //
+        //     } else {
+        //         throw::logic_error ("Invalid identifier.");
+        //     }
+        // } else if (token == "(") {
+        //     value.push_back(pass1 (tokenize(getsub (it, end))) * sign);
+        // } else if (order[token] != 0){
+        //
+        //     if (!oper.empty() && order[oper.back()] >= order[token]) {
+        //         double b = getstack (value), a = getstack (value);
+        //         value.push_back(operate[getstack (oper)] (a,b));
+        //     }
+        //     oper.push_back(token);
+        // } else {
+        //     throw::logic_error ("Invalid operator.");
+        // }
 
         it++;
         if (it >= end) running = false;
@@ -319,19 +322,18 @@ void Test () {
 ///////////////////////////////////////////////////////////////////////////////////////
 int main (int argc, char **argv) {
 
+
+
     // interpret("(fn f => 1)");
     // Assert::That(interpret("fn sq x => x * x"), Equals(0));
     // cout << interpret ("sq (4/2)");
 
-    string input = " 4 5 6";
-    vector<string> expr = tokenize (input);
-    vector<string>::iterator it = expr.begin();
-
-    vector<string> args = getargs (it, expr);
-    cout << args.size();
+    // string input = " 4 5 6";
+    // vector<string> expr = tokenize (input);
+    // vector<string>::iterator it = expr.begin();
+    //
+    // vector<string> args = getargs (it, expr);
     // display(args);
 
     cout << "end";
 }
-
-

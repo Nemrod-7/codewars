@@ -24,11 +24,18 @@ class Display {
     private :
         static inline struct winsize win;
         static inline int width, height;
-        static inline wchar_t *prev, *buffer;
+        static inline int *color;
+        static inline wchar_t *buffer;
 
         static bool isinside (int x, int y) { return x >= 0 && y >= 0 && x < width && y < height; }
-        static void mark (int x, int y, wchar_t ch) {
+        static void plot (int x, int y, wchar_t ch) {
             if (isinside(x,y)) buffer[y * width + x] = ch;
+        }
+        static void plot (int x, int y, pixel pix) {
+            if (isinside(x,y)) {
+                buffer[y * width + x] = pix.first;
+                color[y * width + x] = pix.second;
+            }
         }
 
     public :
@@ -36,12 +43,13 @@ class Display {
             // Disable iostream sync and increase stdout buffering:
             std::ios::sync_with_stdio(false); // for effiency
             std::cin.tie(nullptr);
-            setvbuf(stdout, nullptr, _IOFBF, 1<<20);
 
+            setvbuf(stdout, nullptr, _IOFBF, 1<<20);
             ioctl(0, TIOCGWINSZ, &win); // get terminal height and width
+
             height = win.ws_row - 1, width = win.ws_col;
+            color = new int[width * height];
             buffer = new wchar_t[width * height];
-            // prev = new wchar_t[width * height];
             clear();
         }
 
@@ -52,7 +60,7 @@ class Display {
             this_thread::sleep_for(100ms);
         }
         static void clear () {
-            // std::fill_n (prev, width * height, ' ');
+            std::fill_n (color, width * height, 0);
             std::fill_n (buffer, height * width, ' ');
         }
         static void draw(const std::string &sprite) {
@@ -62,7 +70,7 @@ class Display {
                 if (ch == '\n') {
                     nx = 0, ny++;
                 } else {
-                    mark (nx, ny, ch);
+                    plot (nx, ny, ch);
                     nx++;
                 }
             }
@@ -71,7 +79,7 @@ class Display {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-pair<int,int> operator+ (const pair<int,int> &a, const pair<int,int> &b) {
+pair<int,int> operator + (const pair<int,int> &a, const pair<int,int> &b) {
     return {a.first + b.first, a.second + b.second};
 }
 
