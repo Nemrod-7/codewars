@@ -65,8 +65,8 @@ fn get_origin(track: &Vec<Vec<char>>) -> (i32, i32) {
 
     for y in 0..track.len() {
         for x in 0..track[y].len() {
-            if track[y][x] != ' ' { 
-                return (x as i32 , y as i32); 
+            if track[y][x] != ' ' {
+                return (x as i32 , y as i32);
             }
         }
     }
@@ -75,7 +75,7 @@ fn get_origin(track: &Vec<Vec<char>>) -> (i32, i32) {
 }
 
 fn getcell(track : &Vec<Vec<char>>, prev: &(i32,i32), curr: &(i32,i32), index :usize) -> bool {
-    let next = add( curr, &DIRECT[index]);  
+    let next = add( curr, &DIRECT[index]);
     let index = index % 4;
 
     if !is_inside( &next, &track) { return false; }
@@ -96,17 +96,14 @@ fn getcell(track : &Vec<Vec<char>>, prev: &(i32,i32), curr: &(i32,i32), index :u
     false
 }
 
-fn move_next(wagon: &mut LinkedList<(i32, i32)>, p: &(i32,i32)) {
-    wagon.push_front( add( wagon.front().unwrap(), p));
-    wagon.pop_back();
-}
 fn move_wagon (track: &Vec<Vec<char>>, wagon: &mut LinkedList<(i32,i32)>) {
     let curr = *wagon.iter().nth(0).unwrap();
     let prev = *wagon.iter().nth(1).unwrap();
 
     for i in 0..8 {
         if getcell(track, &prev, &curr, i) {
-            move_next(wagon, &DIRECT[i]);
+            wagon.push_front( add( wagon.front().unwrap(), &DIRECT[i]));
+            wagon.pop_back();
         }
     }
 }
@@ -167,9 +164,9 @@ fn mk_train(track: &Vec<Vec<char>>, train: &str, pos:usize)-> Train {
     if ch.is_uppercase() {
         let dest = getstart(&track, pos);
 
-        // while &dest != wagon.front().unwrap() {
-        //     move_wagon(&track, &mut wagon);
-        // }
+        while &dest != wagon.front().unwrap() {
+            move_wagon(&track, &mut wagon);
+        }
     } else {
         for _ in 0..pos {
             move_wagon(&track, &mut wagon);
@@ -179,13 +176,15 @@ fn mk_train(track: &Vec<Vec<char>>, train: &str, pos:usize)-> Train {
     (id, size, wagon)
 }
 fn collision(a: &Train, b: &Train) -> bool {
-    // let hist:HashMap<(i32,i32), usize> = HashMap::new();
+
     let loco_a = a.2.front().unwrap();
     let loco_b = b.2.front().unwrap();
-
+    // print!("{:?}, {:?}\n", a, b);
     for tr in b.2.iter() {
         if loco_a == tr { return true; }
     }
+
+    a.2[0];
 
     for tr in a.2.iter() {
         if loco_b == tr { return true; }
@@ -195,36 +194,48 @@ fn collision(a: &Train, b: &Train) -> bool {
 }
 
 fn advance(track: &Vec<Vec<char>>, train: &mut Train, wait: &mut usize) {
-    let a = train.2.front().unwrap();
-    let (ax,ay) = (a.0 as usize, a.1 as usize);
-   
-    if track[ay][ax] == 'S' && *wait < (train.1 - 1)  {
-        *wait += 1
-    } else {
-        if *wait > 0 { *wait = 0 }
-        move_wagon(&track, &mut train.2);
-    }
 
+    match train.0 {
+        'X' => move_wagon(&track, &mut train.2),
+        _ => {
+            let a = train.2.front().unwrap();
+            let (ax,ay) = (a.0 as usize, a.1 as usize);
+
+            if track[ay][ax] == 'S' && *wait < (train.1 - 1)  {
+                *wait += 1
+            } else {
+                if *wait > 0 { *wait = 0 }
+                move_wagon(&track, &mut train.2);
+            }
+        },
+    }
 }
 pub fn train_crash( track: &str, a_train: &str, a_pos: usize, b_train: &str, b_pos: usize, limit: usize,) -> Option<usize> {
-
+    print!("\n{}, \"{}\", {}, \"{}\", {}, {}\n", track, a_train, a_pos, b_train, b_pos, limit);
     let rail = track
         .lines()
         .map(|line| line.trim_end_matches(' ').chars().map(|x| x as char).collect::<Vec<_>>() )
         .collect::<Vec<Vec<char>>>() ;
 
     let mut a_train = mk_train(&rail, &a_train, a_pos);
-    // let mut b_train = mk_train(&rail, &b_train, b_pos);
-    // let mut wait_a = a_train.1;
-    // let mut wait_b = b_train.1;
+    let mut b_train = mk_train(&rail, &b_train, b_pos);
+    let [mut wait_a, mut wait_b] = [a_train.1, b_train.1];
 
-    // for cnt in 1..limit {
-    //     advance(&rail, &mut a_train, &mut wait_a);
-    //     advance(&rail, &mut b_train, &mut wait_b);
-    //
-    //     if collision(&a_train, &b_train) { return Some(cnt); }
-    // }
-    // show_track(&rail, &a_train, &b_train);
+    if collision(&a_train, &b_train) { return Some(0); }
+    print!("{}", show_track(&rail, &a_train, &b_train));
+
+    for cnt in 0..limit {
+        advance(&rail, &mut a_train, &mut wait_a);
+        advance(&rail, &mut b_train, &mut wait_b);
+
+        print!("{}", show_track(&rail, &a_train, &b_train));
+        std::io::stdout().flush().unwrap();
+        thread::sleep( time::Duration::from_millis(100) );
+
+        if collision(&a_train, &b_train) { return Some(cnt + 1); }
+    }
+
+    // print!("{}", show_track(&rail, &a_train, &b_train));
     // animation(&rail, &mut a_train, &mut b_train);
     None
 }
@@ -232,18 +243,18 @@ pub fn train_crash( track: &str, a_train: &str, a_pos: usize, b_train: &str, b_p
 fn main() {
 
 
-    const TRACK_EX: &str = 
+    const TRACK_EX: &str =
         "                                /------------\\
 /-------------\\                /             |
 |             |               /              S
 |             |              /               |
-|        /----+--------------+------\\        |   
-\\       /     |              |      |        |     
- \\      |     \\              |      |        |                    
+|        /----+--------------+------\\        |
+\\       /     |              |      |        |
+ \\      |     \\              |      |        |
  |      |      \\-------------+------+--------+---\\
  |      |                    |      |        |   |
  \\------+--------------------+------/        /   |
-        |                    |              /    | 
+        |                    |              /    |
         \\------S-------------+-------------/     |
                              |                   |
 /-------------\\              |                   |
@@ -253,22 +264,67 @@ fn main() {
               |              |             |             \\
               |              |             |             |
               |              \\-------------+-------------/
-              |                            |               
-              \\----------------------------/ 
+              |                            |
+              \\----------------------------/
               ";
     // let res = train_crash(TRACK_EX, "Aaaa", 147, "Bbbbbbbbbbb", 288, 1000);
     // Some(516);
-
-    const track: &str = 
+const LOOP: &str =
 "/-----------------\\
 |                 |
 |                 |
 |                 |
 |                 |
-\\-----------------/";
-train_crash(track, "aaaaaA", 10 ,"bbbbbB", 30,100);
+\\---------S-------/";
 
-    // print!("{:?}\n", res);
+// left: `Some(1)`,
+// right: `Some(0)`:
 
-print!("end");
+const EIGHT: &str =
+"/-------\\
+|       |
+|       |
+|       |
+\\-------+--------\\
+        |        |
+        |        |
+        |        |
+        \\--------/" ;
+
+const GRAND: &str =
+"/-------\\
+|       |
+|       |
+\\-------+-------------------------------------------------------------------\\
+        |                                                                   |
+        |                                                                   |
+        \\-------------------------------------------------------------------/";
+
+const FOUR8: &str =
+"/-----\\   /-----\\   /-----\\   /-----\\
+|      \\ /       \\ /       \\ /      |
+|       X         X         X       |
+|      / \\       / \\       / \\      |
+\\-----/   \\-----/   \\-----/   \\-----/";
+
+let res = train_crash(GRAND, "aA", 10, "oooooooooooooooooooooooooO", 70, 200);
+// left: `Some(27)`,
+// right: `None`:
+// Your result (left) did not match the expected output (right)
+
+// let res = train_crash(GRAND, "aA", 10, "oooooooooooooooooooooooooO", 70, 200);
+
+
+// let res = train_crash(LOOP, "xX", 15, "Zzzzzzzzzzzzzz", 40, 100);
+print!("{:?}\n", res);
+
+// /-----------------\
+// |                 |
+// |                 |
+// |                 |
+// |                 |
+// \-----------------/,
+//
+
+print!("\nend\n");
 }
