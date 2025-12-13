@@ -184,8 +184,6 @@ fn collision(a: &Train, b: &Train) -> bool {
         if loco_a == tr { return true; }
     }
 
-    a.2[0];
-
     for tr in a.2.iter() {
         if loco_b == tr { return true; }
     }
