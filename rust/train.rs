@@ -175,22 +175,23 @@ fn mk_train(track: &Vec<Vec<char>>, train: &str, pos:usize)-> Train {
 
     (id, size, wagon)
 }
-fn collision(a: &Train, b: &Train) -> bool {
 
-    let loco_a = a.2.front().unwrap();
-    let loco_b = b.2.front().unwrap();
-    // print!("{:?}, {:?}\n", a, b);
-    for tr in b.2.iter() {
-        if loco_a == tr { return true; }
+fn collision (a: &LinkedList<(i32,i32)>, b: &LinkedList<(i32,i32)>) -> bool {
+    let mut tr_a = a.iter();
+    let mut tr_b = b.iter();
+    let loco_a = tr_a.next().unwrap();
+    let loco_b = tr_b.next().unwrap();
+
+    while let Some(wagon) = tr_b.next() {
+        if loco_a == wagon || loco_b == wagon { return true }
     }
 
-    for tr in a.2.iter() {
-        if loco_b == tr { return true; }
+    while let Some(wagon) = tr_a.next() {
+        if loco_a == wagon || loco_b == wagon { return true }
     }
 
     false
 }
-
 fn advance(track: &Vec<Vec<char>>, train: &mut Train, wait: &mut usize) {
 
     match train.0 {
@@ -219,19 +220,19 @@ pub fn train_crash( track: &str, a_train: &str, a_pos: usize, b_train: &str, b_p
     let mut b_train = mk_train(&rail, &b_train, b_pos);
     let [mut wait_a, mut wait_b] = [a_train.1, b_train.1];
 
-    if collision(&a_train, &b_train) { return Some(0); }
+    if collision(&a_train.2, &b_train.2) { return Some(0); }
     print!("{}", show_track(&rail, &a_train, &b_train));
 
-    for cnt in 0..limit {
-        advance(&rail, &mut a_train, &mut wait_a);
-        advance(&rail, &mut b_train, &mut wait_b);
-
-        print!("{}", show_track(&rail, &a_train, &b_train));
-        std::io::stdout().flush().unwrap();
-        thread::sleep( time::Duration::from_millis(100) );
-
-        if collision(&a_train, &b_train) { return Some(cnt + 1); }
-    }
+    // for cnt in 0..limit {
+    //     advance(&rail, &mut a_train, &mut wait_a);
+    //     advance(&rail, &mut b_train, &mut wait_b);
+    //
+    //     print!("{}", show_track(&rail, &a_train, &b_train));
+    //     std::io::stdout().flush().unwrap();
+    //     thread::sleep( time::Duration::from_millis(100) );
+    //
+    //     if collision(&a_train.2, &b_train.2) { return Some(cnt + 1); }
+    // }
 
     // print!("{}", show_track(&rail, &a_train, &b_train));
     // animation(&rail, &mut a_train, &mut b_train);
@@ -305,7 +306,16 @@ const FOUR8: &str =
 |      / \\       / \\       / \\      |
 \\-----/   \\-----/   \\-----/   \\-----/";
 
-let res = train_crash(GRAND, "aA", 10, "oooooooooooooooooooooooooO", 70, 200);
+const XWING: &str =
+"/----\\     /----\\
+|     \\   /     |
+|      \\ /      |
+|       S       |
+|      / \\      |
+|     /   \\     |
+\\----/     \\----/";
+
+let res = train_crash(XWING, "Eeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", 7, "Xxxx", 0, 100);
 // left: `Some(27)`,
 // right: `None`:
 // Your result (left) did not match the expected output (right)
