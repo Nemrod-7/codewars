@@ -1,6 +1,6 @@
 #![allow(warnings)]
 
-use std::collections::LinkedList;
+use std::collections::{LinkedList, HashMap};
 type Train = (char,usize, LinkedList<(i32,i32)>);
 
 fn process (iter: &mut Iterator<Item = (i32,i32)>)  {
@@ -14,17 +14,13 @@ fn process (iter: &mut Iterator<Item = (i32,i32)>)  {
 }
 
 fn collision (a: &LinkedList<i32>, b: &LinkedList<i32>) -> bool {
-    let mut tr_a = a.iter();
-    let mut tr_b = b.iter();
-    let loco_a = tr_a.next().unwrap();
-    let loco_b = tr_b.next().unwrap();
+    let mut map:HashMap<i32, usize> = HashMap::new();
 
-    while let Some(wagon) = tr_b.next() {
-        if loco_a == wagon || loco_b == wagon { return true }
-    }
+    for &it in a.iter() { *map.entry(it).or_insert(0) += 1; }
+    for &it in b.iter() { *map.entry(it).or_insert(0) += 1; }
 
-    while let Some(wagon) = tr_a.next() {
-        if loco_a == wagon || loco_b == wagon { return true }
+    for it in map {
+        print!("{} {}\n", it.0, it.1);
     }
 
     false
@@ -38,6 +34,7 @@ fn main() {
     train.push_back(4);
     train.push_back(3);
     train.push_back(5);
+    train.push_back(4);
 
     // let loco = train.front().unwrap();
 
