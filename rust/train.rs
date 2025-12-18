@@ -50,7 +50,7 @@ fn animation(rail: &Vec<Vec<char>>, a_train: &mut Train, b_train: &mut Train) {
     }
 }
 
-use std::collections::LinkedList;
+use std::collections::{LinkedList, HashMap};
 const BASE:[&str;4] = ["|+S","/XS", "-S", "\\XS"];
 const DIRECT:[(i32,i32);8] = [(0,-1),(1,-1),(1,0),(1,1),(0,1),(-1,1),(-1,0),(-1,-1)];
 
@@ -177,18 +177,27 @@ fn mk_train(track: &Vec<Vec<char>>, train: &str, pos:usize)-> Train {
 }
 
 fn collision (a: &LinkedList<(i32,i32)>, b: &LinkedList<(i32,i32)>) -> bool {
-    let mut tr_a = a.iter();
-    let mut tr_b = b.iter();
-    let loco_a = tr_a.next().unwrap();
-    let loco_b = tr_b.next().unwrap();
 
-    while let Some(wagon) = tr_b.next() {
-        if loco_a == wagon || loco_b == wagon { return true }
-    }
+    let mut map:HashMap<i32, usize> = HashMap::new();
 
-    while let Some(wagon) = tr_a.next() {
-        if loco_a == wagon || loco_b == wagon { return true }
+    for &it in a.iter() { *map.entry(it).or_insert(0) += 1; }
+    for &it in b.iter() { *map.entry(it).or_insert(0) += 1; }
+
+    for it in map {
+        if it.1 != 1 { return true }
     }
+    // let mut tr_a = a.iter();
+    // let mut tr_b = b.iter();
+    // let loco_a = tr_a.next().unwrap();
+    // let loco_b = tr_b.next().unwrap();
+    //
+    // while let Some(wagon) = tr_b.next() {
+    //     if loco_a == wagon || loco_b == wagon { return true }
+    // }
+    //
+    // while let Some(wagon) = tr_a.next() {
+    //     if loco_a == wagon || loco_b == wagon { return true }
+    // }
 
     false
 }
@@ -221,21 +230,18 @@ pub fn train_crash( track: &str, a_train: &str, a_pos: usize, b_train: &str, b_p
     let [mut wait_a, mut wait_b] = [a_train.1, b_train.1];
 
     if collision(&a_train.2, &b_train.2) { return Some(0); }
-    print!("{}", show_track(&rail, &a_train, &b_train));
 
-    // for cnt in 0..limit {
-    //     advance(&rail, &mut a_train, &mut wait_a);
-    //     advance(&rail, &mut b_train, &mut wait_b);
-    //
-    //     print!("{}", show_track(&rail, &a_train, &b_train));
-    //     std::io::stdout().flush().unwrap();
-    //     thread::sleep( time::Duration::from_millis(100) );
-    //
-    //     if collision(&a_train.2, &b_train.2) { return Some(cnt + 1); }
-    // }
+    for cnt in 0..limit {
+        advance(&rail, &mut a_train, &mut wait_a);
+        advance(&rail, &mut b_train, &mut wait_b);
 
-    // print!("{}", show_track(&rail, &a_train, &b_train));
-    // animation(&rail, &mut a_train, &mut b_train);
+        // print!("{}", show_track(&rail, &a_train, &b_train));
+        // std::io::stdout().flush().unwrap();
+        // thread::sleep( time::Duration::from_millis(100) );
+
+        if collision(&a_train.2, &b_train.2) { return Some(cnt + 1); }
+    }
+
     None
 }
 
