@@ -161,16 +161,22 @@ fn mk_train(track: &Vec<Vec<char>>, train: &str, pos:usize)-> Train {
         }
     }
 
-    if ch.is_uppercase() {
-        let dest = getstart(&track, pos);
-
-        while &dest != wagon.front().unwrap() {
-            move_wagon(&track, &mut wagon);
-        }
-    } else {
-        for _ in 0..pos {
-            move_wagon(&track, &mut wagon);
-        }
+    // if ch.is_uppercase() {
+    //     let dest = getstart(&track, pos);
+    //     let origin = get_origin(track);
+    //     let mut curr = LinkedList::from([origin]);
+    //
+    //     while &dest != wagon.front().unwrap() {
+    //         move_wagon(&track, &mut wagon);
+    //     }
+    //
+    // } else {
+    //     for _ in 0..pos {
+    //         move_wagon(&track, &mut wagon);
+    //     }
+    // }
+    for _ in 0..pos {
+        move_wagon(&track, &mut wagon);
     }
 
     (id, size, wagon)
@@ -178,7 +184,7 @@ fn mk_train(track: &Vec<Vec<char>>, train: &str, pos:usize)-> Train {
 
 fn collision (a: &LinkedList<(i32,i32)>, b: &LinkedList<(i32,i32)>) -> bool {
 
-    let mut map:HashMap<i32, usize> = HashMap::new();
+    let mut map:HashMap<(i32,i32), usize> = HashMap::new();
 
     for &it in a.iter() { *map.entry(it).or_insert(0) += 1; }
     for &it in b.iter() { *map.entry(it).or_insert(0) += 1; }
@@ -219,7 +225,7 @@ fn advance(track: &Vec<Vec<char>>, train: &mut Train, wait: &mut usize) {
     }
 }
 pub fn train_crash( track: &str, a_train: &str, a_pos: usize, b_train: &str, b_pos: usize, limit: usize,) -> Option<usize> {
-    print!("\n{}, \"{}\", {}, \"{}\", {}, {}\n", track, a_train, a_pos, b_train, b_pos, limit);
+    // print!("\n{}, \"{}\", {}, \"{}\", {}, {}\n", track, a_train, a_pos, b_train, b_pos, limit);
     let rail = track
         .lines()
         .map(|line| line.trim_end_matches(' ').chars().map(|x| x as char).collect::<Vec<_>>() )
@@ -228,6 +234,8 @@ pub fn train_crash( track: &str, a_train: &str, a_pos: usize, b_train: &str, b_p
     let mut a_train = mk_train(&rail, &a_train, a_pos);
     let mut b_train = mk_train(&rail, &b_train, b_pos);
     let [mut wait_a, mut wait_b] = [a_train.1, b_train.1];
+
+    print!("{}", show_track(&rail, &a_train, &b_train));
 
     if collision(&a_train.2, &b_train.2) { return Some(0); }
 
@@ -272,21 +280,19 @@ fn main() {
               |                            |
               \\----------------------------/
               ";
-    // let res = train_crash(TRACK_EX, "Aaaa", 147, "Bbbbbbbbbbb", 288, 1000);
+    let res = train_crash(TRACK_EX, "xxxxxxX", 35, "Aaaaaaaaaaaaaaaaaaaaaaaaa", 3, 2000);
+
     // Some(516);
-const LOOP: &str =
-"/-----------------\\
+    const LOOP: &str =
+        "/-----------------\\
 |                 |
 |                 |
 |                 |
 |                 |
 \\---------S-------/";
 
-// left: `Some(1)`,
-// right: `Some(0)`:
-
-const EIGHT: &str =
-"/-------\\
+    const EIGHT: &str =
+        "/-------\\
 |       |
 |       |
 |       |
@@ -296,8 +302,8 @@ const EIGHT: &str =
         |        |
         \\--------/" ;
 
-const GRAND: &str =
-"/-------\\
+    const GRAND: &str =
+        "/-------\\
 |       |
 |       |
 \\-------+-------------------------------------------------------------------\\
@@ -305,15 +311,15 @@ const GRAND: &str =
         |                                                                   |
         \\-------------------------------------------------------------------/";
 
-const FOUR8: &str =
-"/-----\\   /-----\\   /-----\\   /-----\\
+    const FOUR8: &str =
+        "/-----\\   /-----\\   /-----\\   /-----\\
 |      \\ /       \\ /       \\ /      |
 |       X         X         X       |
 |      / \\       / \\       / \\      |
 \\-----/   \\-----/   \\-----/   \\-----/";
 
-const XWING: &str =
-"/----\\     /----\\
+    const XWING: &str =
+        "/----\\     /----\\
 |     \\   /     |
 |      \\ /      |
 |       S       |
@@ -321,24 +327,24 @@ const XWING: &str =
 |     /   \\     |
 \\----/     \\----/";
 
-let res = train_crash(XWING, "Eeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", 7, "Xxxx", 0, 100);
-// left: `Some(27)`,
-// right: `None`:
-// Your result (left) did not match the expected output (right)
+    // let res = train_crash(XWING, "Eeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", 7, "Xxxx", 0, 100);
+    // left: `Some(27)`,
+    // right: `None`:
+    // Your result (left) did not match the expected output (right)
 
-// let res = train_crash(GRAND, "aA", 10, "oooooooooooooooooooooooooO", 70, 200);
+    // let res = train_crash(GRAND, "aA", 10, "oooooooooooooooooooooooooO", 70, 200);
 
 
-// let res = train_crash(LOOP, "xX", 15, "Zzzzzzzzzzzzzz", 40, 100);
-print!("{:?}\n", res);
+    // let res = train_crash(LOOP, "xX", 15, "Zzzzzzzzzzzzzz", 40, 100);
+    print!("{:?}\n", res);
 
-// /-----------------\
-// |                 |
-// |                 |
-// |                 |
-// |                 |
-// \-----------------/,
-//
+    // /-----------------\
+    // |                 |
+    // |                 |
+    // |                 |
+    // |                 |
+    // \-----------------/,
+    //
 
-print!("\nend\n");
+    print!("\nend\n");
 }
