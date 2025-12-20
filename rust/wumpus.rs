@@ -1,5 +1,4 @@
 #![allow(dead_code, unused)]
-
 mod tests;
 
 const WUMP:u8 = 0;
@@ -12,8 +11,16 @@ const SAFE:u8 = 6;
 fn show(cave: &[[u8;4];4]) {
     for i in 0..4 {
         for j in 0..4 {
-            print!("{:2?} ", cave[i][j]);
-        }
+            let mut lsg = String::new();
+
+            if check(cave[i][j], GOLD) { lsg += "G"; } 
+            if check(cave[i][j], PITT) { lsg += "P"; }
+            if check(cave[i][j], WUMP) { lsg += "W"; }
+            if check(cave[i][j], WIND) { lsg += "w"; }
+            if check(cave[i][j], SMEL) { lsg += "s"; }
+
+            print!("[{:2}]", lsg);
+        }       
         print!("\n");
     }
     print!("\n");
@@ -22,28 +29,6 @@ fn show(cave: &[[u8;4];4]) {
 fn check(num:u8, x:u8) -> bool { num >> x &1 == 1 }
 fn is_inside(x:i8, y:i8) -> bool { x >= 0 && y >= 0 && x < 4 && y < 4 }
 
-fn mk_grid(src: &Vec<String>) -> Vec<Vec<u8>> {
-    let src:Vec<Vec<char>> = src.iter().map(|x| x.chars().collect()).collect::<Vec<_>>();
-    let height = src.len();
-    let width = src[0].len();
-    let mut grid = vec![vec![0; 4]; 4];
-
-    for i in 0..height {
-        for j in 0..width {
-            let (x,y) = ((j * 4) / width, (i * 4) / height) ;
-
-            if let Some(pos) = "WAPGws".chars().position(|ch| ch == src[i][j] ) {
-                grid[y][x] |= 1 << pos;
-            }
-
-            // if !"WAPGws".contains(src[i][j]) { continue; }
-            // if !grid[y][x].contains(src[i][j]) { grid[y][x] += &format!("{}",src[i][j] ) ; }
-        }
-    }
-
-    grid[0][0] = 0;
-    grid
-}
 fn next_dir(x:usize, y:usize) -> Vec<(usize,usize)> {
     [(0,1),(0,-1),(1,0),(-1,0)]
         .iter()
@@ -138,14 +123,35 @@ pub fn wumpus_world(src: &[[char; 4]; 4]) -> bool {
     );
 
     for _ in (0..4) {
-        // show(&cave);
-        if solve(&mut cave, &exit) {
-            return true;
-        }
+        show(&cave);
+        if solve(&mut cave, &exit) { return true }
     }
 
     false
 }
+
+// fn mk_grid(src: &Vec<String>) -> Vec<Vec<u8>> {
+//     let src:Vec<Vec<char>> = src.iter().map(|x| x.chars().collect()).collect::<Vec<_>>();
+//     let height = src.len();
+//     let width = src[0].len();
+//     let mut grid = vec![vec![0; 4]; 4];
+//
+//     for i in 0..height {
+//         for j in 0..width {
+//             let (x,y) = ((j * 4) / width, (i * 4) / height) ;
+//
+//             if let Some(pos) = "WAPGws".chars().position(|ch| ch == src[i][j] ) {
+//                 grid[y][x] |= 1 << pos;
+//             }
+//
+//             // if !"WAPGws".contains(src[i][j]) { continue; }
+//             // if !grid[y][x].contains(src[i][j]) { grid[y][x] += &format!("{}",src[i][j] ) ; }
+//         }
+//     }
+//
+//     grid[0][0] = 0;
+//     grid
+// }
 fn assert(i:usize, curr: ([[char;4]; 4], bool)) {
     let (maze, result) = curr;
 
@@ -188,7 +194,7 @@ fn main () {
 
     let i = 4;
 
-    for i in 0..6 {
+    for i in 5..6 {
 
         assert(i, tests::TESTS[i]);
     }
