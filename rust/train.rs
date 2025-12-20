@@ -161,22 +161,19 @@ fn mk_train(track: &Vec<Vec<char>>, train: &str, pos:usize)-> Train {
         }
     }
 
-    // if ch.is_uppercase() {
-    //     let dest = getstart(&track, pos);
-    //     let origin = get_origin(track);
-    //     let mut curr = LinkedList::from([origin]);
-    //
-    //     while &dest != wagon.front().unwrap() {
-    //         move_wagon(&track, &mut wagon);
-    //     }
-    //
-    // } else {
-    //     for _ in 0..pos {
-    //         move_wagon(&track, &mut wagon);
-    //     }
-    // }
-    for _ in 0..pos {
-        move_wagon(&track, &mut wagon);
+    if ch.is_uppercase() {
+        let dest = getstart(&track, pos);
+        let origin = get_origin(track);
+        let mut curr = LinkedList::from([origin]);
+
+        while &dest != wagon.front().unwrap() {
+            move_wagon(&track, &mut wagon);
+        }
+
+    } else {
+        for _ in 0..pos {
+            move_wagon(&track, &mut wagon);
+        }
     }
 
     (id, size, wagon)
@@ -280,7 +277,7 @@ fn main() {
               |                            |
               \\----------------------------/
               ";
-    let res = train_crash(TRACK_EX, "xxxxxxX", 35, "Aaaaaaaaaaaaaaaaaaaaaaaaa", 3, 2000);
+    let res = train_crash(TRACK_EX, "Aaaa", 147, "Bbbbbbbbbbb", 288, 1000);
 
     // Some(516);
     const LOOP: &str =
