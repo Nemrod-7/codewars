@@ -43,7 +43,7 @@ fn show(cave: &[[u8;4];4]) -> String {
             if check(cave[i][j], SMEL) { lsg += "w"; }
             if check(cave[i][j], SAFE) { lsg += "."; }
 
-            os += &format!("[{:3}]", lsg);
+            os += &format!("[{:4}]", lsg);
         }
         os += &format!("\n");
     }
@@ -57,10 +57,10 @@ fn is_inside(x:i8, y:i8) -> bool { x >= 0 && y >= 0 && x < 4 && y < 4 }
 fn next_dir(x:usize, y:usize) -> Vec<(usize,usize)> {
     [(0,1),(0,-1),(1,0),(-1,0)]
         .iter()
-            .map(|(dx,dy)| (dx + x as i8, dy + y as i8) )
-            .filter(|&(nx,ny)| is_inside(nx, ny))
-            .map(|(nx,ny)| (nx as usize, ny as usize))
-            .collect::<Vec<_>>()
+        .map(|(dx,dy)| (dx + x as i8, dy + y as i8) )
+        .filter(|&(nx,ny)| is_inside(nx, ny))
+        .map(|(nx,ny)| (nx as usize, ny as usize))
+        .collect::<Vec<_>>()
 }
 fn neigh (grid: &[[u8;4];4], nx:usize, ny:usize, mark: u8) -> Vec<(usize,usize)> {
     let surr = next_dir(nx,ny)
@@ -69,17 +69,28 @@ fn neigh (grid: &[[u8;4];4], nx:usize, ny:usize, mark: u8) -> Vec<(usize,usize)>
         .map(|&(sx,sy)| (sx,sy))
         .collect::<Vec<_>>();
 
-    if surr.len() < 2 { return vec![]; }
     surr
 }
-fn solve(cave: &mut [[u8; 4]; 4], exit: &(usize,usize)) -> bool {
-    let mut grid = [[0; 4]; 4];
+
+fn detect_wumpus(grid: &mut [[u8; 4]; 4]) -> Option<(usize,usize)> {
+
+    for y in 0..4 {
+        for x in 0..4 {
+            if check(grid[y][x], WUMP) && neigh(&grid, x, y, SMEL).len() > 1 {
+                return Some((x,y));
+            }
+        }
+    }
+
+    None
+}
+
+fn explore(cave: &mut [[u8; 4]; 4], grid: &mut [[u8; 4]; 4]) {
     let mut visit = [[0; 4]; 4];
     let mut queue = vec![(0,0)];
 
     visit[0][0] = 1;
-
-    (0..4).for_each(|y| (0..4).for_each(|x| if cave[y][x] == 0 { grid[y][x] = 64; }));
+    // (0..4).for_each(|y| (0..4).for_each(|x| if cave[y][x] == 0 { grid[y][x] = 64; }));
     // next_dir(x,y).iter().for_each(|&(sx,sy)| grid[sy][sx] |= 1 << SAFE )
 
     append_file("result", & "====================\n");
@@ -89,53 +100,60 @@ fn solve(cave: &mut [[u8; 4]; 4], exit: &(usize,usize)) -> bool {
         if check(cave[y][x], PITT) { continue }
         if check(cave[y][x], WIND) { grid[y][x] |= 1 << WIND; }
         if check(cave[y][x], SMEL) { grid[y][x] |= 1 << SMEL; }
-        // print!("{x} {y} : {}  ", grid[y][x]);
-        
-        append_file("result", &(show(&grid) + "\n"));
 
         for (nx,ny) in next_dir(x,y) {
-            if grid[y][x] == 64 { grid[ny][nx] |= 1 << SAFE; }
+            if cave[y][x] == 0 { grid[ny][nx] |= 1 << SAFE; }
 
             if !check(grid[ny][nx], SAFE) {
                 if check(grid[y][x], WIND) { grid[ny][nx] |= 1 << PITT; }
                 if check(grid[y][x], SMEL) { grid[ny][nx] |= 1 << WUMP; }
-
-                if check(grid[ny][nx], WUMP) { // check the neighbour of a marked cell
-                                               // if there's more than 2 snell around it then then location is known : erase all other traces
-                    neigh(&grid, nx, ny, SMEL).iter().for_each( |&(sx,sy)| {
-                        // grid[sy][sx] &= !(1 << SMEL);
-                        cave[sy][sx] &= !(1 << SMEL);
-                    });
-                }
-
-                if check(grid[ny][nx], PITT) { // check the neighbour of a marked cell
-                                               // if there's more than 2 wind around it then then location is known : erase all other traces
-
-                    print!("{} {} : {} \n", x, y, grid[y][x]);
-                    neigh(&grid, nx, ny, WIND).iter().for_each( |&(sx,sy)| {
-                        // grid[sy][sx] &= !(1 << WIND);
-                        cave[sy][sx] &= !(1 << WIND);
-                    });
-                }
-
             }
 
             if check(grid[ny][nx], SAFE) && visit[ny][nx] == 0 {
                 visit[ny][nx] = 1;
                 queue.push( (nx, ny) );
             }
+        }
 
+        cave[y][x] = 0;
+    }
 
+    append_file("result", &(show(&grid) + "\n"));
+
+    if let Some((wx,wy)) = detect_wumpus(grid) {
+        (0..4).for_each(|y| (0..4).for_each(|x| if check(cave[y][x], SMEL) { cave[y][x] &= !(1 << SMEL) }));
+        (0..4).for_each(|y| (0..4).for_each(|x| if check(grid[y][x], SMEL) { grid[y][x] &= !(1 << SMEL) }));
+        (0..4).for_each(|y| (0..4).for_each(|x| if check(grid[y][x], WUMP) { grid[y][x] &= !(1 << WUMP) }));
+
+        grid[wy][wx] |= 1 << WUMP;
+    }
+
+    // map cleaning
+    for y in 0..4 {
+        for x in 0..4 {
+            if check(grid[y][x], PITT) {
+                if neigh(&grid, x, y, SAFE).len() >= 2 { // if the cell is surrounded by two explored cell 
+                    let four = neigh(&grid, x, y, WIND);
+
+                    if four.len() < 2 {
+                    // grid[y][x] &= !(1 << PITT);
+                    } else {
+                        // four.iter().for_each(|&(sx,sy)| { grid[sy][sx] &= !(1 << WIND) });
+                    }
+                } 
+            }
         }
     }
 
-
-    visit[exit.1][exit.0] == 1
+    append_file("result", &(show(&grid) + "\n"));
 }
 
 pub fn wumpus_world(src: &[[char; 4]; 4]) -> bool {
     let mut exit = (0,0);
     let mut cave = [[0u8;4];4];
+    let mut grid = [[0u8; 4]; 4];
+
+    grid[0][0] = 64;
 
     (0..4).for_each(|y|
         (0..4).for_each(|x|
@@ -157,8 +175,10 @@ pub fn wumpus_world(src: &[[char; 4]; 4]) -> bool {
         )
     );
 
-    for _ in (0..1) {
-        if solve(&mut cave, &exit) { 
+    for _ in (0..2) {
+        explore(&mut cave, &mut grid);
+
+        if check(grid[exit.1][exit.0], SAFE) { 
             return true 
         }
     }
@@ -169,6 +189,7 @@ pub fn wumpus_world(src: &[[char; 4]; 4]) -> bool {
 fn assert(i:usize, curr: ([[char;4]; 4], bool)) {
     let (maze, result) = curr;
 
+    print!("::{i}::\n");
     if wumpus_world(&maze) != result {
         print!("error : {i} expect : {result}\n");
     }
@@ -179,10 +200,10 @@ fn main () {
 
     clear_file("result");
 
-    assert(0, tests::TESTS[5]);
+    assert(0, tests::TESTS[6]);
 
-    for i in 0..0 {
-        assert(i, tests::TESTS[i]);
+    for i in 0..11 {
+        // assert(i, tests::TESTS[i]);
     }
 
 }
