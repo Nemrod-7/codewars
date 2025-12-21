@@ -1,3 +1,4 @@
+
   pub  const TESTS: [([[char; 4]; 4], bool); 16] = [
         (
             [
@@ -102,3 +103,57 @@
                 ['_', '_', '_', '_'],
             ], true,),
     ];
+
+
+// fn mk_grid(src: &Vec<String>) -> Vec<Vec<u8>> {
+//     let src:Vec<Vec<char>> = src.iter().map(|x| x.chars().collect()).collect::<Vec<_>>();
+//     let height = src.len();
+//     let width = src[0].len();
+//     let mut grid = vec![vec![0; 4]; 4];
+//
+//     for i in 0..height {
+//         for j in 0..width {
+//             let (x,y) = ((j * 4) / width, (i * 4) / height) ;
+//
+//             if let Some(pos) = "WAPGws".chars().position(|ch| ch == src[i][j] ) {
+//                 grid[y][x] |= 1 << pos;
+//             }
+//
+//             // if !"WAPGws".contains(src[i][j]) { continue; }
+//             // if !grid[y][x].contains(src[i][j]) { grid[y][x] += &format!("{}",src[i][j] ) ; }
+//         }
+//     }
+//
+//     grid[0][0] = 0;
+//     grid
+// }
+fn test2() {
+
+    let src = [
+        "|------------|------------|------------|------------|",
+        "|            |            |            |            |",
+        "|            |            |            |            |",
+        "|    Agent                                          |",
+        "|            |            |            |  wwwwwwww  |",
+        "|            |            |            |  wwwwwwww  |",
+        "|-----  -----|-----  -----|-----  -----|-----  -----|",
+        "|            |            |            |            |",
+        "|            |            |         ww |            |",
+        "|                                   ww       Pit    |",
+        "|  ssssssss  |            |  wwwwwwwww |            |",
+        "|  ssssssss  |            |  wwwwwwww  |            |",
+        "|-----  -----|-----  -----|-----  -----|-----  -----|",
+        "|            |            |            |  wwwwwwww  |",
+        "|            | ss      ww |            | wwwwwwwww  |",
+        "|   Wumpus     ss Gold ww       Pit      ww         |",
+        "|            | ss      ww |            | ww         |",
+        "|            |            |            |            |",
+        "|-----  -----|-----  -----|-----  -----|-----  -----|",
+        "|  ssssssss  |            |  wwwwwwww  |            |",
+        "|  ssssssss  |            |  wwwwwwww  |            |",
+        "|                                                   |",
+        "|            |            |            |            |",
+        "|            |            |            |            |",
+        "|------------|------------|------------|------------|"];
+
+}
