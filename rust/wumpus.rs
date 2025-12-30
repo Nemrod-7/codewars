@@ -76,17 +76,7 @@ fn neigh (grid: &[[usize;4];4], nx:usize, ny:usize, mark: usize) -> Vec<(usize,u
 
     surr
 }
-
-struct Wumpus {
-    pits : Vec<Point>,
-    wumpus : Option<Point>,
-}
-
-impl Wumpus {
-    fn new() -> Wumpus {
-        Wumpus { pits:vec![], wumpus:None }
-    }
-    fn sensor(&self, grid: &[[usize;4];4], x:usize, y:usize) -> [usize;8] {
+    fn sensor(grid: &[[usize;4];4], x:usize, y:usize) -> [usize;8] {
         let mut sense = [0;8];
 
         for (nx,ny) in next_dir(x,y) {
@@ -98,6 +88,15 @@ impl Wumpus {
 
         sense
     }
+struct Wumpus {
+    pits : Vec<Point>,
+    wumpus : Option<Point>,
+}
+
+impl Wumpus {
+    fn new() -> Wumpus {
+        Wumpus { pits:vec![], wumpus:None }
+    }
     fn clean(&mut self, grid: &mut [[usize;4];4]) {
         (0..4).for_each(|y|
             (0..4).for_each(|x|
@@ -105,19 +104,21 @@ impl Wumpus {
                     grid[y][x] &= !(1 << WUMP);
                     grid[y][x] &= !(1 << PITT);
                 }
-
             ) );
     }
 
     fn evaluate(&mut self, grid: &mut [[usize; 4]; 4]) {
         for y in 0..4 {
             for x in 0..4 {
-                let probe = self.sensor(grid,x,y);
+                let probe = sensor(grid,x,y);
 
                 if probe[SAFE] >= 2 { // if the cell is surrounded by two explored cell
                     if check(grid[y][x], WUMP) {
                         if probe[SMEL] < 2 { // if there's less than two ptr, then it's a false positive
                             grid[y][x] &= !(1 << WUMP);
+
+                            if grid[y][x] == 0 { grid[y][x] = 64 }
+                            // print!("{} {} {}\n", x, y, grid[y][x]);
                         } else { // else it's a sure threat grid[y][x] = 65;
                             self.wumpus = Some( (x,y) );
                         }
@@ -126,6 +127,9 @@ impl Wumpus {
                     if check(grid[y][x], PITT) {
                         if probe[WIND] < 2 { // and there less than 2 wind, then it's a false positive.
                             grid[y][x] &= !(1 << PITT);
+
+                            if grid[y][x] == 0 { grid[y][x] = 64 }
+                            // print!("{} {} {}\n", x, y, grid[y][x]);
                         } else { // otherwise it's a sure threat.
                             // print!("threat : {} {}\n", x, y);
                             if !exist(&self.pits, &(x,y)) { self.pits.push( (x,y) ); }
@@ -137,7 +141,7 @@ impl Wumpus {
 
         for y in 0..4 {
             for x in 0..4 {
-                let mut probe = self.sensor(grid,x,y);
+                let mut probe = sensor(grid,x,y);
 
                 if check(grid[y][x], SMEL) {
                     for &(nx,ny) in next_dir(x,y).iter() {
@@ -166,13 +170,12 @@ impl Wumpus {
 
         for &(x,y) in self.pits.iter() {
             let minv = next_dir(x,y).iter().filter(|&&(nx,ny)| check(grid[ny][nx], WIND)).map(|(nx,ny)| {
-                    let mut probe = self.sensor(grid,*nx,*ny);
+                    let mut probe = sensor(grid,*nx,*ny);
                     probe[SURR] - probe[SAFE]
             } ).min();
             // print!("[{} {}] -> {}\n", x, y, minv);
             hist.push( (minv, (x,y)) );
         }
-        // print!("{:?}\n", hist);
         hist.sort();
         hist
     }
@@ -191,10 +194,9 @@ impl Wumpus {
                         grid[y][x] &= !(1 << WUMP);
                     }
             ));
-            // print!("wumpus {:?}\n", (x,y));
-            // cave[y][x] &= !(1 << WUMP);
-            // cave[y][x] &= !(1 << WUMP);
-            grid[y][x] = 65;
+            print!("wumpus {:?}\n", (x,y));
+            // grid[y][x] = 65;
+            grid[y][x] |= 1 << SAFE
         }
 
         if self.pits.len() > npit {
@@ -202,8 +204,8 @@ impl Wumpus {
             self.pits = (0..std::cmp::min(npit, self.pits.len())).map(|i| scc[i].1 ).collect::<Vec<_>>();
         }
 
+        print!("{} pitts discovered: {:?}.\n", npit, self.pits);
         if self.pits.len() == npit {
-            // print!("{} pitts discovered: {:?}.\n", npits, pitt);
             for y in 0..4 {
                 for x in 0..4 {
                     cave[y][x] &= !(1 << WIND);
@@ -243,6 +245,25 @@ impl Wumpus {
         append_file("result", &(show(&grid) + "\n"));
     }
 }
+fn probability(grid: &mut [[usize; 4]; 4]) {
+    let mut score = [[0;4];4];
+
+    for y in 0..4 {
+        for x in 0..4 {
+            // let mut probe = sensor(grid,x,y);
+            // if grid[y][x] == 64 { score[y][x] = 0 }
+
+            // if check(grid[y][x], PITT) {
+                // let pt = probe[SURR] - probe[SAFE];
+
+                // print!("{} {} -> {:?} \n", x, y, probe);
+
+            // }
+            print!(" {} ", grid[y][x]);
+        }
+        print!("\n");
+    }
+}
 pub fn wumpus_world(src: &[[char; 4]; 4]) -> bool {
 
     let mut puzz = Wumpus::new();
@@ -275,13 +296,15 @@ pub fn wumpus_world(src: &[[char; 4]; 4]) -> bool {
 
     append_file("result", &(show(&cave) + "\n"));
 
-    for _ in (0..5) {
+    for _ in (0..4) {
         puzz.explore(&mut cave, &mut grid, npit);
 
         if check(grid[exit.1][exit.0], SAFE) {
             return true
         }
     }
+
+    probability(&mut grid);
 
     false
 }
@@ -300,9 +323,10 @@ fn main () {
 
     clear_file("result");
 
-    assert(0, tests::TESTS[10]);
+    assert(0, tests::TESTS[13]);
 
-    for i in 0..11 {
+    // print!("{}", tests::TESTS.len() );
+    for i in 0..tests::TESTS.len() {
         // assert(i, tests::TESTS[i]);
     }
 
