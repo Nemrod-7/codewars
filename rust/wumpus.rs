@@ -24,14 +24,15 @@ fn append_file(filename: &str, text: &str) {
 
 type Point = (usize, usize);
 
-const WUMP:u8 = 0;
-const PITT:u8 = 2;
-const GOLD:u8 = 3;
-const WIND:u8 = 4;
-const SMEL:u8 = 5;
-const SAFE:u8 = 6;
+const WUMP:usize = 0;
+const PITT:usize = 2;
+const GOLD:usize = 3;
+const WIND:usize = 4;
+const SMEL:usize = 5;
+const SAFE:usize = 6;
+const SURR:usize = 7;
 
-fn show(cave: &[[u8;4];4]) -> String {
+fn show(cave: &[[usize;4];4]) -> String {
     let mut os = String::new();
 
     for i in 0..4 {
@@ -52,7 +53,9 @@ fn show(cave: &[[u8;4];4]) -> String {
 
     os
 }
-fn check(num:u8, x:u8) -> bool { num >> x &1 == 1 }
+fn check(num:usize, x:usize) -> bool { num >> x &1 == 1 }
+fn exist(vec: &Vec<Point>, p: &Point) -> bool { vec.iter().find(|&x| x == p) != None }
+
 fn is_inside(x:i8, y:i8) -> bool { x >= 0 && y >= 0 && x < 4 && y < 4 }
 
 fn next_dir(x:usize, y:usize) -> Vec<(usize,usize)> {
@@ -64,7 +67,7 @@ fn next_dir(x:usize, y:usize) -> Vec<(usize,usize)> {
         .collect::<Vec<_>>()
 }
 
-fn neigh (grid: &[[u8;4];4], nx:usize, ny:usize, mark: u8) -> Vec<(usize,usize)> {
+fn neigh (grid: &[[usize;4];4], nx:usize, ny:usize, mark: usize) -> Vec<(usize,usize)> {
     let surr = next_dir(nx,ny)
         .iter()
         .filter(|(sx,sy)| check(grid[*sy][*sx], mark) )
@@ -83,89 +86,97 @@ impl Wumpus {
     fn new() -> Wumpus {
         Wumpus { pits:vec![], wumpus:None }
     }
-    fn sensor(&self, grid: &[[u8;4];4], x:usize, y:usize) -> [usize;8] {
+    fn sensor(&self, grid: &[[usize;4];4], x:usize, y:usize) -> [usize;8] {
         let mut sense = [0;8];
 
         for (nx,ny) in next_dir(x,y) {
             for i in 0..8 {
-                sense[i] += if check(grid[ny][nx], i as u8) { 1 } else { 0 };
+                sense[i] += if check(grid[ny][nx], i ) { 1 } else { 0 };
             }
-        } 
+            sense[7] += 1;
+        }
 
         sense
     }
-    fn clean(&mut self, grid: &mut [[u8;4];4]) {
-        (0..4).for_each(|y| 
-            (0..4).for_each(|x| 
-                if check(grid[y][x], SAFE) { 
+    fn clean(&mut self, grid: &mut [[usize;4];4]) {
+        (0..4).for_each(|y|
+            (0..4).for_each(|x|
+                if check(grid[y][x], SAFE) {
                     grid[y][x] &= !(1 << WUMP);
-                    grid[y][x] &= !(1 << PITT); 
-                } 
+                    grid[y][x] &= !(1 << PITT);
+                }
 
             ) );
     }
 
-    fn evaluate(&mut self, grid: &mut [[u8; 4]; 4]) {
+    fn evaluate(&mut self, grid: &mut [[usize; 4]; 4]) {
         for y in 0..4 {
             for x in 0..4 {
-                let surr = next_dir(x,y);
-                let mut probe = self.sensor(grid,x,y);
+                let probe = self.sensor(grid,x,y);
 
-                if probe[SAFE as usize] >= 2 { // if the cell is surrounded by two explored cell 
+                if probe[SAFE] >= 2 { // if the cell is surrounded by two explored cell
                     if check(grid[y][x], WUMP) {
-                        if probe[SMEL as usize] < 2 { // if there's less than two ptr, then it's a false positive
+                        if probe[SMEL] < 2 { // if there's less than two ptr, then it's a false positive
                             grid[y][x] &= !(1 << WUMP);
                         } else { // else it's a sure threat grid[y][x] = 65;
-                            self.wumpus = Some((x,y));
+                            self.wumpus = Some( (x,y) );
                         }
-                    }        
+                    }
 
                     if check(grid[y][x], PITT) {
-                        if probe[WIND as usize] < 2 { // and there less than 2 wind, then it's a false positive.
+                        if probe[WIND] < 2 { // and there less than 2 wind, then it's a false positive.
                             grid[y][x] &= !(1 << PITT);
                         } else { // otherwise it's a sure threat.
                             // print!("threat : {} {}\n", x, y);
-                            if self.pits.iter().find(|&p| *p == (x,y) ) == None { // grid[y][x] = 4;
-                                self.pits.push( (x,y) );
-                            }
+                            if !exist(&self.pits, &(x,y)) { self.pits.push( (x,y) ); }
                         }
-                    } 
+                    }
                 }
             }
         }
 
         for y in 0..4 {
             for x in 0..4 {
-                let surr = next_dir(x,y);
                 let mut probe = self.sensor(grid,x,y);
 
                 if check(grid[y][x], SMEL) {
-                    for &(nx,ny) in surr.iter() {
-                        if check(grid[ny][nx], PITT) && self.pits.iter().find(|&p| *p == (nx,ny)) != None {
-                            probe[SAFE as usize] += 1;
+                    for &(nx,ny) in next_dir(x,y).iter() {
+
+                        if check(grid[ny][nx], PITT) && !exist(&self.pits, &(nx,ny)) {
+                            probe[SAFE] += 1;
                         }
                     }
-
-                    if surr.len() - probe[SAFE as usize] == 1 {
-                        // print!("wump {:?}\n",neigh(grid, x,y, WUMP) );
+                    // print!("wump {:?}\n",neigh(grid, x,y, WUMP) );
+                    if probe[SURR] - probe[SAFE] == 1 {
                         self.wumpus = Some(neigh(grid, x,y, WUMP)[0]);
                     }
-                } 
+                }
 
                 if check(grid[y][x], WIND) {
-                    if surr.len() - probe[SAFE as usize] == 1 {
+                    if probe[SURR] - probe[SAFE] == 1 {
                         let next = neigh(grid, x,y, PITT);
-
-                        if next.len() == 1 && self.pits.iter().find(|&p| *p == next[0]) == None {
-                            self.pits.push( next[0] );
-                        }
+                        if next.len() == 1 && !exist(&self.pits, &next[0]) { self.pits.push( next[0] ); }
                     }
                 }
             }
         }
     }
+    fn score(&mut self, grid: &mut [[usize; 4]; 4]) -> Vec<(Option<usize>, Point)> {
+        let mut hist = vec![];
 
-    fn explore(&mut self, cave: &mut [[u8; 4]; 4], grid: &mut [[u8; 4]; 4], npit: usize) {
+        for &(x,y) in self.pits.iter() {
+            let minv = next_dir(x,y).iter().filter(|&&(nx,ny)| check(grid[ny][nx], WIND)).map(|(nx,ny)| {
+                    let mut probe = self.sensor(grid,*nx,*ny);
+                    probe[SURR] - probe[SAFE]
+            } ).min();
+            // print!("[{} {}] -> {}\n", x, y, minv);
+            hist.push( (minv, (x,y)) );
+        }
+        // print!("{:?}\n", hist);
+        hist.sort();
+        hist
+    }
+    fn explore(&mut self, cave: &mut [[usize; 4]; 4], grid: &mut [[usize; 4]; 4], npit: usize) {
         let mut visit = [[0; 4]; 4];
         let mut queue = vec![(0,0)];
         visit[0][0] = 1;
@@ -174,18 +185,23 @@ impl Wumpus {
         self.evaluate(grid);
 
         if let Some( (x,y) ) = self.wumpus {
-            (0..4).for_each(|y| (0..4).for_each(|x|  
-                    {
-                        cave[y][x] &= !(1 << SMEL); 
-                        grid[y][x] &= !(1 << SMEL); 
+            (0..4).for_each(|y| (0..4).for_each(|x| {
+                        cave[y][x] &= !(1 << SMEL);
+                        grid[y][x] &= !(1 << SMEL);
                         grid[y][x] &= !(1 << WUMP);
                     }
             ));
             // print!("wumpus {:?}\n", (x,y));
+            // cave[y][x] &= !(1 << WUMP);
+            // cave[y][x] &= !(1 << WUMP);
             grid[y][x] = 65;
         }
 
-        print!("pits : {:?}\n", self.pits);
+        if self.pits.len() > npit {
+            let scc = self.score(grid);
+            self.pits = (0..std::cmp::min(npit, self.pits.len())).map(|i| scc[i].1 ).collect::<Vec<_>>();
+        }
+
         if self.pits.len() == npit {
             // print!("{} pitts discovered: {:?}.\n", npits, pitt);
             for y in 0..4 {
@@ -195,10 +211,10 @@ impl Wumpus {
                     grid[y][x] &= !(1 << PITT);
                 }
             }
-            for &(x,y) in self.pits.iter() { 
-                grid[y][x] |= 1 << PITT 
+            for &(x,y) in self.pits.iter() {
+                grid[y][x] |= 1 << PITT
             }
-        } 
+        }
 
         append_file("result","==========================\n");
         append_file("result", &(show(&grid) + "\n"));
@@ -207,8 +223,8 @@ impl Wumpus {
             if check(cave[y][x], PITT) { continue }
             if check(cave[y][x], WIND) { grid[y][x] |= 1 << WIND; }
             if check(cave[y][x], SMEL) { grid[y][x] |= 1 << SMEL; }
-            if check(cave[y][x], WUMP) { grid[y][x] &= !(1 << WUMP) }
-
+            if check(cave[y][x], WUMP) { grid[y][x] &= !(1 << WUMP); }
+            // print!("{} {} {}\n", x, y, grid[y][x]);
             for (nx,ny) in next_dir(x,y) {
                 if grid[y][x] == 64 { grid[ny][nx] |= 1 << SAFE; }
 
@@ -231,8 +247,8 @@ pub fn wumpus_world(src: &[[char; 4]; 4]) -> bool {
 
     let mut puzz = Wumpus::new();
     let mut exit = (0,0);
-    let mut cave = [[0u8;4];4];
-    let mut grid = [[0u8;4];4];
+    let mut cave = [[0;4];4];
+    let mut grid = [[0;4];4];
     let mut npit = 0;
     grid[0][0] = 64;
 
@@ -262,8 +278,8 @@ pub fn wumpus_world(src: &[[char; 4]; 4]) -> bool {
     for _ in (0..5) {
         puzz.explore(&mut cave, &mut grid, npit);
 
-        if check(grid[exit.1][exit.0], SAFE) { 
-            return true 
+        if check(grid[exit.1][exit.0], SAFE) {
+            return true
         }
     }
 
@@ -284,7 +300,7 @@ fn main () {
 
     clear_file("result");
 
-    assert(0, tests::TESTS[3]);
+    assert(0, tests::TESTS[10]);
 
     for i in 0..11 {
         // assert(i, tests::TESTS[i]);
