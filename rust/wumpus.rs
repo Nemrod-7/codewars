@@ -55,39 +55,48 @@ const SURR:usize = 7;
 
 fn check(num:usize, x:usize) -> bool { num >> x &1 == 1 }
 fn exist(vec: &Vec<Point>, p: &Point) -> bool { vec.iter().find(|&x| x == p) != None }
+fn clear(num:usize, x:usize) -> usize { num & !(1 << x) }
+
 fn is_inside(x:i8, y:i8) -> bool { x >= 0 && y >= 0 && x < 4 && y < 4 }
 
+// fn direction(dir: [(i8,i8);4], x:usize, y:usize) -> Vec<(usize,usize)> {
+//     dir.iter()
+//         .map(|(dx,dy)| (dx + x as i8, dy + y as i8) )
+//         .filter(|&(nx,ny)| is_inside(nx, ny))
+//         .map(|(nx,ny)| (nx as usize, ny as usize))
+//         .collect::<Vec<_>>()
+// }
 fn cross(x:usize, y:usize) -> Vec<(usize,usize)> {
     [(0,1),(0,-1),(1,0),(-1,0)]
         .iter()
-        .map(|(dx,dy)| (dx + x as i8, dy + y as i8) )
-        .filter(|&(nx,ny)| is_inside(nx, ny))
-        .map(|(nx,ny)| (nx as usize, ny as usize))
-        .collect::<Vec<_>>()
+            .map(|(dx,dy)| (dx + x as i8, dy + y as i8) )
+            .filter(|&(nx,ny)| is_inside(nx, ny))
+            .map(|(nx,ny)| (nx as usize, ny as usize))
+            .collect::<Vec<_>>()
 }
 fn diags(x:usize, y:usize) -> Vec<(usize,usize)> {
     [(1,1),(-1,-1),(1,-1),(-1,1)]
         .iter()
-        .map(|(dx,dy)| (dx + x as i8, dy + y as i8) )
-        .filter(|&(nx,ny)| is_inside(nx, ny))
-        .map(|(nx,ny)| (nx as usize, ny as usize))
-        .collect::<Vec<_>>()
+            .map(|(dx,dy)| (dx + x as i8, dy + y as i8) )
+            .filter(|&(nx,ny)| is_inside(nx, ny))
+            .map(|(nx,ny)| (nx as usize, ny as usize))
+            .collect::<Vec<_>>()
 }
 fn neigh (grid: &[[usize;4];4], nx:usize, ny:usize, mark: usize) -> Vec<(usize,usize)> {
-        cross(nx,ny).iter().filter(|(sx,sy)| check(grid[*sy][*sx], mark) ).map(|&(sx,sy)| (sx,sy)).collect::<Vec<_>>()
+    cross(nx,ny).iter().filter(|(sx,sy)| check(grid[*sy][*sx], mark) ).map(|&(sx,sy)| (sx,sy)).collect::<Vec<_>>()
 }
-    fn sensor(grid: &[[usize;4];4], x:usize, y:usize) -> [usize;8] {
-        let mut sense = [0;8];
+fn sensor(grid: &[[usize;4];4], x:usize, y:usize) -> [usize;8] {
+    let mut sense = [0;8];
 
-        for (nx,ny) in cross(x,y) {
-            for i in 0..8 {
-                sense[i] += if check(grid[ny][nx], i ) { 1 } else { 0 };
-            }
-            sense[7] += 1;
+    for (nx,ny) in cross(x,y) {
+        for i in 0..8 {
+            sense[i] += if check(grid[ny][nx], i ) { 1 } else { 0 };
         }
-
-        sense
+        sense[7] += 1;
     }
+
+    sense
+}
 
 struct Wumpus {
     pits : Vec<Point>,
@@ -99,13 +108,7 @@ impl Wumpus {
         Wumpus { pits:vec![], wumpus:None }
     }
     fn clean(&mut self, grid: &mut [[usize;4];4]) {
-        (0..4).for_each(|y|
-            (0..4).for_each(|x|
-                if check(grid[y][x], SAFE) {
-                    grid[y][x] &= !(1 << WUMP);
-                    grid[y][x] &= !(1 << PITT);
-                }
-            ) );
+        (0..4).for_each(|y| (0..4).for_each(|x| if check(grid[y][x], SAFE) { grid[y][x] &= !(1 << (WUMP | PITT)) }) );
     }
 
     fn evaluate(&mut self, grid: &mut [[usize; 4]; 4]) {
@@ -134,10 +137,9 @@ impl Wumpus {
                         }
                     }
                 }
-                
+
                 if probe[SURR] - probe[SAFE] == 1 {
                     if check(grid[y][x], SMEL) {
-
                         self.wumpus = Some(neigh(grid, x,y, WUMP)[0]);
                     }
                     if check(grid[y][x], WIND) && probe[PITT] == 1 {
@@ -150,9 +152,9 @@ impl Wumpus {
     }
 
     fn explore(&mut self, cave: &mut [[usize; 4]; 4], grid: &mut [[usize; 4]; 4], npit: usize) {
-        let mut visit = [[0; 4]; 4];
+        let mut visit = [[false; 4]; 4];
         let mut queue = vec![(0,0)];
-        visit[0][0] = 1;
+        visit[0][0] = true;
 
         self.clean(grid);
         self.evaluate(grid);
@@ -160,8 +162,7 @@ impl Wumpus {
         if let Some( (x,y) ) = self.wumpus {
             (0..4).for_each(|y| (0..4).for_each(|x| {
                 cave[y][x] &= !(1 << SMEL);
-                grid[y][x] &= !(1 << SMEL);
-                grid[y][x] &= !(1 << WUMP);
+                grid[y][x] &= !(1 << (SMEL | WUMP)); // grid[y][x] &= !(1 << WUMP);
             }
             ));
             grid[y][x] |= 1 << SAFE
@@ -187,7 +188,7 @@ impl Wumpus {
             if check(cave[y][x], WIND) { grid[y][x] |= 1 << WIND; }
             if check(cave[y][x], SMEL) { grid[y][x] |= 1 << SMEL; }
             if check(cave[y][x], WUMP) { grid[y][x] &= !(1 << WUMP); }
-            // print!("{} {} {}\n", x, y, grid[y][x]);
+
             for (nx,ny) in cross(x,y) {
                 if grid[y][x] == 64 { grid[ny][nx] |= 1 << SAFE; }
 
@@ -196,8 +197,8 @@ impl Wumpus {
                     if check(grid[y][x], SMEL) { grid[ny][nx] |= 1 << WUMP; }
                 }
 
-                if check(grid[ny][nx], SAFE) && visit[ny][nx] == 0 {
-                    visit[ny][nx] = 1;
+                if check(grid[ny][nx], SAFE) && !visit[ny][nx] {
+                    visit[ny][nx] = true;
                     queue.push( (nx, ny) );
                 }
             }
