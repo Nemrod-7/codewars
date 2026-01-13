@@ -1,19 +1,8 @@
+import re
 
-def test_case( field, action) :
+name = '3,7-dicyclobutyloctane'
 
-    # field = [ 'JUNK' ]
+name = name.replace('cyclo', ' cyclo ')
+name = re.findall(r"\S+", name)
 
-
-m = [
-    'SX#  EDE ',
-    '  # EEEEE',
-    '#-#     X',
-    '         ',
-    '^       K',
-]
-# test_case(m, ['F'])
-
-for i in range(len(m)) :
-    print(m[i])
-
-
+print(name)
