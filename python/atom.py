@@ -13,6 +13,7 @@ MULTIPLIERS = ["--","di",     "tri",     "tetra",     "penta",     "hexa",     "
 HYDROCARBON = ['ane','ene', 'yne' , 'yl' ] # => ['C']
 HALOGEN = ['fluoro','chloro','bromo','iodo'] # => ['F','Cl','Br','I']
 
+
 def prefix(text, arr) :
     max = [i for i in range(len(arr)) if arr[i] == text[:len(arr[i])] ]
     return [text, 1] if max == [] else [text[len(arr[max[-1]]):] , max[-1] + 1]
@@ -66,7 +67,7 @@ def parser(name) :
                 name = chain.replace('cyclo', ' cyclo ')
                 name = re.findall(r"\S+", name)
                 cyclo = false
-                
+
                 for ident in token :
                     if ident == 'cyclo' :
                         cyclo = true
@@ -147,7 +148,7 @@ def parser(name) :
         for atom in branch :
             element = atom[0]
             valence = table[element][0]
-            
+
             while len(atom[1]) < valence : atom[1].append('H')
 
             print(atom)

@@ -14,147 +14,55 @@ MULTIPLIERS = ["--","di", "tri", "tetra", "penta", "hexa", "hepta", "octa", "non
 HYDROCARBON = ['ane','ene', 'yne' , 'yl' ] # => ['C']
 HALOGEN = ['fluoro','chloro','bromo','iodo'] # => ['F','Cl','Br','I']
 
+class UnlockedMolecule(Exception) :
+    def __init__(self) :
+        super().__init__('Unlocked Molecule.')
+class LockedMolecule(Exception):
+    def __init__(self) :
+        super().__init__('Locked Molecule.')
+class EmptyMolecule(Exception) :
+    def __init__(self) :
+        super().__init__('Empty Molecule.')
+class InvalidBond(Exception):
+    def __init__(self) :
+        super().__init__('Invalid Bond')
 
-def prefix(text, arr) :
-    max = [i for i in range(len(arr)) if arr[i] == text[:len(arr[i])] ]
-    return 1 if max == [] else max[-1] + 1
-    # return [text, 1] if max == [] else [text[len(arr[max[-1]]):] , max[-1] + 1]
+class Atom() :
+    def __init__(self, id, elt, adj) :
+        self.id = id
+        self.element = elt
+        self.edge = adj
 
-def bond (a, b) :
-    a[1].append(b[0])
-    b[1].append(a[0])
+    def __hash__(self):      return self.id
+    def __eq__(self, other): return self.id == other.id
 
-def brancher(radical) :
-    branch = [['C', []] for _ in range(radical)]
+    def __str__(self) :
+        self.edge.sort(key = lambda x: x.id  )
+        self.edge.sort(key = lambda x: order.index(x.element) if x.element != 'H' else len(order)  )
 
-    for i in range(1, len(branch)) :
-        bond(branch[i-1], branch[i-0])
-    return branch
+        prefix = 'Atom(' + self.element + '.' + str(self.id)
+        edge =  ['H' if bond.element == 'H' else bond.element + str(bond.id) for bond in self.edge]
 
-def tokenize (name) :
-    name = name.replace('cyclo', ' cyclo ')
-    name = name.replace('[', ' { ').replace(']', ' } ')
-    name = name.replace('{', ' ] ').replace('}', ' [ ')
-    name = name.replace('-', ' ')
-    for sub in HYDROCARBON : name = name.replace(sub, sub + ' ')
-    for sub in HALOGEN : name = name.replace(sub, sub + ' ')
-    name = re.findall(r'\S+', name)
-    name.reverse()
-    return name
+        if len(edge) > 0 : prefix += ': '
+        return prefix + ','.join(edge) + ')'
 
-def identify(name) :
-    # if name == '[' or name == ']' : return 'sub'
-    if name[-3:] == 'ane' : return 'alkane'
-    elif name[-3:] == 'ene' : return 'alkene'
-    elif name[-3:] == 'yne' : return 'alkyne'
-    elif name[-2:] == 'yl' : return 'alkyl'
-    elif name[:8] == 'hydroxy' or name[-2:] == 'ol' : return 'alcool'
-    elif name[:8] == 'mercapto' or name[-5:] == 'thiol' : return 'thiol'
-    elif name[:5] == 'imino' or name[-5:] == 'imine' : return 'imine'
-    elif name[:3] == 'oxo' or name[-3:] == 'one' : return 'ketone'
-    elif name[:5] == 'amido' or name[-5:] == 'amide' : return 'amide'
-    elif name[:6] == 'formyl' or name[-2:] == 'al': return 'aldehyde'
-    elif name[-5:] == 'acid' : return 'carboxylic acid'
-    if name[-6:] == 'fluoro' or name[-6:] == 'chloro' or name[-5:] == 'bromo' or name[-4:] == 'iodo' : return 'halogen'
-    return ''
+    def bond(atom1, atom2) :
+        a1, a2 = atom1, atom2
 
-def getsub(name, index) :
-    pile = 1
+        if a1 == a2 : raise InvalidBond
+        if not a1.valid_valence() or not a2.valid_valence() : raise InvalidBond
 
-    while True :
-        if name[index] == '[' : pile += 1
-        if name[index] == ']' : pile -= 1
+        atom1.edge.append(a2)
+        atom2.edge.append(a1)
 
-        if pile == 0 : return index
-        index += 1
-
-    return 0
-
-def parser(name) :
-    index = 0
-    formula  = ''
-    position = []
-    molecule = []
-    code = tokenize(name)
-
-    while index < len(code) :
-        pos = re.findall(r'\d+', code[index])
-        print(code[index], end='')
-
-        if code[index] == '[' :
-            print(' => sub')
-            next = getsub(code, index + 1)
-            # parser(code[index + 1 : next])
-            index = next
-        if code[index] == 'cyclo' :
-            print(' => cycle')
-            branch = molecule[-1]
-            bond(branch[0], branch[-1])
-        elif pos != [] :
-            print(' => position')
-            position.append(pos)
-        else :
-            type = identify(code[index])
-            print(" => " , identify(code[index]))
-
-            match type :
-                case 'alkane' :
-                    radical = prefix(code[index], RADICALS)
-                    branch = brancher(radical)
-                    molecule.append(branch)
-                case 'alkyl' :
-                    radical = prefix(code[index], RADICALS)
-                    branch = brancher(radical)
-                case 'alkene' :
-                    pass
-                case 'alkyne' :
-                    pass
-
-                case 'halogen' :
-                    match code[index] :
-                        case 'fluoro' : molecule.append([['F',[]]])
-                        case 'chloro' : molecule.append([['Cl',[]]])
-                        case 'bromo' : molecule.append([['Br',[]]])
-                        case 'iodo' : molecule.append([['I',[]]])
-                case 'alcool' :
-                    molecule.append([['OH',[]]])
-                case 'thiol'  :
-                    molecule.append([['SH',[]]])
-                case 'imine'  :
-                    molecule.append([['NH',[]]])
-                case 'ketone' :
-                    molecule.append([['O',[]]])
-                case 'amide'  :
-                    pass
-                case 'aldehyde' :
-                    pass
-
-        index += 1
-
-    while molecule :
-        branch = molecule.pop()
-        for atom in branch :
-            element = atom[0]
-            valence = table[element][0]
-
-            while len(atom[1]) < valence : atom[1].append('H')
-
-            hist = { x: atom[1].count(x) for x in set(atom[1]) if table[x][0] == 1 }
-            formula += element + ''.join(elt + str(hist[elt]) if hist[elt] != 1 else elt for elt in hist) + '-'
-            print(atom)
-        print()
-
-    formula = formula[:-1]
-    print(formula)
-    return []
-
-# parser('methane')
+    def valid_valence(self) :
+        return len(self.edge) < table[self.element][0]
 # parser('ethane')
 # parser('propane')
 # parser('butane')
 # parser('cyclobutane')
 
-parser('1-fluoropentane')
+# parser('1-fluoropentane')
 # parser('2-methylbutane')
 
 # parser('2,3,5-trimethylhexane')
