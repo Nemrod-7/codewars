@@ -7,4 +7,4 @@ DEBUG: pause: False
 DEBUG: repl: python
 DEBUG: args: ['/home/nemrod7/code/codewars/python/fullmetalchemist.py']
 INFO: return code: 0 (0x0)
-INFO: elapsed time: 0.027173
+INFO: elapsed time: 0.036832

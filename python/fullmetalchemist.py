@@ -76,7 +76,26 @@ def getsub(name, index) :
 
     return 0
 
+def display(molecule) :
+    while molecule :
+        branch = molecule.pop()
+        for atom in branch :
+            id = atom[0]
+            edge = atom[2];
+            element = atom[1]
+            valence = table[element][0]
+
+            while len(atom[2]) < valence :
+                edge.append([0, 'H', []])
+
+            hist = [at[1] for at in edge if table[at[1]][0] == 1]
+            hist = { x: hist.count(x) for x in set(hist) }
+            # formula += element + ''.join(elt + str(hist[elt]) if hist[elt] != 1 else elt for elt in hist) + '-'
+            print(id, element, hist)
+        print()
+
 def parser(name) :
+    print(name)
     index = 0
     formula  = ''
     position = []
@@ -100,6 +119,7 @@ def parser(name) :
             # print(' => position')
             alkx = molecule.pop()
             main = molecule.pop()
+            # for i in range(len(main)) : print(main[i][1])
 
             for i in range(len(pos)) :
                 branch = alkx.copy()
@@ -124,13 +144,12 @@ def parser(name) :
                     pass
                 case 'alkyne' :
                     pass
-
                 case 'halogen' :
                     match code[index] :
-                        case 'iodo' : molecule.append([['I',[]]])
-                        case 'bromo' : molecule.append([['Br',[]]])
-                        case 'fluoro' : molecule.append([['F',[]]])
-                        case 'chloro' : molecule.append([['Cl',[]]])
+                        case 'iodo' : molecule.append([ [0,'I',[]] ])
+                        case 'bromo' : molecule.append([ [0,'Br',[]] ])
+                        case 'fluoro' : molecule.append([ [0,'F',[]] ])
+                        case 'chloro' : molecule.append([ [0,'Cl',[]] ])
                 case 'alcool' :
                     molecule.append([['OH',[]]])
                 case 'thiol'  :
@@ -148,27 +167,30 @@ def parser(name) :
 
     while molecule :
         branch = molecule.pop()
+
         for atom in branch :
-            id = atom[0]
-            element = atom[1]
-            edge = atom[2];
+            id, element, edge = atom;
             valence = table[element][0]
 
+            formula += atom[1]
+
             while len(atom[2]) < valence :
+                formula += 'H'
                 edge.append([0, 'H', []])
 
+            # hist = [at[1] for at in edge if table[at[1]][0] == 1]
+            # hist = { x: hist.count(x) for x in set(hist) }
+            # formula += element + ''.join(elt + str(hist[elt]) if hist[elt] != 1 else elt for elt in hist) + '-'
 
-            hist = [at[1] for at in edge if table[at[1]][0] == 1]
-            hist = { x: hist.count(x) for x in set(hist) }
-            formula += element + ''.join(elt + str(hist[elt]) if hist[elt] != 1 else elt for elt in hist) + '-'
             # print(id, element, hist)
         # print()
+    # display(molecule)
 
     formula = formula[:-1]
     print(formula)
     return []
 
-# parser('methane')
+parser('methane')
 parser('ethane')
 # parser('propane')
 # parser('butane')
@@ -176,8 +198,8 @@ parser('ethane')
 
 # parser('1-fluoropentane')
 # parser('2-methylbutane')
-
 # parser('2,3,5-trimethylhexane')
+
 # parser('3-ethyl-2,5-dimethylhexane')
 
 
