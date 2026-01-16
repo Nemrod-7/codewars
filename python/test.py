@@ -1,8 +1,8 @@
-import re
 
-name = '3,7-dicyclobutyloctane'
+atom1 = [0, 'C', []]
+atom2 = [1, 'O', []]
+atom3 = copy.deepcopy(atom1)
 
-name = name.replace('cyclo', ' cyclo ')
-name = re.findall(r"\S+", name)
+atom1[2].append('H')
 
-print(name)
+print(atom3)
