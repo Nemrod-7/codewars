@@ -54,7 +54,7 @@ And don't forget to read the very last section, well named "the pins in the a**"
 Notes to the chemists or those who bother:
 
     The names you'll encounter will always be "well formed", but they won't always be "the good one", especially in the random tests. Meaning, they will always represent an actual molecule/be parsable applying the rules below, but they could not be the real name for that molecule (for example: incorrect choice of the main chain, inversion of the numbering of the positions, ...). Those who know a bit about nomenclature could see them. For the others, don't bother with that, just apply the given rules ;)
-    To make the task manageable, having more consistent strings for the names, the positions of the groups/ramifications will be written following the way of the French nomenclature where the position is right on...the left... XD of the related part. Meaning, expect "butan-2-ol" instead of "2-butanol", and so on. 
+    To make the task manageable, having more consistent strings for the names, the positions of the groups/ramifications will be written following the way of the French nomenclature where the position is right on...the left... XD of the related part. Meaning, expect "butan-2-ol" instead of "2-butanol", and so on.
 
 
 
@@ -72,14 +72,15 @@ propane = ...                     ->  CH3-CH2-CH3
 butane  = ...                     ->  CH3-CH2-CH2-CH3
 ...
 
-RADICALS = ["meth",  "eth",   "prop",   "but",      "pent",     "hex",     "hept",     "oct",     "non",    "dec",  
+RADICALS = ["meth",  "eth",   "prop",   "but",      "pent",     "hex",     "hept",     "oct",     "non",    "dec",
             "undec", "dodec", "tridec", "tetradec", "pentadec", "hexadec", "heptadec", "octadec", "nonadec"]
 
 You'll find the RADICALS list (up to 19 carbons) in the solution setup.
 
     Ramified alkanes
 
-If the molecule isn't linear, you can name it by picking a main chain, then add alkyls groups at the beginning of the name. You don't have to worry about the way the main chain is chosen or the way the numbering is done.
+If the molecule isn't linear, you can name it by picking a main chain, then add alkyls groups at the beginning of the name.
+You don't have to worry about the way the main chain is chosen or the way the numbering is done.
 
 Alkyls groups are defined this way:
 
@@ -109,7 +110,7 @@ CH3-CH-CH-CH2-CH-CH3    => 3-ethyl-2,5-dimethylhexane
 You do not need to know about the order of the alkyls in the name.
 Here is the complete list of multipliers (from 2 to 19, provided in the solution setup):
 
-MULTIPLIERS = [         "di",     "tri",     "tetra",     "penta",     "hexa",     "hepta",     "octa",     "nona",     "deca", 
+MULTIPLIERS = [         "di",     "tri",     "tetra",     "penta",     "hexa",     "hepta",     "octa",     "nona",     "deca",
               "undeca", "dodeca", "trideca", "tetradeca", "pentadeca", "hexadeca", "heptadeca", "octadeca", "nonadeca"]
 
 
@@ -187,7 +188,7 @@ With subramifications:
     CH2-CH-CH2-CH2-CH-CH2-CH2-CH2-CH3      => 1-[3-propyl]heptylcyclobutane
     |   |
     CH2-CH2
-    
+
                    CH2-CH2-CH3
                    |
     CH2-CH-CH2-CH2-CH-CH2-CH2-CH2-CH3
@@ -233,13 +234,13 @@ Simple functions
   Cl  ->   prefix = "chloro"
   Br  ->   prefix = "bromo"
   I   ->   prefix = "iodo"
-  
+
   CH3-CH2-CH2-CH2-CH2-F      ->     "1-fluoropentane"
-  
+
   CH3-CH-CH2-CH2-CH3         ->     "2-chloropentane"
       |
       Cl
-  
+
   CH3-CH-CH2-CH2-CHBr2        ->     "1,1-dibromo-4-chloropentane"
       |
       Cl
@@ -249,11 +250,11 @@ Simple functions
 
   OH  ->   prefix = "hydroxy"
            suffix = "ol"
-  
+
       OH
       |
   CH3-CH-CH2-CH2-CH3         ->     "pentan-2-ol"
-  
+
      HO  CH2-OH
       |  |
   CH3-CH-CH-CH2-CH2-OH       ->     "3-[1-hydroxy]methylpentan-1,4-diol"
@@ -263,11 +264,11 @@ Simple functions
 
   SH   ->   prefix = "mercapto"
             suffix = "thiol"
-  
+
       SH
       |
   CH3-CH-CH2-CH2-CH3         ->     "pentan-2-thiol"
-  
+
      HO  CH2-CH2-SH
       |  |
   CH3-CH-CH-CH2-CH2-OH       ->     "3-[2-mercapto]ethylpentan-1,4-diol"
@@ -277,11 +278,11 @@ Simple functions
 
   =NH  ->   prefix = "imino"
             suffix = "imine"
-  
+
   H3C-CH2-CH2-C-CH3
               ||          ->     "pentan-2-imine"
               NH
-              
+
           OH
           |
   H3C-CH2-CH-C-CH3
@@ -298,16 +299,16 @@ A bit less simple functions
 
   =O    ->    prefix = "oxo"
               suffix = "one"
-  
+
       O
       ||                ->    "pentan-2-one"
   CH3-C-CH2-CH2-CH3
-  
+
             CH3
             |
   H3C   CH2-C=O         ->     "4-[1-oxo]ethylheptan-2,6-dione"
-     \  |                      
-      C-CH-CH2-C-CH3           (note that the ethyl ramification is the 
+     \  |
+      C-CH-CH2-C-CH3           (note that the ethyl ramification is the
     //         ||               chain of 2 carbons on the very left, here)
    O           O
 
@@ -321,12 +322,12 @@ The aldehydes are a bit special about two points:
 
   -CH=O   ->    prefix = "formyl"  (anywhere on a chain)
      =O   ->    suffix = "al"      (as ketones, but only at an extremity)
-  
-  
+
+
       CH3-CH2-CH2-CH2-CH=O      ->     "pentanal"
-  
+
              CH2-CH2-CH=O
-             |                      
+             |
       HC-CH2-CH-CH2-CH2-CH=O    ->     "4-[1-formyl]methylheptandial"
      //
     O
@@ -334,33 +335,33 @@ The aldehydes are a bit special about two points:
             - The ramification still is the leftmost part (O=CH-CH2-...),
               but since the formyl group holds the last carbon, the radical
               used for the ramification has only 1 carbon left and is "methyl".
-            - No positional information for the suffixes, but present for the 
+            - No positional information for the suffixes, but present for the
               prefix if no elision (see last section).
 
 
     Carboxylic acids: They behave a bit like the aldehydes, having prefix and suffixes that represent the same functional group, but with 1 extra carbon in some cases. Positions are generally omitted when using suffixes too (same as for the aldehydes).
 
   Suffix type 1:  "oic acid"   (note the presence of the space character).
-  
-       OH                          OH                 "ethanoic acid" 
+
+       OH                          OH                 "ethanoic acid"
        |          example:         |                  (the carbon of the function is in the main chain)
   ...-(C)=O                    H3C-C=O
-  
-  
-  
+
+
+
   Suffix type 2:  "carboxylic acid" (used in some special cases.  Don't bother with the how and the why)
-  
-      OH                           OH             ->  "methancarboxylic acid" 
+
+      OH                           OH             ->  "methancarboxylic acid"
       |           example:         |                   ^^^^
   ...-C=O                      H3C-C=O               (which is incorrect, but will show you that
-                                                     the carbon of the function isn't considered 
-                                                     as a part of the main chain, here) 
-                                            
+                                                     the carbon of the function isn't considered
+                                                     as a part of the main chain, here)
+
   Prefix:         "carboxy"                OH
                                            |      ->  "4-carboxyheptan-1,7-dioic acid"
       OH                           CH2-CH2-C=O
       |           example:          |                 (for this time, let's do this with the positions... ;) )
-  ...-C=O                     HO-C-CH-CH2-CH2-C=O 
+  ...-C=O                     HO-C-CH-CH2-CH2-C=O
                                 //            |
                                O              OH
 
@@ -376,15 +377,15 @@ Amides are always at an extremity of a chain.
 
 
     H2N-CH=O                ->    "methanamide"
-    
+
     O=C-CH2-CH=CH-CH3       ->    "pent-3-enamide"
       |
       NH2
-      
+
     O=C-CH2-CH2-CH2-C=O     ->    "5-amidopentanoic acid"
-      |             | 
+      |             |
       NH2           OH
-    
+
 Note that the carbon isn't part of the function, but is part of the radical.
 
 
@@ -404,20 +405,20 @@ As suffixes:  "amine", "phosphine", "arsine"
   --------    (up to three of them) around are alkyls.
 
   * WAY 2:    Not the general case, but they can be used the same way than the previous functions.
-  --------    
+  --------
 
 Examples:                   WAY 1                        WAY 2
-    
+
     H3C-NH2           "methylamine"                "methan-1-amine"
     H3C-PH2           "methylphosphine"            "methan-1-phosphine"
     H3C-AsH2          "methylarsine"               "methan-1-arsine"
-    
+
     H3C-N-CH2-CH3     "ethyldimethylamine"         "ethan-1-[dimethyl]amine"
-        |                                            
+        |
         CH3
 
 
-Way 2 is actually used in this type of cases: 
+Way 2 is actually used in this type of cases:
 
     H2N-H2C-CH2-CH2-CH2-CH2-CH2-NH2        hexan-1,6-diamine    (the "cadavérine", in French...
                                                                  What a beautiful name... ;p )
@@ -428,10 +429,10 @@ Prefixes:    "amino", "phosphino", "arsino"
 
                 OH
                 |                            ->    "1,6-diaminohexan-3-ol"
-    H2N-H2C-CH2-CH-CH2-CH2-CH2-NH2 
+    H2N-H2C-CH2-CH-CH2-CH2-CH2-NH2
 
                 OH
-                |                            ->    "1-amino-6-[diethyl]arsinohexan-3-ol" 
+                |                            ->    "1-amino-6-[diethyl]arsinohexan-3-ol"
     H2N-H2C-CH2-CH-CH2-CH2-CH2-As-CH2-CH3
                                |                  (there are no position to give for the ethyl groups
                                CH2-CH3             since they are bound to the arsenic atom, not to a chain)
@@ -442,20 +443,20 @@ Prefixes:    "amino", "phosphino", "arsino"
 They have a lot in common with the previous ones, but there is only the "way 1" for the suffix. So, no main chain, and (always) two alkyls since ethers are made with oxygen.
 
 As suffix:    "alkylether"
-  
+
 Examples:      H3C-CH2-O-CH2-CH3         "diethylether"
-               
+
                H3C-O-CH=CH-CH3           "methylprop-1-enylether"
-               
+
 
 Prefix:    "alkoxy"
 
 Examples:      H3C-O-CH2-CH2-CH2-OH      "3-methoxypropan-1-ol"
                ^^^^^                        ^^^^^^^
-               
-    Note that the radical is use "raw". 
+
+    Note that the radical is use "raw".
     Though, if a multiple bound was in the auxiliary chain:
-    
+
         H2C=CH-CH2-O-CH2-CH2-CH2-OH      "3-prop-2-enoxypropan-1-ol"
 
 
@@ -476,14 +477,14 @@ Note that:
 
 Examples:
 
-      O 
+      O
       ||                                ->   "propyl ethanoate"
   CH3-C-O-CH2-CH2-CH3
-  
-        O 
+
+        O
        ||                               ->   "methyl butanoate"
   CH3-O-C-CH2-CH2-CH3
-  
+
                         O
                         ||              ->   "eth-1-enyl hept-2-enoate"
   CH3-CH2-CH2-CH2-CH=CH-C-O-CH=CH2
@@ -492,7 +493,7 @@ Due to their structure, esters as prefixes can be in two different form:
 
 Prefix type 1: alkoxycarbonyl
 
-      O 
+      O
       ||         Main chain, as "...":       the carbon of the function is NOT part of the main chain.
   ...-C-O-R      Auxiliary chain, as "alk":  the "R", separated by the oxygen.
 
@@ -512,10 +513,10 @@ Prefix type 2: alkanoyloxy...
 Example:
              CH3                                vvvvvvvvvvvv
  vvvvvvvvvvv |                          ->   "4-propanoyloxypentanoic acid"
- CH3-CH2-C-O-CH-CH2-CH2-C=O                    
+ CH3-CH2-C-O-CH-CH2-CH2-C=O
         ||              |
          O              OH                    (note the absence of squared brackets, again)
-         
+
   Put a double bound in the auxiliary chain and with this prefix, it would become ""prop-2-enoyloxy..."
 
 
@@ -530,7 +531,7 @@ These are actually a special kind of radicals. We will focus our effort on only 
       HC     CH        It can of course hold ramifications and functions.
         \   /
         HC=CH
-        
+
              CH2-CH3
             /
         HC-C
@@ -543,7 +544,7 @@ These are actually a special kind of radicals. We will focus our effort on only 
 * Used as ramification:    "phenyl", C6H5
 
         HC-CH                  OH
-       //   \\                 | 
+       //   \\                 |
       HC     C-CH2-CH2-CH2-CH2-C=O      ->   "5-phenylpentanoic acid"
         \   /
         HC=CH
@@ -564,7 +565,7 @@ With:
 
   suffixes  = alkenes, alkynes, functional groups
   prefixes  = functional groups (as prefixes), subchains, "cyclo"
-  
+
   subchains =  [other prefixes] + (cyclo) + radical + (alkenes or alkynes) + "yl"
             or functional groups as prefixes
   subparts  = subchains
@@ -610,9 +611,9 @@ Cycles         cyclo
 Note about the "Chemical group" representations:
     * When you see "(C)", that means the carbon is already counted in the main chain:
       you do not have to add a new one to build the function.
-    * Warning with the representations of carboxylic acids, amides or esters: 
+    * Warning with the representations of carboxylic acids, amides or esters:
       be aware of the double bound with one of the "O" (see details upper)
-    
+
 
 Functional group      Prefix              Suffix              Chemical group      Notes
 ----------------      ------              ------              --------------      -----
@@ -637,7 +638,7 @@ carboxylic acid       .                   oic acid            ...(C)O-OH        
 ester                 .                   (alkyl) ...oate     ...(C)O-O-R         R being a secondary alkyl chain (see details above). Only at an extremity of the main chain
                       (alk)oxycarbonyl    .                   ...(C)-CO-O-R       Anywhere on the chain. R being a secondary alkyl chain (see details above)
                       (alkan)oyloxy       .                   ...(C)-O-OR         Anywhere on the chain. R being a secondary alkyl chain (see details above)
-                      
+
 ether                 (alk)oxy            (alkyles)ether      R1-O-R2             R1 and R2 being alkyles if suffix, or R2 being the main chain if prefix (see details above)
 
 amine                 (alkyles)amino      (alkyles)amine      N  (various)        See details above about the different possibilities
@@ -657,11 +658,11 @@ The valence number is the number of bounds (understood as number of strokes goin
 
   1  |  2  |  3  |  4
 -----|-----|-----|-----
-  Br |  O  |  As |  C  
-  Cl |  S  |  N  |     
-  F  |     |  P  |     
-  H  |     |     |     
-  I  |     |     |     
+  Br |  O  |  As |  C
+  Cl |  S  |  N  |
+  F  |     |  P  |
+  H  |     |     |
+  I  |     |     |
 
 
 

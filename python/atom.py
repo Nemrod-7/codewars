@@ -1,183 +1,199 @@
 import re
-#####################################################################################################
-# Symbol:           H     B     C     N     O     F    Mg     P     S    Cl    Br      I            #
-# Valence number:   1     3     4     3     2     1     2     3     2     1     1      1            #
-# Atomic weight:  1.0  10.8  12.0  14.0  16.0  19.0  24.3  31.0  32.1  35.5  80.0  126.9  (in g/mol)#
-#####################################################################################################
+for _ in range(3) : print()
 
-order = ['C','H','O','B','Br','Cl','F','Mg','N','P','S']
 table = { 'C':[4, 12.0], 'H':[1, 1.0 ], 'O':[2, 16.0], 'B':[3, 10.8], 'Br':[1, 80.0], 'Cl':[1, 35.5], 'F':[1, 19.0], 'Mg':[2, 24.3], 'N':[3, 14.0], 'P':[3, 31.0], 'S':[2, 32.1] }
 
-RADICALS = ["meth",  "eth",   "prop",   "but",      "pent",     "hex",     "hept",     "oct",     "non",    "dec",  "undec", "dodec", "tridec", "tetradec", "pentadec", "hexadec", "heptadec", "octadec", "nonadec"]
-MULTIPLIERS = ["--","di",     "tri",     "tetra",     "penta",     "hexa",     "hepta",     "octa",     "nona",     "deca", "undeca", "dodeca", "trideca", "tetradeca", "pentadeca", "hexadeca", "heptadeca", "octadeca", "nonadeca"]
+RADICALS = ["meth",  "eth", "prop", "but", "pent", "hex", "hept", "oct", "non", "dec", "undec", "dodec", "tridec", "tetradec", "pentadec", "hexadec", "heptadec", "octadec", "nonadec"]
+MULTIPLIERS = ["--","di", "tri", "tetra", "penta", "hexa", "hepta", "octa", "nona", "deca", "undeca", "dodeca", "trideca", "tetradeca", "pentadeca", "hexadeca", "heptadeca", "octadeca", "nonadeca"]
+
 HYDROCARBON = ['ane','ene', 'yne' , 'yl' ] # => ['C']
 HALOGEN = ['fluoro','chloro','bromo','iodo'] # => ['F','Cl','Br','I']
 
-
-def prefix(text, arr) :
-    max = [i for i in range(len(arr)) if arr[i] == text[:len(arr[i])] ]
-    return [text, 1] if max == [] else [text[len(arr[max[-1]]):] , max[-1] + 1]
-
+def tokenize (name) :
+    name = name.replace('cyclo', ' cyclo ')
+    name = name.replace('[', ' { ').replace(']', ' } ')
+    name = name.replace('{', ' ] ').replace('}', ' [ ')
+    name = name.replace('-', ' ')
+    for sub in HYDROCARBON : name = name.replace(sub,' ' + sub + ' ')
+    for sub in HALOGEN : name = name.replace(sub, ' ' + sub + ' ')
+    for sub in ['di','meth','an '] : name = name.replace(sub, ' ' + sub + ' ')
+    name = re.findall(r'\S+', name)
+    name.reverse()
+    return name
 def bond (a, b) :
-    a[1].append(b[0])
-    b[1].append(a[0])
+    a[2].append(b[0])
+    b[2].append(a[0])
 
 def brancher(radical) :
-    branch = [['C', []] for _ in range(radical)]
+    branch = [[0, 'C', []]] + [[i + 1, 'C', []] for i in range(radical)]
 
-    for i in range(1, len(branch)) :
+    for i in range(2, len(branch)) :
         bond(branch[i-1], branch[i-0])
-    # print(branch)
     return branch
 
-def identify(chain) :
-    if chain[-3:] == 'ane' : return 'alkane'
-    elif chain[-3:] == 'ene' : return 'alkene'
-    elif chain[-3:] == 'yne' : return 'alkyne'
-    elif chain[-2:] == 'yl' : return 'alkyl'
-    elif chain[:8] == 'hydroxy' or chain[-2:] == 'ol' : return 'alcool'
-    elif chain[:8] == 'mercapto' or chain[-5:] == 'thiol' : return 'thiol'
-    elif chain[:5] == 'imino' or chain[-5:] == 'imine' : return 'imine'
-    elif chain[:3] == 'oxo' or chain[-3:] == 'one' : return 'ketone'
-    elif chain[:5] == 'amido' or chain[-5:] == 'amide' : return 'amide'
-    elif chain[:6] == 'formyl' or chain[-2:] == 'al': return 'aldehyde'
-    elif chain[-5:] == 'acid' : return 'carboxylic acid'
-    if chain[-6:] == 'fluoro' or chain[-6:] == 'chloro' or chain[-5:] == 'bromo' or chain[-4:] == 'iodo' : return 'halogen'
-    return ''
+def reindex(branch, index) :
+    for i in range(1, len(branch)) :
+        nid = index + i
+        pid = branch[i][0]
 
-def tokenize(name) :
-    # name = name.replace('cyclo', ' cyclo ')
-    for sub in HALOGEN : name = name.replace(sub, sub + ' ')
-    for sub in HYDROCARBON : name = name.replace(sub, sub + ' ')
-    return re.findall(r"\S+", name)
-
-def parser(name) :
-    arms = []
-    atoms = []
-    formula = ''
-    token = tokenize(name)
-    token.reverse()
-    print(token)
-
-    for chain in token :
-        type = identify(chain)
-        # print(chain, type)
-        match type :
-            case 'alkane' : # simple bound between carbons. CnH2n+2 => radical + "ane"
-                name = chain.replace('cyclo', ' cyclo ')
-                name = re.findall(r"\S+", name)
-                cyclo = false
-
-                for ident in token :
-                    if ident == 'cyclo' :
-                        cyclo = true
-                    else :
-
-
-
-                chain, radical = prefix(chain, RADICALS)
-                branch = brancher(radical)
-                if 'cyclo' in chain : bond(branch[0], branch[-1])
-
-                arms.append(branch)
-            case 'alkyl' : # positions + "-" + multiplier + radical + "yl"
-                chain, position = chain[chain.rfind('-') + 1:], re.findall( r'\d+' , chain)
-                chain, multipl = prefix(chain, MULTIPLIERS)
-                chain, radical = prefix(chain, RADICALS)
-                main = arms[0];
-
-                for nb in range(multipl) :
-                    branch = brancher(radical)
-                    if 'cyclo' in chain : bond(branch[0], branch[-1])
-
-                    index = int(position[i]) - 1
-                    bond(main[index], branch[0])
-                    arms.append(branch)
-
-            case 'alkene' : # double bound between carbons. CnH2n   => radical + "-" + positions + "-" + multiplier + "ene"
-                chain, radical = prefix(chain, RADICALS)
-                chain, position = chain[chain.rfind('-') + 1:], re.findall( r'\d+' , chain)
-                chain, multipl = prefix(chain, MULTIPLIERS)
-
-                for i in range(multipl) :
-                    branch = brancher(radical)
-                    link = arms[0][int(position[i]) - 1]
-                    for _ in range(2) : bond(link, branch[0])
-
-                    arms.append(branch)
-            case 'alkyne' : # triple bound between carbons. CnH2n-2 => radical + "-" + positions + "-" + multiplier + "yne"
-                chain, radical = prefix(chain, RADICALS)
-                chain, position = chain[chain.rfind('-') + 1:], re.findall( r'\d+' , chain)
-                chain, multipl = prefix(chain, MULTIPLIERS)
-
-                for i in range(multipl) :
-                    branch = brancher(radical)
-                    link = arms[0][int(position[i]) - 1]
-                    for _ in range(3) : bond(link, branch[0])
-
-                    arms.append(branch)
-            case 'halogen' :
-                atom, position = chain[chain.rfind('-') + 1:], re.findall( r'\d+' , chain)
-                main = arms[0]
-
-                for i in range(len(position)) :
-                    match atom :
-                        case 'fluoro' : branch = [['F',[]]]
-                        case 'chloro' : branch = [['Cl',[]]]
-                        case 'bromo' : branch = [['Br',[]]]
-                        case 'iodo' : branch = [['I',[]]]
-
-                    index = int(position[i]) - 1
-                    bond(main[index], branch[0])
-                    arms.append(branch)
-
-            case 'alcool' :
-                elt = 'OH'
-            case 'thiol'  :
-                elt = 'SH'
-            case 'imine'  :
-                elt = 'NH'
-            case 'ketone' :
-                elt += 'O'
-            case 'amide'  :
-                pass
-            case 'aldehyde' :
-                pass
-
-    for branch in arms :
         for atom in branch :
-            element = atom[0]
-            valence = table[element][0]
+            for j in range(len(atom[2])) :
+                if atom[2][j] == pid : atom[2][j] = nid
 
-            while len(atom[1]) < valence : atom[1].append('H')
+        branch[i][0] = nid
 
-            print(atom)
-            hist = { x: atom[1].count(x) for x in set(atom[1]) if table[x][0] == 1 }
-            formula += element + ''.join(elt + str(hist[elt]) if hist[elt] != 1 else elt for elt in hist) + '-'
+def represent(atom) :
+    id, elt, edge = atom
+    valence = table[elt][0]
+    rest = valence - len(edge)
+    cell = elt
 
-        print()
-    formula = formula[:-1]
-    print(formula)
-#
+    match rest :
+       case 0 : pass
+       case 1 : cell += 'H'
+       case _ : cell += 'H' + str(rest)
+    return cell
+
+def smile(molecule) :
+    # display
+    width = max([len(branch) for branch in molecule])
+    height = len(molecule)
+    graph = [[ [] for _ in range(width) ] for _ in range(height)]
+    formula = ''
+
+    for y in range(len(molecule)) :
+        branch = molecule[y]
+        for i in range(1, len(branch)) :
+            id, element, edge = branch[i]
+            link = ''
+            nb = [0] if i == 0 else [ 1 for j in range(len(edge)) if edge[j] == branch[i-1][0] ].count(1)
+
+            match nb :
+                case 0 : link += '  '
+                case 1 : link += '-'
+                case 2 : link += '='
+                case 3 : link += '{=}'
+
+            formula += link + represent(branch[i])
+    return formula
+def prefix(text, arr) :
+    max = [i for i in range(len(arr)) if arr[i] == text ]
+    return 1 if max == [] else max[-1] + 1
+
+def mainchain(code) :
+    (maxv,inxv) = (0,0)
+
+    for index in range( len(code) ) :
+        name = code[index]
+        pose = re.findall(r'\d+', name)
+
+        if pose == [] and name != 'cyclo':
+            radical = prefix(code[index], RADICALS)
+            # print(name, '=>', radical, multipl, index )
+            # if multipl > radical :
+            #     ii = len(MULTIPLIERS[multipl-1])
+            #     name = name[ii:]
+            #     radical = RADICALS.index(code[index]) + 1
+            if radical >= maxv :
+                (maxv,inxv) = (radical,index)
+    return (maxv, inxv)
+
+def getposition(code, index) :
+    position = re.findall(r'\d+', code[index + 1])
+
+    if position == [] :
+        index += 1
+        position = re.findall(r'\d+', code[index + 1])
+
+    index += 1
+    return index, position
+def parser(name) :
+    code = tokenize(name)
+    radical, index = mainchain(code)
+    molecule = [brancher(radical)]
+    code = [ code[it] for it in range(len(code)) if it != index  ]
+    index = 0
+    print(code)
+    while index < len(code) :
+        pos = re.findall(r'\d+', code[index])
+        # print(code[index], end=' ')
+        if pos != [] :
+            ix = max([atom[0] for branch in molecule for atom in branch])
+            alky = molecule.pop()
+            main = molecule.pop()
+            # display(main)
+            # display(alky)
+            for p in pos :
+                branch = [ [at[0], at[1], [edge for edge in at[2]]] for at in alky ] # because python is unable to make a deep copy !
+                reindex(branch, ix)
+                bond(branch[1], main[int(p)])
+                ix += len(alky) - 1
+
+                for i in range(1, len(branch)) :
+                    main.append(branch[i])
+
+            molecule.append(main)
+        else :
+            match code[index] :
+                case 'cyclo' :
+                    branch = molecule[-1]
+                    bond(branch[1], branch[-1])
+                case 'ane' | 'yl' :
+                    radical = RADICALS.index(code[index + 1]) + 1
+                    molecule.append(brancher(radical))
+                    index += 1
+                case 'yne' :
+                    branch = molecule[-1]
+                    index,position = getposition(code, index)
+
+                    for pos in position :
+                        bond(branch[int(pos)], branch[int(pos) + 1])
+                        bond(branch[int(pos)], branch[int(pos) + 1])
+                case 'ene' | 'en' : # double bond
+                    branch = molecule[-1]
+                    index,position = getposition(code, index)
+
+                    for pos in position :
+                        bond(branch[int(pos)], branch[int(pos) + 1])
+                case 'iodo' :
+                    molecule.append([[0,'C',[]], [1,'I',[]] ])
+                case 'bromo' :
+                    molecule.append([[0,'C',[]], [1,'Br',[]] ])
+                case 'fluoro' :
+                    molecule.append([[0,'C',[]], [1,'F',[]] ])
+                case 'chloro' :
+                    molecule.append([[0,'C',[]], [1,'Cl',[]] ])
+        index += 1
+
+    print(smile(molecule))
+
+
 # parser('methane')
 # parser('ethane')
 # parser('propane')
 # parser('butane')
-
+# parser('cyclobutane')
+#
 # parser('2-methylbutane')
 # parser('2,3,5-trimethylhexane')
 # parser('3-ethyl-2,5-dimethylhexane')
+# parser('2,7-dicyclobutyloctane')
 
+# parser("1,1-dibromo-4-chloropentane")
 # parser('1-fluoropentane')
 
+# parser("hex-2-ene")
+# parser("hex-2-yne")
 
-parser('cyclobutane')
-# parser('1-ethylcyclobutane')
-# parser('3,7-dicyclobutyloctane')
+# parser("tridec-4,10-dien-2,6,8-triyne")
+# parser("4-hept-2,4-dienylundec-9-en-2,5-diyne")
+parser("4-hept-2,4-dienyl")
 
-# parser('1,2-di[1-ethyl-3-[2-methyl]propyl]heptylcyclobutane')
+# #
+# parser("pentan-2-ol")
+# parser("diethylether")
+#
 # parser('1-[3-propyl]heptylcyclobutane')
-
-
-
-# for chain in token : print(chain, end=' ')
+# parser('1,2-di[1-ethyl-3-[2-methyl]propyl]heptylcyclobutane')
+#
+# parser("5-methylhexan-2-ol")

@@ -44,7 +44,7 @@ class Atom() :
 
     def bond(atom1, atom2) :
         a1, a2 = atom1, atom2
-        
+
         if a1 == a2 : raise InvalidBond
         if not a1.valid_valence() or not a2.valid_valence() : raise InvalidBond
 
@@ -135,25 +135,6 @@ class Molecule() :
 
         return self
 
-    def add_chainingbak(self, nc, nb, *elts) :
-        if self.lock : raise LockedMolecule
-        print('.add_chaining(',nc,',',nb,',*', elts, ')',end='')
-        i1 = self.arms[nb][nc]
-        i2 = len(self.atoms) + 1
-
-        chain = []
-        for i in range(0,len(elts)) :
-            if table[elts[i]][0] < 2 and i < (len(elts) - 1) :
-                raise InvalidBond
-            chain.append( Atom(i2 + i, elts[i], []))
-        self.atoms += chain
-
-        for i in range(i2, len(self.atoms)) :
-            Atom.bond(self.atoms[i-1], self.atoms[i])
-
-        Atom.bond(self.atoms[i1], self.atoms[i2-1])
-
-        return self
     def add_chaining(self, nc, nb, *elts) :
         i1 = self.arms[nb][nc]
         i2 = len(self.atoms) + 1
@@ -249,8 +230,8 @@ except Exception as x: print('\nerror :', x)
 # m.mutate(* ((3, 1, 'Mg'), (4, 1, 'Mg'), (4, 1, 'Mg')) )
 # m.add_chaining( 2 , 1 ,* ('C', 'O', 'N') )
 
-# ['Atom(S.1: C2,F5)', 'Atom(C.2: C9,N3,S1)', 'Atom(N.3: C2,C4,P6)', 'Atom(C.4: N3)', 'Atom(F.5: S1)', 'Atom(P.6: N3)', 'Atom(Mg.7)', 'Atom(Cl.8)', 'Atom(C.9: C2,O10)', 'Atom(O.10: C9,N11)', 'Atom(N.11: O10)'] 
-# should equal 
+# ['Atom(S.1: C2,F5)', 'Atom(C.2: C9,N3,S1)', 'Atom(N.3: C2,C4,P6)', 'Atom(C.4: N3)', 'Atom(F.5: S1)', 'Atom(P.6: N3)', 'Atom(Mg.7)', 'Atom(Cl.8)', 'Atom(C.9: C2,O10)', 'Atom(O.10: C9,N11)', 'Atom(N.11: O10)']
+# should equal
 # ['Atom(S.1: C2,F5)', 'Atom(C.2: C7,N3,S1)', 'Atom(N.3: C2,C4,P6)', 'Atom(C.4: N3)', 'Atom(F.5: S1)', 'Atom(P.6: N3)', 'Atom(C.7: C2,O8)', 'Atom(O.8: C7,N9)', 'Atom(N.9: O8)']
 
 display.atoms(m)
