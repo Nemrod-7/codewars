@@ -3,26 +3,13 @@ for _ in range(3) : print()
 
 table = { 'C':[4, 12.0], 'H':[1, 1.0 ], 'O':[2, 16.0], 'B':[3, 10.8], 'Br':[1, 80.0], 'Cl':[1, 35.5], 'F':[1, 19.0], 'Mg':[2, 24.3], 'N':[3, 14.0], 'P':[3, 31.0], 'S':[2, 32.1], 'I':[1, 0.0], 'As':[3, 0.0] }
 
+RADICALS = ["meth",  "eth", "prop", "but", "pent", "hex", "hept", "oct", "non", "dec", "undec", "dodec", "tridec", "tetradec", "pentadec", "hexadec", "heptadec", "octadec", "nonadec"]
 MISC = ['di','meth','an ', 'cyclo']
 PREFIX = ['hydroxy','mercapto','imino','oxo','formyl','amide', 'fluoro','chloro','bromo','iodo']
 SUFFIX  = ['ol','thiol','imine','one','al', 'amido','amine', 'phosphine','arsine']
 HYDROCARBON = ['ane','ene', 'yne' , 'yl' ]
 KEYWORDS = (HYDROCARBON + PREFIX + SUFFIX + MISC)
 
-def get_rad(code, index) :
-    while index < len(code) :
-        if code[index] in RADICALS :
-            return (RADICALS.index(code[index]) + 1, index)
-        index += 1
-    return 0,0
-
-def get_pos(code, index) :
-    while index < len(code) :
-        if re.findall(r'\d+', code[index]) :
-            return re.findall(r'\d+', code[index]), index
-        index += 1
-
-    return [],0
 
 def suffix(code) : # retreat each suffix which is not part of a main chain
     # source : [suffix, (multiplier), (positions), alkane, radical]
@@ -50,14 +37,13 @@ def tokenize (name) :
     suffix(name)
     return name
 
+def get_pos(code, index) :
+    while index < len(code) :
+        if re.findall(r'\d+', code[index]) :
+            return re.findall(r'\d+', code[index]), index
+        index += 1
 
-def parser(name) :
-    code = tokenize(name)
+    return [],0
 
-# source : [suffix, position, alkane, radical]
-# expect : [alkane, radical, suffix, position]
-#          [ol, di, 1,4, an, pent]
 
-parser("fluoropentan-4-ol")
-parser("5-fluoropentanol")
-parser("fluoropentan-1,4-diol")
+
