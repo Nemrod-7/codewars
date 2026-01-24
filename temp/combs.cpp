@@ -212,7 +212,6 @@ void filter (const vector<vector<int>> &subs) {
                 s1.push_back (comb + dig);
             }
         }
-
     }
 }
 
@@ -224,7 +223,7 @@ int main() {
     vector<int> mask = {8,8,8};
     // 1_2_3_4_5_6_7_8_9_0 
 
-    filter (mask);
+    // filter (mask);
 
 
 

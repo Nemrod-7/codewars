@@ -8,9 +8,10 @@ table = { 'C':[4, 12.0], 'H':[1, 1.0 ], 'O':[2, 16.0], 'B':[3, 10.8], 'Br':[1, 8
 RADICALS = ["meth",  "eth", "prop", "but", "pent", "hex", "hept", "oct", "non", "dec", "undec", "dodec", "tridec", "tetradec", "pentadec", "hexadec", "heptadec", "octadec", "nonadec"]
 MULTIPLIERS = ["--","di", "tri", "tetra", "penta", "hexa", "hepta", "octa", "nona", "deca", "undeca", "dodeca", "trideca", "tetradeca", "pentadeca", "hexadeca", "heptadeca", "octadeca", "nonadeca"]
 
+AMARPHOS = ['amine', 'phosphine','arsine']
 MISC = ['di','meth','an ', 'cyclo']
 PREFIX = ['hydroxy','mercapto','imino','oxo','formyl','amide', 'fluoro','chloro','bromo','iodo']
-SUFFIX  = ['ol','thiol','imine','one','al', 'amido','amine', 'phosphine','arsine']
+SUFFIX  = ['ol','thiol','imine','one','al', 'amido']
 HYDROCARBON = ['ane','ene', 'yne' , 'yl' ]
 KEYWORDS = (HYDROCARBON + PREFIX + SUFFIX + MISC)
 
@@ -158,14 +159,14 @@ def append(main, molecule, position) :
         main += [chain[i] for i in range(1,len(chain))]
 
 def parser(name) :
-
-    code = tokenize(name)
     index = 0
-    stack = []
-    molecule = []
+    stack, molecule = [], []
+    code = tokenize(name)
     print(code)
 
     while index < len(code) :
+        adjency(molecule)
+
         match code[index] :
             case '[' : pass
             case ']' : pass
@@ -177,10 +178,10 @@ def parser(name) :
             case 'ene' :# (cyclo) + radical + positions + "-" + multiplier + "ene" => double bond
                 position, index = get_pos(code, index)
                 branch = mk_branch(code,index)
-
-                for pos in position :
-                    bond(branch[int(pos)], branch[int(pos) + 1])
-
+         
+                # for pos in position :
+                #     bond(branch[int(pos)], branch[int(pos) + 1])
+                #
                 molecule.append(branch)
             case 'yne' :# (cyclo) + radical + positions + "-" + multiplier + "yne" => triple bond
                 position, index = get_pos(code, index)
@@ -227,35 +228,53 @@ def parser(name) :
 
             case _ :
                 pos = re.findall(r'\d+', code[index])
+        
                 if pos != [] :
-                    pos = [int(it) for it in pos]
-                    main = molecule[-(len(pos) + 1)]
-
-                    append(main, molecule, pos)
+                    if len(molecule) > len(pos) :
+                        pos = [int(it) for it in pos]
+                        main = molecule[-(len(pos) + 1)]
+                        # append(main, molecule, pos)
+                    else : 
+                        stack.append(pos)
                 if code[index] in MULTIPLIERS :
                     mul = MULTIPLIERS.index(code[index]) + 1
                     branch = molecule.pop()
-
+                   
                     for _ in range(mul) :
                         molecule.append([ [at[0], at[1], [edge for edge in at[2]]] for at in branch ])
 
         index += 1
 
     main = molecule[0]
-    pos = [len(main) - 1]
-    # print('size : ',len(molecule), stack)
+    end = [len(main) - 1]
 
-    while (len(molecule) > 1) :
-        append(main, molecule, pos)
+    # while (len(molecule) > 1) :
+    #     pos = end if pos == [] else [int(it) for it in pos]
+    #     append(main, molecule, pos)
 
-    adjency(molecule)
-    print(smile(main), '\n')
+    # adjency(molecule)
+    print(smile(main))
     return main
 
 
-parser("methylamine")
-parser("methan-1-amine")
-
-
-
+# parser("ethyldimethylamine")
 # parser("diethylether")
+#
+# parser("methylamine")
+# parser("methan-1-amine")
+# parser("methylphosphine")
+# parser("methan-1-phosphine")
+# parser("methylarsine")
+# parser("methan-1-arsine")
+#
+
+# parser("ethyldimethylamine")
+# parser("ethan-1-[dimethyl]amine") # <== fails
+# parser("hexan-1,6-diamine")
+# parser("1,6-diaminohexan-3-ol")
+# parser("1-amino-6-[diethyl]arsinohexan-3-ol")
+
+# parser("benzene")
+parser("1-formylbenzene")
+# parser("2-ethyl-1-formylbenzene")
+

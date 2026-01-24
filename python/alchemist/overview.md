@@ -489,8 +489,8 @@ Those three have the same behavior and a strong particularity: they can be used 
     Examples:                   WAY 1                        WAY 2
 
         H3C-NH2           "methylamine"                "methan-1-amine"
-        H3C-PH2           "methylphosphine"            "methan-1-phosphine"
         H3C-AsH2          "methylarsine"               "methan-1-arsine"
+        H3C-PH2           "methylphosphine"            "methan-1-phosphine"
 
         H3C-N-CH2-CH3     "ethyldimethylamine"         "ethan-1-[dimethyl]amine"
             |
