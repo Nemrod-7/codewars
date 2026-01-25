@@ -8,12 +8,12 @@ table = { 'C':[4, 12.0], 'H':[1, 1.0 ], 'O':[2, 16.0], 'B':[3, 10.8], 'Br':[1, 8
 RADICALS = ["meth",  "eth", "prop", "but", "pent", "hex", "hept", "oct", "non", "dec", "undec", "dodec", "tridec", "tetradec", "pentadec", "hexadec", "heptadec", "octadec", "nonadec"]
 MULTIPLIERS = ["--","di", "tri", "tetra", "penta", "hexa", "hepta", "octa", "nona", "deca", "undeca", "dodeca", "trideca", "tetradeca", "pentadeca", "hexadeca", "heptadeca", "octadeca", "nonadeca"]
 
-AMARPHOS = ['amine', 'phosphine','arsine']
-MISC = ['di','meth','an ', 'cyclo']
-PREFIX = ['hydroxy','mercapto','imino','oxo','formyl','amide', 'fluoro','chloro','bromo','iodo']
+AMARPHOS = ['amine', 'phosphine','arsine', 'amino', 'phosphino', 'arsino']
+MISC = ['di','meth','an ', 'cyclo','oate', 'benz', 'phen']
+PREFIX = ['hydroxy','mercapto','imino','oxo','oxy','formyl','amide', 'fluoro','chloro','bromo','iodo']
 SUFFIX  = ['ol','thiol','imine','one','al', 'amido']
 HYDROCARBON = ['ane','ene', 'yne' , 'yl' ]
-KEYWORDS = (HYDROCARBON + PREFIX + SUFFIX + MISC)
+KEYWORDS = (HYDROCARBON + PREFIX + SUFFIX + MISC + AMARPHOS)
 
 def get_rad(name, index) :
     while index < len(name) :
@@ -90,6 +90,38 @@ def append(molecule, stack, position) :
             bond(molecule[0][p], subc[0][1])
         molecule += subc
 
+def get_element(name) :
+    if name == 'ol' : return([ [[0,'C',[0]], [1,'O',[]]]])
+    if name == 'al' : return([ [[0, 'C',[0,0]], [1,'O',[]]]])
+    if name == 'oxo' : return([ [[0,'C',[0,0]], [1,'O',[]]]])
+    if name == 'oxy' : return([ [[0,'C',[0,0]], [1,'O',[]]]])
+    if name == 'one' : return([ [[0,'C',[0,0]], [1,'O',[]]]])
+    if name == 'ether' : return([ [[0,'C',[0]], [1,'O',[]]]])
+    if name == 'formyl' : return([ [[0,'C', [0]], [1, 'C', [2,2]], [2, 'O', [1,1]]]])
+    if name == 'hydroxy' : return([ [[0,'C',[0]], [1,'O',[]]]])
+
+    if name == 'thiol' : return([ [[0,'C',[0]], [1,'S',[]]]])
+    if name == 'mercapto' : return([ [[0,'C',[0]], [1,'S',[]]]])
+
+    if name == 'iodo' : return([ [[0,'C',[0]], [1,'I',[]]]])
+    if name == 'bromo' : return([ [[0,'C',[0]], [1,'Br',[]]]])
+    if name == 'fluoro' : return([ [[0,'C',[0]], [1,'F',[]]]])
+    if name == 'chloro' : return([ [[0,'C',[0]], [1,'Cl',[]]]])
+
+    if name == 'imine' : return([ [[0,'C',[0,0]], [1,'N',[]]]])
+    if name == 'imino' : return([ [[0,'C',[0,0]], [1,'N',[]]]])
+
+    if name == 'amide' : return([ [[0,'C',[0,0]], [1,'C',[2]], [2,'N',[1,3,3]], [3, 'O', [2,2]] ]])
+    if name == 'amido' : return([ [[0,'C',[0]], [1,'N',[]]]])
+
+    if name == 'amine' : return([ [[0,'C', [0]], [1, 'N', []]]])
+    if name == 'amino' : return([ [[0,'C', [0]], [1, 'N', []]]])
+    if name == 'arsine' : return([ [[0,'C', [0]], [1, 'As', []]]])
+    if name == 'arsino' : return([ [[0,'C', [0]], [1, 'As', []]]])
+    if name == 'phosphine' : return([ [[0,'C', [0]], [1, 'P', []]]])
+    if name == 'phosphino' : return([ [[0,'C', [0]], [1, 'P', []]]])
+    return []
+
 # def reindex2(structure, index) :
 #
 #     for chain in structure :
@@ -142,8 +174,8 @@ def parser(name) :
     index = 0
     stkpos, stack = [], []
     code = tokenize(name)
-    # print(code)
 
+    print(code)
     while index < len(code) :
         match code[index] :
             case '[' : pass
@@ -180,37 +212,12 @@ def parser(name) :
                 branch = stack[-1][0]
                 for pos in position :
                     bond(branch[int(pos)], branch[int(pos) + 1])
-            case 'ol' : stack.append([ [[0,'C',[0]], [1,'O',[]]]])
-            case 'al' : stack.append([ [[0, 'C', [0,0]], [1, 'O', []]]])
-            case 'oxo' : stack.append([ [[0,'C',[0,0]], [1,'O',[]]]])
-            case 'one' : stack.append([ [[0,'C',[0,0]], [1,'O',[]]]])
-            case 'ether' : stack.append([ [[0,'C',[0]], [1,'O',[]]]])
-            case 'formyl' : stack.append([ [[0,'C', [0]], [1, 'C', [2,2]], [2, 'O', [1,1]]]])
-            case 'hydroxy' : stack.append([ [[0,'C',[0]], [1,'O',[]]]])
-
-            case 'thiol' : stack.append([ [[0,'C',[0]], [1,'S',[]]]])
-            case 'mercapto' : stack.append([ [[0,'C',[0]], [1,'S',[]]]])
-
-            case 'iodo' : stack.append([ [[0,'C',[0]], [1,'I',[]]]])
-            case 'bromo' : stack.append([ [[0,'C',[0]], [1,'Br',[]]]])
-            case 'fluoro' : stack.append([ [[0,'C',[0]], [1,'F',[]]]])
-            case 'chloro' : stack.append([ [[0,'C',[0]], [1,'Cl',[]]]])
-
-            case 'imine' : stack.append([ [[0,'C',[0,0]], [1,'N',[]]]])
-            case 'imino' : stack.append([ [[0,'C',[0,0]], [1,'N',[]]]])
-
-            case 'amide' : stack.append([ [[0,'C',[0,0]], [1,'C',[2]], [2,'N',[1,3,3]], [3, 'O', [2,2]] ]])
-            case 'amido' : stack.append([ [[0,'C',[0]], [1,'N',[]]]])
-
-            case 'amine' : stack.append([ [[0,'C', [0]], [1, 'N', []]]])
-            case 'arsine' : stack.append([ [[0,'C', [0]], [1, 'As', []]]])
-            case 'phosphine' : stack.append([ [[0,'C', [0]], [1, 'P', []]]])
-
-            case 'acid' : pass
-
             case _ :
+                element = get_element(code[index])
                 position = re.findall(r'\d+', code[index])
 
+                if element != [] :
+                    stack.append(element)
                 if position != [] :
                     if len(stack) > len(position) :
                         position = [int(it) for it in position]
@@ -229,35 +236,40 @@ def parser(name) :
 
                     for _ in range(multiple) :
                         stack.append([ [ [at[0], at[1], [edge for edge in at[2]]] for chain in molecule for at in chain ] ])
+
+                    if index == (len(code) - 1) or not re.findall(r'\d+', code[index + 1]) :
+                        molecule = stack[-(multiple + 1)]
+                        end = [len(molecule)] * multiple
+
+                        append(molecule, stack, end)
+                        # print(molecule, end)
+                        # print (code, multiple)
+
         # print('****************************')
         # print(code[index])
         # show.stack(stack)
         index += 1
+
+    if stkpos != [] :
+        stack[0], stack[-1] = stack[-1],stack[0]
 
     molecule = stack[0]
     main = molecule[0]
     end = [len(main) - 1]
 
     while (len(stack) > 1) :
-        # pos = end if pos == [] else [int(it) for it in pos]
-        pos = end
-        append(molecule, stack, end)
+        pos = end if stkpos == [] else [int(it) for it in stkpos.pop()]
+        append(molecule, stack, pos)
 
-    print('****************************')
+    # print('****************************')
     show.stack(stack)
-    print(show.smile(molecule))
-    return main
+    # print(show.smile(molecule))
+    # return main
 
 # parser('4-[1-oxo]ethylheptan-2,6-dione')
+
 # parser('4-[1-formyl] methyl heptan dial') # the 'di'al with no position
-
-parser("ethan-1-[dimethyl]amine")
-# parser("ethan-1-[dimethyl]amine")
-
-# parser("hexan-1,6-diamine")
-# parser("1,6-diaminohexan-3-ol")
-# parser("1-amino-6-[diethyl]arsinohexan-3-ol")
-
-
+# parser('2-ethyl-1-formylbenzene')
+# parser('3-prop-2-enoxypropan-1-ol')
 
 print('end')

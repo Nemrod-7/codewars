@@ -566,7 +566,7 @@ Examples:
           ||                                ->   "propyl ethanoate"
       CH3-C-O-CH2-CH2-CH3
 
-            O
+           O
            ||                               ->   "methyl butanoate"
       CH3-O-C-CH2-CH2-CH3
 

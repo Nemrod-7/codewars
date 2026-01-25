@@ -60,9 +60,14 @@ parser("methan-1-phosphine")
 parser("methylarsine")
 parser("methan-1-arsine")
 parser("ethyldimethylamine")
+parser("ethan-1-[dimethyl]amine")
+parser("hexan-1,6-diamine")
+parser("1,6-diaminohexan-3-ol")
+parser("1-amino-6-[diethyl]arsinohexan-3-ol")
 
 # ethers
 parser("diethylether")
+parser('methylprop-1-enylether')
 
 ###############################################################################
 
@@ -79,14 +84,8 @@ parser("diethylether")
 # parser("pent-3-enamide")
 # parser("5-amidopentanoic acid")
 #
-# # amines, phosphenes, arsines
-# parser("ethan-1-[dimethyl]amine")
-# parser("hexan-1,6-diamine")
-# parser("1,6-diaminohexan-3-ol")
-# parser("1-amino-6-[diethyl]arsinohexan-3-ol")
-#
 # # ethers
-# parser("methylprop-1-enylether")
+#
 #
 # # esters...
 #
