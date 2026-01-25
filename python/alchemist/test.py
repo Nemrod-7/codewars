@@ -94,11 +94,7 @@ def parser(name) :
 
         index += 1
 
-parser("ethyldimethylamine")
-parser("diethylether")
 
-parser("methylamine")
-parser("methan-1-amine")
 
 # parser("methylphosphine")
 # parser("methan-1-phosphine")

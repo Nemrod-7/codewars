@@ -133,8 +133,8 @@ def reindex(branch, index) :
 def mk_branch(code, index) :
 
     while index < len(code) :
-        if code[index] == 'benz' or code[index] == 'phen' :
-            return [ [0,'C',[]], [1,'C',[2,6,6]], [2,'C',[1,3,3]], [3,'C',[2,2,4]], [4,'C',[3,5,5]], [5,'C',[4,4,6]], [6,'C',[5,1,1]] ]
+        # if code[index] == 'benz' or code[index] == 'phen' :
+        #     return [ [0,'C',[]], [1,'C',[2,6,6]], [2,'C',[1,3,3]], [3,'C',[2,2,4]], [4,'C',[3,5,5]], [5,'C',[4,4,6]], [6,'C',[5,1,1]] ]
         if code[index] in RADICALS :
             radical = RADICALS.index(code[index]) + 1
             branch = [[0, 'C', [0]]] + [[i + 1, 'C', []] for i in range(radical)]
@@ -165,8 +165,6 @@ def parser(name) :
     print(code)
 
     while index < len(code) :
-        adjency(molecule)
-
         match code[index] :
             case '[' : pass
             case ']' : pass
@@ -176,12 +174,15 @@ def parser(name) :
             case 'ane' | 'an' : # radical + ane => single bond
                 molecule.append(mk_branch(code,index))
             case 'ene' :# (cyclo) + radical + positions + "-" + multiplier + "ene" => double bond
-                position, index = get_pos(code, index)
-                branch = mk_branch(code,index)
-         
-                # for pos in position :
-                #     bond(branch[int(pos)], branch[int(pos) + 1])
-                #
+                if code[index + 1] == 'benz' :
+                    branch = [ [0,'C',[]], [1,'C',[2,6,6]], [2,'C',[1,3,3]], [3,'C',[2,2,4]], [4,'C',[3,5,5]], [5,'C',[4,4,6]], [6,'C',[5,1,1]] ]
+                else :
+                    position, index = get_pos(code, index)
+                    branch = mk_branch(code, index)
+
+                    for pos in position :
+                        bond(branch[int(pos)], branch[int(pos) + 1])
+
                 molecule.append(branch)
             case 'yne' :# (cyclo) + radical + positions + "-" + multiplier + "yne" => triple bond
                 position, index = get_pos(code, index)
@@ -228,18 +229,18 @@ def parser(name) :
 
             case _ :
                 pos = re.findall(r'\d+', code[index])
-        
+
                 if pos != [] :
                     if len(molecule) > len(pos) :
                         pos = [int(it) for it in pos]
                         main = molecule[-(len(pos) + 1)]
-                        # append(main, molecule, pos)
-                    else : 
+                        append(main, molecule, pos)
+                    else :
                         stack.append(pos)
                 if code[index] in MULTIPLIERS :
                     mul = MULTIPLIERS.index(code[index]) + 1
                     branch = molecule.pop()
-                   
+
                     for _ in range(mul) :
                         molecule.append([ [at[0], at[1], [edge for edge in at[2]]] for at in branch ])
 
@@ -277,4 +278,3 @@ def parser(name) :
 # parser("benzene")
 parser("1-formylbenzene")
 # parser("2-ethyl-1-formylbenzene")
-
