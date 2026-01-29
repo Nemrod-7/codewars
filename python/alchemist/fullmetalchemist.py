@@ -3,6 +3,7 @@ from display import *
 # import fma2_tests
 for _ in range(3) : print()
 
+order = ['C','H','O','B','Br','Cl','F','Mg','N','P','S','I','As']
 table = { 'C':[4, 12.0], 'H':[1, 1.0 ], 'O':[2, 16.0], 'B':[3, 10.8], 'Br':[1, 80.0], 'Cl':[1, 35.5], 'F':[1, 19.0], 'Mg':[2, 24.3], 'N':[3, 14.0], 'P':[3, 31.0], 'S':[2, 32.1], 'I':[1, 0.0], 'As':[3, 0.0] }
 
 RADICALS = ["meth",  "eth", "prop", "but", "pent", "hex", "hept", "oct", "non", "dec", "undec", "dodec", "tridec", "tetradec", "pentadec", "hexadec", "heptadec", "octadec", "nonadec"]
@@ -90,76 +91,9 @@ def append(molecule, stack, position) :
             bond(molecule[0][p], subc[0][1])
         molecule += subc
 
-def get_element(name) :
-    if name == 'ol' : return([ [[0,'C',[0]], [1,'O',[]]]])
-    if name == 'al' : return([ [[0, 'C',[0,0]], [1,'O',[]]]])
-    if name == 'oxo' : return([ [[0,'C',[0,0]], [1,'O',[]]]])
-    # if name == 'oxy' : return([ [[0,'C',[0,0]], [1,'O',[]]]])
-    if name == 'one' : return([ [[0,'C',[0,0]], [1,'O',[]]]])
-    if name == 'ether' : return([ [[0,'C',[0]], [1,'O',[]]]])
-    if name == 'formyl' : return([ [[0,'C', [0]], [1, 'C', [2,2]], [2, 'O', [1,1]]]])
-    if name == 'hydroxy' : return([ [[0,'C',[0]], [1,'O',[]]]])
-
-    if name == 'thiol' : return([ [[0,'C',[0]], [1,'S',[]]]])
-    if name == 'mercapto' : return([ [[0,'C',[0]], [1,'S',[]]]])
-
-    if name == 'iodo' : return([ [[0,'C',[0]], [1,'I',[]]]])
-    if name == 'bromo' : return([ [[0,'C',[0]], [1,'Br',[]]]])
-    if name == 'fluoro' : return([ [[0,'C',[0]], [1,'F',[]]]])
-    if name == 'chloro' : return([ [[0,'C',[0]], [1,'Cl',[]]]])
-
-    if name == 'imine' : return([ [[0,'C',[0,0]], [1,'N',[]]]])
-    if name == 'imino' : return([ [[0,'C',[0,0]], [1,'N',[]]]])
-
-    if name == 'amide' : return([ [[0,'C',[0,0]], [1,'C',[2]], [2,'N',[1,3,3]], [3, 'O', [2,2]] ]])
-    if name == 'amido' : return([ [[0,'C',[0]], [1,'N',[]]]])
-
-    if name == 'amine' : return([ [[0,'C', [0]], [1, 'N', []]]])
-    if name == 'amino' : return([ [[0,'C', [0]], [1, 'N', []]]])
-    if name == 'arsine' : return([ [[0,'C', [0]], [1, 'As', []]]])
-    if name == 'arsino' : return([ [[0,'C', [0]], [1, 'As', []]]])
-    if name == 'phosphine' : return([ [[0,'C', [0]], [1, 'P', []]]])
-    if name == 'phosphino' : return([ [[0,'C', [0]], [1, 'P', []]]])
-    return []
-
-# def reindex2(structure, index) :
-#
-#     for chain in structure :
-#         for i in range(1, len(chain)) :
-#             index += 1
-#             nid = index
-#             pid = chain[i][0]
-#
-#             for br in structure :
-#                 for at in range(1, len(br)) :
-#                     a2 = br[at]
-#                     for j in range(len(a2[2])) :
-#                         if a2[2][j] == pid :
-#                             a2[2][j] = nid
-#             chain[i][0] = nid
-
-    # print(structure)
-# def append2(molecule, stack, position) :
-#     print('*********first*************')
-#     show.stack(stack)
-#
-#     for p in position :
-#         subc = stack.pop()
-#         ix = molecule[-1][-1][0]
-#         info = subc[0][0]
-#         reindex2(subc, ix)
-#
-#         for _ in range(len(info[2])) :
-#             bond(molecule[0][p], subc[0][1])
-#         molecule += subc
-#
-#     print('********second*************')
-#     show.stack(stack)
 def mk_branch(code, index) :
 
     while index < len(code) :
-        # if code[index] == 'benz' or code[index] == 'phen' :
-        #     return [ [0,'C',[]], [1,'C',[2,6,6]], [2,'C',[1,3,3]], [3,'C',[2,2,4]], [4,'C',[3,5,5]], [5,'C',[4,4,6]], [6,'C',[5,1,1]] ]
         if code[index] in RADICALS :
             radical = RADICALS.index(code[index]) + 1
             branch = [[0, 'C', [0]]] + [[i + 1, 'C', []] for i in range(radical)]
@@ -212,12 +146,59 @@ def parser(name) :
                 branch = stack[-1][0]
                 for pos in position :
                     bond(branch[int(pos)], branch[int(pos) + 1])
+
+            case 'al' : stack.append([ [[0, 'C',[0,0]], [1,'O',[]]]]) # =O
+            case 'iodo' : stack.append([ [[0,'C',[0]], [1,'I',[]]]])
+            case 'bromo' : stack.append([ [[0,'C',[0]], [1,'Br',[]]]])
+            case 'fluoro' : stack.append([ [[0,'C',[0]], [1,'F',[]]]])
+            case 'chloro' : stack.append([ [[0,'C',[0]], [1,'Cl',[]]]])
+
+            case 'oxo'   | 'one' : stack.append([ [[0,'C',[0,0]], [1,'O',[]]]]) # =O
+            case 'ol'    | 'hydroxy' : stack.append([ [[0,'C',[0]], [1,'O',[]]]]) # -OH
+            case 'thiol' | 'mercapto' : stack.append([ [[0,'C',[0]], [1,'S',[]]]]) # -SH
+            case 'imine' | 'imino' : stack.append([ [[0,'C',[0,0]], [1,'N',[]]]]) # =NH
+            case 'amine' | 'amino' : stack.append([ [[0,'C', [0]], [1, 'N', []]]])
+            case 'arsine'| 'arsino' : stack.append([ [[0,'C', [0]], [1, 'As', []]]])
+            case 'phosphine' | 'phosphino' : stack.append([ [[0,'C', [0]], [1, 'P', []]]])
+
+            # case 'ether' : stack.append([ [[0,'C',[0]], [1,'O',[]]]])
+            case 'formyl' :
+                #-CH=O
+                stack.append([ [[0,'C', [0]], [1, 'C', [2,2]], [2, 'O', [1,1]]]])
+            case 'amide' | 'amido' : # => methanamide | 5-amidopentanoic acid
+                #      NH2
+                #      |
+                # ...-(C)=O
+
+                stack.append([ [[0,'C',[0,0]], [1,'C',[2]], [2,'N',[1,3,3]], [3, 'O', [2,2]] ]])
+            case 'carboxy' : # => methancarboxylic acid
+                #     OH
+                #     |
+                # ...-C=O
+                # stack.append([ [[0,'C',[0]], [1,'C',[2,3,3]], [2,'O',[1]], [3,'O',[1,1]]] ])
+                pass
+            case 'carboxylic' : # => 4-carboxyheptan-1,7-dioic acid
+                #     OH
+                #     |
+                # ...-C=O
+                # stack.append([ [[0,'C',[0]], [1,'C',[2,3,3]], [2,'O',[1]], [3,'O',[1,1]]] ])
+                pass
+            case 'oic' : # => ethanoic acid
+                #      OH
+                #      |
+                # ...-(C)=O
+                # stack.append([ [[0,'C',[0]], [1,'C',[2,3,3]], [2,'O',[1]], [3,'O',[1,1]]] ])
+                pass
+
+            case 'acid' : # =>
+                #      OH
+                #      |
+                # ...-(C)=O
+                # stack.append([ [[0,'C',[0]], [1,'C',[2,3,3]], [2,'O',[1]], [3,'O',[1,1]]] ])
+                pass
             case _ :
-                element = get_element(code[index])
                 position = re.findall(r'\d+', code[index])
 
-                if element != [] :
-                    stack.append(element)
                 if position != [] :
                     if len(stack) > len(position) :
                         position = [int(it) for it in position]
@@ -262,14 +243,15 @@ def parser(name) :
         append(molecule, stack, pos)
 
     # print('****************************')
-    show.stack(stack)
-    # print(show.smile(molecule))
-    # return main
+    # show.stack(stack)
 
+
+    # print(show.smile(molecule))
+    print(formula)
 # parser('4-[1-oxo]ethylheptan-2,6-dione')
 
 # parser('4-[1-formyl] methyl heptan dial') # the 'di'al with no position
-# parser('2-ethyl-1-formylbenzene')
+parser('2-ethyl-1-formylbenzene')
 # parser('3-prop-2-enoxypropan-1-ol')
 
 print('end')

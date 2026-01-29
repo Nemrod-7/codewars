@@ -45,3 +45,17 @@ class show :
                 formula += link + show.represent(chain[i])
             formula += ' '
         return formula + '\n' + links
+    def formula(molecule) :
+        formula = ''
+        hist = {}
+
+        for chain in molecule :
+            for i in range(1, len(chain)) :
+                elt = chain[i][1]
+                hist[elt] = 1 if not elt in hist else hist[elt] + 1
+                hist['H'] = 1 if not 'H' in hist else hist['H'] + table[elt][0] - len(chain[i][2])
+
+        arr = [(key,hist[key]) for key in hist]
+        arr.sort(key = lambda x: order.index(x[0]))
+        formula = ''.join([ it[0] + (str(it[1]) if it[1] > 1 else '') for it in arr])
+        return formula
